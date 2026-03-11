@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>資料庫綱要與資源庫設計</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">資料庫綱要與資源庫設計</h1>
+</header>
+<h1
+id="資料庫綱要與資源庫設計-database-vector-store-schema">資料庫綱要與資源庫設計
+(Database &amp; Vector Store Schema)</h1>
+<h2 id="關聯式資料庫-relational-db---postgresql">1. 關聯式資料庫
+(Relational DB - PostgreSQL)</h2>
+<h3 id="users-表-核心帳號與權限">Users 表 (核心帳號與權限)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>email</code> (String, Unique)</li>
+<li><code>subscription_tier</code> (Enum: <code>FREE</code>,
+<code>PRO_199</code>)</li>
+<li><code>subscription_status</code> (Enum: <code>ACTIVE</code>,
+<code>CANCELED</code>, <code>PAST_DUE</code>)</li>
+<li><code>current_period_end</code> (Timestamp)</li>
+<li><code>stripe_customer_id</code> (String, Nullable)</li>
+<li><code>created_at</code> (Timestamp)</li>
+</ul>
+<h3 id="user_usage_logs-表-防濫用與配額追蹤">User_Usage_Logs 表
+(防濫用與配額追蹤)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>user_id</code> (UUID, Foreign Key)</li>
+<li><code>billing_cycle_start</code> (Timestamp)</li>
+<li><code>claude_pro_queries_count</code> (Integer) -&gt; 用於限制 199
+方案的高階模型調用 (如每月 50 次)</li>
+<li><code>vision_ocr_pages_count</code> (Integer) -&gt;
+用於限制圖片/手寫數學的解析量</li>
+<li><code>youtube_minutes_parsed</code> (Integer)</li>
+<li><code>documents_uploaded_count</code> (Integer)</li>
+</ul>
+<h3 id="documents-表-教材與多媒體資源庫">Documents 表
+(教材與多媒體資源庫)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>user_id</code> (UUID, Foreign Key)</li>
+<li><code>source_type</code> (Enum: <code>PDF</code>,
+<code>MARKDOWN</code>, <code>YOUTUBE_URL</code>,
+<code>IMAGE_MATH</code>)</li>
+<li><code>title</code> (String)</li>
+<li><code>source_url</code> (String, S3 Path 或 YouTube 原始連結)</li>
+<li><code>mcp_parsed_transcript_url</code> (String, Nullable, 存放 MCP
+抓下來的純文字逐字稿)</li>
+<li><code>status</code> (Enum: <code>PENDING</code>,
+<code>PROCESSING</code>, <code>COMPLETED</code>, <code>FAILED</code>,
+<code>RATE_LIMITED</code>)</li>
+<li><code>file_size_bytes</code> (Integer)</li>
+<li><code>vision_required</code> (Boolean) -&gt;
+標記是否含有複雜數學公式或圖片需走 Vision Pipeline</li>
+</ul>
+<h3 id="exams-表-生成的測驗卷">Exams 表 (生成的測驗卷)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>document_id</code> (UUID, Foreign Key)</li>
+<li><code>title</code> (String)</li>
+<li><code>exam_type</code> (Enum: <code>MOCK_EXAM</code>,
+<code>SPACED_REPETITION</code>, <code>FLASHCARD_SET</code>)</li>
+<li><code>score</code> (Integer, Nullable)</li>
+<li><code>created_at</code> (Timestamp)</li>
+</ul>
+<h3 id="questions-表-多模態題庫">Questions 表 (多模態題庫)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>exam_id</code> (UUID, Foreign Key)</li>
+<li><code>question_type</code> (Enum: <code>MULTIPLE_CHOICE</code>,
+<code>FILL_IN_BLANK</code>, <code>MATH_FORMULA</code>)</li>
+<li><code>content_text</code> (Text)</li>
+<li><code>content_image_url</code> (String, Nullable,
+用於理工科圖片題)</li>
+<li><code>correct_answer</code> (String)</li>
+<li><code>explanation_markdown</code> (Text, 支援 KaTeX 語法)</li>
+<li><code>citation_chunk_id</code> (UUID,
+溯源對照：此題源自講義的哪一段，方便 NotebookLM 式體驗)</li>
+</ul>
+<h3 id="user_answers-表-錯題與學習追蹤">User_Answers 表
+(錯題與學習追蹤)</h3>
+<ul>
+<li><code>id</code> (UUID, Primary Key)</li>
+<li><code>user_id</code> (UUID, Foreign Key)</li>
+<li><code>question_id</code> (UUID, Foreign Key)</li>
+<li><code>is_correct</code> (Boolean)</li>
+<li><code>user_choice</code> (String)</li>
+<li><code>ebbinghaus_next_review</code> (Timestamp) -&gt;
+艾賓浩斯間隔重複演算法排程</li>
+<li><code>ebbinghaus_multiplier</code> (Float) -&gt; 答錯頻率權重</li>
+</ul>
+<h2 id="向量資料庫-vector-database---pinecone">2. 向量資料庫 (Vector
+Database - Pinecone)</h2>
+<ul>
+<li><strong>Namespace</strong>: 依據 <code>document_id</code>
+隔離資料。</li>
+<li><strong>Metadata</strong>:
+<ul>
+<li><code>page_number</code> (Integer, 用於溯源追蹤)</li>
+<li><code>chunk_index</code> (Integer)</li>
+<li><code>content_type</code> (Enum: <code>TEXT</code>,
+<code>IMAGE_DESCRIPTION</code>, <code>YOUTUBE_TRANSCRIPT</code>)</li>
+<li><code>timestamp_start</code> / <code>timestamp_end</code> (String,
+如果是 YouTube 影片，記錄該段落的時間軸)</li>
+</ul></li>
+<li><strong>用途</strong>：當進行 RAG (考題生成或解惑)
+時，能精準提取對應的上下文，並在 UI 上標示出處 (Citation)。</li>
+</ul>
+<h2 id="快取層庫-cache---redis-memorystore">3. 快取層庫 (Cache - Redis /
+Memorystore)</h2>
+<ul>
+<li><strong>用途</strong>：大幅降低重複運算成本與提升回應速度。</li>
+<li><strong>Keys 設計</strong>：
+<ul>
+<li><code>ratelimit:user:{user_id}:vision_ocr</code> -&gt; 追蹤 Vision
+API 呼叫頻率</li>
+<li><code>ratelimit:user:{user_id}:export</code> -&gt; 防禦 Hit-and-Run
+極端高頻匯出</li>
+<li><code>doc_hash:{sha256}</code> -&gt;
+記錄該講義/影片是否已經被其他使用者解析過。若是，則可直接秒取快取結果，達成「邊際成本遞減」的商業利益。</li>
+</ul></li>
+</ul>
+<h2 id="b2b-ultra-旗艦版擴充預留-phase-4">4. B2B / Ultra 旗艦版擴充預留
+(Phase 4)</h2>
+<p>為了未來無縫銜接生態系整合，系統核心預留以下外掛點： -
+<strong>External_Sync_Jobs 表</strong>：記錄與 Notion, Google Drive 或
+AWS 官方課綱的定時同步排程 (Cron Job)。 - <strong>Organizations
+表</strong>：提供給補習班/教育機構的 B2B 多租戶 (Multi-tenant)
+管理，建立老師與學生的從屬關係 (Role-based Access Control)。</p>
+</body>
+</html>

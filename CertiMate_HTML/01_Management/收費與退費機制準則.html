@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>收費與退費機制準則</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">收費與退費機制準則</h1>
+</header>
+<h1 id="收費與退費機制準則-billing-refund-policy">收費與退費機制準則
+(Billing &amp; Refund Policy)</h1>
+<p>為了保障 CertiMate 平台 (做為純工具 SaaS)
+的現金流健康，並兼顧消費者的合理權益與使用體驗，針對定價 199 TWD/月 的
+Pro 訂閱服務，制定以下收費、取消與退費準則。</p>
+<h2 id="訂閱收費原則-billing-cycle">1. 訂閱收費原則 (Billing Cycle)</h2>
+<ul>
+<li><strong>週期性扣款 (Auto-Renewal)</strong>：Pro
+方案採「月費制」，使用者綁定信用卡或第三方支付 (如 Stripe, Line Pay,
+Apple Pay) 後，系統將於每個計費週期 (滿 30 天) 的同一日自動扣款 199
+TWD。</li>
+<li><strong>隨買隨用 (Immediate
+Access)</strong>：付款成功當下，帳號立即升級為 Pro
+權限，解鎖無廣告、無限上傳、無時長 YouTube 解析、以及進階 AI 錯題分析
+(如 Claude 3.5 次數解鎖)。</li>
+<li><strong>發票開立</strong>：依照營運所在地法規，於扣款成功後開立電子發票發送至註冊信箱。</li>
+</ul>
+<h2 id="訂閱取消機制-cancellation-policy">2. 訂閱取消機制 (Cancellation
+Policy)</h2>
+<ul>
+<li><strong>隨時可取消 (Cancel
+Anytime)</strong>：使用者可隨時在「帳戶設定/訂閱管理」頁面點擊「取消訂閱」，過程不得設立人為障礙
+(如強迫聯繫客服)。</li>
+<li><strong>權益保留至期末 (Prorated
+Access)</strong>：取消訂閱後，系統將停止次月的自動扣款。但使用者<strong>已支付的當期
+Pro
+權限將保留至該計費週期結束為止</strong>。週期結束後，帳號將自動降級為
+Free 免費版。</li>
+<li><strong>歷史資料保留</strong>：降級為 Free 版後，使用者於 Pro
+期間生成的龐大題庫、心智圖與錯題記錄<strong>不會被刪除</strong>，但可能會受到免費帳號的「每日存取/解析次數限制」。</li>
+</ul>
+<h2 id="退費政策與防護機制-refund-policy-abuse-prevention">3.
+退費政策與防護機制 (Refund Policy &amp; Abuse Prevention)</h2>
+<p>考量到 CertiMate 的核心價值在於「消耗高昂的 AI API 算力運算 (如長篇
+YouTube 與巨型
+PDF)」，我們必須設立嚴格但合理的退費門檻，防止「惡意白嫖算力」的行為。</p>
+<h3 id="a.-絕對不退費情境-no-refund-allowed">A. 絕對不退費情境 (No
+Refund Allowed)</h3>
+<p>若符合以下任一條件，代表實質的系統算力已被消耗，<strong>原則上不予退費
+(No Questions Asked Refund)</strong>： 1.
+<strong>已使用核心算力</strong>：在當期計費週期內，使用者有「成功上傳並向量化
+(Embedding)」任何一份超過一定額度 (例如 5 頁以上) 的講義，或「成功解析
+YouTube 影片」並產出模擬考卷。 2. <strong>已調用高階 AI
+教練</strong>：在當期計費週期內，進行過任何一次 Pro
+專屬的「深度錯題解析對話 (如調用 Claude 3.5)」。 3.
+<strong>週期過半</strong>：距離扣款日已超過 7
+天的法定猶豫期或該計費週期已過半。</p>
+<h3 id="b.-特例全額退費-full-refund-exceptions">B. 特例全額退費 (Full
+Refund Exceptions)</h3>
+<p>基於善意與消保法精神，符合以下狀況可透過客服信箱申請全額退費： 1.
+<strong>誤觸扣款 (Accidental Renewal)</strong>：在自動續訂扣款發生後的
+<strong>48
+小時內</strong>提出申請，且紀錄顯示在「該續訂週期內」<strong>完全沒有使用任何生成/解析
+API</strong> (用量紀錄為 0 發生)。 2. <strong>重大系統故障 (Service
+Outage)</strong>：因 CertiMate 系統或底層 API 供應商 (如 GCP,
+OpenRouter) 發生無預警連續當機超過 24
+小時，導致使用者在考前黃金期無法使用付費功能。 3. <strong>重複扣款
+(Duplicate Billing)</strong>：因系統金流 Bug
+導致同一帳號在同一週期被扣款兩次以上。</p>
+<h3 id="c.-防濫用阻斷機制-anti-abuse-system">C. 防濫用阻斷機制
+(Anti-Abuse System)</h3>
+<p>為防範少數惡意使用者濫用 199 元吃到飽的機制，進而拖垮整體系統效能與
+API 成本，系統將導入以下「<strong>帳號異常偵測 (Anomaly
+Detection)</strong>」與阻斷規則：</p>
+<ol type="1">
+<li><strong>共享帳號偵測 (Account Sharing)</strong>：
+<ul>
+<li><strong>情境</strong>：同一組 Pro 帳號在極短時間內（例如 10
+分鐘內），出現於多個地理位置差異巨大的 IP 登入，或同時有 3 個以上的裝置
+(Session) 同時觸發耗時的文件解析或 YouTube 轉換。</li>
+<li><strong>處置</strong>：系統強制登出所有
+Session，並發送警告信。若單月觸發達 3
+次，立刻凍結帳號，當月不予退費。</li>
+</ul></li>
+<li><strong>極端高頻匯出 (Hit-and-Run Exporting)</strong>：
+<ul>
+<li><strong>情境</strong>：帳號剛升級為 Pro 的前 48 小時內，瘋狂上傳超過
+30 份巨量講義 (或數十部超長
+YouTube)，並且完全沒有進行「線上測驗」與「錯題檢討」的互動，而是直接將生成的數百題模擬考卷與
+Anki 閃卡「全部匯出 (Export)」。</li>
+<li><strong>處置</strong>：觸發 Rate Limit (速率限制)
+閘道，暫停該帳號的文件解析權限 24 小時。防堵「付 199
+元買斷一個月，把整學期題庫幹走然後退訂」的羊毛黨。</li>
+</ul></li>
+<li><strong>API 腳本惡意爬蟲 (Scripted Scraping)</strong>：
+<ul>
+<li><strong>情境</strong>：上傳行為與答題行為呈現高度規律性 (例如每 2.5
+秒精準觸發一次 API)，缺乏人類操作的隨機滑鼠軌跡或停留時間，疑似使用
+Python 腳本將 CertiMate 當作底層的廉價 LLM API 轉接頭 (Wrapper)。</li>
+<li><strong>處置</strong>：觸發 Cloudflare 或 API Gateway 的 WAF
+阻擋，要求強制進行 reCAPTCHA 驗證，未通過即鎖卡。</li>
+</ul></li>
+<li><strong>巨型垃圾檔案攻擊 (DoS via Garbage PDF)</strong>：
+<ul>
+<li><strong>情境</strong>：上傳蓄意構造的「文字炸彈 (Text
+Bomb)」PDF、或是完全由無意義亂碼組成、或是刻意將 100
+頁純白圖片打包的檔案，意圖耗損系統的 Vision OCR 與 Embedding 算力。</li>
+<li><strong>處置</strong>：在文字預處理 (Preprocessing)
+階段若偵測到重複率過高或無法辨識的亂碼比例過高，直接終止工作管線
+(Pipeline)，並跳出「文件解析失敗，請確認檔案格式正常」的錯誤，該次解析<strong>不計入使用額度</strong>，但也阻斷後續向
+OpenAI/Anthropic 發送 API 的成本。</li>
+</ul></li>
+</ol>
+<ul>
+<li><strong>無按比例退費 (No Prorated
+Refunds)</strong>：為降低客服與金流手續費成本，除上述特例外，本平台<strong>不接受依使用天數「按比例退還剩餘款項」</strong>。取消訂閱一律視為「用到該週期最後一天」。</li>
+</ul>
+<h2 id="決策面考量與結論">4. 決策面考量與結論</h2>
+<ul>
+<li><strong>199 元的保護色</strong>：定價 199
+元是一把雙面刃，雖然客單價低，但也因為「沉沒成本極低」，絕大多數正常使用者在考完試後，如果忘記取消訂閱被多扣了一個月，通常摸摸鼻子就算了，較少會為
+199 元憤而發動耗時的信用卡爭議款 (Chargeback)。</li>
+<li><strong>明確的標示</strong>：必須在結帳頁面 (Checkout Page)
+最顯眼處標明：「本服務包含即時巨量 AI
+運算，一旦產生首份專屬考卷即代表履約完畢，除系統重大故障外恕不接受退費。」以建立最強的法務與客訴防禦盾牌。</li>
+</ul>
+</body>
+</html>

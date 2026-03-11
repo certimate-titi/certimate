@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase_3_上線與商業擴張詳解</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase_3_上線與商業擴張詳解</h1>
+</header>
+<h1 id="phase-3-正式上線與商業擴張詳解">Phase 3:
+正式上線與商業擴張詳解</h1>
+<h2 id="m7-10月v1.0-正式上線">M7 (10月)：v1.0 正式上線</h2>
+<h3 id="資安防護與架構鞏固-security-hardening">資安防護與架構鞏固
+(Security &amp; Hardening)</h3>
+<ul>
+<li><strong>Anti-DDoS 防護網</strong>：在 Cloud Run 前端加上 Google
+Cloud API Gateway 或 Firebase App Check，嚴格限制未經驗證的流量
+(防範惡意腳本與白嫖)。</li>
+<li><strong>API 速率限制 (Rate Limiting)</strong>：利用 Redis 實作進階的
+Rate Limit。例如：「10 分鐘內觸發 5 次不相關惡意問答的使用者，關入小黑屋
+30 分鐘不能使用」。</li>
+<li><strong>正式環境切換</strong>：清空所有 Beta
+測試的「假帳號」與「沙盒金流資料」，將所有的 API 端點正式指向 Production
+環境。</li>
+</ul>
+<h3 id="行銷與-seo-marketing-seo">行銷與 SEO (Marketing &amp; SEO)</h3>
+<ul>
+<li><strong>SEO 結構化佈署</strong>：對 Next.js 前端所有的公開頁面
+(Landing Page、Pricing、Features) 補齊 <code>&lt;meta&gt;</code>
+tags、<code>og:image</code>，並自動生成 <code>sitemap.xml</code>。</li>
+<li><strong>Landing Page 優化</strong>：將原本的 MVP
+首頁升級，強調「省錢、省時、高亮錯題」的核心痛點，並放入 Beta
+期間的優質用戶見證 (Testimonials)。</li>
+<li><strong>首波宣傳</strong>：透過各大社群與 KOL
+進行開台第一播宣發。</li>
+</ul>
+<h2 id="m8-11月商業模式優化">M8 (11月)：商業模式優化</h2>
+<h3 id="轉換率與留存率優化-cro-retention">轉換率與留存率優化 (CRO &amp;
+Retention)</h3>
+<ul>
+<li><strong>漏斗優化 (Funnel Optimization)</strong>：利用 Mixpanel
+追蹤「登入 -&gt; 上傳 -&gt; 免費考題生成 -&gt; 遇到進階錯題教練 -&gt;
+點擊升級 Pro -&gt; 付款成功」的轉化率，A/B 測試不同的定價引導 UI。</li>
+<li><strong>艾賓浩斯複習推播</strong>：開發「記憶曲線追蹤」演算法，利用
+Google Cloud Scheduler 每日定時掃描用戶錯題歷史，透過 Email
+自動寄出「這三題你上週答錯了，花 5
+分鐘再複習一下吧！」的信件，提升用戶回訪率 (Retention)。</li>
+</ul>
+<h3 id="多元變現管道-monetization-engine">多元變現管道 (Monetization
+Engine)</h3>
+<ul>
+<li><strong>免費用戶廣告變現</strong>：為 Free 用戶版面植入 Google
+AdSense 或相關的教育聯播網廣告，達到哪怕不轉 Pro
+也能為伺服器打平開銷的最終目的。</li>
+</ul>
+<h2 id="m9-12月b2b-saas-準備">M9 (12月)：B2B SaaS 準備</h2>
+<h3 id="企業端雛型設計-b2b-prototyping">企業端雛型設計 (B2B
+Prototyping)</h3>
+<ul>
+<li><strong>多租戶架構 (Multi-Tenancy)
+評估</strong>：針對補習班、知名企業內訓講師，評估系統架構如何分割資料庫，讓
+A 企業的學員資料完全獨立於 B 企業。</li>
+<li><strong>講師版儀表板 (Instructor
+Dashboard)</strong>：實作初步的講師端後台，講師可以看見全班學生「哪幾題錯最多」，藉此優化下一次的實體授課品質。</li>
+<li><strong>B2B 帳號授權系統</strong>：設計「機構大量授權碼 (License
+Key)」，讓講師能一次購買 50 人份的 Pro 權限批次派發給學員。</li>
+</ul>
+</body>
+</html>

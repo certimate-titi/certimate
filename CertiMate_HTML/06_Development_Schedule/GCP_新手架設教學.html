@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>GCP_新手架設教學</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">GCP_新手架設教學</h1>
+</header>
+<h1
+id="雲端新手村google-cloud-platform-gcp-基礎設施架設教學">雲端新手村：Google
+Cloud Platform (GCP) 基礎設施架設教學</h1>
+<p>這份教學專為初學者設計，將帶你一步步完成 CertiMate <strong>Phase 1
+(M1)</strong> 中提到的雲端基礎設施架設。不用擔心，我們會像在設定手機 App
+一樣，從註冊帳號到開通服務，手把手帶你完成！</p>
+<hr />
+<h2 id="第一步踏入雲端世界-註冊與建立專案">🚀 第一步：踏入雲端世界
+(註冊與建立專案)</h2>
+<p>就像蓋房子需要先買一塊地，在 GCP
+上開發任何東西前，我們都要先建立一個「專案 (Project)」。</p>
+<h3 id="註冊-gcp-帳號">1. 註冊 GCP 帳號</h3>
+<ol type="1">
+<li>前往 <a href="https://cloud.google.com/">Google Cloud
+官網</a>。</li>
+<li>點擊右上角的「免費開始使用 (Get started for free)」。</li>
+<li>登入你的 Google 帳號 (Gmail)。</li>
+<li>填寫國家/地區，並同意服務條款。</li>
+<li><strong>綁定信用卡</strong>：別擔心！GCP
+會要求綁定信用卡來驗證你是真人。Google 對新用戶非常大方，會送你
+<strong>$300 美金</strong> 的免費額度 (效期 90
+天)，而且在你「主動」升級為付費帳號之前，<strong>絕對不會偷偷扣你錢</strong>。</li>
+</ol>
+<h3 id="建立新專案-project">2. 建立新專案 (Project)</h3>
+<ol type="1">
+<li>進入 GCP 控制台 (Console) 後，點擊左上角 Google Cloud Logo
+旁邊的下拉式選單 (通常會顯示 “Select a project” 或預設的專案名稱)。</li>
+<li>點擊右上角的「新增專案 (NEW PROJECT)」。</li>
+<li><strong>專案名稱</strong>：輸入 <code>certimate-dev</code>
+(或你喜歡的名字)。</li>
+<li>點擊「建立 (CREATE)」。等個幾秒鐘，你的第一塊雲端建地就買好啦！</li>
+<li><strong>重要</strong>：確保你在左上角的下拉選單中，選中的是剛剛建立的
+<code>certimate-dev</code> 專案。</li>
+</ol>
+<hr />
+<h2 id="第二步打造雲端硬碟-google-cloud-storage---gcs">🗄️
+第二步：打造雲端硬碟 (Google Cloud Storage - GCS)</h2>
+<p>GCS 就像是無限容量的 Google
+Drive，我們將用它來存放使用者上傳的講義、PDF 和圖片。</p>
+<h3 id="操作步驟">操作步驟：</h3>
+<ol type="1">
+<li>在 GCP 控制台左側選單，找到 <strong>Cloud Storage</strong>，點擊
+<strong>Buckets (儲存區)</strong>。
+<em>(如果找不到，可以直接在上方搜尋列搜尋 “Cloud Storage”)</em></li>
+<li>點擊上方的「建立 (CREATE)」。</li>
+<li><strong>命名你的 Bucket</strong>：名字必須是全世界唯一的
+(就像網址一樣)。建議取名為 <code>certimate-assets-你的名字或日期</code>
+(例如：<code>certimate-assets-2026</code>)。點擊 “Continue”。</li>
+<li><strong>選擇位置</strong>：選擇 <code>Region</code>
+(單一區域)，並在下拉選單選擇
+<code>asia-east1 (Taiwan)</code>。這可以讓台灣的用戶上傳下載速度最快！點擊
+“Continue”。</li>
+<li><strong>儲存級別</strong>：保持預設的 <code>Standard</code>。點擊
+“Continue”。</li>
+<li><strong>存取控制</strong>：保持預設的
+<code>Uniform</code>。這代表我們之後可以統一設定誰能讀取這些檔案。點擊
+“Continue”。</li>
+<li>剩下的設定保持預設，直接滑到最下面點擊「建立 (CREATE)」。</li>
+<li>跳出警示框時，點擊「確認 (Confirm)」。</li>
+</ol>
+<p>🎉 <strong>完成！</strong> 你已經擁有了一個專屬的雲端儲存空間。</p>
+<hr />
+<h2 id="第三步建立大腦記憶庫-cloud-sql-for-postgresql">🧠
+第三步：建立大腦記憶庫 (Cloud SQL for PostgreSQL)</h2>
+<p>這裡我們要架設資料庫，用來記住使用者的帳號、密碼、測驗紀錄，以及最重要的「向量資料
+(Vector)」。</p>
+<h3 id="操作步驟-1">操作步驟：</h3>
+<ol type="1">
+<li>在上方搜尋列搜尋 <strong>SQL</strong> 並點擊進入。</li>
+<li>點擊「建立執行個體 (Create Instance)」。</li>
+<li>選擇 <strong>PostgreSQL</strong>。</li>
+<li><strong>如果遇到需要啟用 API 的提示</strong>，請點擊「啟用
+(Enable)」。</li>
+<li><strong>設定執行個體資訊</strong>：
+<ul>
+<li><strong>Instance ID</strong>：輸入 <code>certimate-db</code>。</li>
+<li><strong>密碼
+(Password)</strong>：輸入一組你記得住但夠複雜的密碼，或是點擊右邊的眼睛圖示旁的按鈕讓他幫你隨機產生
+(請務必把這組密碼記在筆記本上！)。</li>
+<li><strong>資料庫版本</strong>：選擇 <code>PostgreSQL 15</code>
+或更新的版本。</li>
+</ul></li>
+<li><strong>選擇區域 (Region)</strong>：一樣選擇
+<code>asia-east1 (Taiwan)</code>。</li>
+<li><strong>選擇機器規格設定 (重要，幫你省錢！)</strong>：
+<ul>
+<li>在下方找到「設定機器類型 (Customize your
+instance)」或類似的選項，將層級改為 <strong>Shared core
+(共用核心)</strong>，並選擇最小的
+<code>db-f1-micro</code>。因為我們現在還在開發階段，用最便宜的機器就夠了。</li>
+<li>找到「儲存空間 (Storage)」，將容量改為 <code>10 GB</code>
+(預設可能是 100GB，太多了)。</li>
+</ul></li>
+<li>點擊最下方的「建立執行個體 (CREATE INSTANCE)」。</li>
+</ol>
+<blockquote>
+<p>☕ <strong>休息一下</strong>：建立資料庫大約需要 5~10
+分鐘，你可以去泡杯咖啡。等它旁邊出現綠色勾勾，就代表建立完成了！</p>
+</blockquote>
+<hr />
+<h2 id="第四步準備程式運行的舞台-cloud-run">🚀
+第四步：準備程式運行的舞台 (Cloud Run)</h2>
+<p>Cloud Run 是我們用來跑後端程式碼 (API)
+的地方。它的超強好處是：<strong>有人用才算錢，沒人用就不用錢</strong>
+(Scale to zero)，非常適合初期的新創專案！</p>
+<p>雖然我們現在還沒有寫好程式碼來部署，但我們可以先認識它在哪裡。</p>
+<h3 id="操作須知">操作須知：</h3>
+<ol type="1">
+<li>在上方搜尋列搜尋 <strong>Cloud Run</strong>。</li>
+<li>如果跳出提示，請點擊「啟用 API (ENABLE API)」。</li>
+<li>現在你可能會看到一個空空的頁面。這樣就對了！</li>
+<li>等到未來我們的工程師 (或是你) 寫好了 Node.js 或 Python 的 API
+程式碼，我們會把它打包成一個貨櫃 (Docker Image)。</li>
+<li>到時候，只要在這個畫面點擊「建立服務 (CREATE
+SERVICE)」，把那包貨櫃丟上去，GCP 就會自動幫你產生一串專屬的網址 (例如
+<code>https://api.certimate.run.app</code>)，你的服務就正式上線啦！</li>
+</ol>
+<hr />
+<h2 id="總結你的-mvp-戰果">🎯 總結你的 MVP 戰果</h2>
+<p>恭喜你！跟著上面的步驟，你已經成功在雲端上開墾了 CertiMate
+的基礎設施： 1. <strong>買好建地</strong> (GCP 專案
+<code>certimate-dev</code> 建立完成) 2. <strong>蓋好倉庫</strong> (GCS
+Bucket 建置完畢，可以收納講義圖片) 3. <strong>裝好記憶大腦</strong>
+(Cloud SQL PostgreSQL 啟動中，準備好記住考題資料) 4.
+<strong>準備好舞台</strong> (Cloud Run API 啟用完成，等待程式碼上線)</p>
+<p>這就是所謂的 <strong>M1
+(基礎架構建立)</strong>。萬事起頭難，最複雜的雲端環境開通你已經搞定了！下一步，我們就會開始寫程式碼，讓這些服務真正串聯起來。</p>
+</body>
+</html>

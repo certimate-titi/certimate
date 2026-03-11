@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>未來擴充性與系統延展評估</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">未來擴充性與系統延展評估</h1>
+</header>
+<h1
+id="未來擴充性與架構延展評估-scalability-extensibility">未來擴充性與架構延展評估
+(Scalability &amp; Extensibility)</h1>
+<p>CertiMate 目前採用的結合「GCP Serverless 無伺服器架構」與「MCP (Model
+Context
+Protocol)」的微服務混合設計，賦予了專案極高的未來擴充與轉型便利性。</p>
+<p>當平台度過早期的 PoC
+階段並開始獲利後，可以輕易且低門檻地往以下四個維度進行擴充：</p>
+<h2 id="流量層級的無縫擴容-traffic-scalability">1. 流量層級的無縫擴容
+(Traffic Scalability)</h2>
+<ul>
+<li><strong>Cloud Run 的 Auto-Scaling</strong>：目前的運算核心 (前後端
+API 與 MCP 爬蟲伺服器) 都架構在 Cloud Run
+上。這意味著當考季來臨、流量瞬間從 100 人暴增到 10,000
+人時，系統會<strong>自動在幾秒內長出新的實例 (Instances)
+來承載流量</strong>，流量退去後又自動縮容至
+0。完全不需要人工介入開機或關機。</li>
+<li><strong>資料庫升級平滑</strong>：初期考量成本使用的微型 Cloud
+SQL，未來只要在 GCP 控制台點擊幾下，就能不中斷服務地升級為具備高可用性
+(HA) 與多讀取複本 (Read Replicas) 的企業級叢集。</li>
+</ul>
+<h2 id="功能生態系的橫向擴充-mcp-ecosystem">2. 功能生態系的橫向擴充 (MCP
+Ecosystem)</h2>
+<p>透過我們在「YouTube 影片解析」所驗證的 <strong>MCP (Model Context
+Protocol) 架構</strong>，未來要新增任何「輸入源」都非常簡單，不需要更動
+CertiMate 的核心程式碼。這就像是在替系統外掛裝備： 1. <strong>GitHub
+Repository 解析器</strong>：可以再寫一個 MCP Server，讓使用者輸入一個
+GitHub 網址，系統就能直接幫他針對某個開源專案的程式碼出考題。 2.
+<strong>Podcast / 音檔解析器</strong>：串接 Whisper 的 MCP
+Server，讓通勤族丟入一段 Podcast 音檔連結，回家就能做上面提過的測驗。 3.
+<strong>Notion / Google Drive 匯入器</strong>：透過 MCP
+授權，直接一鍵將使用者的線上筆記本變成考題。</p>
+<h2 id="b2b-企業市場的平行擴張-b2b-expansion">3. B2B 企業市場的平行擴張
+(B2B Expansion)</h2>
+<ul>
+<li><strong>多租戶架構 (Multi-Tenancy)
+準備</strong>：由於架構切分乾淨，未來若有補習班或企業想採購這套系統，我們只需在資料庫加上
+<code>TenantID</code> (租戶
+ID)，就能輕易為每個企業開出「獨立專屬的測驗後台」。</li>
+<li><strong>API 經濟
+(API-as-a-Service)</strong>：我們強大的「異質講義轉考題引擎」本身就是一個極具價值的資產。未來可以不只做
+B2C 的網頁版，而是將引擎包裝成 API 販售給其他教育平台
+(EdTech)，讓他們按次呼叫付費 (SaaS API Model)。</li>
+</ul>
+<h2 id="llm-模型的無痛抽換-model-flexibility">4. LLM 模型的無痛抽換
+(Model Flexibility)</h2>
+<ul>
+<li><strong>不被單一廠商綁架</strong>：由於核心是標準的 RAG
+(檢索增強生成)，且我們已經抽象化了 AI 呼叫層。如果明天 OpenAI 漲價，或是
+Llama-4 表現超越了 Gemini，我們只需在設定檔中抽換 API Key 與
+Endpoint，系統就能在一夜之間切換大腦。</li>
+<li><strong>地端化 / 私有化部署</strong>：如前述 SWOT
+所提，當我們收集了足夠多的「學生錯題對話記錄」後，未來完全有機會自行
+Fine-tune 一個開源的 Llama 模型，並部署在我們自己的 GPU
+伺服器上，徹底擺脫對雲端大廠 API 的依賴，使得單次考題生成成本真正趨近於
+0。</li>
+</ul>
+</body>
+</html>
