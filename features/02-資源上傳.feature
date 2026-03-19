@@ -30,6 +30,13 @@ Feature: 資源上傳
         | mp4    |
         | zip    |
 
+  Rule: 前置（狀態）- 上傳前須勾選合法使用與著作權免責承諾
+
+    Example: 未同意著作權免責聲明上傳失敗
+      When 使用者 "pro@example.com" 上傳檔案 "document.pdf"，但未勾選同意「合法著作權與無機密資訊承諾」
+      Then 操作失敗
+      And 錯誤訊息應為 "您必須確認並同意上傳內容的合法使用權利"
+
   Rule: 前置（參數）- 檔案大小不得超過訂閱方案的限制
 
     Example: FREE 方案上傳超過 10MB 的檔案失敗
@@ -146,3 +153,14 @@ Feature: 資源上傳
         | 資源ID | 系統配發的唯一識別碼   |
         | 名稱   | AWS_SAA_準備資料.pdf   |
         | 狀態   | PENDING                |
+
+  Rule: 後置（狀態）- 資源解析任務的狀態同步機制 (SSE 或輪詢)
+
+    Example: 前端建立 SSE 連線以即時接收任務狀態更新
+      Given 系統已接受文件上傳並回傳 資源ID "doc_123" 與 任務ID "task_123"
+      When 前端對 任務ID "task_123" 發起 SSE 或狀態輪詢請求
+      Then 系統應於狀態改變時推送事件：
+        | 事件名          | 狀態值      | 附加資訊                                |
+        | status_update  | PROCESSING | "正在萃取文字內容" 或 "正在生成知識節點" |
+      And 任務完成時應推送事件 "COMPLETED" 並自動結束連線
+      And 發生錯誤時應推送事件 "FAILED" 包含失敗原因並關閉連線

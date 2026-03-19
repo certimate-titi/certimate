@@ -24,6 +24,13 @@ Feature: 身分驗證
         | @nodomain.com    |
         | double@@test.com |
 
+  Rule: 前置（狀態）- 註冊時必須同意服務條款與隱私權宣告
+
+    Example: 使用者未勾選同意條款註冊失敗
+      When 使用者以 Email "new@example.com" 和密碼 "ValidPass1!" 進行註冊，但未勾選同意「服務條款與隱私權宣告」
+      Then 操作失敗
+      And 錯誤訊息應為 "請閱讀並同意服務條款與隱私權政策"
+
   Rule: 前置（參數）- 密碼強度必須達到最低要求
 
     Scenario Outline: 以強度不足的密碼註冊失敗
@@ -100,3 +107,30 @@ Feature: 身分驗證
       When 使用者以 Email "ghost@example.com" 申請密碼重設
       Then 操作成功
       And 系統不應洩漏該帳號是否存在的資訊
+
+  Rule: 後置（狀態）- 支援第三方 OAuth 登入 (Google SSO)
+
+    Example: 首次以 Google 帳號登入時系統應自動建立新帳號
+      When 使用者透過 Google SSO 登入且 Email 為 "new-google@example.com"
+      Then 操作成功
+      And 系統應建立新帳號，訂閱方案為 "FREE"，狀態為 "已啟用"
+      And 使用者註冊方式應註記為 "Google SSO"
+      And 回應應包含有效的 JWT 存取憑證
+
+    Example: 已註冊過 Email 密碼的使用者，若與 Google SSO 綁定同一 Email，應成功登入並關聯身分
+      Given 使用者 "alice@example.com" 原本為 Email/密碼註冊方式
+      When 使用者透過 Google SSO 登入且 Email 為 "alice@example.com"
+      Then 操作成功
+      And 登入成功不會報錯
+      And 該帳號的註冊方式應允許或更新關聯 "Google SSO"
+      And 回應應包含有效的 JWT 存取憑證
+
+  Rule: 後置（狀態）- 刪除帳號時應同步清除所有快取與存儲資料 (Right to be Forgotten)
+
+    Example: 使用者請求刪除帳號後系統徹底清空資料
+      When 使用者 "alice@example.com" 執行 "刪除帳號" 操作
+      Then 操作成功
+      And 系統應從主資料庫中移除該使用者的所有個人資料與測驗記錄
+      And 系統應同步清除 Redis 中所有與該使用者 ID 關聯的快取資料
+      And 使用者上傳至雲端存儲 (GCS) 的實體檔案應被標記刪除或移除
+      And 該使用者的所有 JWT 存取憑證應立即失效 (Revoked)
