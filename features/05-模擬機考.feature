@@ -53,6 +53,14 @@ Feature: 模擬機考
       And 測驗 1 的狀態應更新為 "IN_PROGRESS"
       And 測驗 1 應記錄開始時間
 
+  Rule: 後置（回應）- AI 教練在開始測驗時提供專屬的打氣訊息
+
+    Example: 開始測驗前 AI 基於使用者狀態動態生成打氣語句
+      Given 使用者 "alice@example.com" 準備開始測驗 1
+      When 系統載入測驗的初始畫面
+      Then 畫面應短暫顯示 AI 教練角色（Certi）的打氣介面
+      And AI 教練應提供基於使用者近期學習狀態或連續測驗次數所生成的專屬鼓勵對話
+
   Rule: 後置（狀態）- 使用者選擇答案後應自動儲存至 LocalStorage 與後端
 
     Example: 選擇答案後作答記錄被儲存
