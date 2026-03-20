@@ -11,8 +11,21 @@ Feature: 個人儀表板與成就系統
       When 使用者 "alice@example.com" 成功登入系統
       Then 系統應導向至 "個人儀表板首頁"
 
-  Rule: 後置（狀態）- 儀表板應顯示核心學習狀態與組件
-  
+  Rule: 後置（狀態）- 儀表板應顯示科目切換器與核心學習狀態組件
+
+    Example: 備考多科時儀表板顯示科目切換器
+      Given 使用者 "alice@example.com" 目前備考 "AWS SAA" 和 "TOEIC"
+      When 使用者 "alice@example.com" 瀏覽 "個人儀表板首頁"
+      Then 畫面頂部應顯示科目切換器，包含 "AWS SAA" 與 "TOEIC" 選項
+      And 畫面應顯示「+ 新增備考科目」入口
+      And 預設顯示第一個科目的學習數據
+
+    Example: 切換科目後儀表板數據對應更新
+      Given 使用者 "alice@example.com" 目前在儀表板檢視 "AWS SAA" 的數據
+      When 使用者切換至 "TOEIC"
+      Then 學習狀態區的考試倒數、答對率、雷達圖應更新為 "TOEIC" 的數據
+      And 待辦提醒應對應 "TOEIC" 的錯題與未完成考卷
+
     Example: 儀表板正確顯示雷達圖與組件
       When 使用者 "alice@example.com" 瀏覽 "個人儀表板首頁"
       Then 畫面應顯示即將到來的考試倒數計時

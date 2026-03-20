@@ -125,6 +125,22 @@ Feature: 身分驗證
       And 該帳號的註冊方式應允許或更新關聯 "Google SSO"
       And 回應應包含有效的 JWT 存取憑證
 
+  Rule: 後置（狀態）- 首次登入應導向 Onboarding 引導流程
+
+    Example: 新用戶首次登入後系統自動導向 Onboarding 頁面
+      Given 使用者 "newuser@example.com" 已完成註冊驗證
+      And 該使用者尚未建立任何學習歷程
+      When 使用者以 Email "newuser@example.com" 和密碼 "CertiMate#2024" 進行登入
+      Then 操作成功
+      And 回應應包含有效的 JWT 存取憑證
+      And 系統應導向至 "首次登入引導頁"
+
+    Example: 已完成 Onboarding 的使用者登入後直接導向儀表板
+      Given 使用者 "alice@example.com" 已建立至少一個備考科目的學習歷程
+      When 使用者以 Email "alice@example.com" 和密碼 "Password1!" 進行登入
+      Then 操作成功
+      And 系統應導向至 "個人儀表板首頁"
+
   Rule: 後置（狀態）- 刪除帳號時應同步清除所有快取與存儲資料 (Right to be Forgotten)
 
     Example: 使用者請求刪除帳號後系統徹底清空資料
