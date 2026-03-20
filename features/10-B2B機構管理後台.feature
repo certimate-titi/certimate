@@ -116,3 +116,95 @@ Feature: B2B機構管理後台
         | 題目內容 | 題目原文         |
         | 答錯率   | 全班答錯的百分比 |
         | 知識節點 | 所屬知識章節     |
+
+  # ========== Redmenta 啟發功能 ==========
+
+  Rule: 後置（回應）- 班級健康 KPI 應回傳四項摘要數值
+
+    # 對應頁面頂部 KPI 卡片列（總學生數 / 活躍率 / 需關注人數 / 班級平均分）
+
+    Example: 機構管理員查看班級健康 KPI
+      When 使用者 "admin@school.com" 查看機構 1 的班級健康摘要
+      Then 操作成功
+      And 回應應包含以下欄位：
+        | 欄位         | 說明                                          |
+        | total        | 機構授權總學員數                              |
+        | active_rate  | 過去 7 天有登入的學員比例（0.0–1.0）          |
+        | at_risk_count| 需關注學員人數（平均分 < 60 或趨勢連續下降）  |
+        | avg_score    | 全班最近一次測驗的平均分數                    |
+
+  Rule: 後置（回應）- 早期預警應自動偵測並回傳需關注學員清單
+
+    # 觸發條件：平均分低於 60 分，或連續 3 次測驗趨勢下降，或 5 天以上未登入
+    # 參考 Redmenta 的 Early Detection 設計，主動浮出問題而非等待教師翻查
+
+    Example: 機構管理員查看需關注學員清單
+      When 使用者 "admin@school.com" 查看機構 1 的早期預警清單
+      Then 操作成功
+      And 回應中每位需關注學員應包含：
+        | 欄位             | 說明                                    |
+        | student_id       | 學員 ID                                 |
+        | name             | 學員姓名                                |
+        | avg_score        | 最近測驗平均分數                        |
+        | trend            | 近期分數趨勢：up / down / flat          |
+        | weakest_topic    | 最弱知識節點名稱                        |
+        | weakest_score    | 最弱知識節點分數                        |
+        | last_active_days | 距上次登入天數                          |
+
+    Example: 學員平均分低於 60 分應被列入預警清單
+      Given 學員 "student2@school.com" 最近三次測驗分數為 45、52、48
+      When 使用者 "admin@school.com" 查看機構 1 的早期預警清單
+      Then 回應中應包含 "student2@school.com"
+      And 該學員的 trend 應為 "flat"
+
+  Rule: 後置（回應）- 個別學員能力檔案應回傳多維度技能分析
+
+    # 對應展開單一學員列時顯示的能力分析列（Redmenta 的 Competency Profiles）
+    # 每個知識節點獨立計算分數，而非只有單一整體分數
+
+    Example: 機構管理員查看學員 student1 的能力檔案
+      When 使用者 "admin@school.com" 查看學員 4 的能力分析
+      Then 操作成功
+      And 回應應包含以下結構：
+        | 欄位            | 說明                                        |
+        | student_id      | 學員 ID                                     |
+        | competencies    | 知識節點能力列表（陣列）                    |
+      And 每個能力節點應包含：
+        | 欄位   | 說明                              |
+        | label  | 節點名稱（如：風險管理、EVM 計算） |
+        | score  | 0–100 分                          |
+        | color  | 綠色（≥70）/ 橘色（40–69）/ 紅色（<40）|
+
+  Rule: 後置（回應）- AI 個人化補強建議應根據學員弱點生成針對性任務清單
+
+    # 對應學員能力檔案展開後的「AI 個人化補強建議」按鈕（Redmenta 的 Personalise 設計）
+    # 系統依學員各節點分數，讓 AI 生成具體建議而非通用內容
+
+    Example: 機構管理員為學員 student2 請求 AI 補強建議
+      When 使用者 "admin@school.com" 呼叫 POST /students/5/ai-reinforcement
+      Then 操作成功
+      And 回應應包含 1 至 3 條補強建議
+      And 每條建議應包含：
+        | 欄位            | 說明                                        |
+        | topic           | 針對的弱點節點名稱                          |
+        | suggestion      | AI 生成的補強方式描述（繁體中文）           |
+        | action_type     | 建議動作類型：review / quiz / explore       |
+
+    Example: 非機構管理員無法呼叫 AI 補強建議 API
+      When 使用者 "student1@school.com" 呼叫 POST /students/5/ai-reinforcement
+      Then 操作失敗
+      And 錯誤訊息應為 "您沒有機構管理員權限"
+
+  Rule: 後置（回應）- 學員列表應包含趨勢指標欄位
+
+    # 前端依 trend 欄位顯示 ↑↓→ 圖示
+
+    Example: 機構管理員查看機構學員列表包含趨勢資訊
+      When 使用者 "admin@school.com" 查看機構 1 的學員列表
+      Then 操作成功
+      And 每位學員資料應包含 trend 欄位（up / down / flat）
+      And trend 應依最近 3 次測驗平均分的變化計算：
+        | 條件                     | trend  |
+        | 最近平均 > 前次平均 5 分 | up     |
+        | 最近平均 < 前次平均 5 分 | down   |
+        | 差距在 ±5 分以內         | flat   |

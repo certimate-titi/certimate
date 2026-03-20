@@ -48,10 +48,28 @@ Feature: 個人儀表板與成就系統
 
   Rule: 後置（狀態）- 每日動態產生微任務 (Daily Quests)
 
+    # 任務完成狀態由系統根據使用者行為事件自動判斷，前端不提供手動勾選入口。
+    # 可觸發完成的事件類型：完成一次測驗 (quiz)、瀏覽知識節點 (explore)、完成錯題複習 (review)
+
     Example: 系統自動派發每日微任務
       When 使用者 "alice@example.com" 每日首次登入
       Then 系統應產生 1 到 3 個動態學習微任務（如：複習錯題 5 題）
       And 任務介面應暗示完成後可獲得經驗值或解鎖進度
+      And 任務項目不應提供手動勾選完成的操作入口
+
+    Example: 完成對應學習行為後系統自動將任務標記為完成
+      Given 使用者 "alice@example.com" 有一個類型為 "quiz" 的每日任務「完成一份 15 題的快速測驗」
+      And 該任務狀態為 "未完成"
+      When 使用者 "alice@example.com" 完成一份包含 15 題的測驗
+      Then 系統應自動將該任務標記為 "已完成"
+      And 系統應發放對應的 XP 獎勵至使用者帳號
+      And 前端任務卡片應顯示打勾完成動畫
+
+    Example: 使用者嘗試透過 API 手動完成任務應被拒絕
+      Given 使用者 "alice@example.com" 有一個類型為 "review" 的每日任務尚未完成
+      When 使用者 "alice@example.com" 直接呼叫 POST /daily-quests/{id}/complete
+      Then 操作失敗
+      And 錯誤訊息應為 "任務完成狀態由系統自動判定，不接受手動更新"
 
   Rule: 後置（狀態）- 達成特定條件時頒發成就徽章 (Badges)
 
