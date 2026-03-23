@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(head -100 \"/d/TDD/certimate/03_Research_and_Development/02_Page_Specifications/個人儀表板首頁 \\(User Dashboard\\).md\")",
+      "Bash(npm install react-hook-form)",
+      "Bash(npx next build)",
+      "Bash(npm install lightningcss-win32-x64-msvc)"
+    ]
+  }
+}
