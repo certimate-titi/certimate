@@ -7,6 +7,17 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       | 2        | pro@example.com    | PRO      |
       | 3        | proplus@example.com| PRO_PLUS |
     And 系統中有包含歷史錯題、PDF 與 YouTube 的心智圖節點資料
+    And 系統中預設存在 "PMP" 與 "AWS SAA" 兩個學科庫
+
+  # ========== 跨學科導航與資料切換 ==========
+
+  Rule: 前置（導航）- 提供學科切換器以存取不同知識庫的內容
+
+    Example: 在 PMP 與 AWS 學科間切換以過濾資源與心智圖
+      Given 使用者已登入並擁有多個學科的存取權
+      When 使用者在頂部學科切換器選擇 "AWS SAA"
+      Then 頁面應載入與 AWS SAA 關聯的學習資源列表
+      And 右側心智圖導覽區應切換顯示 AWS SAA 的深層知識節點樹（如：AWS S3、IAM）
 
   # ========== 版面結構與重點移轉 ==========
 
