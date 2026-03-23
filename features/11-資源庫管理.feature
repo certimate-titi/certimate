@@ -1,32 +1,96 @@
-Feature: 資源庫管理與連鎖移除防呆機制
+Feature: 資源庫管理與連鎖清除防呆機制
 
   Background:
-    Given 系統中有以下使用者帳號與資源
-      | 資源 ID | 名稱             | 狀態      | 使用者 ID |
-      | 1       | AWS_SAA_講義.pdf | COMPLETED | 1         |
-      | 2       | 雲端設計影片     | COMPLETED | 1         |
+    Given 系統中有以下使用者帳號：
+      | 使用者 ID | Email              | 訂閱方案 |
+      | 1        | alice@example.com  | FREE     |
+      | 2        | bob@example.com    | PRO      |
+    And 系統中有以下資源：
+      | 資源 ID | 使用者 ID | 名稱                  | 類型    | 狀態      | 上傳時間            |
+      | 1       | 1        | AWS_SAA_官方手冊.pdf  | PDF     | COMPLETED | 2024-01-05 10:00:00 |
+      | 2       | 1        | 雲端概論筆記.md       | MD      | COMPLETED | 2024-01-08 14:00:00 |
+      | 3       | 1        | 解析失敗的資料.pdf    | PDF     | FAILED    | 2024-01-09 09:00:00 |
+      | 4       | 2        | Bob的AWS筆記.pdf      | PDF     | COMPLETED | 2024-01-06 11:00:00 |
+      | 5       | 1        | AWS架構影片           | YouTube | COMPLETED | 2024-01-10 16:00:00 |
 
   # ========== 前置條件 ==========
 
-  Rule: 前置（狀態）- 只能查看及管理自己上傳或生成的資源
+  Rule: 前置（狀態）- 只能查看及管理自己的資源
 
-    Example: 查詢自己的資源列表時嚴格隔離權限
-      When 使用者查詢擁有的資源記錄
-      Then 系統應正確回傳專屬自身的資源庫清單，不夾帶任何跨租戶的資料
-
-  # ========== 後置破壞性操作防呆 ==========
-
-  Rule: 後置（狀態抹除）- 執行永久刪除資源時，應觸發極為嚴密的連鎖刪除警告與資料淨空處理
-
-    Example: 使用者意圖刪除其上傳已久的文件資源
-      When 使用者在資源庫列表嘗試點擊「刪除」AWS_SAA_講義.pdf
-      Then 系統必須彈出防呆模態對話框（Modal Warning）
-      And 對話框內明確警告：「刪除此檔案將同步無可挽回地銷毀衍生出的所有知識節點、您用心標記的錯題紀錄，以及所有由這份講義誕生的測驗成績。」
-
-    Example: 使用者確認刪除，系統依序進行乾淨的連鎖銷毀
-      When 使用者了解後遺症並勾選「我知道這會導致相關資料全數遺失，確認刪除」
+    Example: 查詢自己的資源列表不應包含他人資源
+      When 使用者 "alice@example.com" 查詢自己的資源列表
       Then 操作成功
-      And 步驟一：原先儲存於 Google Cloud Storage 的 PDF 實體檔案遭到實體/軟刪除
-      And 步驟二：與之關聯的 Vector DB (pgvector) 中的萃取文本切塊 (Chunks) 全數遭到抹除或標記無效
-      And 步驟三：由該講義產生的關聯心智圖節點全數粉碎
-      And 步驟四：學習記憶排程 (錯題本) 內對應至該資源的考題應被連動撤銷，並自動從個人成就系統中校準扣除累積經驗值
+      And 資源列表應只包含資源 ID 1、2、3、5
+      And 資源列表不應包含資源 ID 4
+
+  Rule: 前置（狀態）- 刪除他人資源失敗
+
+    Example: 刪除其他使用者的資源失敗
+      When 使用者 "alice@example.com" 刪除資源 4
+      Then 操作失敗
+      And 錯誤訊息應為 "無存取此資源的權限"
+
+  # ========== 後置條件 ==========
+
+  Rule: 後置（回應）- 查詢資源列表應回傳完整屬性包含狀態標籤
+
+    Example: 查詢資源列表取得完整資源資訊
+      When 使用者 "alice@example.com" 查詢自己的資源列表
+      Then 操作成功
+      And 資源列表應包含以下資源資訊：
+        | 資源 ID | 名稱                  | 類型    | 狀態      | 上傳時間            |
+        | 1       | AWS_SAA_官方手冊.pdf  | PDF     | COMPLETED | 2024-01-05 10:00:00 |
+        | 2       | 雲端概論筆記.md       | MD      | COMPLETED | 2024-01-08 14:00:00 |
+        | 3       | 解析失敗的資料.pdf    | PDF     | FAILED    | 2024-01-09 09:00:00 |
+        | 5       | AWS架構影片           | YouTube | COMPLETED | 2024-01-10 16:00:00 |
+
+  Rule: 後置（狀態）- 刪除 COMPLETED 資源時需彈出連鎖清除警告
+
+    Example: 使用者嘗試刪除已完成解析的資源，系統彈出防呆確認
+      When 使用者 "alice@example.com" 點擊刪除資源 1
+      Then 系統應彈出防呆模態框
+      And 模態框內容應警告：「此操作將同步刪除：① GCS 中的 .md 純文字紀錄、② pgvector 中的所有切塊向量、③ 衍生的心智圖知識節點、④ 相關聯的錯題排程紀錄。此操作無法復原。」
+
+    Example: 使用者確認刪除後，系統依序執行連鎖清除
+      Given 使用者已確認刪除資源 1 並勾選「我了解相關資料將永久清除」
+      When 系統執行連鎖刪除
+      Then 操作成功
+      And GCS 中資源 1 的 .md 純文字紀錄應永久刪除
+      And pgvector 中資源 1 關聯的所有 Embedding Chunks 應全數抹除
+      And 資源 1 關聯的所有心智圖知識節點應標記為已刪除
+      And 學習記憶排程中對應該資源考題的排程紀錄應連動撤銷
+
+  Rule: 後置（狀態）- FAILED 資源可重新觸發解析，保留原始檔至成功為止
+
+    Example: 對 FAILED 資源觸發重新解析後狀態重置為 PENDING，原始檔保留在 GCS
+      When 使用者 "alice@example.com" 重新解析資源 3
+      Then 操作成功
+      And 資源 3 的狀態應重置為 "PENDING"
+      And 資源 3 的原始 PDF 應仍保留於 GCS，等待重試完成
+
+    Example: 重新解析成功後狀態更新為 COMPLETED，原始檔隨即從 GCS 刪除
+      Given 資源 3 的狀態為 "PROCESSING"
+      When 後端解析服務成功完成資源 3 的重試解析
+      Then 資源 3 的狀態應更新為 "COMPLETED"
+      And 資源 3 的原始 PDF 應從 GCS 永久刪除
+      And 资源 3 應關聯至少一個新生成的心智圖知識節點
+
+    Example: FAILED 資源刪除時無需彈出連鎖清除警告（尚無衍生資料）
+      When 使用者 "alice@example.com" 刪除資源 3
+      Then 操作成功
+      And 資源 3 應標記為已刪除
+      And 資源 3 的原始 PDF 應從 GCS 永久刪除
+
+  Rule: 後置（回應）- 搜尋資源時應依檔名與自動萃取的標籤進行篩選
+
+    Example: 依關鍵字搜尋資源名稱取得符合結果
+      When 使用者 "alice@example.com" 以關鍵字 "AWS" 搜尋資源列表
+      Then 操作成功
+      And 搜尋結果應包含資源 ID 1 和資源 ID 5
+      And 搜尋結果不應包含資源 ID 2
+
+    Example: 以標籤篩選資源取得符合結果
+      Given 資源 1 帶有自動萃取的標籤 "EC2"、"S3"、"IAM"
+      When 使用者 "alice@example.com" 以標籤 "EC2" 篩選資源列表
+      Then 操作成功
+      And 搜尋結果應包含資源 ID 1
