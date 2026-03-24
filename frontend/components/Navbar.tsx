@@ -1,0 +1,161 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { BookOpen, LayoutDashboard, BrainCircuit, PenTool, User, Menu, X, LogOut, ShieldCheck, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '@/lib/auth-context';
+
+export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
+
+  const navLinks = [
+    { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
+    { href: '/knowledge', label: '知識庫', icon: BookOpen },
+    { href: '/exam/setup', label: '測驗', icon: PenTool },
+    { href: '/review', label: 'AI 教練', icon: BrainCircuit },
+    ...(isUltra ? [{ href: '/admin', label: '教育後台', icon: Building2 }] : []),
+    ...(isAdmin ? [{ href: '/super-admin/dashboard', label: '後台管理', icon: ShieldCheck }] : []),
+  ];
+
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
+          <button
+            className="md:hidden text-slate-600 hover:text-emerald-600 transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+          <Link href="/" className="flex items-center gap-2">
+            <BrainCircuit className="h-6 w-6 text-emerald-500" />
+            <span className="text-xl font-bold tracking-tight text-slate-900">CertiMate</span>
+          </Link>
+        </div>
+
+        <div className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-1"
+            >
+              <link.icon className="h-4 w-4" /> {link.label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {isAuthenticated ? (
+            <>
+              {isAdmin && (
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
+                  Admin
+                </span>
+              )}
+              {isUltra && !isAdmin && (
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
+                  Ultra
+                </span>
+              )}
+              {isPro && !isUltra && !isAdmin && (
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                  Pro
+                </span>
+              )}
+              <Link href="/account" className="hidden sm:flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors">
+                <div className="h-7 w-7 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">
+                  {user?.displayName?.charAt(0) || 'U'}
+                </div>
+                <span className="font-medium">{user?.displayName || '學習者'}</span>
+              </Link>
+              <button
+                onClick={signOut}
+                className="hidden sm:flex items-center gap-1 text-sm text-slate-400 hover:text-rose-500 transition-colors"
+                title="登出"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <div className="hidden sm:flex items-center gap-4">
+              <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+                登入
+              </Link>
+              <Link href="/signup" className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">
+                免費註冊
+              </Link>
+            </div>
+          )}
+          <Link href="/account" className="sm:hidden text-slate-500 hover:text-slate-900">
+            <User className="h-5 w-5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-slate-100 bg-white overflow-hidden"
+          >
+            <div className="flex flex-col p-4 space-y-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-3 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors p-2 rounded-lg hover:bg-slate-50"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <link.icon className="h-5 w-5" /> {link.label}
+                </Link>
+              ))}
+              <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-3 text-sm font-medium text-slate-600 p-2 rounded-lg hover:bg-slate-50"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="h-5 w-5" /> 帳號設定
+                    </Link>
+                    <button
+                      onClick={() => { signOut(); setIsOpen(false); }}
+                      className="flex items-center gap-3 text-sm font-medium text-rose-500 p-2 rounded-lg hover:bg-rose-50"
+                    >
+                      <LogOut className="h-5 w-5" /> 登出
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="text-center py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      登入
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="text-center rounded-full bg-emerald-500 py-2 text-sm font-medium text-white hover:bg-emerald-600 transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      免費註冊
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+}

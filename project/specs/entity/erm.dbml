@@ -1,0 +1,734 @@
+// CertiMate Entity-Relationship Model
+// Generated from .feature specifications
+// Database: Cloud SQL (PostgreSQL)
+
+// ============================================================
+// Enums
+// ============================================================
+
+Enum subscription_plan {
+  FREE
+  PRO_199
+  PRO_PLUS_399
+  ULTRA_1599
+}
+
+Enum user_status {
+  active
+  suspended
+  cooling
+  deleted
+}
+
+Enum user_role {
+  user
+  org_admin
+  admin
+  super_admin
+}
+
+Enum resource_type {
+  pdf
+  markdown
+  txt
+  image
+  youtube
+}
+
+Enum resource_status {
+  PENDING
+  PROCESSING
+  COMPLETED
+  COMPLETED_NO_MAP
+  FAILED
+}
+
+Enum resource_scope {
+  personal
+  institution
+}
+
+Enum exam_status {
+  PENDING       // AI 正在生成
+  READY         // 生成完成，可開始
+  IN_PROGRESS   // 作答中
+  SUBMITTED     // 已交卷
+}
+
+Enum question_type {
+  single_choice
+  multiple_choice
+  fill_in
+  calculation
+}
+
+Enum difficulty_level {
+  easy
+  medium
+  hard
+}
+
+Enum learning_mode {
+  sprint      // <14 天，短期衝刺
+  standard    // 1-3 個月，正常準備
+  mastery     // >6 個月，長久學習
+}
+
+Enum self_assessed_level {
+  beginner
+  intermediate
+  advanced
+}
+
+Enum learning_preference {
+  drill       // 大量刷題
+  concept     // 觀念理解優先
+  mixed       // 混合模式
+}
+
+Enum quest_type {
+  quiz
+  explore
+  review
+}
+
+Enum quest_status {
+  pending
+  completed
+}
+
+Enum subscription_status {
+  active
+  cancelled       // 已取消但未到期
+  expired
+}
+
+Enum announcement_type {
+  info
+  maintenance
+  feature
+  warning
+}
+
+Enum display_mode {
+  banner
+  notification
+  email
+}
+
+Enum discount_type {
+  percentage
+  fixed_amount
+  free_trial_days
+}
+
+Enum refund_status {
+  pending
+  approved
+  rejected
+}
+
+Enum report_type {
+  inappropriate
+  copyright
+  bug_report
+  other
+}
+
+Enum report_status {
+  pending
+  resolved
+  dismissed
+}
+
+Enum assignment_status {
+  pending
+  active
+  expired
+}
+
+// ============================================================
+// Core User & Auth
+// ============================================================
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  email varchar(255) [unique, not null]
+  display_name varchar(100)
+  avatar_url text
+  auth_provider varchar(20) [default: 'email', note: 'email | google | github']
+  password_hash text [note: 'null for SSO users']
+  subscription_plan subscription_plan [default: 'FREE']
+  subscription_status subscription_status [default: 'active']
+  next_billing_date timestamptz
+  stripe_customer_id varchar(100)
+  role user_role [default: 'user']
+  status user_status [default: 'active']
+  onboarding_completed boolean [default: false]
+  daily_study_minutes integer [default: 30]
+  learning_preference learning_preference [default: 'mixed']
+  age integer
+  education varchar(100)
+  career varchar(100)
+  agreed_to_terms boolean [default: false]
+  last_login_at timestamptz
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table admin_roles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, unique]
+  role varchar(20) [not null, note: 'super_admin | admin']
+  permissions jsonb [default: '{}']
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: admin_roles.user_id > users.id [delete: cascade]
+Ref: admin_roles.created_by > users.id
+
+// ============================================================
+// Subjects & Learning Journeys
+// ============================================================
+
+Table subject_categories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(50) [not null, note: 'IT / 金融 / 語言 / 醫療 / 公務員 / 其他']
+  sort_order integer [default: 0]
+}
+
+Table subjects {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category_id uuid [not null]
+  name varchar(200) [not null]
+  name_en varchar(200)
+  description text
+  is_popular boolean [default: false]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: subjects.category_id > subject_categories.id
+
+Table learning_journeys {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  subject_id uuid [not null]
+  exam_date date
+  self_assessed_level self_assessed_level [default: 'beginner']
+  learning_mode learning_mode [default: 'standard']
+  is_archived boolean [default: false, note: '移除科目時封存而非刪除']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, subject_id) [unique, note: '每人每科僅一個歷程']
+  }
+}
+
+Ref: learning_journeys.user_id > users.id [delete: cascade]
+Ref: learning_journeys.subject_id > subjects.id
+
+// ============================================================
+// Resources & Knowledge Map
+// ============================================================
+
+Table resources {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  subject_id uuid [not null]
+  institution_id uuid [note: 'non-null = 機構共享資源']
+  name varchar(500) [not null]
+  type resource_type [not null]
+  scope resource_scope [default: 'personal']
+  status resource_status [default: 'PENDING']
+  file_size_bytes bigint
+  gcs_path text [note: '處理完成後靜默刪除原始檔']
+  youtube_url text
+  processing_engine varchar(50) [note: 'gemini-flash | vision-ocr | etc.']
+  implicit_consent boolean [default: true]
+  tags text[] [default: '{}']
+  error_message text [note: 'FAILED 時的失敗原因']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: resources.user_id > users.id [delete: cascade]
+Ref: resources.subject_id > subjects.id
+Ref: resources.institution_id > institutions.id
+
+Table knowledge_nodes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  resource_id uuid [not null]
+  parent_id uuid [note: 'null = 根節點']
+  name varchar(300) [not null]
+  depth integer [default: 0]
+  sort_order integer [default: 0]
+  source_page_number integer [note: 'PDF 頁碼']
+  source_timestamp_seconds integer [note: 'YouTube 時間戳（秒）']
+  source_text text [note: '萃取的原文片段']
+  available_questions integer [default: 0]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: knowledge_nodes.resource_id > resources.id [delete: cascade]
+Ref: knowledge_nodes.parent_id > knowledge_nodes.id
+
+Table node_mastery {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  node_id uuid [not null]
+  correct_count integer [default: 0]
+  total_count integer [default: 0]
+  mastery_rate decimal(5,2) [default: 0, note: '答對率百分比']
+  color varchar(10) [note: 'green ≥80 / orange 60-79 / red <60 / gray 未測']
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, node_id) [unique]
+  }
+}
+
+Ref: node_mastery.user_id > users.id [delete: cascade]
+Ref: node_mastery.node_id > knowledge_nodes.id [delete: cascade]
+
+// ============================================================
+// Exams & Questions
+// ============================================================
+
+Table exams {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  subject_id uuid [not null]
+  institution_assignment_id uuid [note: 'non-null = B2B 派發考卷']
+  status exam_status [default: 'PENDING']
+  total_questions integer [not null]
+  duration_minutes integer
+  passing_score integer
+  difficulty_distribution jsonb [note: '{"easy":30,"medium":50,"hard":20}']
+  question_types text[]
+  score integer
+  correct_count integer
+  started_at timestamptz
+  submitted_at timestamptz
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: exams.user_id > users.id [delete: cascade]
+Ref: exams.subject_id > subjects.id
+
+Table questions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  exam_id uuid [not null]
+  node_id uuid
+  question_number integer [not null]
+  type question_type [default: 'single_choice']
+  difficulty difficulty_level [default: 'medium']
+  content text [not null, note: '支援 Markdown + KaTeX']
+  option_a text
+  option_b text
+  option_c text
+  option_d text
+  correct_answer varchar(10) [not null]
+  explanation text [note: 'AI 生成的詳解（Markdown）']
+  source_citation text [note: '原文溯源引用']
+}
+
+Ref: questions.exam_id > exams.id [delete: cascade]
+Ref: questions.node_id > knowledge_nodes.id
+
+Table answers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  exam_id uuid [not null]
+  question_id uuid [not null]
+  user_id uuid [not null]
+  selected_answer varchar(10)
+  is_correct boolean
+  marked_for_review boolean [default: false]
+  answered_at timestamptz
+
+  indexes {
+    (exam_id, question_id, user_id) [unique]
+  }
+}
+
+Ref: answers.exam_id > exams.id [delete: cascade]
+Ref: answers.question_id > questions.id [delete: cascade]
+Ref: answers.user_id > users.id [delete: cascade]
+
+// ============================================================
+// Learning Schedule (SuperMemo-2)
+// ============================================================
+
+Table question_stats {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  node_id uuid [not null]
+  success_count integer [default: 0]
+  fail_count integer [default: 0]
+  ease_factor decimal(4,2) [default: 2.5]
+  next_review_date date
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, node_id) [unique]
+  }
+}
+
+Ref: question_stats.user_id > users.id [delete: cascade]
+Ref: question_stats.node_id > knowledge_nodes.id [delete: cascade]
+
+// ============================================================
+// AI Coach Chat
+// ============================================================
+
+Table ai_chat_sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  context_type varchar(20) [not null, note: 'knowledge_node | error_review']
+  context_id uuid [not null, note: 'nodeId or questionId']
+  model_used varchar(50) [note: 'claude-3.5-sonnet | gemini-flash']
+  message_count integer [default: 0]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: ai_chat_sessions.user_id > users.id [delete: cascade]
+
+Table ai_chat_messages {
+  id uuid [pk, default: `gen_random_uuid()`]
+  session_id uuid [not null]
+  role varchar(10) [not null, note: 'user | assistant | system']
+  content text [not null]
+  token_count integer
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: ai_chat_messages.session_id > ai_chat_sessions.id [delete: cascade]
+
+Table ai_cooldowns {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  reason varchar(100) [note: '10min_5_out_of_scope | token_abuse']
+  cooldown_until timestamptz [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: ai_cooldowns.user_id > users.id [delete: cascade]
+
+// ============================================================
+// Gamification
+// ============================================================
+
+Table streaks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, unique]
+  current_streak integer [default: 0]
+  longest_streak integer [default: 0]
+  freeze_available boolean [default: true, note: '斷連保護冰凍，每人1次免費']
+  last_active_date date
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: streaks.user_id > users.id [delete: cascade]
+
+Table daily_quests {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  quest_type quest_type [not null]
+  description text [not null]
+  target_count integer [default: 1]
+  current_count integer [default: 0]
+  status quest_status [default: 'pending']
+  xp_reward integer [default: 10]
+  quest_date date [not null]
+  completed_at timestamptz
+
+  indexes {
+    (user_id, quest_date, quest_type) [unique]
+  }
+}
+
+Ref: daily_quests.user_id > users.id [delete: cascade]
+
+Table achievements {
+  id uuid [pk, default: `gen_random_uuid()`]
+  key varchar(100) [unique, not null, note: 'first_upload, first_pass, streak_7, etc.']
+  name varchar(200) [not null]
+  description text
+  icon_url text
+}
+
+Table user_achievements {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  achievement_id uuid [not null]
+  unlocked_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, achievement_id) [unique]
+  }
+}
+
+Ref: user_achievements.user_id > users.id [delete: cascade]
+Ref: user_achievements.achievement_id > achievements.id
+
+// ============================================================
+// Subscriptions & Billing
+// ============================================================
+
+Table invoices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  stripe_invoice_id varchar(200)
+  amount decimal(10,2) [not null]
+  currency varchar(3) [default: 'TWD']
+  plan subscription_plan [not null]
+  status varchar(20) [note: 'success | failed | refunded']
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: invoices.user_id > users.id [delete: cascade]
+
+// ============================================================
+// B2B Institution
+// ============================================================
+
+Table institutions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(200) [not null]
+  admin_user_id uuid [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: institutions.admin_user_id > users.id
+
+Table student_groups {
+  id uuid [pk, default: `gen_random_uuid()`]
+  institution_id uuid [not null]
+  name varchar(200) [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: student_groups.institution_id > institutions.id [delete: cascade]
+
+Table student_group_members {
+  id uuid [pk, default: `gen_random_uuid()`]
+  group_id uuid [not null]
+  user_id uuid [not null]
+  joined_at timestamptz [default: `now()`]
+
+  indexes {
+    (group_id, user_id) [unique]
+  }
+}
+
+Ref: student_group_members.group_id > student_groups.id [delete: cascade]
+Ref: student_group_members.user_id > users.id [delete: cascade]
+
+Table institution_assignments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  institution_id uuid [not null]
+  group_id uuid [not null]
+  created_by uuid [not null]
+  exam_config jsonb [not null, note: 'nodeIds, questionCount, etc.']
+  deadline timestamptz
+  status assignment_status [default: 'pending']
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: institution_assignments.institution_id > institutions.id
+Ref: institution_assignments.group_id > student_groups.id
+Ref: institution_assignments.created_by > users.id
+
+Table early_warning_rules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  institution_id uuid [not null, unique]
+  min_avg_score decimal(5,2) [default: 60]
+  max_decline_trend integer [default: 3]
+  max_inactive_days integer [default: 5]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: early_warning_rules.institution_id > institutions.id [delete: cascade]
+
+// ============================================================
+// Community & Proactive Care
+// ============================================================
+
+Table weekly_reports {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  report_week date [not null, note: '週一日期']
+  study_hours decimal(5,1)
+  exams_completed integer
+  questions_answered integer
+  progress_summary text [note: 'AI 生成摘要']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, report_week) [unique]
+  }
+}
+
+Ref: weekly_reports.user_id > users.id [delete: cascade]
+
+// ============================================================
+// Super Admin: Finance & Moderation
+// ============================================================
+
+Table admin_audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  admin_id uuid [not null]
+  action varchar(100) [not null]
+  target_type varchar(50)
+  target_id uuid
+  details jsonb
+  ip_address inet
+  user_agent text
+  created_at timestamptz [default: `now()`]
+  note: 'Append-only, immutable'
+}
+
+Ref: admin_audit_logs.admin_id > users.id
+
+Table system_announcements {
+  id uuid [pk, default: `gen_random_uuid()`]
+  title varchar(200) [not null]
+  content text [not null]
+  type announcement_type
+  display_mode display_mode
+  is_active boolean [default: true]
+  starts_at timestamptz
+  ends_at timestamptz
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: system_announcements.created_by > users.id
+
+Table feature_flags {
+  id uuid [pk, default: `gen_random_uuid()`]
+  flag_key varchar(100) [unique, not null]
+  description text
+  is_enabled boolean [default: false]
+  rollout_percentage integer [default: 0, note: '0-100']
+  target_plans text[] [default: '{}']
+  target_user_ids uuid[] [default: '{}']
+  updated_by uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: feature_flags.updated_by > users.id
+
+Table promo_codes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  code varchar(50) [unique, not null]
+  discount_type discount_type [not null]
+  discount_value decimal(10,2) [not null]
+  applicable_plans text[] [default: '{PRO_199,PRO_PLUS_399,ULTRA_1599}']
+  max_uses integer
+  max_uses_per_user integer [default: 1]
+  current_uses integer [default: 0]
+  valid_from timestamptz
+  valid_until timestamptz
+  is_active boolean [default: true]
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: promo_codes.created_by > users.id
+
+Table refund_requests {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  invoice_id uuid [not null]
+  amount decimal(10,2) [not null]
+  reason text
+  status refund_status [default: 'pending']
+  reviewed_by uuid
+  review_note text
+  reviewed_at timestamptz
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: refund_requests.user_id > users.id
+Ref: refund_requests.invoice_id > invoices.id
+Ref: refund_requests.reviewed_by > users.id
+
+Table content_reports {
+  id uuid [pk, default: `gen_random_uuid()`]
+  reporter_id uuid [not null]
+  report_type report_type [not null]
+  target_type varchar(30) [not null]
+  target_id uuid [not null]
+  description text
+  status report_status [default: 'pending']
+  resolved_by uuid
+  resolution_note text
+  resolved_at timestamptz
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: content_reports.reporter_id > users.id
+Ref: content_reports.resolved_by > users.id
+
+Table model_routing_config {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan subscription_plan [not null]
+  task_type varchar(50) [not null, note: 'basic | advanced | vision_ocr']
+  primary_model varchar(100) [not null]
+  fallback_model varchar(100)
+  fallback_timeout_ms integer [default: 3000]
+  updated_by uuid
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (plan, task_type) [unique]
+  }
+}
+
+Ref: model_routing_config.updated_by > users.id
+
+Table plan_quotas {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan subscription_plan [not null, unique]
+  monthly_uploads integer
+  monthly_exams integer
+  daily_ai_chats integer
+  monthly_vision_pages integer
+  max_file_size_mb integer
+  updated_by uuid
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: plan_quotas.updated_by > users.id
+
+// ============================================================
+// Indexes (Performance)
+// ============================================================
+
+// users
+// CREATE INDEX idx_users_email ON users(email);
+// CREATE INDEX idx_users_subscription ON users(subscription_plan);
+// CREATE INDEX idx_users_status ON users(status);
+
+// resources
+// CREATE INDEX idx_resources_user_subject ON resources(user_id, subject_id);
+// CREATE INDEX idx_resources_status ON resources(status);
+// CREATE INDEX idx_resources_institution ON resources(institution_id) WHERE institution_id IS NOT NULL;
+
+// exams
+// CREATE INDEX idx_exams_user_subject ON exams(user_id, subject_id);
+// CREATE INDEX idx_exams_status ON exams(status);
+
+// knowledge_nodes
+// CREATE INDEX idx_nodes_resource ON knowledge_nodes(resource_id);
+// CREATE INDEX idx_nodes_parent ON knowledge_nodes(parent_id);
+
+// admin_audit_logs
+// CREATE INDEX idx_audit_admin ON admin_audit_logs(admin_id);
+// CREATE INDEX idx_audit_created ON admin_audit_logs(created_at DESC);
+// CREATE INDEX idx_audit_action ON admin_audit_logs(action);

@@ -1,10 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(head -100 \"/d/TDD/certimate/03_Research_and_Development/02_Page_Specifications/個人儀表板首頁 \\(User Dashboard\\).md\")",
-      "Bash(npm install react-hook-form)",
-      "Bash(npx next build)",
-      "Bash(npm install lightningcss-win32-x64-msvc)"
+      "Bash(find /d/TDD/certimate/project -maxdepth 2 -type f -name *.mod -o -name *.json -o -name Makefile -o -name Dockerfile -o -name *.md)",
+      "Bash(find /d/TDD/certimate/frontend -maxdepth 3 -type d ! -path */node_modules/* ! -path */.next* ! -path */.firebase* ! -path */.git*)",
+      "Bash(find /d/TDD/certimate -maxdepth 3 -type f \\\\\\(-name *.py -o -name requirements.txt -o -name main.py \\\\\\))",
+      "Bash(ls -d /d/TDD/certimate/*/)"
     ]
   }
 }

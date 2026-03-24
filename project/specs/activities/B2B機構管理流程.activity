@@ -1,0 +1,23 @@
+[ACTIVITY] B2B機構管理流程
+[ACTOR] 機構管理者 -> {specs/actors/機構管理者.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[STEP:1] @機構管理者 {features/10-B2B機構管理後台.feature}  # RESOLVED: 機構管理者已通過身分驗證，具備 ULTRA 方案 + org_admin 角色。入口為身分驗證流程的角色導向分支。權限驗證同超級管理員模式（JWT → admin_roles → Middleware）。
+
+[STEP:2] @機構管理者 {features/10-B2B機構管理後台.feature}
+[DECISION:2a] 管理操作類型
+  [BRANCH:2a:學生管理] @機構管理者 {features/10-B2B機構管理後台.feature}
+    [DECISION:2a1] 學生匯入方式
+      [BRANCH:2a1:CSV批次匯入] @機構管理者 {features/10-B2B機構管理後台.feature}  # RESOLVED: 固定欄位格式（姓名、Email、學號）。前端 PapaParse 預先格式檢核，後端驗證重複 Email 與欄位完整性。匯入前需強制顯示個資合規同意提示。
+      [BRANCH:2a1:手動新增] @機構管理者 {features/10-B2B機構管理後台.feature}
+    [MERGE:2a1]
+  [BRANCH:2a:測驗分配] @機構管理者 {features/10-B2B機構管理後台.feature}
+  [BRANCH:2a:學習分析] {specs/ui/班級學習分析儀表板.md}
+    [DECISION:2a2] 分析維度
+      [BRANCH:2a2:班級熱力圖] {specs/ui/班級熱力圖.md}
+      [BRANCH:2a2:個人能力剖面] {specs/ui/個人能力剖面.md}
+      [BRANCH:2a2:預警學生清單] {specs/ui/預警學生清單.md}  # RESOLVED: 機構管理者可自訂預警閾值。系統提供預設值（平均分 <60 / 連續 3 次趨勢下降 / 5 天以上未登入），管理者可在「預警規則設定」頁面調整各項閾值。需新增預警規則設定 UI spec。
+    [MERGE:2a2]
+[MERGE:2a]
+
+[STEP:3] @機構管理者 {features/11-資源庫管理.feature}  # RESOLVED: 機構共享資源庫，與個人資源區分。管理者上傳的資源標記為「機構資源」，全班學生可存取。11-資源庫管理.feature 需增加機構資源上傳、可見性控制、與派發考卷的連動 Rule。個人資源與機構資源在資源庫頁面以分頁或標籤區分。

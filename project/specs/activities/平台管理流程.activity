@@ -1,0 +1,38 @@
+[ACTIVITY] 平台管理流程
+[ACTOR] 超級管理員 -> {specs/actors/超級管理員.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[STEP:1] @超級管理員 {features/12-平台管理後台.feature}  # RESOLVED: 超級管理員已通過 Firebase Auth 身分驗證，JWT → admin_roles 表查詢角色，Middleware 攔截 /super-admin/* 路由驗證 super_admin / admin 角色。入口為身分驗證流程的角色導向分支。
+
+[STEP:2] @超級管理員 {features/12-平台管理後台.feature}
+[DECISION:2a] 管理模組
+  [BRANCH:2a:營運儀表板] {specs/ui/營運儀表板.md}
+  [BRANCH:2a:使用者管理] @超級管理員 {features/12-平台管理後台.feature}
+    [DECISION:2a1] 使用者操作
+      [BRANCH:2a1:搜尋與篩選] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a1:調整訂閱方案] @超級管理員 {features/12-平台管理後台.feature}  # RESOLVED: super_admin 直接調整即時生效，無需雙人審批。所有操作自動寫入稽核日誌可事後追溯。敏感操作（如降級付費用戶）需二次密碼/OTP 確認。
+      [BRANCH:2a1:停用帳號] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a1:匯出CSV] @超級管理員 {features/12-平台管理後台.feature}
+    [MERGE:2a1]
+  [BRANCH:2a:財務管理] @超級管理員 {features/12-平台管理後台.feature}
+    [DECISION:2a2] 財務操作
+      [BRANCH:2a2:退款審核] @超級管理員 {features/12-平台管理後台.feature}  # RESOLVED: 無退款金額上限。super_admin 可批准任意金額退款（最高為 ULTRA_1599 TWD/月）。退款後自動降級用戶至 FREE。所有退款操作寫入稽核日誌，需二次密碼/OTP 確認。
+      [BRANCH:2a2:優惠碼管理] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a2:訂閱分布統計] {specs/ui/訂閱分布統計.md}
+    [MERGE:2a2]
+  [BRANCH:2a:內容審核] @超級管理員 {features/12-平台管理後台.feature}
+    [DECISION:2a3] 審核操作
+      [BRANCH:2a3:AI濫用監控] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a3:內容檢舉處理] @超級管理員 {features/12-平台管理後台.feature}
+    [MERGE:2a3]
+  [BRANCH:2a:系統設定] @超級管理員 {features/12-平台管理後台.feature}
+    [DECISION:2a4] 設定類型
+      [BRANCH:2a4:AI模型路由] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a4:方案配額] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a4:系統公告] @超級管理員 {features/12-平台管理後台.feature}
+      [BRANCH:2a4:功能開關] @超級管理員 {features/12-平台管理後台.feature}  # RESOLVED: 支援分群控制。Feature Flag 可設定 rollout_percentage（0-100%）、target_user_ids、依訂閱方案篩選。支援漸進式上線與 A/B 測試。Flag 狀態快取於 Redis，Fallback 查 Cloud SQL。新增功能開關設定 UI spec。
+    [MERGE:2a4]
+  [BRANCH:2a:管理員帳號] @超級管理員 {features/12-平台管理後台.feature}
+[MERGE:2a]
+
+[STEP:3] @系統 {features/12-平台管理後台.feature}  # RESOLVED: 所有超級管理員操作自動寫入 admin_audit_logs（append-only）。記錄 admin_id、action、target_type、target_id、details、IP、user_agent。隱式行為，不需使用者觸發。

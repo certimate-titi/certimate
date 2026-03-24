@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "AdminAuditLog": {
+      "title": "Admin Audit Log",
+      "description": "Records of administrative actions taken in the Super Admin dashboard.",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string", "description": "The UID of the admin who performed the action." },
+        "adminEmail": { "type": "string", "description": "The email of the admin." },
+        "action": { "type": "string", "description": "The type of action (e.g., 'CREATE_ADMIN', 'UPDATE_SETTINGS')." },
+        "targetId": { "type": "string", "description": "The ID of the target entity (e.g., user UID, setting key)." },
+        "details": { "type": "string", "description": "A human-readable description of the change." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the action occurred." },
+        "metadata": { "type": "object", "description": "Additional context (IP, browser, etc.)." }
+      },
+      "required": ["adminId", "action", "timestamp"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the CertiMate platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin", "super_admin"] },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "SystemSetting": {
+      "title": "System Setting",
+      "description": "Global configuration settings for the platform.",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "firestore": {
+    "admin_audit_logs": {
+      "schema": "AdminAuditLog",
+      "description": "Collection of administrative audit logs."
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles."
+    },
+    "system_settings": {
+      "schema": "SystemSetting",
+      "description": "Collection of global system settings."
+    }
+  }
+}

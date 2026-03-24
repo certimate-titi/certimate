@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: admin_audit_logs
+    // Fields:
+    //   - adminId: string (required)
+    //   - adminEmail: string (optional)
+    //   - action: string (required)
+    //   - targetId: string (required)
+    //   - details: string (optional)
+    //   - timestamp: timestamp (required)
+    //   - metadata: map (optional)
+    //
+    // Collection: users
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, ['user', 'admin', 'super_admin'])
+    //   - status: string (required, ['active', 'suspended'])
+    //   - displayName: string (optional)
+    //
+    // Collection: system_settings
+    // Fields:
+    //   - key: string (required)
+    //   - value: string (required)
+    //   - updatedBy: string (optional)
+    //   - updatedAt: timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "son731202@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin']));
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "son731202@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'));
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['adminId', 'action', 'targetId', 'timestamp']) &&
+             data.adminId == request.auth.uid &&
+             data.action is string &&
+             data.targetId is string &&
+             data.timestamp == request.time;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'status']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['user', 'admin', 'super_admin'] &&
+             data.status in ['active', 'suspended'];
+    }
+
+    function isValidSetting(data) {
+      return data.keys().hasAll(['key', 'value']) &&
+             data.key is string &&
+             data.value is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Admin Audit Logs: Only admins can read, only authenticated users can create (if they are admins)
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidAuditLog(request.resource.data);
+      allow update, delete: if false; // Audit logs are immutable
+    }
+
+    // Users: Users can read/write their own data, admins can read/write all
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && request.resource.data.role == 'user') || isSuperAdmin();
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // System Settings: Only admins can read, only super admins can write
+    match /system_settings/{settingId} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin() && isValidSetting(request.resource.data);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
