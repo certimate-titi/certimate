@@ -280,7 +280,7 @@ export default function LandingPage() {
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> B2B 後台與席位管理</li>
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> Super Admin 控制台</li>
               </ul>
-              <Link href="/admin" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm">
+              <Link href="/edu-console" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm">
                 聯絡企業銷售
               </Link>
             </div>

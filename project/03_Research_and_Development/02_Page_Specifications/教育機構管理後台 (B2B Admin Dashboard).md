@@ -1,4 +1,4 @@
-# 教育機構管理後台 (B2B Admin Dashboard)
+# 教育機構管理中心 (B2B Edu Console)
 
 ## 📌 頁面定位與目標
 
@@ -6,7 +6,7 @@
 
 ## 🧩 頁面佈局與功能區塊
 
-本頁面為獨立的 Admin 路由 (`/admin`)，避免與一般學生視角混淆。
+本頁面為獨立的教育管理路由 (`/edu-console`)，避免與一般學生視角及平台管理後台 (`/super-admin`) 混淆。
 
 ---
 
@@ -90,21 +90,21 @@
 
 | 端點 | 方法 | 說明 |
 |------|------|------|
-| `/admin/class-health` | GET | 取得 KPI 概覽（總數/活躍率/需關注/平均分） |
-| `/admin/at-risk` | GET | 取得早期預警學員清單 |
-| `/admin/students` | GET | 取得學員列表（含 trend 欄位） |
-| `/admin/students/:id/competencies` | GET | 取得單一學員多維度能力檔案 |
-| `/admin/students/:id/ai-reinforcement` | POST | 生成 AI 個人化補強建議 |
-| `/admin/students/import` | POST | CSV 批量匯入（含個資同意確認） |
-| `/admin/assignments` | POST | 派發測驗給指定群組 |
-| `/admin/analytics/weak-spots` | GET | 班級共同弱點分析 |
-| `/admin/analytics/top-mistakes` | GET | 全班答錯率 Top 10 題目 |
+| `/edu/class-health` | GET | 取得 KPI 概覽（總數/活躍率/需關注/平均分） |
+| `/edu/at-risk` | GET | 取得早期預警學員清單 |
+| `/edu/students` | GET | 取得學員列表（含 trend 欄位） |
+| `/edu/students/:id/competencies` | GET | 取得單一學員多維度能力檔案 |
+| `/edu/students/:id/ai-reinforcement` | POST | 生成 AI 個人化補強建議 |
+| `/edu/students/import` | POST | CSV 批量匯入（含個資同意確認） |
+| `/edu/assignments` | POST | 派發測驗給指定群組 |
+| `/edu/analytics/weak-spots` | GET | 班級共同弱點分析 |
+| `/edu/analytics/top-mistakes` | GET | 全班答錯率 Top 10 題目 |
 
 ---
 
 ## 💻 技術面/實作建議
 
-- **RBAC 權限設計**：後端必須驗證 `subscription_tier = ULTRA_399` 且 `role` 為機構管理員才能存取此組 API。
+- **RBAC 權限設計**：後端必須驗證 `subscription_tier = ULTRA_1599` 且 `role` 為機構管理員才能存取此組 API。
 - **能力分數計算**：每個知識節點的分數由該節點下所有測驗題目的答對率計算；使用加權平均（近期測驗權重更高）。
 - **趨勢計算**：比較最近 3 次測驗與前 3 次測驗的平均分；差距 > 5 分為 `up`/`down`，否則為 `flat`。
 - **AI 補強建議**：呼叫 Gemini API，傳入學員弱點節點清單，生成繁體中文補強建議；結果可快取 24 小時。

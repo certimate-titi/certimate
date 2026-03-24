@@ -147,21 +147,21 @@ Feature: 身分驗證
 
   Rule: 後置（回應）- 登入後導覽列依 role 與 subscription_tier 顯示對應功能入口
 
-    # DB: users.subscription_tier = 'ULTRA_399' → 顯示「教育後台」連結 (/admin)
-    # DB: users.role = 'ADMIN' → 顯示「後台管理」連結 (/super-admin/dashboard)
+    # DB: users.subscription_tier = 'ULTRA_1599' → 顯示「教育管理」連結 (/edu-console)
+    # DB: users.role = 'ADMIN' → 顯示「平台管理」連結 (/super-admin/dashboard)
 
-    Example: ULTRA_399 用戶登入後導覽列顯示「教育後台」入口
-      Given 使用者 "carol@example.com" 訂閱方案為 "ULTRA_399"
+    Example: ULTRA_1599 用戶登入後導覽列顯示「教育管理」入口
+      Given 使用者 "carol@example.com" 訂閱方案為 "ULTRA_1599"
       When 使用者 "carol@example.com" 成功登入系統
-      Then 登入後的回應應包含 "subscription_tier": "ULTRA_399"
-      And 前端導覽列應顯示「教育後台」連結，路徑為 "/admin"
-      And 前端導覽列不應顯示「後台管理」連結
+      Then 登入後的回應應包含 "subscription_tier": "ULTRA_1599"
+      And 前端導覽列應顯示「教育管理」連結，路徑為 "/edu-console"
+      And 前端導覽列不應顯示「平台管理」連結
 
-    Example: ADMIN 角色用戶登入後導覽列顯示「後台管理」入口
+    Example: ADMIN 角色用戶登入後導覽列顯示「平台管理」入口
       Given 使用者 "admin@example.com" 角色為 "ADMIN"
       When 使用者 "admin@example.com" 成功登入系統
       Then 登入後的回應應包含 "role": "ADMIN"
-      And 前端導覽列應顯示「後台管理」連結，路徑為 "/super-admin/dashboard"
+      And 前端導覽列應顯示「平台管理」連結，路徑為 "/super-admin/dashboard"
       And 前端導覽列不應顯示「教育後台」連結
 
     Example: FREE / PRO_199 一般用戶登入後導覽列不顯示管理入口

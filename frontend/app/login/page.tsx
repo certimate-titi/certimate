@@ -22,8 +22,8 @@ const MOCK_ACCOUNTS: {
   { label: 'user1 — 新用戶', email: 'user1@test.com', displayName: 'User1 新用戶', tier: 'FREE', role: 'USER', onboardingDone: false, badge: 'NEW', badgeColor: 'bg-slate-100 text-slate-600' },
   { label: 'user2 — PRO', email: 'user2@test.com', displayName: 'User2 PRO', tier: 'PRO_199', role: 'USER', onboardingDone: true, badge: 'PRO', badgeColor: 'bg-emerald-100 text-emerald-700' },
   { label: 'proplus — PRO PLUS', email: 'proplus@test.com', displayName: 'ProPlus 用戶', tier: 'PRO_PLUS_399', role: 'USER', onboardingDone: true, badge: 'PRO+', badgeColor: 'bg-yellow-100 text-yellow-700' },
-  { label: 'ultra@test.com', email: 'ultra@test.com', displayName: 'Ultra 用戶', tier: 'ULTRA_1599', role: 'USER', onboardingDone: true, badge: 'ULTRA', badgeColor: 'bg-indigo-100 text-indigo-700' },
-  { label: 'admin@test.com', email: 'admin@test.com', displayName: '管理者', tier: 'FREE', role: 'ADMIN', onboardingDone: true, badge: 'ADMIN', badgeColor: 'bg-rose-100 text-rose-700' },
+  { label: 'ultra — 教育管理', email: 'ultra@test.com', displayName: 'Ultra 教育管理員', tier: 'ULTRA_1599', role: 'USER', onboardingDone: true, badge: 'ULTRA', badgeColor: 'bg-indigo-100 text-indigo-700' },
+  { label: 'admin — 平台管理', email: 'admin@test.com', displayName: '平台管理者', tier: 'FREE', role: 'ADMIN', onboardingDone: true, badge: 'ADMIN', badgeColor: 'bg-rose-100 text-rose-700' },
 ];
 
 export default function LoginPage() {

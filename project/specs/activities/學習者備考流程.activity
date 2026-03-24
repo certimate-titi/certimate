@@ -10,6 +10,11 @@
 [MERGE:1a]
 
 [STEP:2] @學習者 {features/13-個人儀表板與成就系統.feature}  # RESOLVED: 儀表板為預設首頁但非必經入口，允許 Deep Link 直達子功能（/exam/setup、/knowledge 等）。未登入時 Deep Link 先導向登入再重定向回原目標頁。
+[DECISION:2a] 儀表板行動
+  [BRANCH:2a:管理訂閱] @學習者 {features/08-訂閱管理.feature}
+    -> 2  # 訂閱管理完成後回到儀表板
+  [BRANCH:2a:開始備考] -> 3
+[MERGE:2a]
 
 [STEP:3] @學習者 {features/02-資源上傳.feature}
 [DECISION:3a] 資源處理結果

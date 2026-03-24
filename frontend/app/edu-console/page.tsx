@@ -51,7 +51,7 @@ function CompetencyBar({ label, score }: { label: string; score: number }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export default function AdminDashboardPage() {
+export default function EduConsolePage() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
@@ -92,7 +92,7 @@ export default function AdminDashboardPage() {
         setStudents(fetchedStudents);
         setClassStats(fetchedStats);
       } catch (error) {
-        console.error('Admin Page: Fetch error:', error);
+        console.error('EduConsole: Fetch error:', error);
       } finally {
         setIsLoading(false);
       }
@@ -121,8 +121,8 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-indigo-400" />
           <div>
-            <h1 className="text-xl font-bold tracking-wider">教育機構管理後台</h1>
-            <p className="text-xs text-slate-400">Ultra 專屬功能 • 企業訓練中心</p>
+            <h1 className="text-xl font-bold tracking-wider">教育機構管理中心</h1>
+            <p className="text-xs text-slate-400">Ultra 方案專屬 • 教育訓練管理</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
         subjects={userSubjects}
         activeSubjectId={activeSubjectId}
         onSwitch={setActiveSubjectId}
-        onAddSubject={() => {}} // Admin 暫不提供新增學科，或連至設定
+        onAddSubject={() => {}} // 教育管理中心暫不提供新增學科，或連至設定
         allowAdd={false}
       />
 

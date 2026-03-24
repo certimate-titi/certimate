@@ -4,7 +4,10 @@
       "Bash(find /d/TDD/certimate/project -maxdepth 2 -type f -name *.mod -o -name *.json -o -name Makefile -o -name Dockerfile -o -name *.md)",
       "Bash(find /d/TDD/certimate/frontend -maxdepth 3 -type d ! -path */node_modules/* ! -path */.next* ! -path */.firebase* ! -path */.git*)",
       "Bash(find /d/TDD/certimate -maxdepth 3 -type f \\\\\\(-name *.py -o -name requirements.txt -o -name main.py \\\\\\))",
-      "Bash(ls -d /d/TDD/certimate/*/)"
+      "Bash(ls -d /d/TDD/certimate/*/)",
+      "Bash(npx next:*)",
+      "Bash(npm run:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

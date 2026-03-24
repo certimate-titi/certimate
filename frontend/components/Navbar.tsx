@@ -15,8 +15,8 @@ export default function Navbar() {
     { href: '/knowledge', label: '知識庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/review', label: 'AI 教練', icon: BrainCircuit },
-    ...(isUltra ? [{ href: '/admin', label: '教育後台', icon: Building2 }] : []),
-    ...(isAdmin ? [{ href: '/super-admin/dashboard', label: '後台管理', icon: ShieldCheck }] : []),
+    ...(isUltra ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
+    ...(isAdmin ? [{ href: '/super-admin/dashboard', label: '平台管理', icon: ShieldCheck }] : []),
   ];
 
   return (

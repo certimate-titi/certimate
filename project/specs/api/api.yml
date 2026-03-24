@@ -553,11 +553,11 @@ paths:
         200: { description: 發票列表 }
 
   # ----------------------------------------------------------
-  # 10 - B2B 機構管理
+  # 10 - B2B 教育機構管理
   # ----------------------------------------------------------
-  /admin/class-health:
+  /edu/class-health:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 班級健康 KPI
       description: 總學生數、活躍率、需關注人數、班級平均分
       operationId: getClassHealth
@@ -565,24 +565,24 @@ paths:
         200: { description: KPI 數據 }
         403: { description: 非 ULTRA + org_admin }
 
-  /admin/at-risk:
+  /edu/at-risk:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 早期預警學生清單
       description: 依機構自訂閾值觸發（預設：平均分<60 / 連續3次下降 / 5天未登入）
       operationId: getAtRiskStudents
       responses:
         200: { description: 預警學生清單 }
 
-  /admin/at-risk/rules:
+  /edu/at-risk/rules:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 取得預警規則設定
       operationId: getWarningRules
       responses:
         200: { description: 當前閾值設定 }
     put:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 更新預警規則設定
       operationId: updateWarningRules
       requestBody:
@@ -598,18 +598,18 @@ paths:
       responses:
         200: { description: 規則已更新 }
 
-  /admin/students:
+  /edu/students:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 學生能力檔案列表
       description: 含趨勢箭頭、進度條、平均分、狀態標籤
       operationId: getStudents
       responses:
         200: { description: 學生列表 }
 
-  /admin/students/import:
+  /edu/students/import:
     post:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: CSV 批量匯入學生
       description: 固定欄位（姓名、Email、學號），需確認個資同意
       operationId: importStudents
@@ -627,9 +627,9 @@ paths:
         201: { description: 匯入成功，已發送啟用信 }
         400: { description: CSV 格式錯誤或重複 Email }
 
-  /admin/students/{studentId}/competencies:
+  /edu/students/{studentId}/competencies:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 單一學生多維度能力檔案
       operationId: getStudentCompetencies
       parameters:
@@ -640,9 +640,9 @@ paths:
       responses:
         200: { description: 各知識節點能力分析 }
 
-  /admin/students/{studentId}/ai-reinforcement:
+  /edu/students/{studentId}/ai-reinforcement:
     post:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 生成 AI 個人化補強建議
       description: Gemini API 生成繁體中文建議，快取 24 小時
       operationId: generateReinforcement
@@ -654,9 +654,9 @@ paths:
       responses:
         200: { description: AI 補強建議（1-3 條） }
 
-  /admin/assignments:
+  /edu/assignments:
     post:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 派發模擬考卷
       operationId: distributeExam
       requestBody:
@@ -677,39 +677,39 @@ paths:
       responses:
         201: { description: 考卷已派發 }
 
-  /admin/analytics/heatmap:
+  /edu/analytics/heatmap:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 班級熱力圖（知識節點 × 學生）
       operationId: getClassHeatmap
       responses:
         200: { description: 熱力圖矩陣數據 }
 
-  /admin/analytics/weak-spots:
+  /edu/analytics/weak-spots:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 班級共同弱點分析
       operationId: getWeakSpots
       responses:
         200: { description: 共同弱點 Top N }
 
-  /admin/analytics/top-mistakes:
+  /edu/analytics/top-mistakes:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 全班答錯率 Top 10 題目
       operationId: getTopMistakes
       responses:
         200: { description: 答錯率排行 }
 
-  /admin/institution/resources:
+  /edu/institution/resources:
     get:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 機構共享資源庫列表
       operationId: getInstitutionResources
       responses:
         200: { description: 機構資源列表 }
     post:
-      tags: [B2B Admin]
+      tags: [B2B Edu]
       summary: 上傳機構共享資源
       description: 標記為機構資源，全班學生可存取
       operationId: uploadInstitutionResource
