@@ -1,15 +1,12 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
   title: CertiMate API
-  version: 0.1.0
+  version: 1.0.0
   description: AI-powered certificate exam preparation SaaS platform
 
 servers:
   - url: /api/v1
 
-# ============================================================
-# 共用元件
-# ============================================================
 components:
   securitySchemes:
     BearerAuth:
@@ -18,42 +15,566 @@ components:
       bearerFormat: JWT
       description: Firebase Auth ID Token
 
-  parameters:
-    SubjectId:
-      name: subjectId
-      in: query
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: 篩選特定備考科目
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: 必要參數未提供
 
-  responses:
-    401Unauthorized:
-      description: 未登入或 Token 過期
-    403Forbidden:
-      description: 權限不足
-    404NotFound:
-      description: 資源不存在
-    422ValidationError:
-      description: 請求參數驗證失敗
+    # ---- Auth ----
+    RegisterRequest:
+      type: object
+      required: [email, password, agreedToTerms]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        agreedToTerms: { type: boolean }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        onboardingCompleted: { type: boolean }
+        role: { type: string, enum: [user, org_admin, admin, super_admin] }
+        subscriptionTier: { type: string, enum: [FREE, PRO_199, PRO_PLUS_399, ULTRA_1599] }
+
+    GoogleSsoRequest:
+      type: object
+      required: [idToken]
+      properties:
+        idToken: { type: string }
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token: { type: string }
+        newPassword: { type: string, minLength: 8 }
+
+    # ---- Resources ----
+    ResourceResponse:
+      type: object
+      properties:
+        resourceId: { type: string }
+        status: { type: string, enum: [PENDING, PROCESSING, COMPLETED, COMPLETED_NO_MAP, FAILED] }
+        resourceType: { type: string, enum: [pdf, markdown, image, youtube] }
+        implicitConsent: { type: boolean }
+        processingEngine: { type: string, enum: [pdf_parser, markdown_parser, vision_ocr, gemini_flash] }
+
+    YoutubeSubmitRequest:
+      type: object
+      required: [url, subjectId]
+      properties:
+        url: { type: string, format: uri }
+        subjectId: { type: string }
+
+    # ---- Knowledge ----
+    KnowledgeNode:
+      type: object
+      properties:
+        nodeId: { type: string }
+        name: { type: string }
+        parentId: { type: string }
+        sourceType: { type: string, enum: [pdf, youtube] }
+        sourceRef: { type: string }
+        accuracyRate: { type: integer }
+        color: { type: string, enum: [green, orange, red, gray] }
+
+    NodeSourceResponse:
+      type: object
+      properties:
+        nodeId: { type: string }
+        content: { type: string, description: Markdown formatted source text }
+        sourceType: { type: string, enum: [pdf, youtube] }
+        pageNumber: { type: integer }
+        timestamp: { type: string }
+
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
+    # ---- Exams ----
+    GenerateExamRequest:
+      type: object
+      required: [subjectId, nodeIds, questionCount]
+      properties:
+        subjectId: { type: string }
+        nodeIds:
+          type: array
+          items: { type: string }
+          minItems: 1
+        questionCount: { type: integer, minimum: 1 }
+        difficultyDistribution:
+          type: object
+          properties:
+            easy: { type: number }
+            medium: { type: number }
+            hard: { type: number }
+        questionTypes:
+          type: array
+          items:
+            type: string
+            enum: [single_choice, multiple_choice, fill_in, calculation]
+
+    SaveAnswersRequest:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId: { type: string }
+              selectedAnswer: { type: string }
+              markedForReview: { type: boolean }
+
+    ExamResultsResponse:
+      type: object
+      properties:
+        examId: { type: string }
+        score: { type: integer }
+        totalQuestions: { type: integer }
+        correctCount: { type: integer }
+        incorrectCount: { type: integer }
+        skippedCount: { type: integer }
+        passStatus: { type: boolean }
+        timeTaken: { type: integer, description: seconds }
+        comparisonWithPrevious:
+          type: object
+          properties:
+            scoreDiff: { type: integer }
+            trend: { type: string, enum: [up, down, flat] }
+        nodeAccuracyRates:
+          type: array
+          items:
+            type: object
+            properties:
+              nodeName: { type: string }
+              accuracyRate: { type: integer }
+              color: { type: string, enum: [green, orange, red] }
+        aiSummary: { type: string, description: PRO+ only }
+
+    ShareCardResponse:
+      type: object
+      properties:
+        imageUrl: { type: string, format: uri }
+        displayName: { type: string }
+        score: { type: integer }
+        aiEncouragement: { type: string }
+
+    # ---- Reviews ----
+    ErrorQuestionResponse:
+      type: object
+      properties:
+        questionId: { type: string }
+        question: { type: string }
+        correct: { type: string }
+        selected: { type: string }
+        nodeName: { type: string }
+        tip: { type: string, description: FREE users only }
+        deepAnalysisLocked: { type: boolean }
+        fullAnalysis: { type: string, description: PRO+ Markdown content }
+        sourceResource: { type: string }
+        sourceRef: { type: string }
+        upgradePrompt:
+          type: object
+          properties:
+            targetPlan: { type: string }
+            monthlyFee: { type: integer }
+
+    # ---- Subscriptions ----
+    SubscriptionInfoResponse:
+      type: object
+      properties:
+        currentPlan: { type: string, enum: [FREE, PRO_199, PRO_PLUS_399, ULTRA_1599] }
+        monthlyFee: { type: integer }
+        nextBilling: { type: string, format: date, nullable: true }
+        coachRemainingQuota: { type: integer }
+        planComparison:
+          type: array
+          items:
+            type: object
+            properties:
+              plan: { type: string }
+              aiChats: { type: string }
+              uploads: { type: string }
+              exams: { type: string }
+              visionOcr: { type: string }
+
+    UpgradeRequest:
+      type: object
+      required: [targetPlan]
+      properties:
+        targetPlan: { type: string, enum: [PRO_199, PRO_PLUS_399, ULTRA_1599] }
+
+    DowngradeRequest:
+      type: object
+      required: [targetPlan]
+      properties:
+        targetPlan: { type: string, enum: [FREE, PRO_199, PRO_PLUS_399] }
+
+    InvoiceResponse:
+      type: object
+      properties:
+        invoiceId: { type: string }
+        amount: { type: integer }
+        plan: { type: string }
+        status: { type: string, enum: [success, failed, refunded] }
+        createdAt: { type: string, format: date-time }
+
+    # ---- Learning Schedule ----
+    LearningScheduleResponse:
+      type: object
+      properties:
+        mode: { type: string, enum: [sprint, standard, mastery] }
+        subjectId: { type: string }
+        daysUntilExam: { type: integer }
+        recommendedQuestions:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId: { type: string }
+              priority: { type: number }
+              reason: { type: string }
+
+    # ---- B2B Edu ----
+    ClassHealthResponse:
+      type: object
+      properties:
+        total: { type: integer }
+        activeRate: { type: number }
+        atRiskCount: { type: integer }
+        avgScore: { type: number }
+
+    AtRiskStudentResponse:
+      type: object
+      properties:
+        studentId: { type: integer }
+        name: { type: string }
+        avgScore: { type: integer }
+        trend: { type: string, enum: [up, down, flat] }
+        weakestTopic: { type: string }
+        lastActiveDays: { type: integer }
+
+    WarningRulesRequest:
+      type: object
+      properties:
+        minAvgScore: { type: integer }
+        maxDeclineTrend: { type: integer }
+        maxInactiveDays: { type: integer }
+
+    StudentListResponse:
+      type: object
+      properties:
+        studentId: { type: integer }
+        email: { type: string }
+        avgScore: { type: integer }
+        trend: { type: string, enum: [up, down, flat] }
+
+    CompetencyResponse:
+      type: object
+      properties:
+        label: { type: string }
+        score: { type: integer }
+        color: { type: string, enum: [green, orange, red] }
+
+    AiReinforcementResponse:
+      type: object
+      properties:
+        topic: { type: string }
+        suggestion: { type: string }
+        actionType: { type: string, enum: [review, quiz, explore] }
+
+    HeatmapResponse:
+      type: object
+      properties:
+        xAxis:
+          type: array
+          items: { type: string }
+        yAxis:
+          type: array
+          items: { type: string }
+        cells:
+          type: array
+          items:
+            type: array
+            items: { type: integer }
+
+    TopMistakeResponse:
+      type: object
+      properties:
+        questionText: { type: string }
+        errorRate: { type: number }
+        nodeName: { type: string }
+
+    CsvImportRequest:
+      type: object
+      required: [dataProcessingAgreed]
+      properties:
+        dataProcessingAgreed: { type: boolean }
+
+    AssignExamRequest:
+      type: object
+      required: [examId, groupId, deadline]
+      properties:
+        examId: { type: integer }
+        groupId: { type: integer }
+        deadline: { type: string, format: date }
+
+    # ---- Super Admin ----
+    OperationsDashboardResponse:
+      type: object
+      properties:
+        dau: { type: integer }
+        mau: { type: integer }
+        newRegistrations: { type: integer }
+        conversionRate: { type: number }
+        mrr: { type: number }
+        aiTokenCost: { type: number }
+        queueDepth: { type: integer }
+
+    AdjustSubscriptionRequest:
+      type: object
+      required: [targetPlan, otpCode]
+      properties:
+        targetPlan: { type: string, enum: [FREE, PRO_199, PRO_PLUS_399, ULTRA_1599] }
+        otpCode: { type: string }
+
+    SuspendUserRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+
+    ApproveRefundRequest:
+      type: object
+      required: [otpCode]
+      properties:
+        otpCode: { type: string }
+
+    RejectRefundRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+
+    CreatePromoCodeRequest:
+      type: object
+      required: [code, discountType, discountValue]
+      properties:
+        code: { type: string }
+        discountType: { type: string, enum: [percentage, fixed_amount, free_trial_days] }
+        discountValue: { type: number }
+        applicablePlans:
+          type: array
+          items: { type: string }
+        maxUses: { type: integer }
+        maxUsesPerUser: { type: integer, default: 1 }
+        validFrom: { type: string, format: date-time }
+        validUntil: { type: string, format: date-time }
+
+    ResolveReportRequest:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [delete_and_warn, dismiss] }
+        note: { type: string }
+
+    ModelRoutingRequest:
+      type: object
+      properties:
+        freeBasicModel: { type: string }
+        freeFallbackModel: { type: string }
+        proAdvancedModel: { type: string }
+        proFallbackModel: { type: string }
+        fallbackTimeoutMs: { type: integer }
+
+    CreateAnnouncementRequest:
+      type: object
+      required: [title, content, type, displayMode]
+      properties:
+        title: { type: string }
+        content: { type: string }
+        type: { type: string, enum: [info, maintenance, feature, warning] }
+        displayMode: { type: string, enum: [banner, notification, email] }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+
+    CreateFeatureFlagRequest:
+      type: object
+      required: [flagKey]
+      properties:
+        flagKey: { type: string }
+        description: { type: string }
+        isEnabled: { type: boolean, default: false }
+        rolloutPercentage: { type: integer, minimum: 0, maximum: 100, default: 0 }
+        targetPlans:
+          type: array
+          items: { type: string }
+        targetUserIds:
+          type: array
+          items: { type: string }
+
+    CreateAdminRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [super_admin, admin] }
+
+    # ---- Dashboard ----
+    DashboardResponse:
+      type: object
+      properties:
+        examCountdown: { type: integer, description: days until exam }
+        radarChart:
+          type: array
+          items:
+            type: object
+            properties:
+              nodeName: { type: string }
+              score: { type: integer }
+        quickUpload: { type: boolean }
+        todoReminders:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              description: { type: string }
+
+    StreakResponse:
+      type: object
+      properties:
+        currentStreak: { type: integer }
+        freezeCredits: { type: integer }
+
+    DailyQuestResponse:
+      type: object
+      properties:
+        questType: { type: string, enum: [quiz, explore, review] }
+        description: { type: string }
+        xpReward: { type: integer }
+        status: { type: string, enum: [pending, completed] }
+
+    AchievementResponse:
+      type: object
+      properties:
+        key: { type: string }
+        name: { type: string }
+        unlocked: { type: boolean }
+        unlockedAt: { type: string, format: date-time }
+
+    # ---- Onboarding ----
+    CompleteOnboardingRequest:
+      type: object
+      required: [subjects]
+      properties:
+        displayName: { type: string }
+        subjects:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [subjectId, examDate, selfAssessedLevel]
+            properties:
+              subjectId: { type: string }
+              examDate: { type: string, format: date }
+              selfAssessedLevel: { type: string, enum: [beginner, intermediate, advanced] }
+        dailyStudyMinutes: { type: integer, default: 30 }
+        learningPreference: { type: string, enum: [drill, concept, mixed], default: mixed }
+
+    # ---- Profile ----
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName: { type: string }
+        age: { type: integer }
+        education: { type: string }
+        career: { type: string }
+
+    AddSubjectRequest:
+      type: object
+      required: [subjectId, examDate, selfAssessedLevel]
+      properties:
+        subjectId: { type: string }
+        examDate: { type: string, format: date }
+        selfAssessedLevel: { type: string, enum: [beginner, intermediate, advanced] }
+
+    # ---- Community ----
+    WeeklyReportResponse:
+      type: object
+      properties:
+        studyHours: { type: number }
+        examsCompleted: { type: integer }
+        questionsAnswered: { type: integer }
+        strongestNode: { type: string }
+        weakestNode: { type: string }
+        aiEncouragement: { type: string }
+
+    # ---- Maintenance ----
+    CreateMaintenanceTaskRequest:
+      type: object
+      required: [anomalyId, assigneeId, description]
+      properties:
+        anomalyId: { type: string }
+        assigneeId: { type: string }
+        description: { type: string }
+        priority: { type: string, enum: [low, medium, high, critical] }
+
+    CreateMaintenanceScheduleRequest:
+      type: object
+      required: [startTime, endTime, description]
+      properties:
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        description: { type: string }
+        affectedServices:
+          type: array
+          items: { type: string }
+
+    EmergencyMaintenanceRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+        estimatedDuration: { type: string }
 
 security:
   - BearerAuth: []
 
 # ============================================================
-# API 端點
+# API Paths
 # ============================================================
 paths:
 
   # ----------------------------------------------------------
-  # 01 - 身分驗證
+  # 01 - Auth (身分驗證) @command
   # ----------------------------------------------------------
   /auth/register:
     post:
       tags: [Auth]
       summary: Email 註冊
-      description: 建立 FREE 方案帳號，需同意服務條款
       security: []
       operationId: register
       requestBody:
@@ -61,16 +582,32 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password, agreedToTerms]
-              properties:
-                email: { type: string, format: email }
-                password: { type: string, minLength: 8 }
-                agreedToTerms: { type: boolean }
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
-        201: { description: 註冊成功，回傳 userId + JWT }
-        409: { description: Email 已存在 }
-        422: { $ref: '#/components/responses/422ValidationError' }
+        '201':
+          description: 註冊成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 必要參數未提供 / Email 格式無效 / 密碼不符合要求
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email 已被註冊
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 未同意服務條款與隱私權政策
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/login:
     post:
@@ -83,15 +620,26 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password]
-              properties:
-                email: { type: string, format: email }
-                password: { type: string }
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        200: { description: 登入成功，回傳 JWT + onboardingCompleted + role }
-        401: { description: 帳號或密碼錯誤 }
-        403: { description: 帳號已停權 }
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 帳號或密碼錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 帳號已停權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/google-sso:
     post:
@@ -104,13 +652,20 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [idToken]
-              properties:
-                idToken: { type: string }
+              $ref: '#/components/schemas/GoogleSsoRequest'
       responses:
-        200: { description: 登入成功 }
-        201: { description: 自動建立帳號並登入 }
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '201':
+          description: 自動建立帳號並登入
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
 
   /auth/forgot-password:
     post:
@@ -123,12 +678,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [email]
-              properties:
-                email: { type: string, format: email }
+              $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
-        200: { description: 重設信已發送（無論帳號是否存在） }
+        '200':
+          description: 重設信已發送（無論帳號是否存在）
 
   /auth/reset-password:
     post:
@@ -141,35 +694,34 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [token, newPassword]
-              properties:
-                token: { type: string }
-                newPassword: { type: string, minLength: 8 }
+              $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
-        200: { description: 密碼已重設 }
-        400: { description: Token 無效或過期（1小時） }
+        '200':
+          description: 密碼已重設
+        '400':
+          description: Token 無效或已過期（1小時）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/account:
     delete:
       tags: [Auth]
-      summary: 刪除帳號（GDPR）
-      description: 級聯刪除所有個人資料與快取
+      summary: 刪除帳號（Right to be Forgotten）
       operationId: deleteAccount
       responses:
-        200: { description: 帳號已刪除 }
+        '200':
+          description: 帳號及所有個人資料已刪除
 
   # ----------------------------------------------------------
-  # 02 - 資源上傳
+  # 02 - Resources (資源上傳) @command
   # ----------------------------------------------------------
   /resources/upload:
     post:
       tags: [Resources]
-      summary: 上傳實體檔案（PDF/MD/TXT/Image）
-      description: |
-        點擊上傳即視為同意版權免責條款。
-        Image（PNG/JPG/JPEG/WebP）僅 PRO_PLUS 以上方案可上傳。
-        檔案大小限制：FREE 10MB / PRO+PRO_PLUS 100MB / ULTRA 無限制。
+      summary: 上傳實體檔案
+      description: 點擊上傳即視為同意版權免責條款。Image 僅 PRO_PLUS 以上可上傳。
       operationId: uploadResource
       requestBody:
         required: true
@@ -180,40 +732,60 @@ paths:
               required: [file, subjectId]
               properties:
                 file: { type: string, format: binary }
-                subjectId: { type: string, format: uuid }
+                subjectId: { type: string }
       responses:
-        201: { description: 上傳成功，資源狀態 PENDING }
-        400: { description: 不支援的檔案格式 }
-        403: { description: Image 上傳需 PRO_PLUS 方案 }
-        413: { description: 檔案大小超過方案限制 }
+        '201':
+          description: 上傳成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          description: 不支援的檔案格式 / 必要參數未提供
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 手寫圖片辨識（Vision OCR）需升級至 PRO_PLUS 方案
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: 檔案大小超過方案限制
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /resources/youtube:
     post:
       tags: [Resources]
       summary: 提交 YouTube URL
-      description: 所有方案皆可使用，無時長限制
       operationId: submitYoutube
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [url, subjectId]
-              properties:
-                url: { type: string, format: uri }
-                subjectId: { type: string, format: uuid }
+              $ref: '#/components/schemas/YoutubeSubmitRequest'
       responses:
-        201: { description: 提交成功，資源狀態 PENDING }
-        400: { description: 無效的 YouTube URL }
+        '201':
+          description: 提交成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '400':
+          description: 無效的 YouTube URL / 必要參數未提供
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ----------------------------------------------------------
-  # 03a - 知識心智圖生成（系統內部，無直接 API）
-  # ----------------------------------------------------------
-  # 資源處理成功後由系統自動觸發，透過內部事件驅動
-
-  # ----------------------------------------------------------
-  # 03b - 知識心智圖導航
+  # 03b - Knowledge Navigation (知識心智圖導航) @query
   # ----------------------------------------------------------
   /knowledge/nodes:
     get:
@@ -221,94 +793,94 @@ paths:
       summary: 取得知識節點樹
       operationId: getKnowledgeNodes
       parameters:
-        - $ref: '#/components/parameters/SubjectId'
-        - name: resourceId
+        - name: subjectId
           in: query
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 知識節點樹（含掌握度顏色） }
+        '200':
+          description: 知識節點樹
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeNode'
 
   /knowledge/nodes/{nodeId}/source:
     get:
       tags: [Knowledge]
       summary: 取得節點溯源內容
-      description: PDF 回傳原文+頁碼，YouTube 回傳逐字稿+時間戳
       operationId: getNodeSource
       parameters:
         - name: nodeId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 溯源內容（Markdown 原文或影片時間戳） }
+        '200':
+          description: 溯源內容
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeSourceResponse'
 
   /knowledge/nodes/{nodeId}/chat:
     post:
       tags: [Knowledge]
-      summary: 與 AI 教練對話（上下文感知）
-      description: |
-        PRO 用戶：毛玻璃鎖死，回傳 403。
-        PRO_PLUS 用戶：扣除月度額度，Claude 3.5 回應。
-        FREE 用戶：單一節點 ≤3 次追問後鎖死。
+      summary: 與 AI 教練對話（知識節點上下文）
+      description: FREE 用戶單一節點 ≤3 次追問，PRO_PLUS 以上扣除月度額度。
       operationId: chatWithCoach
       parameters:
         - name: nodeId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [message]
-              properties:
-                message: { type: string }
+              $ref: '#/components/schemas/ChatRequest'
       responses:
-        200: { description: AI 教練回應（streaming） }
-        403: { description: 方案不支援或額度已用盡 }
-        429: { description: 冷卻中（10分鐘內5次超綱觸發30分鐘冷卻） }
+        '200':
+          description: AI 教練回應（streaming）
+        '403':
+          description: 方案不支援或額度已用盡
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 冷卻中（10分鐘內5次超綱觸發30分鐘冷卻）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ----------------------------------------------------------
-  # 04 - 測驗設定
+  # 04 - Exam Setup (測驗設定) @command
   # ----------------------------------------------------------
   /exams/generate:
     post:
       tags: [Exams]
       summary: 生成模擬考卷
-      description: |
-        題數限制：FREE ≤10 / PRO ≤50 / ULTRA ≤100+。
-        回傳 examId，前端透過 SSE 監聽生成進度。
+      description: 題數限制依方案：FREE ≤10 / PRO ≤50 / ULTRA ≤100+
       operationId: generateExam
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [subjectId, nodeIds, questionCount]
-              properties:
-                subjectId: { type: string, format: uuid }
-                nodeIds:
-                  type: array
-                  items: { type: string, format: uuid }
-                  minItems: 1
-                questionCount: { type: integer, minimum: 1 }
-                difficultyDistribution:
-                  type: object
-                  properties:
-                    easy: { type: number }
-                    medium: { type: number }
-                    hard: { type: number }
-                questionTypes:
-                  type: array
-                  items:
-                    type: string
-                    enum: [single_choice, multiple_choice, fill_in, calculation]
+              $ref: '#/components/schemas/GenerateExamRequest'
       responses:
-        201: { description: 考卷生成任務已建立，回傳 examId }
-        400: { description: 未選擇知識節點或題數超過限制 }
+        '201':
+          description: 考卷生成任務已建立，回傳 examId
+        '400':
+          description: 未選擇知識節點 / 題數超過方案限制 / 必要參數未提供
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /exams/{examId}/progress:
     get:
@@ -319,31 +891,42 @@ paths:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200:
+        '200':
           description: SSE 事件流（10% → 40% → 80% → 100%）
           content:
             text/event-stream: {}
 
   # ----------------------------------------------------------
-  # 05 - 模擬機考
+  # 05 - Mock Exam (模擬機考) @command
   # ----------------------------------------------------------
   /exams/{examId}/start:
     post:
       tags: [Exams]
       summary: 開始考試
-      description: 狀態 READY → IN_PROGRESS，記錄開始時間
+      description: 狀態 READY → IN_PROGRESS
       operationId: startExam
       parameters:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 考試已開始，回傳題目列表+倒數時間 }
-        400: { description: 考試狀態非 READY }
-        403: { description: 非本人考試 }
+        '200':
+          description: 考試已開始，回傳題目列表+倒數時間
+        '403':
+          description: 非本人考試
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 考試狀態非 READY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /exams/{examId}/answers:
     put:
@@ -354,25 +937,16 @@ paths:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [answers]
-              properties:
-                answers:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      questionId: { type: string, format: uuid }
-                      selectedAnswer: { type: string }
-                      markedForReview: { type: boolean }
+              $ref: '#/components/schemas/SaveAnswersRequest'
       responses:
-        200: { description: 答案已儲存 }
+        '200':
+          description: 答案已儲存
 
   /exams/{examId}/submit:
     post:
@@ -384,59 +958,78 @@ paths:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 已交卷，回傳 resultId }
+        '200':
+          description: 已交卷
 
   /exams/{examId}/resume:
     get:
       tags: [Exams]
       summary: 恢復考試
-      description: 回傳已暫存的答案、剩餘時間、已作答題數
       operationId: resumeExam
       parameters:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 恢復資料 }
-        400: { description: 考試狀態非 IN_PROGRESS }
+        '200':
+          description: 恢復資料（已暫存答案、剩餘時間、已作答題數）
+        '422':
+          description: 考試狀態非 IN_PROGRESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ----------------------------------------------------------
-  # 06 - 測驗結果
+  # 06 - Exam Results (測驗結果) @query
   # ----------------------------------------------------------
   /exams/{examId}/results:
     get:
       tags: [Exams]
       summary: 取得測驗結果
-      description: 含分數、及格狀態、知識節點答對率、與上次比較、AI 總評（PRO+）
       operationId: getExamResults
       parameters:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 測驗結果完整資料 }
-        403: { description: 非本人考試 }
+        '200':
+          description: 測驗結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResultsResponse'
+        '403':
+          description: 非本人考試
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /exams/{examId}/results/share-card:
     get:
       tags: [Exams]
       summary: 生成分享成績卡片
-      description: 含暱稱、得分、AI 鼓勵語、品牌浮水印
       operationId: getShareCard
       parameters:
         - name: examId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 成績卡片圖片 URL }
+        '200':
+          description: 成績卡片
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareCardResponse'
 
   # ----------------------------------------------------------
-  # 07 - 錯題複習與 AI 教練
+  # 07 - Review & AI Coach (錯題複習與AI教練) @query
   # ----------------------------------------------------------
   /reviews/errors:
     get:
@@ -444,98 +1037,158 @@ paths:
       summary: 取得錯題清單
       operationId: getErrorQuestions
       parameters:
-        - $ref: '#/components/parameters/SubjectId'
+        - name: subjectId
+          in: query
+          schema: { type: string }
         - name: examId
           in: query
-          schema: { type: string, format: uuid }
-          description: 篩選特定考試的錯題
+          schema: { type: string }
       responses:
-        200: { description: 錯題列表（題目、正確答案、使用者選項、知識節點） }
+        '200':
+          description: 錯題列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorQuestionResponse'
+        '403':
+          description: 無存取此錯題記錄的權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /reviews/errors/{questionId}/analysis:
     get:
       tags: [Reviews]
       summary: 取得錯題詳細解析
-      description: |
-        FREE：一句極簡提示。
-        PRO+：完整 Markdown 解析 + KaTeX + 原文溯源 + 盲點痛擊。
+      description: FREE 用戶取得簡短提示+鎖定狀態，PRO+ 取得完整 Markdown 解析+溯源引用
       operationId: getErrorAnalysis
       parameters:
         - name: questionId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 解析內容（依方案差異化） }
+        '200':
+          description: 解析內容（依方案差異化）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorQuestionResponse'
+        '404':
+          description: 題目不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /reviews/errors/{questionId}/chat:
     post:
       tags: [Reviews]
       summary: 與 AI 教練對話（錯題上下文）
-      description: |
-        僅 PRO 以上可用。Streaming 回應。
-        10分鐘內5次超綱觸發30分鐘冷卻。
+      description: 僅 PRO 以上可用。Streaming 回應。10分鐘內5次超綱觸發30分鐘冷卻。
       operationId: chatAboutError
       parameters:
         - name: questionId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [message]
-              properties:
-                message: { type: string }
+              $ref: '#/components/schemas/ChatRequest'
       responses:
-        200: { description: AI 教練回應（streaming） }
-        403: { description: FREE 方案不可用 }
-        429: { description: 冷卻中 }
+        '200':
+          description: AI 教練回應（streaming）
+        '403':
+          description: AI 教練對話為 PRO 以上方案專屬功能
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 您已暫時被限制使用 AI 教練，請 30 分鐘後再試
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ----------------------------------------------------------
-  # 08 - 訂閱管理
+  # 08 - Subscriptions (訂閱管理) @command
   # ----------------------------------------------------------
   /subscriptions/current:
     get:
       tags: [Subscriptions]
       summary: 取得當前訂閱資訊
-      description: 回傳方案、下次扣款日、額度比較
       operationId: getCurrentSubscription
       responses:
-        200: { description: 訂閱資訊 }
+        '200':
+          description: 訂閱資訊含額度比較
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionInfoResponse'
 
   /subscriptions/upgrade:
     post:
       tags: [Subscriptions]
-      summary: 升級訂閱方案
-      description: 即時生效，額度立刻切換
+      summary: 升級訂閱方案（即時生效）
       operationId: upgradeSubscription
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [targetPlan]
-              properties:
-                targetPlan:
-                  type: string
-                  enum: [PRO_199, PRO_PLUS_399, ULTRA_1599]
+              $ref: '#/components/schemas/UpgradeRequest'
       responses:
-        200: { description: 升級成功，導向 Stripe Checkout }
-        400: { description: 不可訂閱相同方案 }
+        '200':
+          description: 升級成功，額度立刻切換
+        '400':
+          description: 必要參數未提供
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 您已訂閱此方案
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /subscriptions/downgrade:
+    post:
+      tags: [Subscriptions]
+      summary: 降級訂閱方案（下一計費週期生效）
+      operationId: downgradeSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DowngradeRequest'
+      responses:
+        '200':
+          description: 降級已排定
+        '422':
+          description: 您的方案尚未到期，請等待到期後再訂閱
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /subscriptions/cancel:
     post:
       tags: [Subscriptions]
-      summary: 取消訂閱
-      description: 降級於當期結束後生效，期間功能照常使用
+      summary: 取消訂閱（當期結束後降級至 FREE）
       operationId: cancelSubscription
       responses:
-        200: { description: 已排定取消，到期後降級至 FREE }
+        '200':
+          description: 已排定取消
 
   /subscriptions/invoices:
     get:
@@ -550,29 +1203,96 @@ paths:
           in: query
           schema: { type: integer, default: 20 }
       responses:
-        200: { description: 發票列表 }
+        '200':
+          description: 發票列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceResponse'
 
   # ----------------------------------------------------------
-  # 10 - B2B 教育機構管理
+  # 09 - Learning Schedule (學習記憶排程) @query
+  # ----------------------------------------------------------
+  /learning-schedule:
+    get:
+      tags: [Learning Schedule]
+      summary: 取得今日學習排程
+      description: 依距考日自動選模式：≤14天 sprint / 15-180天 standard / >180天 mastery
+      operationId: getLearningSchedule
+      parameters:
+        - name: subjectId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: 今日排程
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningScheduleResponse'
+        '422':
+          description: 使用者尚未設定任何備考科目
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /learning-schedule/post-exam:
+    post:
+      tags: [Learning Schedule]
+      summary: 測驗完成後更新排程統計
+      operationId: updatePostExamStats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [examId]
+              properties:
+                examId: { type: string }
+      responses:
+        '200':
+          description: 排程統計已更新
+
+  # ----------------------------------------------------------
+  # 10 - B2B Edu Console (B2B機構管理後台) @command
   # ----------------------------------------------------------
   /edu/class-health:
     get:
       tags: [B2B Edu]
       summary: 班級健康 KPI
-      description: 總學生數、活躍率、需關注人數、班級平均分
       operationId: getClassHealth
       responses:
-        200: { description: KPI 數據 }
-        403: { description: 非 ULTRA + org_admin }
+        '200':
+          description: KPI 數據
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassHealthResponse'
+        '403':
+          description: 此功能僅限 ULTRA 方案用戶使用 / 您沒有機構管理員權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /edu/at-risk:
     get:
       tags: [B2B Edu]
-      summary: 早期預警學生清單
-      description: 依機構自訂閾值觸發（預設：平均分<60 / 連續3次下降 / 5天未登入）
+      summary: 早期預警學員清單
       operationId: getAtRiskStudents
       responses:
-        200: { description: 預警學生清單 }
+        '200':
+          description: 預警學員清單
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AtRiskStudentResponse'
 
   /edu/at-risk/rules:
     get:
@@ -580,7 +1300,8 @@ paths:
       summary: 取得預警規則設定
       operationId: getWarningRules
       responses:
-        200: { description: 當前閾值設定 }
+        '200':
+          description: 當前閾值設定
     put:
       tags: [B2B Edu]
       summary: 更新預警規則設定
@@ -590,28 +1311,30 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                minAvgScore: { type: number, default: 60 }
-                maxDeclineTrend: { type: integer, default: 3 }
-                maxInactiveDays: { type: integer, default: 5 }
+              $ref: '#/components/schemas/WarningRulesRequest'
       responses:
-        200: { description: 規則已更新 }
+        '200':
+          description: 規則已更新
 
   /edu/students:
     get:
       tags: [B2B Edu]
-      summary: 學生能力檔案列表
-      description: 含趨勢箭頭、進度條、平均分、狀態標籤
+      summary: 學員列表（含趨勢指標）
       operationId: getStudents
       responses:
-        200: { description: 學生列表 }
+        '200':
+          description: 學員列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentListResponse'
 
   /edu/students/import:
     post:
       tags: [B2B Edu]
-      summary: CSV 批量匯入學生
-      description: 固定欄位（姓名、Email、學號），需確認個資同意
+      summary: CSV 批量匯入學員
       operationId: importStudents
       requestBody:
         required: true
@@ -624,110 +1347,117 @@ paths:
                 file: { type: string, format: binary }
                 dataProcessingAgreed: { type: boolean }
       responses:
-        201: { description: 匯入成功，已發送啟用信 }
-        400: { description: CSV 格式錯誤或重複 Email }
+        '201':
+          description: 匯入成功，已發送啟用邀請信
+        '400':
+          description: CSV 格式錯誤 / 包含重複 Email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 您必須聲明已取得相關當事人之同意
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /edu/students/{studentId}/competencies:
     get:
       tags: [B2B Edu]
-      summary: 單一學生多維度能力檔案
+      summary: 學員能力檔案
       operationId: getStudentCompetencies
       parameters:
         - name: studentId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: integer }
       responses:
-        200: { description: 各知識節點能力分析 }
+        '200':
+          description: 各知識節點能力分析
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompetencyResponse'
 
   /edu/students/{studentId}/ai-reinforcement:
     post:
       tags: [B2B Edu]
-      summary: 生成 AI 個人化補強建議
-      description: Gemini API 生成繁體中文建議，快取 24 小時
+      summary: 生成 AI 補強建議
       operationId: generateReinforcement
       parameters:
         - name: studentId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: integer }
       responses:
-        200: { description: AI 補強建議（1-3 條） }
+        '200':
+          description: AI 補強建議（1-3 條）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AiReinforcementResponse'
+        '403':
+          description: 您沒有機構管理員權限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /edu/assignments:
     post:
       tags: [B2B Edu]
-      summary: 派發模擬考卷
+      summary: 派發考卷
       operationId: distributeExam
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [groupId, examConfig, deadline]
-              properties:
-                groupId: { type: string, format: uuid }
-                examConfig:
-                  type: object
-                  properties:
-                    nodeIds: { type: array, items: { type: string, format: uuid } }
-                    questionCount: { type: integer }
-                deadline: { type: string, format: date-time }
+              $ref: '#/components/schemas/AssignExamRequest'
       responses:
-        201: { description: 考卷已派發 }
+        '201':
+          description: 考卷已派發
 
   /edu/analytics/heatmap:
     get:
       tags: [B2B Edu]
-      summary: 班級熱力圖（知識節點 × 學生）
+      summary: 班級熱力圖
       operationId: getClassHeatmap
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema: { type: integer }
       responses:
-        200: { description: 熱力圖矩陣數據 }
-
-  /edu/analytics/weak-spots:
-    get:
-      tags: [B2B Edu]
-      summary: 班級共同弱點分析
-      operationId: getWeakSpots
-      responses:
-        200: { description: 共同弱點 Top N }
+        '200':
+          description: 熱力圖矩陣
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeatmapResponse'
 
   /edu/analytics/top-mistakes:
     get:
       tags: [B2B Edu]
-      summary: 全班答錯率 Top 10 題目
+      summary: 全班答錯率 Top 10
       operationId: getTopMistakes
       responses:
-        200: { description: 答錯率排行 }
-
-  /edu/institution/resources:
-    get:
-      tags: [B2B Edu]
-      summary: 機構共享資源庫列表
-      operationId: getInstitutionResources
-      responses:
-        200: { description: 機構資源列表 }
-    post:
-      tags: [B2B Edu]
-      summary: 上傳機構共享資源
-      description: 標記為機構資源，全班學生可存取
-      operationId: uploadInstitutionResource
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [file, subjectId]
-              properties:
-                file: { type: string, format: binary }
-                subjectId: { type: string, format: uuid }
-      responses:
-        201: { description: 上傳成功 }
+        '200':
+          description: 答錯率排行
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopMistakeResponse'
 
   # ----------------------------------------------------------
-  # 11 - 資源庫管理
+  # 11 - Resource Library (資源庫管理) @command
   # ----------------------------------------------------------
   /resources:
     get:
@@ -735,7 +1465,9 @@ paths:
       summary: 取得資源列表
       operationId: getResources
       parameters:
-        - $ref: '#/components/parameters/SubjectId'
+        - name: subjectId
+          in: query
+          schema: { type: string }
         - name: search
           in: query
           schema: { type: string }
@@ -745,48 +1477,91 @@ paths:
             type: string
             enum: [PENDING, PROCESSING, COMPLETED, COMPLETED_NO_MAP, FAILED]
       responses:
-        200: { description: 資源列表（含狀態、標籤、題數） }
+        '200':
+          description: 資源列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceResponse'
 
   /resources/{resourceId}:
     delete:
       tags: [Resources]
       summary: 刪除資源
-      description: |
-        COMPLETED 資源：級聯刪除 GCS 檔案、pgvector embeddings、心智圖節點、排程記錄。
-        FAILED 資源：直接刪除，無級聯。
-        處理失敗的資源由系統自動刪除。
+      description: COMPLETED 資源需確認級聯刪除。FAILED 資源直接刪除。
       operationId: deleteResource
       parameters:
         - name: resourceId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
         - name: confirmCascade
           in: query
           schema: { type: boolean }
-          description: COMPLETED 資源需確認級聯刪除
       responses:
-        200: { description: 已刪除 }
-        400: { description: COMPLETED 資源未確認級聯刪除 }
+        '200':
+          description: 已刪除
+        '400':
+          description: COMPLETED 資源未確認級聯刪除
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 只能刪除自己上傳的資源
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /resources/{resourceId}/reprocess:
+    post:
+      tags: [Resources]
+      summary: 重新處理失敗的資源
+      operationId: reprocessResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已重新排入處理佇列
+        '422':
+          description: 資源狀態非 FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ----------------------------------------------------------
-  # 12 - 平台管理後台（Super Admin）
+  # 12 - Super Admin Dashboard (平台管理後台) @command
   # ----------------------------------------------------------
   /super-admin/dashboard:
     get:
       tags: [Super Admin]
       summary: 營運儀表板 KPI
-      description: DAU/MAU、新註冊數、轉換率、MRR、AI Token 消耗、佇列深度
       operationId: getOperationsDashboard
       responses:
-        200: { description: KPI 數據 }
-        403: { $ref: '#/components/responses/403Forbidden' }
+        '200':
+          description: KPI 數據
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsDashboardResponse'
+        '403':
+          description: 權限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /super-admin/dashboard/trends:
     get:
       tags: [Super Admin]
       summary: 趨勢圖表資料
-      description: 用戶成長、營收、AI 成本、系統負載
       operationId: getDashboardTrends
       parameters:
         - name: range
@@ -796,20 +1571,13 @@ paths:
             enum: [30d, 90d, 1y]
             default: 30d
       responses:
-        200: { description: 趨勢資料 }
-
-  /super-admin/dashboard/alerts:
-    get:
-      tags: [Super Admin]
-      summary: 系統異常警報清單
-      operationId: getAlerts
-      responses:
-        200: { description: 異常警報列表 }
+        '200':
+          description: 趨勢資料
 
   /super-admin/users:
     get:
       tags: [Super Admin]
-      summary: 用戶列表（搜尋/篩選）
+      summary: 用戶列表
       operationId: getUsers
       parameters:
         - name: search
@@ -825,7 +1593,8 @@ paths:
           in: query
           schema: { type: integer, default: 1 }
       responses:
-        200: { description: 用戶列表 }
+        '200':
+          description: 用戶列表
 
   /super-admin/users/export:
     get:
@@ -833,45 +1602,42 @@ paths:
       summary: 批量匯出用戶 CSV
       operationId: exportUsers
       responses:
-        200: { description: CSV 檔案下載 }
+        '200':
+          description: CSV 檔案下載
 
   /super-admin/users/{userId}:
     get:
       tags: [Super Admin]
       summary: 用戶詳情
-      description: 基本資料、訂閱、使用行為、Token 消耗、登入紀錄、異常紀錄
       operationId: getUserDetail
       parameters:
         - name: userId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 用戶詳情 }
+        '200':
+          description: 用戶詳情
 
   /super-admin/users/{userId}/subscription:
     put:
       tags: [Super Admin]
-      summary: 手動調整訂閱方案
-      description: 僅 super_admin 可操作，即時生效，需二次密碼/OTP 確認
+      summary: 手動調整訂閱方案（需 OTP）
       operationId: adjustSubscription
       parameters:
         - name: userId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [targetPlan, otpCode]
-              properties:
-                targetPlan: { type: string, enum: [FREE, PRO_199, PRO_PLUS_399, ULTRA_1599] }
-                otpCode: { type: string }
+              $ref: '#/components/schemas/AdjustSubscriptionRequest'
       responses:
-        200: { description: 訂閱已調整 }
+        '200':
+          description: 訂閱已調整
 
   /super-admin/users/{userId}/suspend:
     post:
@@ -882,18 +1648,16 @@ paths:
         - name: userId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [reason]
-              properties:
-                reason: { type: string }
+              $ref: '#/components/schemas/SuspendUserRequest'
       responses:
-        200: { description: 已停權 }
+        '200':
+          description: 已停權
 
   /super-admin/users/{userId}/unsuspend:
     post:
@@ -904,21 +1668,26 @@ paths:
         - name: userId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 已解除停權 }
+        '200':
+          description: 已解除停權
 
+  # ----------------------------------------------------------
+  # 12a - Finance (財務管理) @query
+  # ----------------------------------------------------------
   /super-admin/finance/subscriptions:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 訂閱分布與 MRR 趨勢
       operationId: getSubscriptionStats
       responses:
-        200: { description: 訂閱分布圓餅圖 + MRR 折線圖 }
+        '200':
+          description: 訂閱分布 + MRR 資料
 
   /super-admin/finance/transactions:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 交易紀錄
       operationId: getTransactions
       parameters:
@@ -932,11 +1701,12 @@ paths:
           in: query
           schema: { type: string, format: date }
       responses:
-        200: { description: 交易列表 }
+        '200':
+          description: 交易列表
 
   /super-admin/finance/refunds:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 退款申請佇列
       operationId: getRefundRequests
       parameters:
@@ -944,62 +1714,59 @@ paths:
           in: query
           schema: { type: string, enum: [pending, approved, rejected] }
       responses:
-        200: { description: 退款申請列表 }
+        '200':
+          description: 退款申請列表
 
   /super-admin/finance/refunds/{refundId}/approve:
     post:
-      tags: [Super Admin]
-      summary: 核准退款
-      description: 觸發 Stripe Refund API，自動降級至 FREE，需二次密碼/OTP
+      tags: [Super Admin Finance]
+      summary: 核准退款（需 OTP，自動降級至 FREE）
       operationId: approveRefund
       parameters:
         - name: refundId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [otpCode]
-              properties:
-                otpCode: { type: string }
+              $ref: '#/components/schemas/ApproveRefundRequest'
       responses:
-        200: { description: 退款已核准 }
+        '200':
+          description: 退款已核准
 
   /super-admin/finance/refunds/{refundId}/reject:
     post:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 駁回退款
       operationId: rejectRefund
       parameters:
         - name: refundId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [reason]
-              properties:
-                reason: { type: string }
+              $ref: '#/components/schemas/RejectRefundRequest'
       responses:
-        200: { description: 退款已駁回，通知用戶 }
+        '200':
+          description: 退款已駁回
 
   /super-admin/finance/promo-codes:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 優惠碼列表
       operationId: getPromoCodes
       responses:
-        200: { description: 優惠碼列表 }
+        '200':
+          description: 優惠碼列表
     post:
-      tags: [Super Admin]
+      tags: [Super Admin Finance]
       summary: 建立優惠碼
       operationId: createPromoCode
       requestBody:
@@ -1007,44 +1774,40 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [code, discountType, discountValue]
-              properties:
-                code: { type: string }
-                discountType: { type: string, enum: [percentage, fixed_amount, free_trial_days] }
-                discountValue: { type: number }
-                applicablePlans: { type: array, items: { type: string } }
-                maxUses: { type: integer }
-                maxUsesPerUser: { type: integer, default: 1 }
-                validFrom: { type: string, format: date-time }
-                validUntil: { type: string, format: date-time }
+              $ref: '#/components/schemas/CreatePromoCodeRequest'
       responses:
-        201: { description: 優惠碼已建立 }
+        '201':
+          description: 優惠碼已建立
 
+  # ----------------------------------------------------------
+  # 12b - Moderation (內容審核) @command
+  # ----------------------------------------------------------
   /super-admin/moderation/abuse:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Moderation]
       summary: AI 濫用監控（冷卻中用戶列表）
       operationId: getAbuseMonitoring
       responses:
-        200: { description: 冷卻中用戶與剩餘時間 }
+        '200':
+          description: 冷卻中用戶與剩餘時間
 
   /super-admin/moderation/abuse/{userId}/unlock:
     post:
-      tags: [Super Admin]
+      tags: [Super Admin Moderation]
       summary: 手動解除冷卻
       operationId: unlockCooldown
       parameters:
         - name: userId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 已解除冷卻 }
+        '200':
+          description: 已解除冷卻
 
   /super-admin/moderation/reports:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Moderation]
       summary: 內容檢舉佇列
       operationId: getContentReports
       parameters:
@@ -1052,110 +1815,102 @@ paths:
           in: query
           schema: { type: string, enum: [pending, resolved, dismissed] }
       responses:
-        200: { description: 檢舉列表 }
+        '200':
+          description: 檢舉列表
 
   /super-admin/moderation/reports/{reportId}/resolve:
     post:
-      tags: [Super Admin]
+      tags: [Super Admin Moderation]
       summary: 處理檢舉
       operationId: resolveReport
       parameters:
         - name: reportId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [action]
-              properties:
-                action: { type: string, enum: [delete_and_warn, dismiss] }
-                note: { type: string }
+              $ref: '#/components/schemas/ResolveReportRequest'
       responses:
-        200: { description: 檢舉已處理 }
+        '200':
+          description: 檢舉已處理
 
+  # ----------------------------------------------------------
+  # 12c - System Settings (系統設定) @command
+  # ----------------------------------------------------------
   /super-admin/settings/model-routing:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 取得 AI 模型路由設定
       operationId: getModelRouting
       responses:
-        200: { description: 各方案模型設定 }
+        '200':
+          description: 模型設定
     put:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 更新 AI 模型路由設定
-      description: 僅 super_admin
       operationId: updateModelRouting
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                freeBasicModel: { type: string }
-                freeFallbackModel: { type: string }
-                proAdvancedModel: { type: string }
-                proFallbackModel: { type: string }
-                fallbackTimeoutMs: { type: integer }
+              $ref: '#/components/schemas/ModelRoutingRequest'
       responses:
-        200: { description: 已更新 }
+        '200':
+          description: 已更新，即時生效
 
   /super-admin/settings/plan-quotas:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 取得方案限額設定
       operationId: getPlanQuotas
       responses:
-        200: { description: 各方案限額 }
+        '200':
+          description: 各方案限額
     put:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 更新方案限額
-      description: 僅 super_admin
       operationId: updatePlanQuotas
       responses:
-        200: { description: 已更新 }
+        '200':
+          description: 已更新
 
   /super-admin/settings/announcements:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 系統公告列表
       operationId: getAnnouncements
       responses:
-        200: { description: 公告列表 }
+        '200':
+          description: 公告列表
     post:
-      tags: [Super Admin]
-      summary: 建立/排程系統公告
+      tags: [Super Admin Settings]
+      summary: 建立系統公告
       operationId: createAnnouncement
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [title, content, type, displayMode]
-              properties:
-                title: { type: string }
-                content: { type: string }
-                type: { type: string, enum: [info, maintenance, feature, warning] }
-                displayMode: { type: string, enum: [banner, notification, email] }
-                startsAt: { type: string, format: date-time }
-                endsAt: { type: string, format: date-time }
+              $ref: '#/components/schemas/CreateAnnouncementRequest'
       responses:
-        201: { description: 公告已建立 }
+        '201':
+          description: 公告已建立
 
   /super-admin/settings/feature-flags:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: Feature Flags 列表
       operationId: getFeatureFlags
       responses:
-        200: { description: Flag 列表 }
+        '200':
+          description: Flag 列表
     post:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 建立 Feature Flag
       operationId: createFeatureFlag
       requestBody:
@@ -1163,28 +1918,21 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [flagKey]
-              properties:
-                flagKey: { type: string }
-                description: { type: string }
-                isEnabled: { type: boolean, default: false }
-                rolloutPercentage: { type: integer, minimum: 0, maximum: 100, default: 0 }
-                targetPlans: { type: array, items: { type: string } }
-                targetUserIds: { type: array, items: { type: string, format: uuid } }
+              $ref: '#/components/schemas/CreateFeatureFlagRequest'
       responses:
-        201: { description: Flag 已建立 }
+        '201':
+          description: Flag 已建立
 
   /super-admin/settings/feature-flags/{flagId}:
     put:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 更新 Feature Flag
       operationId: updateFeatureFlag
       parameters:
         - name: flagId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -1194,45 +1942,47 @@ paths:
               properties:
                 isEnabled: { type: boolean }
                 rolloutPercentage: { type: integer }
-                targetPlans: { type: array, items: { type: string } }
-                targetUserIds: { type: array, items: { type: string, format: uuid } }
+                targetPlans:
+                  type: array
+                  items: { type: string }
+                targetUserIds:
+                  type: array
+                  items: { type: string }
       responses:
-        200: { description: Flag 已更新 }
+        '200':
+          description: Flag 已更新
 
   /super-admin/settings/admins:
     get:
-      tags: [Super Admin]
+      tags: [Super Admin Settings]
       summary: 管理員帳號列表
       operationId: getAdmins
       responses:
-        200: { description: 管理員列表 }
+        '200':
+          description: 管理員列表
     post:
-      tags: [Super Admin]
-      summary: 新增管理員
-      description: 僅 super_admin
+      tags: [Super Admin Settings]
+      summary: 新增管理員（僅 super_admin）
       operationId: createAdmin
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email, role]
-              properties:
-                email: { type: string, format: email }
-                role: { type: string, enum: [super_admin, admin] }
+              $ref: '#/components/schemas/CreateAdminRequest'
       responses:
-        201: { description: 管理員已建立 }
+        '201':
+          description: 管理員已建立
 
   /super-admin/audit-logs:
     get:
-      tags: [Super Admin]
-      summary: 稽核日誌（唯讀）
+      tags: [Super Admin Settings]
+      summary: 稽核日誌（唯讀 append-only）
       operationId: getAuditLogs
       parameters:
         - name: adminId
           in: query
-          schema: { type: string, format: uuid }
+          schema: { type: string }
         - name: action
           in: query
           schema: { type: string }
@@ -1240,21 +1990,28 @@ paths:
           in: query
           schema: { type: string, format: date }
       responses:
-        200: { description: 稽核日誌列表（append-only） }
+        '200':
+          description: 稽核日誌列表
 
   # ----------------------------------------------------------
-  # 13 - 個人儀表板與成就系統
+  # 13 - Dashboard (個人儀表板與成就系統) @query
   # ----------------------------------------------------------
   /dashboard:
     get:
       tags: [Dashboard]
       summary: 儀表板首頁資料
-      description: 含科目切換器、雷達圖、倒數計時、任務模式、指標卡片
       operationId: getDashboard
       parameters:
-        - $ref: '#/components/parameters/SubjectId'
+        - name: subjectId
+          in: query
+          schema: { type: string }
       responses:
-        200: { description: 儀表板完整資料 }
+        '200':
+          description: 儀表板資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
 
   /dashboard/streaks:
     get:
@@ -1262,7 +2019,12 @@ paths:
       summary: 連勝記錄
       operationId: getStreaks
       responses:
-        200: { description: 連續天數、冰凍保護狀態 }
+        '200':
+          description: 連勝天數與凍結額度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreakResponse'
 
   /dashboard/quests:
     get:
@@ -1270,7 +2032,14 @@ paths:
       summary: 每日微任務
       operationId: getDailyQuests
       responses:
-        200: { description: 今日任務列表（1-3 項） }
+        '200':
+          description: 今日任務列表（1-3 項）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DailyQuestResponse'
 
   /dashboard/achievements:
     get:
@@ -1278,10 +2047,54 @@ paths:
       summary: 成就徽章列表
       operationId: getAchievements
       responses:
-        200: { description: 已解鎖與未解鎖徽章 }
+        '200':
+          description: 徽章列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AchievementResponse'
 
   # ----------------------------------------------------------
-  # 15 - Onboarding
+  # 14 - Community (社群歸屬與主動關懷) @command
+  # ----------------------------------------------------------
+  /community/weekly-report:
+    get:
+      tags: [Community]
+      summary: 取得本週學習週報（ULTRA 限定）
+      operationId: getWeeklyReport
+      responses:
+        '200':
+          description: 週報資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyReportResponse'
+        '403':
+          description: 此功能僅限 ULTRA 方案用戶使用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /community/ai-care:
+    get:
+      tags: [Community]
+      summary: 取得 AI 主動關懷訊息
+      operationId: getAiCareMessages
+      responses:
+        '200':
+          description: AI 關懷訊息列表
+        '403':
+          description: 此功能僅限 ULTRA 方案用戶使用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ----------------------------------------------------------
+  # 15 - Onboarding (首次登入引導) @command
   # ----------------------------------------------------------
   /onboarding/status:
     get:
@@ -1289,38 +2102,29 @@ paths:
       summary: 取得 Onboarding 狀態
       operationId: getOnboardingStatus
       responses:
-        200: { description: onboardingCompleted 狀態 + 暫存資料 }
+        '200':
+          description: onboardingCompleted 狀態
 
   /onboarding/complete:
     post:
       tags: [Onboarding]
       summary: 完成 Onboarding
-      description: 為每個備考科目建立獨立學習歷程，初始化排程
       operationId: completeOnboarding
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [subjects]
-              properties:
-                displayName: { type: string }
-                subjects:
-                  type: array
-                  minItems: 1
-                  items:
-                    type: object
-                    required: [subjectId, examDate, selfAssessedLevel]
-                    properties:
-                      subjectId: { type: string, format: uuid }
-                      examDate: { type: string, format: date }
-                      selfAssessedLevel: { type: string, enum: [beginner, intermediate, advanced] }
-                dailyStudyMinutes: { type: integer, default: 30 }
-                learningPreference: { type: string, enum: [drill, concept, mixed], default: mixed }
+              $ref: '#/components/schemas/CompleteOnboardingRequest'
       responses:
-        200: { description: Onboarding 完成，已初始化學習歷程 }
-        400: { description: 至少需選擇一個科目 }
+        '200':
+          description: Onboarding 完成，學習歷程已初始化
+        '400':
+          description: 至少需選擇一個備考科目
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /subjects/categories:
     get:
@@ -1329,7 +2133,8 @@ paths:
       security: []
       operationId: getSubjectCategories
       responses:
-        200: { description: 分類列表（IT/金融/語言/醫療/公務員/其他） }
+        '200':
+          description: 分類列表
 
   /subjects/search:
     get:
@@ -1345,10 +2150,11 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        200: { description: 科目搜尋結果 }
+        '200':
+          description: 科目搜尋結果
 
   # ----------------------------------------------------------
-  # Profile
+  # Profile (個人資料)
   # ----------------------------------------------------------
   /profile:
     get:
@@ -1356,7 +2162,8 @@ paths:
       summary: 取得個人資料
       operationId: getProfile
       responses:
-        200: { description: 個人資料 }
+        '200':
+          description: 個人資料
     put:
       tags: [Profile]
       summary: 更新個人資料
@@ -1366,14 +2173,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                displayName: { type: string }
-                age: { type: integer }
-                education: { type: string }
-                career: { type: string }
+              $ref: '#/components/schemas/UpdateProfileRequest'
       responses:
-        200: { description: 已更新 }
+        '200':
+          description: 已更新
 
   /profile/avatar:
     put:
@@ -1390,7 +2193,8 @@ paths:
               properties:
                 file: { type: string, format: binary }
       responses:
-        200: { description: 大頭貼已更新 }
+        '200':
+          description: 大頭貼已更新，回傳新 URL
 
   /profile/subjects:
     post:
@@ -1402,14 +2206,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [subjectId, examDate, selfAssessedLevel]
-              properties:
-                subjectId: { type: string, format: uuid }
-                examDate: { type: string, format: date }
-                selfAssessedLevel: { type: string, enum: [beginner, intermediate, advanced] }
+              $ref: '#/components/schemas/AddSubjectRequest'
       responses:
-        201: { description: 科目已新增，學習歷程已建立 }
+        '201':
+          description: 科目已新增
 
   /profile/subjects/{subjectId}:
     put:
@@ -1420,7 +2220,7 @@ paths:
         - name: subjectId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         required: true
         content:
@@ -1431,16 +2231,160 @@ paths:
                 examDate: { type: string, format: date }
                 selfAssessedLevel: { type: string, enum: [beginner, intermediate, advanced] }
       responses:
-        200: { description: 已更新 }
+        '200':
+          description: 已更新
     delete:
       tags: [Profile]
-      summary: 移除備考科目
-      description: 學習紀錄封存而非刪除
+      summary: 移除備考科目（紀錄封存）
       operationId: removeSubject
       parameters:
         - name: subjectId
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
-        200: { description: 科目已移除（紀錄封存） }
+        '200':
+          description: 科目已移除
+
+  # ----------------------------------------------------------
+  # 16 - Maintenance (異常維修管理) @command
+  # ----------------------------------------------------------
+  /maintenance/anomalies:
+    get:
+      tags: [Maintenance]
+      summary: 取得系統異常列表
+      operationId: getAnomalies
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, investigating, resolved] }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [low, medium, high, critical] }
+      responses:
+        '200':
+          description: 異常列表
+        '403':
+          description: 權限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /maintenance/anomalies/{anomalyId}:
+    patch:
+      tags: [Maintenance]
+      summary: 更新異常狀態
+      operationId: updateAnomaly
+      parameters:
+        - name: anomalyId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [investigating, resolved] }
+                note: { type: string }
+      responses:
+        '200':
+          description: 狀態已更新
+
+  /maintenance/tasks:
+    get:
+      tags: [Maintenance]
+      summary: 維修任務列表
+      operationId: getMaintenanceTasks
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, in_progress, completed] }
+      responses:
+        '200':
+          description: 任務列表
+    post:
+      tags: [Maintenance]
+      summary: 建立維修任務
+      operationId: createMaintenanceTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMaintenanceTaskRequest'
+      responses:
+        '201':
+          description: 任務已建立
+
+  /maintenance/tasks/{taskId}:
+    patch:
+      tags: [Maintenance]
+      summary: 更新維修任務狀態
+      operationId: updateMaintenanceTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [in_progress, completed] }
+                resolution: { type: string }
+      responses:
+        '200':
+          description: 任務狀態已更新
+
+  /maintenance/schedules:
+    get:
+      tags: [Maintenance]
+      summary: 排程維護窗口列表
+      operationId: getMaintenanceSchedules
+      responses:
+        '200':
+          description: 排程列表
+    post:
+      tags: [Maintenance]
+      summary: 排定維護窗口（需提前 24 小時）
+      operationId: createMaintenanceSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMaintenanceScheduleRequest'
+      responses:
+        '201':
+          description: 維護窗口已排定
+        '400':
+          description: 維護時間必須至少提前 24 小時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /maintenance/emergency:
+    post:
+      tags: [Maintenance]
+      summary: 緊急維護模式啟動
+      description: 全站顯示維護中頁面，所有 API 回傳 503
+      operationId: activateEmergencyMaintenance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmergencyMaintenanceRequest'
+      responses:
+        '200':
+          description: 緊急維護已啟動

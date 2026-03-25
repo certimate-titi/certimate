@@ -1,66 +1,126 @@
-@ignore
+@ignore @query
 Feature: 知識心智圖導航與 AI 教練面板聯動
-
-  使用者主動瀏覽互動式心智圖，透過溯源面板與 AI 教練進行深度學習。
 
   Background:
     Given 系統中有以下使用者帳號：
-      | 使用者 ID | Email              | 訂閱方案 |
-      | 1        | alice@example.com  | FREE     |
-      | 2        | pro@example.com    | PRO      |
-      | 3        | proplus@example.com| PRO_PLUS |
-    And 系統中有包含歷史錯題、PDF 與 YouTube 的心智圖節點資料
-    And 系統中預設存在 "PMP" 與 "AWS SAA" 兩個學科庫
+      | 使用者 ID | Email                | 訂閱方案      |
+      | 1        | free@example.com     | FREE          |
+      | 2        | pro@example.com      | PRO_199       |
+      | 3        | proplus@example.com  | PRO_PLUS_399  |
+    And 系統中有以下備考科目：
+      | 科目 ID | 名稱     |
+      | 1       | AWS SAA  |
+      | 2       | PMP      |
+    And 使用者 "pro@example.com" 備考 "AWS SAA" 與 "PMP"
+    And 科目 "AWS SAA" 下有以下知識節點：
+      | 節點 ID | 名稱         | 來源資源     | 來源頁碼 | 來源時間戳 | 答對率 | 掌握顏色 |
+      | 101     | S3 儲存服務  | aws-guide.pdf| 12       | null       | 85     | green    |
+      | 102     | EC2 運算邏輯 | aws-video    | null     | 512        | 30     | red      |
+      | 103     | IAM 管理     | aws-guide.pdf| 45       | null       | 0      | gray     |
 
-  # ========== 跨學科導航與資料切換 ==========
+  # ========== 學科切換 ==========
 
-  Rule: 前置（導航）- 提供學科切換器以存取不同知識庫的內容
+  Rule: 前置（導航）- 學科切換器應過濾對應科目的知識節點樹
 
-    Example: 在 PMP 與 AWS 學科間切換以過濾資源與心智圖
-      Given 使用者已登入並擁有多個學科的存取權
-      When 使用者在頂部學科切換器選擇 "AWS SAA"
-      Then 頁面應載入與 AWS SAA 關聯的學習資源列表
-      And 右側心智圖導覽區應切換顯示 AWS SAA 的深層知識節點樹（如：AWS S3、IAM）
+    Example: 切換至 AWS SAA 後心智圖顯示對應節點
+      When 使用者 "pro@example.com" 在知識心智圖頁面選擇科目 "AWS SAA"
+      Then 操作成功
+      And 心智圖應顯示 AWS SAA 的知識節點：
+        | 節點 ID | 名稱         |
+        | 101     | S3 儲存服務  |
+        | 102     | EC2 運算邏輯 |
+        | 103     | IAM 管理     |
+      And 心智圖不應包含 PMP 科目的節點
 
-  # ========== 版面結構與重點移轉 ==========
+  # ========== 前置條件 ==========
 
-  Rule: 後置（UI）- 頁面排版重心轉移，左側 75% 寬度為教練溯源面板，右側 25% 縮為導覽心智圖
+  Rule: 前置（狀態）- 使用者只能瀏覽自己備考科目的知識節點
 
-    Example: 使用者進入心智圖總覽頁面發現版面的非對稱設計
+    Example: 查看非自己備考科目的節點失敗
+      Given 使用者 "free@example.com" 僅備考 "PMP"
+      When 使用者 "free@example.com" 查看科目 "AWS SAA" 的知識節點樹
+      Then 操作失敗，錯誤為「您尚未加入此備考科目」
+
+  Rule: 前置（參數）- 查看節點溯源必須提供有效的節點 ID
+
+    Example: 查看不存在的節點溯源失敗
+      When 使用者 "pro@example.com" 查看節點 999 的溯源內容
+      Then 操作失敗，錯誤為「知識節點不存在」
+
+  # ========== 頁面佈局 ==========
+
+  Rule: 後置（回應）- 頁面應採非對稱佈局，左側 75% 教練面板、右側 25% 心智圖導航
+
+    Example: 進入知識心智圖頁面取得佈局資料
       When 使用者 "pro@example.com" 進入知識心智圖頁面
       Then 操作成功
-      And 畫面的主戰場（左側 75%）預設載入「空白的 AI 教練對話與動態溯源內容區」
-      And 畫面的右側（25%）為樹狀的「互動心智圖知識點導航」
+      And 回應應包含：
+        | 區塊          | 寬度比例 | 內容                      |
+        | coach_panel   | 75%      | AI 教練對話區與溯源內容    |
+        | mind_map_nav  | 25%      | 互動知識節點樹             |
 
-  Rule: 後置（互動聯動）- 點擊右側心智圖節點，左側 75% 教練面板應立即帶入對應關聯與溯源
+  # ========== 節點點擊聯動 ==========
 
-    Example: 點擊 PDF 或影片類知識節點更新左側主面板
-      When 使用者 "pro@example.com" 點擊右側 25% 心智圖導覽區上的知識點 "EC2 運算邏輯"
-      Then 左側 75% 面板頂部即時更新顯示 "來源頁碼：第 12 頁" 或 "影片時間戳：00:08:32"
-      And 面板的對話歷史紀錄中，會以 Markdown 格式高亮顯示當前節點萃取的原文與重點
+  Rule: 後置（回應）- 點擊知識節點應回傳溯源內容至教練面板
 
-  # ========== 商業轉換：毛玻璃鎖死政策 ==========
-
-  Rule: 後置（商業漏斗）- 點擊左下角「AI 教練對話框發問」時，依照付費方案進行強勢攔截或解答
-
-    Example: PRO (199 TWD) 的使用者嘗試與高階教練對話，輸入框遭到高斯模糊鎖死 (Paywall)
-      When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
-      Then 該對話框應立即呈現毛玻璃效果被鎖住
-      And 面板周圍彈出極高質感的升級提示「🌟 解鎖 Claude 3.5 終極教練專為您梳理盲區漏洞，立刻升級 PRO_PLUS 取得解答」
-
-    Example: PRO_PLUS (399 TWD) 的使用者順利拋出難題並讓 Claude 回答
-      When 使用者 "proplus@example.com" 在對話框輸入：「這題的化學鍵算出來為什麼相反？」
+    Example: 點擊 PDF 類知識節點取得頁碼溯源
+      When 使用者 "pro@example.com" 點擊知識節點 101
       Then 操作成功
-      And 系統後端引擎無縫切換為 "Claude 3.5 Sonnet 模型"
-      And 扣除該用戶本月 1 次的高階教練解題額度
-      And 左側主面板以氣泡對話框形式渲染出教練那充滿關懷與深度的專屬解析
+      And 教練面板應顯示溯源資訊：
+        | 欄位           | 值            |
+        | node_name      | S3 儲存服務   |
+        | source_type    | pdf           |
+        | source_ref     | 第 12 頁      |
+      And 教練面板應以 Markdown 格式顯示該節點萃取的原文重點
 
-  # ========== 情緒視覺化與學習激勵 ==========
+    Example: 點擊 YouTube 類知識節點取得時間戳溯源
+      When 使用者 "pro@example.com" 點擊知識節點 102
+      Then 操作成功
+      And 教練面板應顯示溯源資訊：
+        | 欄位           | 值              |
+        | node_name      | EC2 運算邏輯    |
+        | source_type    | youtube         |
+        | source_ref     | 00:08:32        |
 
-  Rule: 後置（狀態回饋）- 測驗完成後導航樹的節點應依答對率進行『紅綠燈變色』
+  # ========== AI 教練付費牆 ==========
 
-    Example: 節點掌握度顏色隨著努力而即時演進
-      Given 某心智圖知識節點初始狀態為「紅色（不熟練，答對率 0%）」
-      When 使用者在模擬考中連續答對該節點衍伸出的 3 道難題
-      Then 返回此頁面時，該節點的顏色應即時更新渲染為「綠色（熟練）」
-      And 對應的 AI 教練可能發送灑花的恭喜獎章動畫
+  Rule: 後置（回應）- FREE 用戶在教練對話框有單節點 3 次追問限制
+
+    Example: FREE 用戶第 4 次追問同一節點時被鎖定
+      Given 使用者 "free@example.com" 已在節點 101 追問 3 次
+      When 使用者 "free@example.com" 在節點 101 的教練對話框輸入第 4 次提問
+      Then 操作失敗，錯誤為「已達免費追問上限，升級 PRO_PLUS 解鎖無限對話」
+
+  Rule: 後置（回應）- PRO_199 用戶嘗試使用高階教練對話時應顯示付費牆
+
+    Example: PRO 用戶在教練對話框輸入時觸發毛玻璃鎖定
+      When 使用者 "pro@example.com" 在節點 102 的教練對話框輸入 "請用簡單的例子教我這段"
+      Then 操作失敗，錯誤為「AI 教練深度對話為 PRO_PLUS 專屬功能」
+      And 回應應包含升級提示：
+        | 欄位         | 值                              |
+        | target_plan  | PRO_PLUS_399                    |
+        | message      | 解鎖 Claude 3.5 終極教練         |
+
+  Rule: 後置（回應）- PRO_PLUS 用戶可使用高階教練並扣除月度額度
+
+    Example: PRO_PLUS 用戶成功與 AI 教練對話
+      Given 使用者 "proplus@example.com" 本月高階教練剩餘額度為 50
+      When 使用者 "proplus@example.com" 在節點 102 的教練對話框輸入 "EC2 的 Auto Scaling 為什麼觸發條件結果不同？"
+      Then 操作成功
+      And 回應應以串流方式輸出 AI 教練回覆
+      And 使用者 "proplus@example.com" 的高階教練剩餘額度應為 49
+      And 回應應標示使用模型為 "claude-3.5-sonnet"
+
+  # ========== 節點掌握度顏色 ==========
+
+  Rule: 後置（回應）- 知識節點應依答對率顯示紅綠燈顏色
+
+    Example: 查看節點樹時每個節點顯示對應掌握顏色
+      When 使用者 "pro@example.com" 查看科目 "AWS SAA" 的知識節點樹
+      Then 操作成功
+      And 節點應依答對率顯示顏色：
+        | 節點 ID | 名稱         | 答對率 | 顏色   |
+        | 101     | S3 儲存服務  | 85     | green  |
+        | 102     | EC2 運算邏輯 | 30     | red    |
+        | 103     | IAM 管理     | 0      | gray   |
+      And 顏色規則為：green >= 80、orange 60-79、red < 60、gray 未作答

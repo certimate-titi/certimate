@@ -9,36 +9,44 @@
   [BRANCH:1a:非首次登入] {specs/ui/導向儀表板.md}
 [MERGE:1a]
 
-[STEP:2] @學習者 {features/13-個人儀表板與成就系統.feature}  # RESOLVED: 儀表板為預設首頁但非必經入口，允許 Deep Link 直達子功能（/exam/setup、/knowledge 等）。未登入時 Deep Link 先導向登入再重定向回原目標頁。
+[STEP:2] @學習者 {features/13-個人儀表板與成就系統.feature}
 [DECISION:2a] 儀表板行動
-  [BRANCH:2a:管理訂閱] @學習者 {features/08-訂閱管理.feature}
-    -> 2  # 訂閱管理完成後回到儀表板
-  [BRANCH:2a:開始備考] -> 3
+  [BRANCH:2a:管理訂閱 -> 2] @學習者 {features/08-訂閱管理.feature}
+  [BRANCH:2a:編輯個人資料 -> 2] @學習者 {features/13-個人儀表板與成就系統.feature}
+  [BRANCH:2a:開始備考] {specs/ui/選擇科目與上傳入口.md}
 [MERGE:2a]
 
 [STEP:3] @學習者 {features/02-資源上傳.feature}
 [DECISION:3a] 資源處理結果
   [BRANCH:3a:處理成功] @系統 {features/03a-知識心智圖生成.feature}
-  [BRANCH:3a:處理失敗] {specs/ui/資源處理失敗提示.md}
-    -> 3  # RESOLVED: 處理失敗時系統自動刪除該資源，顯示異常提示「此資源處理異常，若有需要請重新上傳」，使用者需確認資料後重新上傳（避免伺服器消耗過多 token）。loop-back 到 STEP:3。
+  [BRANCH:3a:處理失敗 -> 3] {specs/ui/資源處理失敗提示.md}
 [MERGE:3a]
 
-[STEP:4] @學習者 {features/03b-知識心智圖導航.feature}  # RESOLVED: 拆分為兩個 feature。03a-知識心智圖生成.feature（系統自動從原文萃取知識節點樹）綁定 STEP:3a；03b-知識心智圖導航.feature（使用者瀏覽互動、溯源、AI 教練、紅綠燈）綁定 STEP:4。
+[STEP:4] @學習者 {features/03b-知識心智圖導航.feature}
+[DECISION:4a] 導航中行動
+  [BRANCH:4a:與AI教練對話 -> 4] @AI教練 {features/03b-知識心智圖導航.feature}
+  [BRANCH:4a:進入測驗設定] {specs/ui/測驗設定入口.md}
+  [BRANCH:4a:回到儀表板 -> 2] {specs/ui/導向儀表板.md}
+[MERGE:4a]
 
 [STEP:5] @學習者 {features/04-測驗設定.feature}
 [STEP:6] @學習者 {features/05-模擬機考.feature}
 [DECISION:6a] 考試是否完成
   [BRANCH:6a:完成提交] @系統 {features/06-測驗結果.feature}
-  [BRANCH:6a:中途離開] {specs/ui/考試暫停恢復提示.md}
-    -> 6  # RESOLVED: 中途離開後可恢復作答。Auto-save（LocalStorage + Debounce API）+ beforeunload 防呆。回來時顯示恢復確認介面（已作答題數/剩餘時間），可選「繼續作答」或「放棄提交」。
+  [BRANCH:6a:中途離開 -> 6] {specs/ui/考試暫停恢復提示.md}
 [MERGE:6a]
 
 [STEP:7] @學習者 {features/06-測驗結果.feature}
-[DECISION:7a] 使用者後續行動
-  [BRANCH:7a:進入錯題複習] @學習者 {features/07-錯題複習與AI教練.feature}
-  [BRANCH:7a:再次測驗] -> 5
-  [BRANCH:7a:回到儀表板] -> 2
-[MERGE:7a]
+[FORK:7a]
+  [PARALLEL:7a] @系統 {features/09-學習記憶排程.feature}
+  [PARALLEL:7a] @學習者 {specs/ui/測驗結果與分析頁.md}
+[JOIN:7a]
+
+[DECISION:7b] 使用者後續行動
+  [BRANCH:7b:進入錯題複習] @學習者 {features/07-錯題複習與AI教練.feature}
+  [BRANCH:7b:再次測驗 -> 5] {specs/ui/重新測驗入口.md}
+  [BRANCH:7b:回到儀表板 -> 2] {specs/ui/導向儀表板.md}
+[MERGE:7b]
 
 [STEP:8] @學習者 {features/07-錯題複習與AI教練.feature}
 [DECISION:8a] 使用者訂閱方案
@@ -46,6 +54,9 @@
   [BRANCH:8a:PRO以上] @AI教練 {features/07-錯題複習與AI教練.feature}
 [MERGE:8a]
 
-[STEP:9] @系統 {features/09-學習記憶排程.feature}  # RESOLVED: 混合模式。初次由 Onboarding Step 2 根據考試日期自動推導模式（Sprint <14天 / Standard 1-3月 / Mastery >6月），之後系統根據考試日期變化與每次考試結果自動調整排程參數。使用者可在會員中心修改考試日期觸發模式切換。跨科目獨立運作（每科各自排程）。
+[DECISION:8b] 錯題複習後行動
+  [BRANCH:8b:回到儀表板 -> 2] {specs/ui/導向儀表板.md}
+  [BRANCH:8b:再次測驗 -> 5] {specs/ui/重新測驗入口.md}
+[MERGE:8b]
 
-[STEP:10] @系統 {features/14-社群歸屬與主動關懷.feature}  # RESOLVED: 純背景系統行為。週報生成、學習低谷偵測、匿名共同備考感等均由系統自動執行，透過儀表板「動態提醒」區塊推播通知，不需獨立頁面或使用者主動觸發。
+[END]

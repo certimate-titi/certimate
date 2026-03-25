@@ -1,16 +1,17 @@
-Feature: 錯題複習與AI教練
+@ignore @query
+Feature: 錯題複習與 AI 教練
 
   Background:
     Given 系統中有以下使用者帳號：
-      | 使用者 ID | Email               | 訂閱方案 |
-      | 1        | free@example.com    | FREE     |
-      | 2        | pro@example.com     | PRO      |
-      | 3        | ultra@example.com   | ULTRA    |
+      | 使用者 ID | Email               | 訂閱方案      |
+      | 1        | free@example.com    | FREE          |
+      | 2        | pro@example.com     | PRO_199       |
+      | 3        | ultra@example.com   | ULTRA_1599    |
     And 系統中有以下測驗與錯題記錄：
-      | 測驗 ID | 使用者 ID | 狀態      |
-      | 1       | 1        | SUBMITTED |
-      | 2       | 2        | SUBMITTED |
-      | 3       | 3        | SUBMITTED |
+      | 測驗 ID | 使用者 ID | 狀態      | 科目    |
+      | 1       | 1        | SUBMITTED | AWS SAA |
+      | 2       | 2        | SUBMITTED | AWS SAA |
+      | 3       | 3        | SUBMITTED | PMP     |
     And 測驗 1 包含以下錯題：
       | 題目 ID | 題目內容                          | 正確答案 | 使用者選擇 | 知識節點     |
       | 101     | S3 的版本控制功能預設為何？        | B        | C          | S3 儲存服務  |
@@ -19,15 +20,14 @@ Feature: 錯題複習與AI教練
       | 題目 ID | 題目內容                          | 正確答案 | 使用者選擇 | 知識節點     |
       | 201     | EC2 Auto Scaling 的觸發條件為何？ | C        | A          | EC2 運算服務 |
 
-  # ========== 跨學科導航與錯題篩選 ==========
+  # ========== 學科切換 ==========
 
-  Rule: 前調（導覽）- 提供學科切換器過濾不同學科的錯題本
+  Rule: 前置（導航）- 學科切換器應過濾對應科目的錯題
 
-    Example: 切換學科後錯題列表與 AI 教練上下文應同步更新
-      When 使用者在錯題複習頁面頂部選擇學科 "AWS SAA"
-      Then 頁面標題應顯示為 "AWS SAA 全學科錯題本"
-      And 側邊欄應僅載入與 AWS SAA 相關的錯題列表
-      And AI 教練的對話歷史應切換至該學科對應的上下文
+    Example: 切換學科後錯題列表僅顯示該科目
+      When 使用者 "free@example.com" 在錯題複習頁面選擇科目 "AWS SAA"
+      Then 操作成功
+      And 錯題列表應僅包含 AWS SAA 科目的錯題
 
   # ========== 前置條件 ==========
 
@@ -35,62 +35,94 @@ Feature: 錯題複習與AI教練
 
     Example: 查看其他使用者的錯題記錄失敗
       When 使用者 "free@example.com" 查看測驗 2 的錯題記錄
-      Then 操作失敗
-      And 錯誤訊息應為 "無存取此錯題記錄的權限"
+      Then 操作失敗，錯誤為「無存取此錯題記錄的權限」
 
-  # ========== 後置條件 ==========
+  Rule: 前置（參數）- 查看錯題解析必須提供有效的題目 ID
 
-  Rule: 後置（回應）- FREE 用戶查看錯題解析時應顯示題目、正確答案與簡短提示並以毛玻璃遮擋深度解析
+    Example: 查看不存在的題目解析失敗
+      When 使用者 "free@example.com" 查看測驗 1 題目 999 的解析
+      Then 操作失敗，錯誤為「題目不存在」
 
-    Example: FREE 用戶查看錯題解析取得基本資訊與升級提示遮罩
+  # ========== FREE 用戶解析 ==========
+
+  Rule: 後置（回應）- FREE 用戶查看錯題解析應取得基本資訊與升級提示
+
+    Example: FREE 用戶查看錯題取得簡短提示與毛玻璃遮罩
       When 使用者 "free@example.com" 查看測驗 1 題目 101 的解析
       Then 操作成功
-      And 回應應包含以下基本資訊：
+      And 回應應包含基本資訊：
         | 欄位     | 值                            |
-        | 題目原文 | S3 的版本控制功能預設為何？   |
-        | 正確答案 | B                             |
-        | 錯誤選擇 | C                             |
-        | 簡短提示 | S3 版本控制預設為停用狀態。   |
-      And 回應應包含深度解析的毛玻璃遮罩升級提示
-      And 升級提示應包含方案名稱 "PRO" 與月費 "199 TWD"
+        | question | S3 的版本控制功能預設為何？   |
+        | correct  | B                             |
+        | selected | C                             |
+        | tip      | S3 版本控制預設為停用狀態。   |
+      And 回應應標記深度解析區為鎖定狀態
+      And 回應應包含升級提示：
+        | 欄位         | 值        |
+        | target_plan  | PRO_199   |
+        | monthly_fee  | 199       |
 
-  Rule: 後置（回應）- PRO 以上方案查看錯題解析時應取得完整 Markdown 解析與溯源引用
+  # ========== PRO+ 用戶解析 ==========
 
-    Example: PRO 用戶查看錯題解析取得完整解析內容
+  Rule: 後置（回應）- PRO 以上用戶查看錯題解析應取得完整 Markdown 解析與溯源引用
+
+    Example: PRO 用戶查看錯題取得完整解析內容
       When 使用者 "pro@example.com" 查看測驗 2 題目 201 的解析
       Then 操作成功
       And 回應應包含完整的 Markdown 格式深度解析（非空白）
-      And 回應應包含溯源引用資訊：
-        | 欄位             | 說明                         |
-        | 來源資源         | 關聯資源的 ID 或名稱         |
-        | 來源頁碼或時間戳 | 對應文件頁碼或影片時間點     |
+      And 回應應包含溯源引用：
+        | 欄位             | 範例值                       |
+        | source_resource  | 關聯資源名稱                 |
+        | source_ref       | 頁碼或影片時間戳             |
 
-  Rule: 後置（狀態）- PRO 以上方案可向 AI 教練提問且回應以串流方式輸出，並具備同理心與記憶
+  # ========== AI 教練對話 ==========
 
-    Example: PRO 用戶對 AI 教練發起追問取得串流回應，AI 會結合歷史紀錄提供同理與引導
+  Rule: 前置（狀態）- FREE 用戶不可使用 AI 教練對話
+
+    Example: FREE 用戶嘗試向 AI 教練提問失敗
+      When 使用者 "free@example.com" 在測驗 1 題目 101 的 AI 教練視窗輸入 "為什麼答案是 B？"
+      Then 操作失敗，錯誤為「AI 教練對話為 PRO 以上方案專屬功能」
+
+  Rule: 後置（回應）- PRO 以上用戶可向 AI 教練提問且回應以串流方式輸出
+
+    Example: PRO 用戶成功與 AI 教練對話取得串流回應
       When 使用者 "pro@example.com" 在測驗 2 題目 201 的 AI 教練視窗輸入 "我還是不懂觸發條件的判斷邏輯"
       Then 操作成功
-      And 回應應以串流方式輸出 AI 教練的回覆訊息
-      And AI 教練應以專屬角色形象（如：Certi）加上帶有情緒的回饋（如鼓勵、陪伴）進行回應
-      And AI 教練的回覆應能引用使用者過去相似的錯題歷史，提供連貫的學習指導或記憶口訣
+      And 回應應以串流方式輸出
+      And AI 教練回覆應包含與題目 201 相關的解釋內容
+      And AI 教練回覆語氣應帶有鼓勵性（非冷冰冰的條列式）
 
-  Rule: 後置（狀態）- 詢問超出題庫範圍的問題時 AI 教練應回覆範圍外提示
+  Rule: 後置（回應）- AI 教練應能引用使用者過去的錯題歷史提供連貫指導
 
-    Example: 詢問非題庫範圍的問題時 AI 教練顯示提示訊息
+    Example: AI 教練引用歷史錯題提供上下文感知回應
+      Given 使用者 "pro@example.com" 過去曾在 EC2 相關題目答錯 3 次
+      When 使用者 "pro@example.com" 在測驗 2 題目 201 的 AI 教練視窗輸入 "我 EC2 這塊一直搞不清楚"
+      Then 操作成功
+      And AI 教練回覆應提及使用者在 EC2 相關題目的歷史錯誤模式
+
+  # ========== 超綱防護 ==========
+
+  Rule: 後置（回應）- 詢問超出題庫範圍的問題時應回覆範圍外提示
+
+    Example: 詢問非題庫範圍的問題時顯示提示
       When 使用者 "pro@example.com" 在測驗 2 題目 201 的 AI 教練視窗輸入 "幫我寫一首詩"
       Then 操作成功
-      And AI 教練的回覆應包含 "此問題超出目前題庫範圍"
+      And AI 教練回覆應包含「此問題超出目前題庫範圍」
 
-  Rule: 後置（狀態）- 10 分鐘內超出範圍提問達 5 次後觸發 30 分鐘冷卻
+  Rule: 後置（狀態）- 10 分鐘內超綱提問達 5 次後觸發 30 分鐘冷卻
 
-    Example: 超出範圍提問累積達 5 次後 AI 教練進入冷卻狀態
-      Given 使用者 "pro@example.com" 在過去 10 分鐘內已提出 4 次超出題庫範圍的問題
+    Example: 第 5 次超綱提問後 AI 教練進入冷卻
+      Given 使用者 "pro@example.com" 在過去 10 分鐘內已提出 4 次超出範圍的問題
       When 使用者 "pro@example.com" 再次提出超出範圍的問題
-      Then AI 教練應回覆冷卻提示訊息
-      And AI 教練應在 30 分鐘內不接受該使用者的新提問
+      Then 操作成功
+      And AI 教練回覆應包含冷卻提示：「您已暫時被限制使用 AI 教練，請 30 分鐘後再試」
+      And 使用者 "pro@example.com" 在接下來 30 分鐘內的 AI 教練提問應被拒絕
 
-  Rule: 後置（狀態）- AI 教練互動介面必須顯示防預性免責文字
+  # ========== 免責聲明 ==========
 
-    Example: AI 視窗固定包含防預小字免責聲明
-      When 使用者開啟 AI 教練對話視窗
-      Then 畫面輸入區下方應固定顯示灰色小字："💡 AI 生成內容僅供參考，請隨時自行查證重要資訊。"
+  Rule: 後置（回應）- AI 教練介面必須顯示免責聲明
+
+    Example: 開啟 AI 教練視窗時顯示免責文字
+      When 使用者 "pro@example.com" 開啟 AI 教練對話視窗
+      Then 操作成功
+      And 介面應顯示免責聲明：「AI 生成內容僅供參考，請隨時自行查證重要資訊。」

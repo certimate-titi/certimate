@@ -1,0 +1,69 @@
+@ignore @command
+Feature: 平台管理後台 — 內容與安全審核
+
+  Background:
+    Given 系統中有以下使用者帳號：
+      | 使用者 ID | Email                   | 訂閱方案      | 角色         | 狀態    |
+      | 1        | super@certimate.com     | ULTRA_1599    | super_admin  | active  |
+      | 2        | ops@certimate.com       | ULTRA_1599    | admin        | active  |
+      | 7        | cooling@example.com     | PRO_PLUS_399  | user         | cooling |
+    And 系統中有以下 AI 冷卻紀錄：
+      | 使用者 ID | 原因                    | 冷卻結束時間        |
+      | 7        | 10min_5_out_of_scope    | 2026-03-25 15:30:00 |
+    And 系統中有以下內容檢舉：
+      | 檢舉 ID | 檢舉者 ID | 類型      | 目標類型  | 目標 ID | 狀態    |
+      | RPT-001 | 10       | copyright | resource  | 50      | pending |
+      | RPT-002 | 11       | inappropriate | resource | 51  | pending |
+
+  # ========== AI 濫用監控 ==========
+
+  Rule: 後置（回應）- AI 濫用監控應回傳冷卻中用戶清單與剩餘時間
+
+    Example: 查看 AI 濫用監控取得冷卻用戶列表
+      When 使用者 "ops@certimate.com" 查看 AI 濫用監控面板
+      Then 操作成功
+      And 回應應包含冷卻中用戶：
+        | 使用者 ID | Email                  | 原因                  | 冷卻剩餘秒數 |
+        | 7        | cooling@example.com    | 10min_5_out_of_scope  | 1800         |
+
+  Rule: 後置（狀態）- 手動解除冷卻應立即生效並記錄審計日誌
+
+    Example: 管理員手動解除用戶冷卻成功
+      When 使用者 "ops@certimate.com" 解除使用者 7 的 AI 冷卻狀態
+      Then 操作成功
+      And 使用者 7 的冷卻狀態應為已解除
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                    |
+        | action   | unlock_cooldown       |
+        | target   | 使用者 7               |
+
+  # ========== 內容檢舉處理 ==========
+
+  Rule: 後置（回應）- 檢舉佇列應回傳待處理檢舉清單
+
+    Example: 查看待處理檢舉列表
+      When 使用者 "ops@certimate.com" 查看內容檢舉佇列，篩選狀態為 "pending"
+      Then 操作成功
+      And 回應應包含 2 筆待處理檢舉
+
+  Rule: 後置（狀態）- 判定違規時刪除內容並警告用戶
+
+    Example: 處理版權檢舉為違規成功
+      When 使用者 "ops@certimate.com" 處理檢舉 "RPT-001"，動作為 "delete_and_warn"，備註為 "確認版權侵害"
+      Then 操作成功
+      And 檢舉 "RPT-001" 的狀態應為 "resolved"
+      And 目標資源 50 應被刪除
+      And 系統應發送警告通知至資源擁有者
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                    |
+        | action   | resolve_report        |
+        | target   | RPT-001               |
+        | details  | delete_and_warn       |
+
+  Rule: 後置（狀態）- 判定為誤報時原始內容不受影響
+
+    Example: 處理檢舉為誤報成功
+      When 使用者 "ops@certimate.com" 處理檢舉 "RPT-002"，動作為 "dismiss"，備註為 "審查後不構成違規"
+      Then 操作成功
+      And 檢舉 "RPT-002" 的狀態應為 "dismissed"
+      And 目標資源 51 不應被刪除

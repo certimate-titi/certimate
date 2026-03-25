@@ -1,0 +1,105 @@
+@ignore @query
+Feature: 平台管理後台 — 財務與訂閱管理
+
+  Background:
+    Given 系統中有以下使用者帳號：
+      | 使用者 ID | Email                   | 訂閱方案      | 角色         |
+      | 1        | super@certimate.com     | ULTRA_1599    | super_admin  |
+      | 2        | ops@certimate.com       | ULTRA_1599    | admin        |
+    And 系統中有以下交易紀錄：
+      | 交易 ID | 使用者 ID | 金額 | 方案         | 狀態   | 交易時間            |
+      | TXN-001 | 10       | 199  | PRO_199      | success| 2026-03-01 10:00:00 |
+      | TXN-002 | 11       | 399  | PRO_PLUS_399 | success| 2026-03-02 14:30:00 |
+      | TXN-003 | 12       | 1599 | ULTRA_1599   | failed | 2026-03-03 09:00:00 |
+    And 系統中有以下退款申請：
+      | 退款 ID | 使用者 ID | 交易 ID | 金額 | 狀態    |
+      | REF-001 | 10       | TXN-001 | 199  | pending |
+      | REF-002 | 11       | TXN-002 | 399  | pending |
+
+  # ========== 訂閱分布與營收 ==========
+
+  Rule: 後置（回應）- 訂閱分布應回傳各方案用戶數與 MRR 趨勢
+
+    Example: 查看訂閱分布取得圓餅圖與 MRR 資料
+      When 使用者 "ops@certimate.com" 查看訂閱分布統計
+      Then 操作成功
+      And 回應應包含各方案用戶數：
+        | 方案          | 用戶數 |
+        | FREE          | 1200   |
+        | PRO_199       | 350    |
+        | PRO_PLUS_399  | 120    |
+        | ULTRA_1599    | 30     |
+      And 回應應包含最近 30 天的 MRR 趨勢資料點
+
+  # ========== 交易紀錄 ==========
+
+  Rule: 後置（回應）- 交易紀錄查詢應回傳完整欄位且支援篩選
+
+    Example: 查看交易紀錄取得明細列表
+      When 使用者 "ops@certimate.com" 查看交易紀錄
+      Then 操作成功
+      And 回應中每筆交易應包含：
+        | 欄位            | 範例值              |
+        | transaction_id  | TXN-001             |
+        | user_id         | 10                  |
+        | amount          | 199                 |
+        | plan            | PRO_199             |
+        | status          | success             |
+        | created_at      | 2026-03-01 10:00:00 |
+
+    Example: 依狀態篩選交易紀錄
+      When 使用者 "ops@certimate.com" 查看交易紀錄，篩選狀態為 "failed"
+      Then 操作成功
+      And 回應中所有交易的狀態應為 "failed"
+
+  # ========== 退款管理 ==========
+
+  Rule: 後置（狀態）- 核准退款應觸發 Stripe Refund 並自動降級至 FREE
+
+    Example: super_admin 核准退款成功
+      When 使用者 "super@certimate.com" 核准退款 "REF-001"，OTP 為 "123456"
+      Then 操作成功
+      And 退款 "REF-001" 的狀態應為 "approved"
+      And 使用者 10 的訂閱方案應自動降級為 "FREE"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                |
+        | action   | approve_refund    |
+        | target   | REF-001           |
+        | details  | 退款 199 TWD      |
+
+  Rule: 後置（狀態）- 駁回退款應記錄理由並通知用戶
+
+    Example: 駁回退款申請成功
+      When 使用者 "ops@certimate.com" 駁回退款 "REF-002"，理由為 "超過退款期限"
+      Then 操作成功
+      And 退款 "REF-002" 的狀態應為 "rejected"
+      And 系統應發送駁回通知 Email 至使用者 11，內容包含理由 "超過退款期限"
+
+  # ========== 優惠碼 ==========
+
+  Rule: 前置（參數）- 優惠碼必要參數必須提供
+
+    Scenario Outline: 建立優惠碼缺少 <缺少參數> 時失敗
+      When 使用者 "super@certimate.com" 建立優惠碼，代碼為 <代碼>，折扣類型為 <折扣類型>，折扣值為 <折扣值>
+      Then 操作失敗，錯誤為「必要參數未提供」
+
+      Examples:
+        | 缺少參數  | 代碼       | 折扣類型   | 折扣值 |
+        | 代碼      |            | percentage | 30     |
+        | 折扣類型  | LAUNCH2026 |            | 30     |
+        | 折扣值    | LAUNCH2026 | percentage |        |
+
+  Rule: 後置（狀態）- 成功建立優惠碼後應為啟用狀態
+
+    Example: 建立百分比折扣優惠碼成功
+      When 使用者 "super@certimate.com" 建立優惠碼：
+        | 欄位           | 值           |
+        | code           | LAUNCH2026   |
+        | discount_type  | percentage   |
+        | discount_value | 30           |
+        | applicable_plans | PRO_199    |
+        | max_uses       | 500          |
+        | max_uses_per_user | 1         |
+      Then 操作成功
+      And 優惠碼 "LAUNCH2026" 的狀態應為 "active"
+      And 優惠碼 "LAUNCH2026" 的已使用次數應為 0
