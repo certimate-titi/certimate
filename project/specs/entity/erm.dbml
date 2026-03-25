@@ -14,6 +14,7 @@ Enum subscription_plan {
 }
 
 Enum user_status {
+  pending       [note: '待驗證，尚未完成 Email 驗證']
   active
   suspended
   cooling
@@ -145,6 +146,33 @@ Enum assignment_status {
   pending
   active
   expired
+}
+
+Enum anomaly_status {
+  pending         [note: '待處理']
+  investigating   [note: '調查中']
+  resolved        [note: '已解決']
+  dismissed       [note: '已忽略']
+}
+
+Enum maintenance_priority {
+  low
+  medium
+  high
+  critical
+}
+
+Enum maintenance_task_status {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+Enum maintenance_schedule_status {
+  scheduled
+  active
+  completed
 }
 
 // ============================================================
@@ -705,6 +733,79 @@ Table plan_quotas {
 }
 
 Ref: plan_quotas.updated_by > users.id
+
+// ============================================================
+// Anomaly Tracking & Maintenance (Feature 16)
+// ============================================================
+
+Table anomaly_records {
+  id uuid [pk, default: `gen_random_uuid()`]
+  error_id varchar(50) [unique, not null, note: 'e.g. ERR-001']
+  error_type varchar(200) [not null, note: 'e.g. Database Connection Timeout']
+  occurrence_count integer [default: 1, not null]
+  status anomaly_status [default: 'pending']
+  impact_scope varchar(100) [not null, note: '全站 / AI 模組 / etc.']
+  assigned_to varchar(200) [note: '指派的團隊或人員']
+  first_seen_at timestamptz [not null, default: `now()`]
+  last_seen_at timestamptz [not null, default: `now()`]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  Note: '異常紀錄，相似錯誤自動歸類彙整'
+}
+
+Table maintenance_tasks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  task_id varchar(50) [unique, not null, note: 'e.g. MNT-001']
+  name varchar(200) [not null]
+  priority maintenance_priority [not null]
+  related_error_id uuid [note: '關聯的異常紀錄']
+  status maintenance_task_status [default: 'pending']
+  estimated_hours decimal(5,1)
+  created_by uuid [not null]
+  assigned_to uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  Note: '維修任務看板'
+}
+
+Ref: maintenance_tasks.related_error_id > anomaly_records.id
+Ref: maintenance_tasks.created_by > users.id
+Ref: maintenance_tasks.assigned_to > users.id
+
+Table maintenance_schedules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(200) [not null]
+  status maintenance_schedule_status [default: 'scheduled']
+  starts_at timestamptz [not null]
+  ends_at timestamptz [not null]
+  notify_channels text[] [default: '{}', note: 'email, banner']
+  notify_targets varchar(100) [note: 'all_subscribers / admin_only']
+  notify_before text[] [default: '{}', note: 'e.g. 24h, 1h']
+  reason text [note: '維修原因']
+  is_full_site boolean [default: false, note: '全站維修模式']
+  health_check_passed boolean [default: false]
+  created_by uuid [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  Note: '維修排程與全站維修模式'
+}
+
+Ref: maintenance_schedules.created_by > users.id
+
+Table maintenance_notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  schedule_id uuid [not null]
+  scheduled_send_at timestamptz [not null]
+  sent_at timestamptz
+  created_at timestamptz [default: `now()`]
+
+  Note: '維修排程的預排通知'
+}
+
+Ref: maintenance_notifications.schedule_id > maintenance_schedules.id [delete: cascade]
 
 // ============================================================
 // Indexes (Performance)

@@ -7,7 +7,16 @@
       "Bash(ls -d /d/TDD/certimate/*/)",
       "Bash(npx next:*)",
       "Bash(npm run:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(ls -d D:/TDD/certimate/project/specs/*/)",
+      "Bash(ls -1 D:/TDD/certimate/project/features/*.feature)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker compose:*)",
+      "Bash(pip --version)",
+      "Bash(pip3 --version)",
+      "Bash(pip install:*)",
+      "Bash(ls D:/TDD/certimate/backend/tests/features/*.feature)",
+      "Bash(python -m behave tests/features/01-身分驗證.feature --no-capture)"
     ]
   }
 }
