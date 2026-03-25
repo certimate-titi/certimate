@@ -4,7 +4,7 @@ Feature: B2B機構管理後台
   Background:
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email                    | 訂閱方案 | 角色       |
-      | 1        | admin@school.com         | ULTRA    | 機構管理員 |
+      | 1        | org-admin@school.com     | ULTRA    | 機構管理員 |
       | 2        | teacher@school.com       | ULTRA    | 機構管理員 |
       | 3        | pro@example.com          | PRO      | 一般學員   |
       | 4        | student1@school.com      | FREE     | 學員       |
@@ -41,14 +41,14 @@ Feature: B2B機構管理後台
   Rule: 前置（參數）- CSV 匯入檔案格式必須符合系統範本
 
     Example: 上傳欄位缺失的 CSV 檔案匯入失敗
-      When 使用者 "admin@school.com" 上傳以下格式錯誤的 CSV 進行學員匯入：
+      When 使用者 "org-admin@school.com" 上傳以下格式錯誤的 CSV 進行學員匯入：
         | 姓名   | 電子郵件         |
         | 王大明 | wang@example.com |
       Then 操作失敗
       And 錯誤訊息應為 "CSV 格式錯誤，請使用系統提供的範本（需包含姓名、電子郵件、群組欄位）"
 
     Example: 上傳包含重複 Email 的 CSV 檔案匯入失敗
-      When 使用者 "admin@school.com" 上傳以下 CSV 進行學員匯入：
+      When 使用者 "org-admin@school.com" 上傳以下 CSV 進行學員匯入：
         | 姓名   | 電子郵件         | 群組             |
         | 王大明 | wang@example.com | AWS 雲端基礎班 A |
         | 王大明 | wang@example.com | AWS 雲端基礎班 A |
@@ -75,7 +75,7 @@ Feature: B2B機構管理後台
   Rule: 前置（狀態）- 匯入學籍名單前必須同意個資法與未成年人資料代為處理宣告
 
     Example: 機構管理員匯入名單未同意個資規範失敗
-      When 使用者 "admin@school.com" 上傳合法 CSV 進行學員匯入，但未勾選同意「學員資料處理條款」
+      When 使用者 "org-admin@school.com" 上傳合法 CSV 進行學員匯入，但未勾選同意「學員資料處理條款」
       Then 操作失敗
       And 錯誤訊息應為 "您必須聲明已取得相關當事人（包含未成年人之法定代理人）之同意，才可將資料匯入本系統"
 
@@ -85,7 +85,7 @@ Feature: B2B機構管理後台
       Given 系統中有以下機構考卷：
         | 考卷 ID | 機構 ID | 名稱              | 狀態 |
         | 1       | 1       | AWS SAA 月考試題  | 就緒 |
-      When 使用者 "admin@school.com" 將考卷 1 派發給群組 1，截止日期為 2024-02-15
+      When 使用者 "org-admin@school.com" 將考卷 1 派發給群組 1，截止日期為 2024-02-15
       Then 操作成功
       And 群組 1 的所有學員應看到待完成的測驗任務，截止日為 2024-02-15
       And 派發任務應記錄以下資訊：
@@ -97,7 +97,7 @@ Feature: B2B機構管理後台
   Rule: 後置（回應）- 班級分析應回傳各知識節點的群組答對率熱點圖資料
 
     Example: 機構管理員查看班級弱點分析取得熱點圖資料
-      When 使用者 "admin@school.com" 查看群組 1 的班級弱點分析
+      When 使用者 "org-admin@school.com" 查看群組 1 的班級弱點分析
       Then 操作成功
       And 回應應包含以下熱點圖資料結構：
         | 欄位     | 說明                                      |
@@ -108,7 +108,7 @@ Feature: B2B機構管理後台
   Rule: 後置（回應）- 全班錯題排行榜應回傳答錯率最高的前 10 道題目
 
     Example: 機構管理員查看本週全班錯題排行榜
-      When 使用者 "admin@school.com" 查看機構 1 本週全班錯題排行榜
+      When 使用者 "org-admin@school.com" 查看機構 1 本週全班錯題排行榜
       Then 操作成功
       And 回應應包含最多 10 道答錯率最高的題目
       And 每道題目應包含：
@@ -124,7 +124,7 @@ Feature: B2B機構管理後台
     # 對應頁面頂部 KPI 卡片列（總學生數 / 活躍率 / 需關注人數 / 班級平均分）
 
     Example: 機構管理員查看班級健康 KPI
-      When 使用者 "admin@school.com" 查看機構 1 的班級健康摘要
+      When 使用者 "org-admin@school.com" 查看機構 1 的班級健康摘要
       Then 操作成功
       And 回應應包含以下欄位：
         | 欄位         | 說明                                          |
@@ -139,7 +139,7 @@ Feature: B2B機構管理後台
     # 參考 Redmenta 的 Early Detection 設計，主動浮出問題而非等待教師翻查
 
     Example: 機構管理員查看需關注學員清單
-      When 使用者 "admin@school.com" 查看機構 1 的早期預警清單
+      When 使用者 "org-admin@school.com" 查看機構 1 的早期預警清單
       Then 操作成功
       And 回應中每位需關注學員應包含：
         | 欄位             | 說明                                    |
@@ -153,7 +153,7 @@ Feature: B2B機構管理後台
 
     Example: 學員平均分低於 60 分應被列入預警清單
       Given 學員 "student2@school.com" 最近三次測驗分數為 45、52、48
-      When 使用者 "admin@school.com" 查看機構 1 的早期預警清單
+      When 使用者 "org-admin@school.com" 查看機構 1 的早期預警清單
       Then 回應中應包含 "student2@school.com"
       And 該學員的 trend 應為 "flat"
 
@@ -163,7 +163,7 @@ Feature: B2B機構管理後台
     # 每個知識節點獨立計算分數，而非只有單一整體分數
 
     Example: 機構管理員查看學員 student1 的能力檔案
-      When 使用者 "admin@school.com" 查看學員 4 的能力分析
+      When 使用者 "org-admin@school.com" 查看學員 4 的能力分析
       Then 操作成功
       And 回應應包含以下結構：
         | 欄位            | 說明                                        |
@@ -181,7 +181,7 @@ Feature: B2B機構管理後台
     # 系統依學員各節點分數，讓 AI 生成具體建議而非通用內容
 
     Example: 機構管理員為學員 student2 請求 AI 補強建議
-      When 使用者 "admin@school.com" 呼叫 POST /students/5/ai-reinforcement
+      When 使用者 "org-admin@school.com" 呼叫 POST /students/5/ai-reinforcement
       Then 操作成功
       And 回應應包含 1 至 3 條補強建議
       And 每條建議應包含：
@@ -200,7 +200,7 @@ Feature: B2B機構管理後台
     # 前端依 trend 欄位顯示 ↑↓→ 圖示
 
     Example: 機構管理員查看機構學員列表包含趨勢資訊
-      When 使用者 "admin@school.com" 查看機構 1 的學員列表
+      When 使用者 "org-admin@school.com" 查看機構 1 的學員列表
       Then 操作成功
       And 每位學員資料應包含 trend 欄位（up / down / flat）
       And trend 應依最近 3 次測驗平均分的變化計算：
