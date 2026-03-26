@@ -92,6 +92,33 @@ Feature: 錯題複習與 AI 教練
       And AI 教練回覆應包含與題目 201 相關的解釋內容
       And AI 教練回覆語氣應帶有鼓勵性（非冷冰冰的條列式）
 
+  Rule: 後置（個人化）- AI 教練應根據使用者的年齡、學歷與職業調整回覆方式
+
+    Example: 高中學歷使用者收到淺顯易懂的比喻式回覆
+      Given 使用者 "pro@example.com" 的個人資料為：
+        | 欄位     | 值          |
+        | 年齡     | 18          |
+        | 最高學歷 | 高中 / 高職 |
+        | 職業     | 學生        |
+      When 使用者 "pro@example.com" 在 AI 教練視窗輸入 "什麼是 Auto Scaling？"
+      Then AI 教練回覆應使用生活化比喻（例如「像是餐廳在尖峰時段自動增加服務生」）
+      And AI 教練回覆不應假設使用者具備進階技術背景知識
+
+    Example: 碩士學歷且具技術背景的使用者收到精準技術回覆
+      Given 使用者 "ultra@example.com" 的個人資料為：
+        | 欄位     | 值           |
+        | 年齡     | 30           |
+        | 最高學歷 | 碩士         |
+        | 職業     | 軟體工程師   |
+      When 使用者 "ultra@example.com" 在 AI 教練視窗輸入 "Auto Scaling 的觸發機制？"
+      Then AI 教練回覆應直接使用技術術語（如 CloudWatch Alarm、Target Tracking Policy）
+      And AI 教練回覆可引用 API 參數或 CLI 指令作為補充
+
+    Example: 使用者未填寫個人資料時 AI 教練使用通用語氣
+      Given 使用者 "pro@example.com" 的個人資料中年齡與學歷皆為空
+      When 使用者 "pro@example.com" 在 AI 教練視窗提問
+      Then AI 教練應使用中等難度的通用說明方式（預設大學程度）
+
   Rule: 後置（回應）- AI 教練應能引用使用者過去的錯題歷史提供連貫指導
 
     Example: AI 教練引用歷史錯題提供上下文感知回應
