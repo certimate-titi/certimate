@@ -224,6 +224,66 @@
 
 ---
 
+### 模組六：異常維修管理 (Anomaly & Maintenance)
+
+**路由**：`/super-admin/anomaly`
+**功能目的**：追蹤系統異常、管理維修任務與排程維護，確保平台穩定運作。
+**權限**：`admin` 與 `super_admin`。
+
+#### 6.1 異常追蹤清單
+
+- **自動歸類**：相似錯誤自動彙整為一筆（例如 100 次 Database Connection Timeout 歸為一筆 ERR-001）。
+- **清單欄位**：error_id、error_type、occurrence_count、status（pending / investigating / resolved / dismissed）、impact_scope、assigned_to、first_seen_at、last_seen_at。
+- **操作**：更新狀態、指派技術小組。所有操作記錄審計日誌。
+
+#### 6.2 維修任務看板
+
+- **看板式管理**：pending → in_progress → completed。
+- **建立任務**：名稱（必填）、優先級（high / medium / low，必填）、關聯異常、預估工時。
+- **任務 ID 格式**：自動遞增 `MNT-001`、`MNT-002`...
+- **狀態變更通知**：任務狀態更新時自動通知指派的技術人員。
+
+#### 6.3 維修排程與通知
+
+- **排程建立**：名稱、開始/結束時間、通知渠道（email / banner）、通知對象、提前通知時間（如 24h、1h）。
+- **自動排程通知**：系統在指定的提前時間自動發送通知。
+- **全站緊急維護模式**：一鍵啟動，填寫原因與預計恢復時間，所有非管理後台的請求導向維修頁面，並通知所有在線用戶。
+- **自動恢復**：維修排程到達結束時間且健康檢查通過後，系統自動關閉維修模式。
+
+---
+
+### 模組七：意見反饋管理 (Feedback Management)
+
+**路由**：`/super-admin/feedback`
+**功能目的**：管理全站使用者提交的意見反饋，追蹤處理進度並回覆使用者。
+**權限**：`admin` 與 `super_admin`。
+
+#### 7.1 反饋清單
+
+- **篩選**：依狀態篩選（PENDING / REVIEWING / RESOLVED / CLOSED）。
+- **反饋類型**：BUG、FEATURE_REQUEST、CONTENT_ERROR、OTHER。
+- **清單欄位**：feedback_id、提交者、類型、主旨、狀態、建立時間、附件數量。
+
+#### 7.2 反饋處理
+
+- **更新狀態**：PENDING → REVIEWING → RESOLVED / CLOSED。
+- **管理員回覆**：可撰寫回覆內容，狀態更新後系統自動發送通知至提交者 Email。
+- **關閉反饋**：可填寫關閉原因（如「內容重複，已合併至其他反饋」）。
+- **審計日誌**：所有操作記錄至 admin_audit_logs。
+
+#### 7.3 反饋統計摘要
+
+| 指標 | 說明 |
+|------|------|
+| total_count | 所有反饋總數 |
+| pending_count | 待處理反饋數量 |
+| reviewing_count | 處理中反饋數量 |
+| resolved_count | 已解決反饋數量 |
+| top_category | 最多反饋的類型 |
+| avg_resolve_hours | 平均解決時間（小時） |
+
+---
+
 ## 💾 資料庫 Schema 新增
 
 ```sql
