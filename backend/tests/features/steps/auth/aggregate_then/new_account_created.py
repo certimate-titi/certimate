@@ -9,9 +9,9 @@ STATUS_MAP = {
 
 PLAN_MAP = {
     "FREE": "FREE",
-    "PRO_199": "PRO_199",
-    "PRO_PLUS_399": "PRO_PLUS_399",
-    "ULTRA_1599": "ULTRA_1599",
+    "PRO": "PRO",
+    "PRO_PLUS": "PRO_PLUS",
+    "ULTRA": "ULTRA",
 }
 
 
@@ -30,9 +30,11 @@ def step_impl(context, plan, status):
     assert user is not None, f"DB 中找不到 email='{email}' 的使用者"
 
     expected_plan = PLAN_MAP.get(plan, plan)
-    assert user.subscription_plan.value == expected_plan, \
-        f"訂閱方案應為 '{expected_plan}'，實際為 '{user.subscription_plan.value}'"
+    actual_plan = user.subscription_plan.value if hasattr(user.subscription_plan, "value") else user.subscription_plan
+    assert actual_plan == expected_plan, \
+        f"訂閱方案應為 '{expected_plan}'，實際為 '{actual_plan}'"
 
     expected_status = STATUS_MAP.get(status, status)
-    assert user.status.value == expected_status, \
-        f"狀態應為 '{expected_status}'，實際為 '{user.status.value}'"
+    actual_status = user.status.value if hasattr(user.status, "value") else user.status
+    assert actual_status == expected_status, \
+        f"狀態應為 '{expected_status}'，實際為 '{actual_status}'"

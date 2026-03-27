@@ -11,8 +11,8 @@ from app.core.config import get_settings
 # 全域變數，由 environment.py 或應用程式啟動時設定
 _SessionLocal = None
 
-# HTTP Bearer Token scheme
-security = HTTPBearer()
+# HTTP Bearer Token scheme（auto_error=False 以自訂錯誤訊息）
+security = HTTPBearer(auto_error=False)
 
 
 def set_session_factory(session_factory):
@@ -38,8 +38,14 @@ def get_db() -> Generator[Session, None, None]:
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> int:
+) -> str:
     """從 JWT Token 中提取當前用戶 ID。"""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="未認證，請先登入"
+        )
+
     settings = get_settings()
     token = credentials.credentials
 
@@ -55,7 +61,7 @@ def get_current_user_id(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="無效的認證憑證"
             )
-        return int(user_id_str)
+        return user_id_str
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,9 +71,4 @@ def get_current_user_id(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="無效的 Token"
-        )
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="無效的用戶 ID"
         )

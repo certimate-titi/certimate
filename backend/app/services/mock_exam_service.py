@@ -1,0 +1,134 @@
+"""Mock Exam Service — 模擬機考業務邏輯。"""
+
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.models.exam import Exam, ExamStatus
+from app.models.answer import Answer
+
+
+class MockExamService:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def start_exam(self, exam_id: str, user_id: str) -> dict:
+        uid = uuid.UUID(user_id)
+        exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
+
+        if not exam:
+            return {"error": True, "status_code": 404, "message": "測驗不存在"}
+
+        if exam.user_id != uid:
+            return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
+
+        if exam.status == ExamStatus.SUBMITTED:
+            return {"error": True, "status_code": 400, "message": "測驗已提交，無法重新開始"}
+
+        if exam.status == ExamStatus.IN_PROGRESS:
+            return {"error": True, "status_code": 400, "message": "測驗已在進行中"}
+
+        if exam.status != ExamStatus.READY:
+            return {"error": True, "status_code": 400, "message": "測驗狀態不允許開始"}
+
+        exam.status = ExamStatus.IN_PROGRESS
+        exam.started_at = datetime.now(timezone.utc)
+        self.db.commit()
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "status": "IN_PROGRESS",
+            "started_at": exam.started_at.isoformat(),
+        }
+
+    def save_answer(self, exam_id: str, user_id: str, question_id: str,
+                    selected_answer: str | None = None,
+                    marked_for_review: bool | None = None) -> dict:
+        uid = uuid.UUID(user_id)
+        eid = uuid.UUID(exam_id)
+        qid = uuid.UUID(question_id)
+
+        exam = self.db.query(Exam).filter_by(id=eid).first()
+        if not exam:
+            return {"error": True, "status_code": 404, "message": "測驗不存在"}
+        if exam.user_id != uid:
+            return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
+
+        # Find or create answer
+        answer = self.db.query(Answer).filter_by(
+            exam_id=eid, question_id=qid, user_id=uid
+        ).first()
+
+        if not answer:
+            answer = Answer(
+                exam_id=eid,
+                question_id=qid,
+                user_id=uid,
+            )
+            self.db.add(answer)
+
+        if selected_answer is not None:
+            answer.selected_answer = selected_answer
+            answer.answered_at = datetime.now(timezone.utc)
+
+        if marked_for_review is not None:
+            answer.marked_for_review = marked_for_review
+
+        self.db.commit()
+
+        return {
+            "error": False,
+            "question_id": str(qid),
+            "selected_answer": answer.selected_answer,
+            "marked_for_review": answer.marked_for_review,
+        }
+
+    def submit_exam(self, exam_id: str, user_id: str) -> dict:
+        uid = uuid.UUID(user_id)
+        exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
+
+        if not exam:
+            return {"error": True, "status_code": 404, "message": "測驗不存在"}
+        if exam.user_id != uid:
+            return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
+
+        exam.status = ExamStatus.SUBMITTED
+        exam.submitted_at = datetime.now(timezone.utc)
+        self.db.commit()
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "status": "SUBMITTED",
+        }
+
+    def resume_exam(self, exam_id: str, user_id: str) -> dict:
+        uid = uuid.UUID(user_id)
+        exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
+
+        if not exam:
+            return {"error": True, "status_code": 404, "message": "測驗不存在"}
+        if exam.user_id != uid:
+            return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
+
+        # Get saved answers
+        answers = self.db.query(Answer).filter_by(
+            exam_id=exam.id, user_id=uid
+        ).all()
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "status": exam.status.value if hasattr(exam.status, 'value') else exam.status,
+            "answers": [
+                {
+                    "question_id": str(a.question_id),
+                    "selected_answer": a.selected_answer,
+                    "marked_for_review": a.marked_for_review,
+                }
+                for a in answers
+            ],
+        }

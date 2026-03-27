@@ -1,6 +1,9 @@
+from datetime import datetime, timezone
+
 from behave import given
-from app.models.user import User, UserStatus, UserRole, SubscriptionPlan
+from app.models.user import User, UserStatus, UserRole, SubscriptionPlan, SubscriptionStatus
 from app.repositories.user_repository import UserRepository
+from app.services.auth_service import _hash_password
 
 
 STATUS_MAP = {
@@ -20,10 +23,18 @@ ROLE_MAP = {
 
 PLAN_MAP = {
     "FREE": SubscriptionPlan.FREE,
-    "PRO_199": SubscriptionPlan.PRO_199,
-    "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS_399,
-    "ULTRA_399": SubscriptionPlan.PRO_PLUS_399,
-    "ULTRA_1599": SubscriptionPlan.ULTRA_1599,
+    "PRO": SubscriptionPlan.PRO,
+    "PRO_199": SubscriptionPlan.PRO,
+    "PRO_PLUS": SubscriptionPlan.PRO_PLUS,
+    "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS,
+    "ULTRA": SubscriptionPlan.ULTRA,
+    "ULTRA_1599": SubscriptionPlan.ULTRA,
+}
+
+SUB_STATUS_MAP = {
+    "active": SubscriptionStatus.ACTIVE,
+    "cancelled": SubscriptionStatus.CANCELLED,
+    "expired": SubscriptionStatus.EXPIRED,
 }
 
 AUTH_PROVIDER_MAP = {
@@ -32,20 +43,58 @@ AUTH_PROVIDER_MAP = {
 }
 
 
+def _get_col(row, name, default=None):
+    try:
+        return row[name]
+    except KeyError:
+        return default
+
+
 @given('系統中有以下使用者帳號：')
 def step_impl(context):
     repo = UserRepository(context.db_session)
 
     for row in context.table:
+        auth_provider_raw = _get_col(row, "驗證方式", "email")
+        role_raw = _get_col(row, "角色", "USER")
+        status_raw = _get_col(row, "狀態", "已啟用")
+
+        # Optional subscription fields
+        sub_status_raw = _get_col(row, "訂閱狀態", "active")
+        billing_raw = _get_col(row, "下次扣款日", "null")
+        next_billing = None
+        if billing_raw and billing_raw not in ("null", ""):
+            next_billing = datetime.fromisoformat(billing_raw).replace(tzinfo=timezone.utc)
+
+        onboarding_raw = _get_col(row, "已完成 Onboarding") or _get_col(row, "Onboarding", "false")
+        onboarding_completed = onboarding_raw.lower() in ("true", "1", "yes", "是")
+
+        # Optional last login date
+        last_login_raw = _get_col(row, "最後登入日")
+        last_login_at = None
+        if last_login_raw and last_login_raw not in ("null", ""):
+            last_login_at = datetime.fromisoformat(last_login_raw).replace(tzinfo=timezone.utc)
+
+        # Optional display name
+        display_name_raw = _get_col(row, "顯示名稱")
+
         user = User(
             email=row["Email"],
-            auth_provider=AUTH_PROVIDER_MAP.get(row["驗證方式"], row["驗證方式"]),
+            auth_provider=AUTH_PROVIDER_MAP.get(auth_provider_raw, auth_provider_raw),
             subscription_plan=PLAN_MAP.get(row["訂閱方案"], SubscriptionPlan.FREE),
-            role=ROLE_MAP.get(row["角色"], UserRole.USER),
-            status=STATUS_MAP.get(row["狀態"], UserStatus.ACTIVE),
-            password_hash="$2b$12$hashed_test_password",
+            subscription_status=SUB_STATUS_MAP.get(sub_status_raw, SubscriptionStatus.ACTIVE),
+            next_billing_date=next_billing,
+            role=ROLE_MAP.get(role_raw, UserRole.USER),
+            status=STATUS_MAP.get(status_raw, UserStatus.ACTIVE),
+            password_hash=_hash_password("Password1!"),
             agreed_to_terms=True,
+            onboarding_completed=onboarding_completed,
+            last_login_at=last_login_at,
+            display_name=display_name_raw,
         )
         saved_user = repo.save(user)
         context.ids[row["Email"]] = str(saved_user.id)
-        context.ids[row["使用者 ID"]] = str(saved_user.id)
+        user_id_col = _get_col(row, "使用者 ID")
+        if user_id_col:
+            context.ids[user_id_col] = str(saved_user.id)
+            context.memo[f"user_{user_id_col}_plan"] = row["訂閱方案"]

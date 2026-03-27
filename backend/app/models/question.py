@@ -1,0 +1,62 @@
+"""Question ORM Model — derived from erm.dbml."""
+
+import enum
+
+from sqlalchemy import (
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+import uuid
+
+from app.models import Base
+
+
+class QuestionType(str, enum.Enum):
+    SINGLE_CHOICE = "single_choice"
+    MULTIPLE_CHOICE = "multiple_choice"
+    FILL_IN = "fill_in"
+    CALCULATION = "calculation"
+
+
+class DifficultyLevel(str, enum.Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+
+class Question(Base):
+    __tablename__ = "questions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    exam_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("exams.id", ondelete="CASCADE"), nullable=False
+    )
+    node_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+    )
+    question_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    type: Mapped[str] = mapped_column(
+        Enum(QuestionType, name="question_type", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
+        default=QuestionType.SINGLE_CHOICE,
+    )
+    difficulty: Mapped[str] = mapped_column(
+        Enum(DifficultyLevel, name="difficulty_level", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
+        default=DifficultyLevel.MEDIUM,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    option_a: Mapped[str | None] = mapped_column(Text)
+    option_b: Mapped[str | None] = mapped_column(Text)
+    option_c: Mapped[str | None] = mapped_column(Text)
+    option_d: Mapped[str | None] = mapped_column(Text)
+    correct_answer: Mapped[str] = mapped_column(String(10), nullable=False)
+    explanation: Mapped[str | None] = mapped_column(Text)
+    source_citation: Mapped[str | None] = mapped_column(Text)

@@ -1,14 +1,14 @@
 Feature: 身分驗證
 
-  # 訂閱方案 API enum 值：FREE | PRO_199 | ULTRA_399
+  # 訂閱方案 API enum 值：FREE | PRO | PRO_PLUS | ULTRA
   # 角色 API enum 值：USER | ADMIN
 
   Background:
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email                | 驗證方式 | 訂閱方案    | 角色  | 狀態   |
       | 1        | alice@example.com    | email    | FREE        | USER  | 已啟用 |
-      | 2        | bob@example.com      | email    | PRO_199     | USER  | 已啟用 |
-      | 3        | carol@example.com    | google   | ULTRA_399   | USER  | 已啟用 |
+      | 2        | bob@example.com      | email    | PRO         | USER  | 已啟用 |
+      | 3        | carol@example.com    | google   | ULTRA       | USER  | 已啟用 |
       | 4        | pending@example.com  | email    | FREE        | USER  | 待驗證 |
       | 5        | admin@example.com    | email    | FREE        | ADMIN | 已啟用 |
 
@@ -147,13 +147,13 @@ Feature: 身分驗證
 
   Rule: 後置（回應）- 登入後導覽列依 role 與 subscription_tier 顯示對應功能入口
 
-    # DB: users.subscription_tier = 'ULTRA_1599' → 顯示「教育管理」連結 (/edu-console)
+    # DB: users.subscription_tier = 'ULTRA' → 顯示「教育管理」連結 (/edu-console)
     # DB: users.role = 'ADMIN' → 顯示「平台管理」連結 (/super-admin/dashboard)
 
-    Example: ULTRA_1599 用戶登入後導覽列顯示「教育管理」入口
-      Given 使用者 "carol@example.com" 訂閱方案為 "ULTRA_1599"
+    Example: ULTRA 用戶登入後導覽列顯示「教育管理」入口
+      Given 使用者 "carol@example.com" 訂閱方案為 "ULTRA"
       When 使用者 "carol@example.com" 成功登入系統
-      Then 登入後的回應應包含 "subscription_tier": "ULTRA_1599"
+      Then 登入後的回應應包含 "subscription_tier": "ULTRA"
       And 前端導覽列應顯示「教育管理」連結，路徑為 "/edu-console"
       And 前端導覽列不應顯示「平台管理」連結
 
@@ -164,7 +164,7 @@ Feature: 身分驗證
       And 前端導覽列應顯示「平台管理」連結，路徑為 "/super-admin/dashboard"
       And 前端導覽列不應顯示「教育後台」連結
 
-    Example: FREE / PRO_199 一般用戶登入後導覽列不顯示管理入口
+    Example: FREE / PRO 一般用戶登入後導覽列不顯示管理入口
       Given 使用者 "alice@example.com" 訂閱方案為 "FREE" 且角色為 "USER"
       When 使用者 "alice@example.com" 成功登入系統
       Then 前端導覽列不應顯示「教育後台」連結

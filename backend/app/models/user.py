@@ -21,9 +21,9 @@ from app.models import Base
 
 class SubscriptionPlan(str, enum.Enum):
     FREE = "FREE"
-    PRO_199 = "PRO_199"
-    PRO_PLUS_399 = "PRO_PLUS_399"
-    ULTRA_1599 = "ULTRA_1599"
+    PRO = "PRO"
+    PRO_PLUS = "PRO_PLUS"
+    ULTRA = "ULTRA"
 
 
 class SubscriptionStatus(str, enum.Enum):
@@ -69,11 +69,13 @@ class User(Base):
     )
     password_hash: Mapped[str | None] = mapped_column(Text)
     subscription_plan: Mapped[str] = mapped_column(
-        Enum(SubscriptionPlan, name="subscription_plan", create_type=False),
+        Enum(SubscriptionPlan, name="subscription_plan", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
         default=SubscriptionPlan.FREE,
     )
     subscription_status: Mapped[str] = mapped_column(
-        Enum(SubscriptionStatus, name="subscription_status", create_type=False),
+        Enum(SubscriptionStatus, name="subscription_status", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
         default=SubscriptionStatus.ACTIVE,
     )
     next_billing_date: Mapped[datetime | None] = mapped_column(
@@ -81,11 +83,13 @@ class User(Base):
     )
     stripe_customer_id: Mapped[str | None] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(
-        Enum(UserRole, name="user_role", create_type=False),
+        Enum(UserRole, name="user_role", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
         default=UserRole.USER,
     )
     status: Mapped[str] = mapped_column(
-        Enum(UserStatus, name="user_status", create_type=False),
+        Enum(UserStatus, name="user_status", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
         default=UserStatus.ACTIVE,
     )
     onboarding_completed: Mapped[bool] = mapped_column(
@@ -95,7 +99,8 @@ class User(Base):
         Integer, default=30
     )
     learning_preference: Mapped[str] = mapped_column(
-        Enum(LearningPreference, name="learning_preference", create_type=False),
+        Enum(LearningPreference, name="learning_preference", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
         default=LearningPreference.MIXED,
     )
     age: Mapped[int | None] = mapped_column(Integer)

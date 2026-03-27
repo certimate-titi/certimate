@@ -19,11 +19,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import Base for autogenerate support
-from app.models import Base
-
-# add your model's MetaData object here for 'autogenerate' support
-target_metadata = Base.metadata
+# Import Base for autogenerate support (lazy — only when needed)
+# Note: We use manually-written migrations, so target_metadata is None
+# to avoid premature enum type creation on PostgreSQL.
+target_metadata = None
 
 
 def get_url() -> str:

@@ -1,6 +1,7 @@
 from behave import given
 from app.models.user import User, UserStatus
 from app.repositories.user_repository import UserRepository
+from app.services.auth_service import _hash_password
 
 
 @given('使用者 "{email}" 已完成註冊驗證')
@@ -13,7 +14,7 @@ def step_impl(context, email):
         user = User(
             email=email,
             auth_provider="email",
-            password_hash="$2b$12$hashed_test_password",
+            password_hash=_hash_password("CertiMate#2024"),
             status=UserStatus.ACTIVE,
             agreed_to_terms=True,
         )

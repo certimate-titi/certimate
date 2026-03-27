@@ -519,6 +519,23 @@ Table invoices {
 
 Ref: invoices.user_id > users.id [delete: cascade]
 
+Table transactions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  merchant_trade_no varchar(20) [unique, not null, note: '綠界交易編號']
+  target_plan varchar(50) [not null]
+  amount decimal(10,2) [not null]
+  status varchar(20) [not null, default: 'pending', note: 'pending | success | failed']
+  payment_provider varchar(20) [not null, default: 'ecpay']
+  trade_no varchar(50) [note: '綠界回傳的交易序號']
+  payment_type varchar(50) [note: '付款方式，如 Credit_CreditCard']
+  rtn_code varchar(20) [note: '綠界回傳碼']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: transactions.user_id > users.id [delete: cascade]
+
 // ============================================================
 // B2B Institution
 // ============================================================
@@ -734,6 +751,25 @@ Table plan_quotas {
 
 Ref: plan_quotas.updated_by > users.id
 
+Table user_usage {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  period varchar(10) [not null, note: 'YYYY-MM format for monthly tracking']
+  daily_ai_chats_used integer [default: 0]
+  monthly_uploads_used integer [default: 0]
+  monthly_exams_used integer [default: 0]
+  monthly_vision_pages_used integer [default: 0]
+  last_reset_at timestamptz [default: `now()`]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, period) [unique]
+  }
+}
+
+Ref: user_usage.user_id > users.id
+
 // ============================================================
 // Anomaly Tracking & Maintenance (Feature 16)
 // ============================================================
@@ -833,3 +869,49 @@ Ref: maintenance_notifications.schedule_id > maintenance_schedules.id [delete: c
 // CREATE INDEX idx_audit_admin ON admin_audit_logs(admin_id);
 // CREATE INDEX idx_audit_created ON admin_audit_logs(created_at DESC);
 // CREATE INDEX idx_audit_action ON admin_audit_logs(action);
+
+// ============================================================
+// Feedback System (Feature 17)
+// ============================================================
+
+Enum feedback_type {
+  BUG
+  FEATURE_REQUEST
+  CONTENT_ERROR
+  OTHER
+}
+
+Enum feedback_status {
+  PENDING
+  REVIEWING
+  RESOLVED
+  CLOSED
+}
+
+Table feedbacks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  feedback_id varchar(50) [unique, not null, note: 'e.g. FB-001']
+  user_id uuid [not null]
+  type feedback_type [not null]
+  subject varchar(100) [not null]
+  content text [not null]
+  status feedback_status [not null, default: 'PENDING']
+  admin_reply text
+  resolved_at timestamptz
+  close_reason text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Ref: feedbacks.user_id > users.id
+
+Table feedback_attachments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  feedback_id uuid [not null]
+  file_path text [not null]
+  file_size integer [not null, note: 'bytes']
+  mime_type varchar(50) [not null]
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: feedback_attachments.feedback_id > feedbacks.id

@@ -5,9 +5,9 @@ from app.repositories.user_repository import UserRepository
 
 PLAN_MAP = {
     "FREE": SubscriptionPlan.FREE,
-    "PRO_199": SubscriptionPlan.PRO_199,
-    "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS_399,
-    "ULTRA_1599": SubscriptionPlan.ULTRA_1599,
+    "PRO": SubscriptionPlan.PRO,
+    "PRO_PLUS": SubscriptionPlan.PRO_PLUS,
+    "ULTRA": SubscriptionPlan.ULTRA,
 }
 
 ROLE_MAP = {

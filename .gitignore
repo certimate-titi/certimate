@@ -25,3 +25,8 @@ coverage/
 
 # Firebase
 .firebase/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

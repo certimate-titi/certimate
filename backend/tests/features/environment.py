@@ -65,20 +65,42 @@ def _start_sqlite():
     """使用 SQLite in-memory 作為 fallback。"""
     global _engine, _SessionLocal, _using_sqlite
 
-    from sqlalchemy import create_engine, event
+    from sqlalchemy import String, create_engine, event
     from sqlalchemy.orm import sessionmaker
     from app.models import Base
 
-    _using_sqlite = True
-    _engine = create_engine("sqlite:///:memory:")
+    import sqlite3
+    import uuid as _uuid
 
-    # SQLite 不支援 PostgreSQL enum，需要忽略 enum 建立
-    # 使用 Base.metadata.create_all 直接建表
+    _using_sqlite = True
+
+    # 註冊 UUID 類型適配器讓 SQLite 能處理 Python uuid 物件
+    sqlite3.register_adapter(_uuid.UUID, lambda u: str(u))
+    sqlite3.register_converter("UUID", lambda b: _uuid.UUID(b.decode()))
+
+    _engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"detect_types": sqlite3.PARSE_DECLTYPES, "check_same_thread": False},
+        pool_pre_ping=True,
+        poolclass=__import__("sqlalchemy.pool", fromlist=["StaticPool"]).StaticPool,
+    )
+
     @event.listens_for(_engine, "connect")
     def _set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
+    # SQLite: 將 PostgreSQL 專用型別替換為可攜帶型別
+    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+    from sqlalchemy import Enum as SA_Enum
+
+    for table in Base.metadata.tables.values():
+        for column in table.columns:
+            if isinstance(column.type, PG_UUID):
+                column.type = String(36)
+            elif isinstance(column.type, SA_Enum):
+                column.type = String(50)
 
     Base.metadata.create_all(bind=_engine)
     _SessionLocal = sessionmaker(bind=_engine)
@@ -147,6 +169,13 @@ def after_scenario(context, scenario):
                     connection.execute(text(f"TRUNCATE TABLE {table} CASCADE"))
 
     context.db_session.close()
+
+    # 重設 ecpay_service 的時間函數
+    try:
+        from app.services.ecpay_service import set_now_func
+        set_now_func(None)
+    except ImportError:
+        pass
 
     # 清理狀態
     context.last_error = None
