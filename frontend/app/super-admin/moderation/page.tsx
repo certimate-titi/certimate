@@ -47,6 +47,11 @@ const reportStats = [
   { label: '系統誤報率', value: '1.2%', color: 'emerald' },
 ];
 
+const contentReviewQueue = [
+  { id: 1, type: '使用者上傳', content: '疑似包含版權內容', reporter: '系統自動', status: 'pending' as const, date: '2026-03-26' },
+  { id: 2, type: 'AI 對話', content: '偵測到超出範圍的提問', reporter: '系統自動', status: 'pending' as const, date: '2026-03-25' },
+];
+
 export default function ModerationPage() {
   const [activeTab, setActiveTab] = useState('queue');
 
@@ -79,6 +84,51 @@ export default function ModerationPage() {
           </div>
         ))}
       </div>
+
+      {/* Content Review Queue */}
+      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="font-bold text-slate-900 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-indigo-500" /> 內容審查佇列
+          </h2>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {contentReviewQueue.map((item) => (
+            <div key={item.id} className="p-6 hover:bg-slate-50/50 transition-all">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={cn(
+                      "text-xs font-bold px-2 py-1 rounded-lg",
+                      item.type === '使用者上傳' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+                    )}>
+                      {item.type}
+                    </span>
+                    <span className="text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
+                      {item.status === 'pending' ? '待審核' : item.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-900 mb-1">{item.content}</p>
+                  <p className="text-xs text-slate-500">
+                    回報者：<span className="font-medium text-slate-700">{item.reporter}</span> &middot; {item.date}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> 通過
+                  </button>
+                  <button className="px-3 py-1.5 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center gap-1.5">
+                    <XCircle className="h-3.5 w-3.5" /> 移除
+                  </button>
+                  <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-1.5">
+                    <Search className="h-3.5 w-3.5" /> 查看詳情
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Moderation Queue */}

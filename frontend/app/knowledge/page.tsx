@@ -15,7 +15,8 @@ interface ChatMessage {
 }
 
 export default function KnowledgeBasePage() {
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, subscriptionTier } = useAuth();
+  const isPro199 = subscriptionTier === 'PRO_199';
   const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export default function KnowledgeBasePage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [freeQueriesLeft, setFreeQueriesLeft] = useState(3);
+  const [freeQueriesLeft, setFreeQueriesLeft] = useState(isPro199 ? 0 : 3);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [mindMapCollapsed, setMindMapCollapsed] = useState(false);
@@ -65,7 +66,7 @@ export default function KnowledgeBasePage() {
     setChatMessages([]);
     setChatInput('');
     setChatLoading(false);
-    setFreeQueriesLeft(3);
+    setFreeQueriesLeft(isPro199 ? 0 : 3);
     setDeleteConfirmId(null);
     setMindMapCollapsed(false);
 
@@ -89,7 +90,7 @@ export default function KnowledgeBasePage() {
   const handleNodeClick = async (nodeId: string) => {
     setLoadingDetail(true);
     setChatMessages([]);
-    setFreeQueriesLeft(3);
+    setFreeQueriesLeft(isPro199 ? 0 : 3);
     const detail = await knowledgeService.getNodeDetail(nodeId);
     setSelectedNodeDetail(detail);
     setLoadingDetail(false);
@@ -110,6 +111,7 @@ export default function KnowledgeBasePage() {
   const handleSendChat = async (msg?: string) => {
     const text = msg || chatInput.trim();
     if (!text || chatLoading) return;
+    if (isPro199) return;
     if (!isProPlus && freeQueriesLeft <= 0) return;
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
@@ -147,10 +149,9 @@ export default function KnowledgeBasePage() {
   };
 
   const quickChips = [
-    { label: '五歲小孩聽得懂', icon: '👶' },
-    { label: '總結這段重點', icon: '🔄' },
-    { label: '轉成 1 題測驗', icon: '📝' },
-    { label: '舉個實例', icon: '💡' },
+    '用五歲小孩聽得懂的方式解釋',
+    '總結這三段重點',
+    '轉成 1 題小測驗',
   ];
 
   const showSubjectSwitcher = subjects.length > 0;
@@ -361,21 +362,27 @@ export default function KnowledgeBasePage() {
                     <div className="flex items-center gap-2 mb-3">
                       <MessageCircle className="h-4 w-4 text-emerald-500" />
                       <h4 className="text-sm font-bold text-slate-700">AI 教練對話</h4>
-                      {!isProPlus && (
+                      {isPro199 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 ml-auto font-medium">
+                          <Lock className="h-3 w-3" />
+                          AI 教練深度對話為 PRO_PLUS 專屬功能，升級解鎖
+                        </span>
+                      )}
+                      {!isProPlus && !isPro199 && (
                         <span className="text-[10px] text-slate-400 ml-auto">免費額度剩餘 {freeQueriesLeft}/3</span>
                       )}
                     </div>
 
-                    {/* Quick Action Chips */}
-                    {chatMessages.length === 0 && (
+                    {/* Quick Action Chips — hidden for PRO_199 (no access at all) */}
+                    {!isPro199 && (isProPlus || freeQueriesLeft > 0) && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {quickChips.map(chip => (
                           <button
-                            key={chip.label}
-                            onClick={() => handleSendChat(chip.label)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                            key={chip}
+                            onClick={() => setChatInput(chip)}
+                            className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs border border-emerald-200 hover:bg-emerald-100 transition-colors"
                           >
-                            <span>{chip.icon}</span> {chip.label}
+                            {chip}
                           </button>
                         ))}
                       </div>
@@ -418,15 +425,31 @@ export default function KnowledgeBasePage() {
                         </div>
                       )}
 
-                      {/* Glassmorphism Paywall */}
-                      {!isProPlus && freeQueriesLeft <= 0 && (
+                      {/* Glassmorphism Paywall — PRO_199: immediate lock */}
+                      {isPro199 && (
                         <div className="relative rounded-2xl overflow-hidden">
                           <div className="p-6 backdrop-blur-md bg-white/50 border border-white/50 text-center">
                             <div className="mx-auto h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center mb-3">
                               <Lock className="h-5 w-5 text-indigo-500" />
                             </div>
-                            <h4 className="font-bold text-slate-900 mb-1">升級 Pro Plus 版</h4>
-                            <p className="text-xs text-slate-500 mb-4">即享對這份講義無限制的深度溯源探討</p>
+                            <h4 className="font-bold text-slate-900 mb-1">AI 教練深度對話為 PRO_PLUS 專屬功能</h4>
+                            <p className="text-xs text-slate-500 mb-4">升級即可使用 Claude 3.5 終極教練，深度溯源探討</p>
+                            <Link href="/account" className="inline-flex items-center gap-1 bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors">
+                              解鎖 Claude 3.5 終極教練 (NT$399/月)
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Glassmorphism Paywall — FREE: after 3 queries exhausted */}
+                      {!isProPlus && !isPro199 && freeQueriesLeft <= 0 && (
+                        <div className="relative rounded-2xl overflow-hidden">
+                          <div className="p-6 backdrop-blur-md bg-white/50 border border-white/50 text-center">
+                            <div className="mx-auto h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center mb-3">
+                              <Lock className="h-5 w-5 text-indigo-500" />
+                            </div>
+                            <h4 className="font-bold text-slate-900 mb-1">已達免費追問上限</h4>
+                            <p className="text-xs text-slate-500 mb-4">升級 PRO_PLUS 解鎖無限對話</p>
                             <Link href="/account" className="inline-flex items-center gap-1 bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors">
                               解鎖 AI 教練 (NT$399/月)
                             </Link>
@@ -443,13 +466,13 @@ export default function KnowledgeBasePage() {
                         value={chatInput}
                         onChange={e => setChatInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleSendChat()}
-                        placeholder={!isProPlus && freeQueriesLeft <= 0 ? '免費額度已用完，升級 Pro Plus 繼續對話' : '我不懂這裡的意思，能給我實例嗎？'}
+                        placeholder={isPro199 ? 'AI 教練深度對話為 PRO_PLUS 專屬功能' : !isProPlus && freeQueriesLeft <= 0 ? '已達免費追問上限，升級 PRO_PLUS 解鎖無限對話' : '我不懂這裡的意思，能給我實例嗎？'}
                         className="w-full pl-4 pr-12 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm disabled:opacity-50"
-                        disabled={chatLoading || (!isProPlus && freeQueriesLeft <= 0)}
+                        disabled={chatLoading || isPro199 || (!isProPlus && freeQueriesLeft <= 0)}
                       />
                       <button
                         onClick={() => handleSendChat()}
-                        disabled={chatLoading || !chatInput.trim() || (!isProPlus && freeQueriesLeft <= 0)}
+                        disabled={chatLoading || !chatInput.trim() || isPro199 || (!isProPlus && freeQueriesLeft <= 0)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 bg-emerald-500 text-white rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
                       >
                         <Send className="h-3.5 w-3.5" />
@@ -489,6 +512,16 @@ export default function KnowledgeBasePage() {
               {nodes.map(node => {
                 const isExpanded = expandedNodes.has(node.id);
                 const isActive = selectedNodeDetail?.node.id === node.id;
+                const nodeMasteryText =
+                  node.masteryLevel === 'mastered' ? 'text-emerald-600' :
+                  node.masteryLevel === 'partial' ? 'text-amber-600' :
+                  node.masteryLevel === 'weak' ? 'text-rose-600' :
+                  'text-slate-400';
+                const nodeMasteryBorder =
+                  node.masteryLevel === 'mastered' ? 'border-emerald-200 bg-emerald-50/30' :
+                  node.masteryLevel === 'partial' ? 'border-amber-200 bg-amber-50/30' :
+                  node.masteryLevel === 'weak' ? 'border-rose-200 bg-rose-50/30' :
+                  'border-slate-200 bg-slate-50/30';
                 return (
                   <div key={node.id} className="mb-1">
                     <button
@@ -498,16 +531,16 @@ export default function KnowledgeBasePage() {
                       }}
                       className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
                         isActive
-                          ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? `${nodeMasteryBorder} font-bold border`
+                          : `hover:bg-slate-50`
                       }`}
                     >
                       {node.children && node.children.length > 0 ? (
-                        isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        isExpanded ? <ChevronDown className={`h-3.5 w-3.5 ${nodeMasteryText} shrink-0`} /> : <ChevronRight className={`h-3.5 w-3.5 ${nodeMasteryText} shrink-0`} />
                       ) : (
                         <div className="w-3.5 shrink-0" />
                       )}
-                      <span className="text-sm truncate">{node.label}</span>
+                      <span className={`text-sm truncate ${isActive ? nodeMasteryText : nodeMasteryText}`}>{node.label}</span>
                     </button>
 
                     {/* Children */}
@@ -515,22 +548,32 @@ export default function KnowledgeBasePage() {
                       <div className="ml-5 border-l border-slate-100 pl-2 mt-0.5">
                         {node.children.map(child => {
                           const childActive = selectedNodeDetail?.node.id === child.id;
-                          const masteryColor =
+                          const masteryDot =
                             child.masteryLevel === 'mastered' ? 'bg-emerald-400' :
-                            child.masteryLevel === 'weak' ? 'bg-rose-400' :
                             child.masteryLevel === 'partial' ? 'bg-amber-400' :
+                            child.masteryLevel === 'weak' ? 'bg-rose-400' :
                             'bg-slate-300';
+                          const childMasteryText =
+                            child.masteryLevel === 'mastered' ? 'text-emerald-600' :
+                            child.masteryLevel === 'partial' ? 'text-amber-600' :
+                            child.masteryLevel === 'weak' ? 'text-rose-600' :
+                            'text-slate-400';
+                          const childActiveBg =
+                            child.masteryLevel === 'mastered' ? 'bg-emerald-50' :
+                            child.masteryLevel === 'partial' ? 'bg-amber-50' :
+                            child.masteryLevel === 'weak' ? 'bg-rose-50' :
+                            'bg-slate-50';
                           return (
                             <button
                               key={child.id}
                               onClick={() => handleNodeClick(child.id)}
                               className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors my-0.5 ${
                                 childActive
-                                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
-                                  : 'text-slate-600 hover:bg-slate-50'
+                                  ? `${childActiveBg} ${childMasteryText} font-semibold`
+                                  : `${childMasteryText} hover:bg-slate-50`
                               }`}
                             >
-                              <div className={`w-2 h-2 rounded-full shrink-0 ${masteryColor}`} />
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${masteryDot}`} />
                               <span className="text-xs truncate">{child.label}</span>
                             </button>
                           );

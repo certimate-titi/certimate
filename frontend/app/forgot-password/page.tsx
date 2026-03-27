@@ -24,12 +24,11 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/user-not-found') {
-        setError('找不到此電子郵件對應的帳號。');
-      } else if (err.code === 'auth/invalid-email') {
+      if (err.code === 'auth/invalid-email') {
         setError('請輸入有效的電子郵件地址。');
       } else {
-        setError('發送失敗，請稍後再試。');
+        // Always show success to prevent account enumeration
+        setSent(true);
       }
     } finally {
       setIsLoading(false);
@@ -61,7 +60,7 @@ export default function ForgotPasswordPage() {
               </p>
             </div>
             <p className="text-xs text-slate-400">
-              沒有收到？請檢查垃圾郵件匣，或稍待幾分鐘後再試。
+              沒有收到？請檢查垃圾郵件匣，或稍待幾分鐘後再試。連結有效期為 1 小時。
             </p>
             <Link
               href="/login"

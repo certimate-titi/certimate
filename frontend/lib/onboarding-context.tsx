@@ -129,6 +129,9 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     try {
       await onboardingService.submit({
         displayName: state.formData.displayName,
+        age: state.formData.age,
+        education: state.formData.education,
+        occupation: state.formData.occupation,
         subjects: state.formData.subjects.map(s => ({
           subjectId: s.subjectId,
           examDate: s.examDate,
@@ -141,7 +144,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       if (typeof window !== 'undefined') {
         localStorage.removeItem(DRAFT_STORAGE_KEY);
       }
-      router.push('/dashboard');
+      // Delay redirect to allow the launch celebration animation to play (~1.5s)
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
     } finally {
       dispatch({ type: 'SET_SUBMITTING', value: false });
     }

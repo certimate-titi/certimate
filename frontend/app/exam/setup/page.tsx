@@ -2,20 +2,29 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, FileText, Youtube, BrainCircuit, Play } from 'lucide-react';
+import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock } from 'lucide-react';
 import { documentService, examService, subjectService } from '@/lib/api/services';
-import type { Document, QuestionType, UserSubject } from '@/types';
+import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
 import ExamLoadingOverlay from '@/components/ExamLoadingOverlay';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import { useAuth } from '@/lib/auth-context';
 
 const QUESTION_COUNTS = [10, 20, 50, 100] as const;
 
+const TIER_QUESTION_LIMITS: Record<SubscriptionTier, { max: number; upgradeMessage: string | null }> = {
+  FREE: { max: 10, upgradeMessage: 'FREE 方案每次測驗最多 10 題，升級 PRO 最多可出 50 題' },
+  PRO_199: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
+  PRO_PLUS_399: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
+  ULTRA_1599: { max: Infinity, upgradeMessage: null },
+};
+
 const LOADING_STAGES = [
-  { label: '正在分析知識點...', duration: 1500 },
-  { label: 'AI 正在設計題目陷阱...', duration: 2500 },
-  { label: '正在驗證答案品質...', duration: 1500 },
-  { label: '考卷準備就緒！', duration: 500 },
+  { label: '正在從向量庫提取知識點...', progress: 10, duration: 1500 },
+  { label: 'AI 正在分析考點與出題比例...', progress: 30, duration: 2000 },
+  { label: 'AI 教練正在出題...', progress: 50, duration: 2500 },
+  { label: 'AI 教練正在設計考題陷阱與詳解...', progress: 75, duration: 2000 },
+  { label: '校對格式與排版中...', progress: 90, duration: 1500 },
+  { label: '考卷準備完畢!', progress: 100, duration: 500 },
 ];
 
 const sourceTypeIcons: Record<string, { icon: typeof FileText; color: string }> = {
@@ -27,9 +36,10 @@ const sourceTypeIcons: Record<string, { icon: typeof FileText; color: string }> 
 
 export default function ExamSetupPage() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading, onboardingCompleted } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Subject state
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
@@ -79,7 +89,18 @@ export default function ExamSetupPage() {
     });
   }, [activeSubjectId, subjects]);
 
+  const tierLimit = TIER_QUESTION_LIMITS[subscriptionTier];
+
+  // Auto-clamp question count when tier changes
+  useEffect(() => {
+    if (questionCount > tierLimit.max) {
+      const validCounts = QUESTION_COUNTS.filter(c => c <= tierLimit.max);
+      setQuestionCount(validCounts.length > 0 ? validCounts[validCounts.length - 1] : QUESTION_COUNTS[0]);
+    }
+  }, [subscriptionTier, tierLimit.max, questionCount]);
+
   const toggleDoc = (docId: string) => {
+    setValidationError(null);
     setSelectedDocIds(prev => {
       const next = new Set(prev);
       if (next.has(docId)) next.delete(docId);
@@ -101,7 +122,11 @@ export default function ExamSetupPage() {
   };
 
   const handleGenerate = useCallback(async () => {
-    if (selectedDocIds.size === 0) return;
+    if (selectedDocIds.size === 0) {
+      setValidationError('請至少選擇一個知識範圍');
+      return;
+    }
+    setValidationError(null);
     setIsGenerating(true);
 
     try {
@@ -230,20 +255,30 @@ export default function ExamSetupPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-3">題數選擇</label>
                 <div className="grid grid-cols-4 gap-2">
-                  {QUESTION_COUNTS.map(count => (
-                    <button
-                      key={count}
-                      onClick={() => setQuestionCount(count)}
-                      className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                        questionCount === count
-                          ? 'border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
-                          : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {count} 題
-                    </button>
-                  ))}
+                  {QUESTION_COUNTS.map(count => {
+                    const isLocked = count > tierLimit.max;
+                    return (
+                      <button
+                        key={count}
+                        onClick={() => !isLocked && setQuestionCount(count)}
+                        disabled={isLocked}
+                        className={`py-2 rounded-lg text-sm font-medium transition-colors relative ${
+                          isLocked
+                            ? 'border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : questionCount === count
+                            ? 'border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                            : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {isLocked && <Lock className="h-3 w-3 inline-block mr-1" />}
+                        {count} 題
+                      </button>
+                    );
+                  })}
                 </div>
+                {tierLimit.upgradeMessage && (
+                  <p className="text-xs text-amber-600 mt-2">{tierLimit.upgradeMessage}</p>
+                )}
               </div>
 
               {/* Difficulty */}
@@ -295,7 +330,9 @@ export default function ExamSetupPage() {
         {/* Action Footer */}
         <div className="bg-slate-900 p-6 flex items-center justify-between">
           <div className="text-slate-300 text-sm">
-            {selectedDocIds.size === 0 ? (
+            {validationError ? (
+              <span className="text-red-400">{validationError}</span>
+            ) : selectedDocIds.size === 0 ? (
               <span className="text-amber-400">請先選擇至少一份學習資源</span>
             ) : (
               <>已選 <span className="text-white font-medium">{selectedDocIds.size}</span> 份資源 • 預計生成時間：<span className="text-white font-medium">約 15 秒</span></>
@@ -303,7 +340,7 @@ export default function ExamSetupPage() {
           </div>
           <button
             onClick={handleGenerate}
-            disabled={selectedDocIds.size === 0 || isGenerating}
+            disabled={isGenerating}
             className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Play className="h-5 w-5 fill-current" /> 生成專屬模擬考

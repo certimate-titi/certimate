@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Youtube, FileText, Image as ImageIcon, Clock, TrendingUp, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, AlertCircle, Sparkles, Lock, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { Upload, Youtube, FileText, Image as ImageIcon, Clock, TrendingUp, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, AlertCircle, Sparkles, Lock, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
 import { dashboardService, documentService, subjectService } from '@/lib/api/services';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -14,7 +14,7 @@ import SubjectPickerModal from '@/components/SubjectPickerModal';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
 export default function DashboardPage() {
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra, subscriptionTier } = useAuth();
   const router = useRouter();
   const [showModeTooltip, setShowModeTooltip] = useState(false);
 
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'pending' | 'completed' | 'failed'>('idle');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'pending' | 'processing' | 'completed' | 'failed'>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,7 +70,12 @@ export default function DashboardPage() {
     setUploadStatus('pending');
     setUploadProgress(0);
     const progressInterval = setInterval(() => {
-      setUploadProgress(p => Math.min(p + 10, 90));
+      setUploadProgress(p => {
+        if (p >= 20 && uploadStatus !== 'processing') {
+          setUploadStatus('processing');
+        }
+        return Math.min(p + 10, 90);
+      });
     }, 300);
     try {
       await documentService.upload({ file: files[0], title: files[0].name, subjectId: activeSubjectId });
@@ -95,7 +100,12 @@ export default function DashboardPage() {
     setUploadStatus('pending');
     setUploadProgress(0);
     const progressInterval = setInterval(() => {
-      setUploadProgress(p => Math.min(p + 8, 90));
+      setUploadProgress(p => {
+        if (p >= 20 && uploadStatus !== 'processing') {
+          setUploadStatus('processing');
+        }
+        return Math.min(p + 8, 90);
+      });
     }, 400);
     try {
       await documentService.upload({ youtubeUrl: youtubeUrl.trim(), subjectId: activeSubjectId });
@@ -207,7 +217,15 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <StreakCounter streak={data.streak} />
+            <div className="flex flex-col items-end gap-1">
+              <StreakCounter streak={data.streak} />
+              {data.streak.freezesRemaining > 0 && (
+                <span className="text-xs text-blue-500">❄️ {data.streak.freezesRemaining} 次補救機會</span>
+              )}
+              {data.streak.freezeConsumedToday && (
+                <span className="text-xs text-slate-500 italic">休息也是學習的一部分，歡迎回來！</span>
+              )}
+            </div>
             {data.stats.examCountdown && (
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
                 <Clock className="h-5 w-5 text-amber-500" />
@@ -226,6 +244,30 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Core Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 text-center">
+            <Clock className="h-5 w-5 text-amber-500 mx-auto mb-2" />
+            <span className="block text-2xl font-extrabold text-slate-900">{data.stats.examCountdown?.daysRemaining ?? '--'}</span>
+            <span className="text-xs text-slate-500">距離考試天數</span>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 text-center">
+            <BookOpen className="h-5 w-5 text-indigo-500 mx-auto mb-2" />
+            <span className="block text-2xl font-extrabold text-slate-900">{data.stats.totalQuestionsAnswered ?? 0}</span>
+            <span className="text-xs text-slate-500">累積答題數</span>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 text-center">
+            <TrendingUp className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
+            <span className="block text-2xl font-extrabold text-slate-900">{data.stats.overallAccuracy}%</span>
+            <span className="text-xs text-slate-500">整體答對率</span>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 text-center">
+            <Sparkles className="h-5 w-5 text-purple-500 mx-auto mb-2" />
+            <span className="block text-2xl font-extrabold text-slate-900">{data.stats.predictedPassRate ?? '--'}%</span>
+            <span className="text-xs text-slate-500">預測及格率</span>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
@@ -237,9 +279,18 @@ export default function DashboardPage() {
 
               {/* Upload Status Feedback */}
               {uploadStatus === 'pending' && (
+                <div className="mb-4 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                  <Clock className="h-4 w-4 text-slate-500 shrink-0" />
+                  <p className="text-sm text-slate-600 font-medium">等待處理...</p>
+                </div>
+              )}
+              {uploadStatus === 'processing' && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                    <span>解析中，請稍候...</span>
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      AI 解析中...
+                    </span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -251,21 +302,21 @@ export default function DashboardPage() {
               {uploadStatus === 'completed' && (
                 <div className="mb-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <p className="text-sm text-emerald-800 font-medium">解析完成！心智圖已生成，</p>
-                  <Link href="/knowledge" className="text-sm font-bold text-emerald-600 underline underline-offset-2">立即查看</Link>
+                  <p className="text-sm text-emerald-800 font-medium">解析完成</p>
+                  <Link href="/knowledge" className="text-sm font-bold text-emerald-600 underline underline-offset-2 ml-1">立即查看</Link>
                 </div>
               )}
               {uploadStatus === 'failed' && (
                 <div className="mb-4 flex items-center justify-between bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-2">
                     <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                    <p className="text-sm text-rose-800">解析失敗，請確認檔案格式是否正確。</p>
+                    <p className="text-sm text-rose-800">解析失敗</p>
                   </div>
                   <button
                     onClick={() => { setUploadStatus('idle'); fileInputRef.current?.click(); }}
                     className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-800 ml-2 shrink-0"
                   >
-                    <RefreshCw className="h-3 w-3" /> 重新解析
+                    <RefreshCw className="h-3 w-3" /> 重試
                   </button>
                 </div>
               )}
@@ -287,7 +338,7 @@ export default function DashboardPage() {
                       onChange={e => handleFileUpload(e.target.files)}
                       disabled={uploading}
                     />
-                    {uploading && uploadStatus === 'pending' ? (
+                    {uploading && (uploadStatus === 'pending' || uploadStatus === 'processing') ? (
                       <div className="flex flex-col items-center">
                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
                         <p className="font-medium text-emerald-700">上傳中...</p>
@@ -316,9 +367,12 @@ export default function DashboardPage() {
                       <ImageIcon className="h-4 w-4" /> 上傳圖片（Vision OCR）
                     </button>
                   ) : (
-                    <div className="w-full flex items-center gap-2 justify-center border border-slate-200 bg-slate-50 rounded-xl px-4 py-2 text-sm text-slate-400 cursor-default">
+                    <div className="group relative w-full flex items-center gap-2 justify-center border border-slate-200 bg-slate-50 rounded-xl px-4 py-2 text-sm text-slate-400 cursor-default">
                       <Lock className="h-3.5 w-3.5" />
-                      <span>圖片上傳需 Pro Plus — 解鎖 Vision OCR</span>
+                      <span>圖片上傳需 PRO+ 以上方案</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                        手寫/圖片辨識需要多模態算力，升級 PRO+ 解鎖 Vision OCR
+                      </div>
                     </div>
                   )}
                 </div>
@@ -568,6 +622,15 @@ export default function DashboardPage() {
               </div>
             </section>
           </div>
+        </div>
+      </div>
+
+      {/* Feedback Link */}
+      <div className="container mx-auto px-4 max-w-6xl pb-8">
+        <div className="flex justify-center">
+          <Link href="/feedback" className="text-sm text-slate-500 hover:text-emerald-600 flex items-center gap-1">
+            <MessageSquare className="h-4 w-4" /> 意見反饋
+          </Link>
         </div>
       </div>
 

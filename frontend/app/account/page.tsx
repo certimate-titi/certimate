@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2 } from 'lucide-react';
+import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { accountService } from '@/lib/api/services';
 import type { GetUserUsageResponse, GetAchievementsResponse, GetBillingHistoryResponse } from '@/types';
@@ -14,6 +14,31 @@ export default function AccountPage() {
   const { user, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [notifDaily, setNotifDaily] = useState(true);
+  const [notifPreExam, setNotifPreExam] = useState(true);
+  const [notifWeekly, setNotifWeekly] = useState(true);
+
+  // Mock billing history data
+  const mockBillingHistory = [
+    { date: '2026-03-01', description: 'PRO 方案 月費', amount: 199, status: 'paid' as const },
+    { date: '2026-02-01', description: 'PRO 方案 月費', amount: 199, status: 'paid' as const },
+  ];
+
+  // Mock subject data
+  const [subjects, setSubjects] = useState([
+    { name: 'AWS SAA', date: '2026-06-15', level: '有基礎', mode: 'Standard' },
+    { name: 'CFA Level 1', date: '2026-08-20', level: '初學', mode: 'Mastery' },
+  ]);
 
   // Data for each tab
   const [usage, setUsage] = useState<GetUserUsageResponse | null>(null);
@@ -30,6 +55,42 @@ export default function AccountPage() {
     setSaving(true);
     await accountService.updateProfile({ displayName: user?.displayName });
     setSaving(false);
+  };
+
+  const handleChangePassword = () => {
+    setPasswordMessage(null);
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordMessage({ type: 'error', text: '請填寫所有欄位' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: 'error', text: '新密碼與確認密碼不一致' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordMessage({ type: 'error', text: '新密碼長度需至少 8 個字元' });
+      return;
+    }
+    // Mock success
+    setPasswordMessage({ type: 'success', text: '密碼已成功更新' });
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const handleEditSubject = (name: string) => {
+    alert(`編輯科目：${name}（Mock）`);
+  };
+
+  const handleRemoveSubject = (name: string) => {
+    setSubjects(prev => prev.filter(s => s.name !== name));
+  };
+
+  const handleAddSubject = () => {
+    alert('新增備考科目（Mock）');
   };
 
   const tabs: { id: TabId; label: string; icon: typeof User }[] = [
@@ -252,36 +313,67 @@ export default function AccountPage() {
                     </button>
                   </div>
                 )}
+                {/* Cancel subscription */}
+                {isPro && (
+                  <div className="mt-4 text-center">
+                    <button className="text-sm text-slate-400 hover:text-rose-500 underline transition-colors">
+                      取消訂閱
+                    </button>
+                    <p className="text-xs text-slate-400 mt-1">取消後，您的方案將在當前帳單週期結束時降級為免費版</p>
+                  </div>
+                )}
               </section>
 
-              {/* Billing History */}
-              {billing && billing.invoices.length > 0 && (
-                <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">帳單記錄</h2>
-                  <div className="space-y-3">
-                    {billing.invoices.map(inv => (
-                      <div key={inv.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{new Date(inv.date).toLocaleDateString('zh-TW')}</p>
-                          <p className="text-xs text-slate-500">NT${inv.amount}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {inv.status === 'paid' ? '已付款' : '處理中'}
-                          </span>
-                          {inv.pdfUrl && (
-                            <button className="text-slate-400 hover:text-slate-600">
-                              <Download className="h-4 w-4" />
+              {/* Billing History Table */}
+              <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <h2 className="text-xl font-bold text-slate-900 mb-6">帳單記錄</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">日期</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">說明</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">金額</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">狀態</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">收據</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(billing && billing.invoices.length > 0
+                        ? billing.invoices.map(inv => ({
+                            date: inv.date,
+                            description: `${inv.amount >= 1599 ? 'ULTRA' : inv.amount >= 399 ? 'PRO PLUS' : 'PRO'} 方案 月費`,
+                            amount: inv.amount,
+                            status: inv.status,
+                          }))
+                        : mockBillingHistory
+                      ).map((row, idx) => (
+                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-4 text-slate-900">{new Date(row.date).toLocaleDateString('zh-TW')}</td>
+                          <td className="py-3 px-4 text-slate-700">{row.description}</td>
+                          <td className="py-3 px-4 text-right font-medium text-slate-900">NT${row.amount}</td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              row.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {row.status === 'paid' ? '已付款' : '處理中'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              disabled
+                              className="inline-flex items-center gap-1 text-xs text-slate-400 cursor-not-allowed"
+                              title="功能開發中"
+                            >
+                              <Download className="h-3.5 w-3.5" /> 下載收據
                             </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </>
           )}
 
@@ -290,21 +382,75 @@ export default function AccountPage() {
             <>
               <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900 mb-6">變更密碼</h2>
+                {passwordMessage && (
+                  <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
+                    passwordMessage.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}>
+                    {passwordMessage.text}
+                  </div>
+                )}
                 <div className="space-y-4 max-w-md">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">目前密碼</label>
-                    <input type="password" className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={e => setCurrentPassword(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">新密碼</label>
-                    <input type="password" className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">確認新密碼</label>
-                    <input type="password" className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="pt-4">
-                    <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <button
+                      onClick={handleChangePassword}
+                      className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
                       更新密碼
                     </button>
                   </div>
@@ -327,7 +473,10 @@ export default function AccountPage() {
                     <p className="text-sm font-medium text-rose-700">刪除帳號</p>
                     <p className="text-xs text-slate-500">永久刪除帳號及所有資料，此操作無法復原</p>
                   </div>
-                  <button className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-bold hover:bg-rose-100 transition-colors flex items-center gap-2">
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-bold hover:bg-rose-100 transition-colors flex items-center gap-2"
+                  >
                     <Trash2 className="h-4 w-4" /> 刪除帳號
                   </button>
                 </div>
@@ -345,19 +494,44 @@ export default function AccountPage() {
                   <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">通知設定</h3>
                   <div className="space-y-4">
                     {[
-                      { label: '每日複習提醒', desc: '根據艾賓浩斯排程發送提醒' },
-                      { label: '考前衝刺信', desc: '考試前 3 天發送鼓勵信' },
-                      { label: '學習週報', desc: '每週日發送學習報告' },
+                      { label: '每日複習提醒', desc: '根據艾賓浩斯排程發送每日複習提醒', checked: notifDaily, onChange: () => setNotifDaily(!notifDaily) },
+                      { label: '考前衝刺通知', desc: '考試前發送衝刺通知與鼓勵信', checked: notifPreExam, onChange: () => setNotifPreExam(!notifPreExam) },
+                      { label: '每週學習週報', desc: '每週日發送學習數據與進度週報', checked: notifWeekly, onChange: () => setNotifWeekly(!notifWeekly) },
                     ].map(item => (
                       <label key={item.label} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-slate-200 transition-colors">
                         <div>
                           <p className="text-sm font-medium text-slate-900">{item.label}</p>
                           <p className="text-xs text-slate-500">{item.desc}</p>
                         </div>
-                        <input type="checkbox" defaultChecked className="rounded text-emerald-500 focus:ring-emerald-500 h-4 w-4" />
+                        <button
+                          type="button"
+                          onClick={item.onChange}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.checked ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.checked ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">外觀</h3>
+                  <label className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:border-slate-200 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {darkMode ? <Moon className="h-5 w-5 text-indigo-500" /> : <Sun className="h-5 w-5 text-amber-500" />}
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">深色模式</p>
+                        <p className="text-xs text-slate-500">切換明/暗色主題</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setDarkMode(!darkMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${darkMode ? 'bg-indigo-500' : 'bg-slate-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </label>
                 </div>
 
                 <div>
@@ -374,6 +548,69 @@ export default function AccountPage() {
           {/* Achievements Tab */}
           {activeTab === 'achievements' && achievements && (
             <>
+              {/* Streak Records */}
+              <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <Flame className="h-6 w-6 text-orange-500" /> 學習連勝紀錄
+                </h2>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-gradient-to-b from-orange-50 to-white rounded-2xl border border-orange-100">
+                    <Flame className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+                    <span className="block text-3xl font-extrabold text-slate-900">12</span>
+                    <span className="text-xs text-slate-500 font-medium">目前連勝</span>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-b from-amber-50 to-white rounded-2xl border border-amber-100">
+                    <Award className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                    <span className="block text-3xl font-extrabold text-slate-900">45</span>
+                    <span className="text-xs text-slate-500 font-medium">歷史最長連勝</span>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-b from-blue-50 to-white rounded-2xl border border-blue-100">
+                    <Shield className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                    <span className="block text-3xl font-extrabold text-slate-900">2</span>
+                    <span className="text-xs text-slate-500 font-medium">凍結額度餘額</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Backup Subject Management */}
+              <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <BookOpen className="h-6 w-6 text-indigo-500" /> 備考科目管理
+                </h2>
+                <div className="space-y-3">
+                  {subjects.map(subject => (
+                    <div key={subject.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <p className="font-medium text-slate-900">{subject.name}</p>
+                        <p className="text-xs text-slate-500">
+                          考試日期：{subject.date} · 自評程度：{subject.level} · 模式：{subject.mode}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditSubject(subject.name)}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-3 py-1 rounded-lg hover:bg-emerald-50 transition-colors inline-flex items-center gap-1"
+                        >
+                          <Pencil className="h-3 w-3" /> 編輯
+                        </button>
+                        <button
+                          onClick={() => handleRemoveSubject(subject.name)}
+                          className="text-xs text-rose-500 hover:text-rose-600 font-medium px-3 py-1 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3 w-3" /> 移除
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleAddSubject}
+                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-medium text-slate-500 hover:border-emerald-300 hover:text-emerald-600 transition-colors"
+                  >
+                    + 新增備考科目
+                  </button>
+                </div>
+              </section>
+
               <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                   <Award className="h-6 w-6 text-amber-500" /> 成就徽章
@@ -389,6 +626,61 @@ export default function AccountPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-rose-600" />
+                </div>
+                <h2 className="text-xl font-bold text-rose-700">刪除帳號</h2>
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4 mb-6">
+              <p className="text-sm text-slate-700">此操作將<strong className="text-rose-700">永久刪除</strong>您的帳號及以下所有資料：</p>
+              <ul className="text-sm text-slate-600 space-y-2 pl-4">
+                <li className="flex items-start gap-2"><span className="text-rose-500 mt-0.5">•</span> 主資料庫中所有個人資料與測驗記錄</li>
+                <li className="flex items-start gap-2"><span className="text-rose-500 mt-0.5">•</span> Redis 中所有關聯快取</li>
+                <li className="flex items-start gap-2"><span className="text-rose-500 mt-0.5">•</span> 雲端存儲的實體檔案</li>
+                <li className="flex items-start gap-2"><span className="text-rose-500 mt-0.5">•</span> 所有 JWT 存取憑證立即失效</li>
+              </ul>
+              <p className="text-sm text-rose-600 font-medium">此操作無法復原。</p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  請輸入 <code className="bg-slate-100 px-1 py-0.5 rounded text-rose-600 font-mono text-xs">DELETE</code> 以確認
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder="輸入 DELETE"
+                  className="w-full rounded-lg border border-rose-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors"
+              >
+                取消
+              </button>
+              <button
+                disabled={deleteConfirmText !== 'DELETE'}
+                className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" /> 永久刪除帳號
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

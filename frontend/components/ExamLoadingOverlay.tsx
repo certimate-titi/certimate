@@ -7,6 +7,7 @@ import { BrainCircuit } from 'lucide-react';
 interface Stage {
   label: string;
   duration: number; // ms
+  progress?: number; // target progress percentage (0-100)
 }
 
 interface ExamLoadingOverlayProps {
@@ -39,10 +40,19 @@ export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: Ex
         const steps = 20;
         const stepDuration = stage.duration / steps;
 
+        // Determine start and end progress for this stage
+        const hasExplicitProgress = stages.every(s => s.progress !== undefined);
+        const startProgress = hasExplicitProgress
+          ? (i === 0 ? 0 : stages[i - 1].progress!)
+          : Math.round((i / stages.length) * 100);
+        const endProgress = hasExplicitProgress
+          ? stage.progress!
+          : Math.round(((i + 1) / stages.length) * 100);
+
         for (let s = 0; s <= steps; s++) {
           if (cancelled) return;
-          const stageProgress = (i / stages.length) + ((s / steps) * (1 / stages.length));
-          setProgress(Math.round(stageProgress * 100));
+          const interpolated = startProgress + ((s / steps) * (endProgress - startProgress));
+          setProgress(Math.round(interpolated));
           await new Promise(r => setTimeout(r, stepDuration));
         }
       }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BrainCircuit, ArrowRight, X } from 'lucide-react';
+import { BrainCircuit, ArrowRight, X, Eye, EyeOff } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
    Modal component
@@ -136,9 +136,47 @@ function PrivacyContent() {
 /* ─────────────────────────────────────────────
    Main Signup Page
 ───────────────────────────────────────────── */
+function getPasswordStrength(password: string): { level: 'weak' | 'medium' | 'strong'; label: string; color: string; width: string } {
+  if (password.length === 0) return { level: 'weak', label: '', color: 'bg-slate-200', width: 'w-0' };
+  if (password.length < 8) return { level: 'weak', label: '弱', color: 'bg-red-500', width: 'w-1/3' };
+
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const traitCount = [hasUpper, hasLower, hasDigit].filter(Boolean).length;
+
+  if (traitCount === 3) return { level: 'strong', label: '強', color: 'bg-green-500', width: 'w-full' };
+  if (traitCount >= 2) return { level: 'medium', label: '中', color: 'bg-yellow-500', width: 'w-2/3' };
+  return { level: 'weak', label: '弱', color: 'bg-red-500', width: 'w-1/3' };
+}
+
 export default function SignupPage() {
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [termsError, setTermsError] = useState('');
+  const [termsChecked, setTermsChecked] = useState(false);
+
+  const passwordStrength = getPasswordStrength(password);
+
+  const validateEmail = (value: string) => {
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setEmailError('電子郵件格式不正確');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (!termsChecked) {
+      e.preventDefault();
+      setTermsError('請閱讀並同意服務條款與隱私權政策');
+      return;
+    }
+    setTermsError('');
+  };
 
   return (
     <>
@@ -164,25 +202,42 @@ export default function SignupPage() {
             </p>
           </div>
           
-          <form className="mt-8 space-y-6" action="#" method="POST">
+          <form className="mt-8 space-y-6" action="#" method="POST" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
                 <label htmlFor="name" className="sr-only">姓名</label>
-                <input id="name" name="name" type="text" required className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="姓名" />
+                <input id="name" name="name" type="text" className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="姓名（選填）" />
               </div>
               <div>
                 <label htmlFor="email-address" className="sr-only">電子郵件</label>
-                <input id="email-address" name="email" type="email" autoComplete="email" required className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="電子郵件" />
+                <input id="email-address" name="email" type="email" autoComplete="email" required className={`appearance-none rounded-xl relative block w-full px-4 py-3 border ${emailError ? 'border-red-400' : 'border-slate-300'} placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm`} placeholder="電子郵件" onBlur={(e) => validateEmail(e.target.value)} onChange={(e) => { if (emailError) validateEmail(e.target.value); }} />
+                {emailError && <p className="mt-1 text-xs text-red-500">{emailError}</p>}
               </div>
               <div>
                 <label htmlFor="password" className="sr-only">密碼</label>
-                <input id="password" name="password" type="password" autoComplete="new-password" required className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="密碼 (至少 8 個字元)" />
+                <div className="relative">
+                  <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none rounded-xl relative block w-full px-4 py-3 pr-11 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="密碼 (至少 8 個字元)" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600" tabIndex={-1}>
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {password.length > 0 && (
+                  <div className="mt-2">
+                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                      <div className={`h-full ${passwordStrength.color} ${passwordStrength.width} rounded-full transition-all duration-300`} />
+                    </div>
+                    <p className={`mt-1 text-xs ${passwordStrength.level === 'weak' ? 'text-red-500' : passwordStrength.level === 'medium' ? 'text-yellow-600' : 'text-green-600'}`}>
+                      密碼強度：{passwordStrength.label}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <input id="terms" name="terms" type="checkbox" required className="h-4 w-4 mt-0.5 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded shrink-0" />
-              <label htmlFor="terms" className="block text-sm text-slate-700 leading-snug">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-start gap-2">
+                <input id="terms" name="terms" type="checkbox" checked={termsChecked} onChange={(e) => { setTermsChecked(e.target.checked); if (e.target.checked) setTermsError(''); }} className="h-4 w-4 mt-0.5 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded shrink-0" />
+                <label htmlFor="terms" className="block text-sm text-slate-700 leading-snug">
                 我同意{' '}
                 <button
                   type="button"
@@ -200,7 +255,9 @@ export default function SignupPage() {
                   隱私權政策
                 </button>
                 ，並知悉上傳之私有資料<span className="font-semibold text-slate-900">絕不用於訓練本平台專屬 AI 模型</span>。
-              </label>
+                </label>
+              </div>
+              {termsError && <p className="text-xs text-red-500">{termsError}</p>}
             </div>
 
             <div>

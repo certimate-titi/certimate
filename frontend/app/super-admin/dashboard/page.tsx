@@ -66,12 +66,12 @@ const aiCostData = [
 ];
 
 const kpiCards = [
-  { label: 'DAU / MAU', value: '1,720 / 5,250', trend: '+12.5%', icon: Users, color: 'emerald' },
-  { label: '今日新註冊', value: '142', trend: '+8.2%', icon: TrendingUp, color: 'blue' },
-  { label: '訂閱轉換率', value: '4.8%', trend: '+0.5%', icon: Zap, color: 'amber' },
-  { label: 'MRR (每月營收)', value: '$15,200', trend: '+15.2%', icon: DollarSign, color: 'indigo' },
-  { label: '今日 AI 成本', value: '$155.2', trend: '+5.4%', icon: Cpu, color: 'rose' },
-  { label: '任務佇列', value: '12 任務', trend: '正常', icon: Clock, color: 'slate' },
+  { label: 'DAU / MAU', value: '1,234 / 8,567', change: '+12.5%', changeDir: 'up' as const, icon: Users, color: 'emerald' },
+  { label: '新註冊', value: '156', sub: '本週', change: '+8.2%', changeDir: 'up' as const, icon: TrendingUp, color: 'blue' },
+  { label: '轉換率', value: '12.3%', change: '+1.2%', changeDir: 'up' as const, icon: Zap, color: 'amber' },
+  { label: 'MRR', value: 'NT$ 234,500', change: '+15.2%', changeDir: 'up' as const, icon: DollarSign, color: 'indigo' },
+  { label: 'AI Token 成本', value: 'NT$ 45,200', change: '+5.4%', changeDir: 'up' as const, icon: Cpu, color: 'rose' },
+  { label: '任務佇列', value: '12 任務', change: '正常', changeDir: 'neutral' as const, icon: Clock, color: 'slate' },
 ];
 
 const alerts = [
@@ -79,6 +79,12 @@ const alerts = [
   { id: 2, type: 'warning', message: '用戶 ID: 12345 觸發 Rate Limit', time: '25 分鐘前' },
   { id: 3, type: 'info', message: 'Cloud SQL 連線數達到 75%', time: '1 小時前' },
   { id: 4, type: 'warning', message: 'OpenRouter 單日費用接近預算上限', time: '2 小時前' },
+];
+
+const systemAlerts = [
+  { severity: 'warning' as const, message: 'AI Token 使用量接近月度預算 85%', time: '2 小時前' },
+  { severity: 'info' as const, message: '資料庫備份已完成', time: '6 小時前' },
+  { severity: 'critical' as const, message: 'Worker queue depth exceeded threshold', time: '1 天前' },
 ];
 
 export default function OperationsDashboard() {
@@ -116,14 +122,18 @@ export default function OperationsDashboard() {
                 <kpi.icon className="h-5 w-5" />
               </div>
               <span className={cn(
-                "text-xs font-bold px-2 py-1 rounded-lg",
-                kpi.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
+                "text-[10px] font-bold px-1.5 py-0.5 rounded-lg inline-flex items-center gap-0.5",
+                kpi.changeDir === 'up' ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
               )}>
-                {kpi.trend}
+                {kpi.changeDir === 'up' && <ArrowUpRight className="h-3 w-3" />}
+                {kpi.change}
               </span>
             </div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{kpi.label}</p>
-            <p className="text-xl font-bold text-slate-900">{kpi.value}</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
+              {kpi.label}
+              {kpi.sub && <span className="normal-case ml-1">({kpi.sub})</span>}
+            </p>
+            <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{kpi.value}</p>
           </div>
         ))}
       </div>
@@ -221,6 +231,51 @@ export default function OperationsDashboard() {
             <button className="w-full mt-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-all">
               查看所有警報 &rarr;
             </button>
+          </section>
+
+          {/* System Alerts */}
+          <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h2 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-rose-500" /> 系統警報
+            </h2>
+            <div className="space-y-3">
+              {systemAlerts.map((alert, idx) => (
+                <div key={idx} className={cn(
+                  "p-4 rounded-2xl border transition-all",
+                  alert.severity === 'critical' && "bg-red-50 border-red-200",
+                  alert.severity === 'warning' && "bg-amber-50 border-amber-200",
+                  alert.severity === 'info' && "bg-blue-50 border-blue-200"
+                )}>
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      "h-2 w-2 rounded-full mt-1.5 shrink-0",
+                      alert.severity === 'critical' && "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]",
+                      alert.severity === 'warning' && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]",
+                      alert.severity === 'info' && "bg-blue-500"
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                          alert.severity === 'critical' && "bg-red-100 text-red-700",
+                          alert.severity === 'warning' && "bg-amber-100 text-amber-700",
+                          alert.severity === 'info' && "bg-blue-100 text-blue-700"
+                        )}>
+                          {alert.severity}
+                        </span>
+                      </div>
+                      <p className={cn(
+                        "text-sm font-medium leading-tight mb-1",
+                        alert.severity === 'critical' && "text-red-900",
+                        alert.severity === 'warning' && "text-amber-900",
+                        alert.severity === 'info' && "text-blue-900"
+                      )}>{alert.message}</p>
+                      <p className="text-xs text-slate-500">{alert.time}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* System Load */}

@@ -1,6 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { differenceInCalendarDays } from 'date-fns';
 import type { SelfAssessmentLevel } from '@/types';
 
 export interface SelectedSubject {
@@ -22,11 +24,33 @@ const assessmentOptions: { value: SelfAssessmentLevel; label: string }[] = [
   { value: 'advanced', label: '進階複習' },
 ];
 
+export function getModeBadge(examDate: string): { label: string; className: string } | null {
+  if (!examDate) return null;
+  const days = differenceInCalendarDays(new Date(examDate), new Date());
+  if (days < 0) return null;
+  if (days <= 30) {
+    return { label: '短期衝刺', className: 'bg-rose-100 text-rose-700' };
+  }
+  if (days <= 90) {
+    return { label: '穩步前進', className: 'bg-blue-100 text-blue-700' };
+  }
+  return { label: '長期備戰', className: 'bg-green-100 text-green-700' };
+}
+
 export default function SelectedSubjectCard({ subject, onUpdate, onRemove }: SelectedSubjectCardProps) {
+  const badge = useMemo(() => getModeBadge(subject.examDate), [subject.examDate]);
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-bold text-slate-900">{subject.subjectName}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="font-bold text-slate-900">{subject.subjectName}</h4>
+          {badge && (
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${badge.className}`}>
+              {badge.label}
+            </span>
+          )}
+        </div>
         <button
           onClick={onRemove}
           className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"

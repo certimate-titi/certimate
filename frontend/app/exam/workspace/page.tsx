@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Clock, Flag, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { Clock, Flag, ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react';
 import { examService } from '@/lib/api/services';
 import type { Question } from '@/types';
 
@@ -42,6 +42,8 @@ function MockExamWorkspacePage() {
   const [timeRemaining, setTimeRemaining] = useState(7200);
   const [loading, setLoading] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submitCalledRef = useRef(false);
 
@@ -85,6 +87,16 @@ function MockExamWorkspacePage() {
     }, 500);
   }, [answers, markedForReview, timeRemaining, examId, loading]);
 
+  // Warn user before closing/refreshing the page during an active exam
+  useEffect(() => {
+    if (loading || submitCalledRef.current) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [loading]);
+
   const handleSubmit = useCallback(async () => {
     if (submitCalledRef.current) return;
     submitCalledRef.current = true;
@@ -101,9 +113,9 @@ function MockExamWorkspacePage() {
     router.push(`/exam/results?examId=${examId}`);
   }, [answers, examId, questions, timeRemaining, router]);
 
-  // Countdown timer
+  // Countdown timer (pauses when isPaused is true)
   useEffect(() => {
-    if (loading) return;
+    if (loading || isPaused) return;
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
@@ -115,11 +127,20 @@ function MockExamWorkspacePage() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [loading, handleSubmit]);
+  }, [loading, isPaused, handleSubmit]);
 
   const selectAnswer = (questionId: string, optionLabel: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: optionLabel }));
   };
+
+  const confirmSubmit = useCallback(() => {
+    const unansweredCount = questions.filter(q => !answers[q.id]).length;
+    if (unansweredCount > 0) {
+      setShowSubmitConfirm(true);
+    } else {
+      handleSubmit();
+    }
+  }, [questions, answers, handleSubmit]);
 
   const toggleMark = (questionId: string) => {
     setMarkedForReview(prev => {
@@ -143,7 +164,7 @@ function MockExamWorkspacePage() {
   const isTimeLow = timeRemaining < 300;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
       {/* Top Bar */}
       <header className="bg-slate-900 text-slate-300 px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-10">
         <div className="flex items-center gap-6">
@@ -158,8 +179,8 @@ function MockExamWorkspacePage() {
 
         <div className="flex items-center gap-8">
           <div className={`flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 ${isTimeLow ? 'animate-pulse' : ''}`}>
-            <Clock className={`h-4 w-4 ${isTimeLow ? 'text-rose-400' : 'text-emerald-400'}`} />
-            <span className={`font-mono font-bold tracking-wider ${isTimeLow ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <Clock className={`h-4 w-4 ${isTimeLow ? 'text-rose-600' : 'text-emerald-400'}`} />
+            <span className={`font-mono font-bold tracking-wider ${isTimeLow ? 'text-rose-600' : 'text-emerald-400'}`}>
               {formatTime(timeRemaining)}
             </span>
           </div>
@@ -171,7 +192,13 @@ function MockExamWorkspacePage() {
             <LayoutGrid className="h-4 w-4" /> 總覽
           </button>
           <button
-            onClick={handleSubmit}
+            onClick={() => setIsPaused(true)}
+            className="text-sm font-medium hover:text-white transition-colors flex items-center gap-2"
+          >
+            <Pause className="h-4 w-4" /> 暫停測驗
+          </button>
+          <button
+            onClick={confirmSubmit}
             className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-1.5 rounded-full text-sm font-bold transition-colors"
           >
             交卷 ({answeredCount}/{questions.length})
@@ -193,10 +220,10 @@ function MockExamWorkspacePage() {
                 const isAnswered = !!answers[q.id];
                 const isMarked = markedForReview.has(q.id);
 
-                let stateClass = 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300';
+                let stateClass = 'bg-slate-200 border-slate-200 text-slate-600 hover:border-emerald-300';
                 if (isCurrent) stateClass = 'bg-slate-900 border-slate-900 text-white font-bold shadow-md';
-                else if (isMarked) stateClass = 'bg-amber-50 border-amber-300 text-amber-700';
-                else if (isAnswered) stateClass = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                else if (isMarked) stateClass = 'bg-yellow-400 border-yellow-400 text-slate-900';
+                else if (isAnswered) stateClass = 'bg-emerald-500 border-emerald-500 text-white';
 
                 return (
                   <button
@@ -216,9 +243,9 @@ function MockExamWorkspacePage() {
 
           <div className="p-4 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 space-y-2">
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-slate-900" /> 目前題目</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200" /> 已作答</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-white border border-slate-200" /> 未作答</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-100 border border-amber-300" /> 標記複習</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500" /> 已作答</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-slate-200" /> 未作答</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-yellow-400" /> 標記複習</div>
           </div>
         </div>
 
@@ -302,6 +329,51 @@ function MockExamWorkspacePage() {
         </div>
       </div>
 
+      {/* Pause Modal */}
+      {isPaused && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-10 max-w-sm w-full shadow-2xl text-center">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-full bg-amber-50 border-2 border-amber-200">
+              <Pause className="h-8 w-8 text-amber-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">測驗已暫停</h2>
+            <p className="text-slate-500 mb-8">計時器已停止，按下按鈕繼續作答。</p>
+            <button
+              onClick={() => setIsPaused(false)}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <Play className="h-5 w-5" /> 繼續作答
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-10 max-w-sm w-full shadow-2xl text-center">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">確認交卷</h2>
+            <p className="text-slate-600 mb-8">
+              你還有 {questions.filter(q => !answers[q.id]).length} 題未作答，確定要交卷嗎？
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSubmitConfirm(false)}
+                className="flex-1 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition-colors"
+              >
+                繼續作答
+              </button>
+              <button
+                onClick={() => { setShowSubmitConfirm(false); handleSubmit(); }}
+                className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-500 transition-colors"
+              >
+                確定交卷
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overview Modal */}
       {showGrid && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowGrid(false)}>
@@ -317,10 +389,10 @@ function MockExamWorkspacePage() {
                     onClick={() => { setCurrentIndex(i); setShowGrid(false); }}
                     className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm relative ${
                       isMarked
-                        ? 'bg-amber-50 border-2 border-amber-300 text-amber-700'
+                        ? 'bg-yellow-400 border-2 border-yellow-400 text-slate-900'
                         : isAnswered
-                        ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700'
-                        : 'bg-slate-50 border-2 border-slate-200 text-slate-500'
+                        ? 'bg-emerald-500 border-2 border-emerald-500 text-white'
+                        : 'bg-slate-200 border-2 border-slate-200 text-slate-500'
                     }`}
                   >
                     {i + 1}

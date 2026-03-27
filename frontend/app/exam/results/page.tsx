@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, ArrowRight, BrainCircuit, Trophy, Target } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, BrainCircuit, Trophy, Target, Clock, TrendingUp, TrendingDown, Flag, Share2, Download, Sparkles } from 'lucide-react';
 import { examService } from '@/lib/api/services';
+import { useAuth } from '@/lib/auth-context';
 import type { GetExamResultsResponse } from '@/types';
 import Confetti from '@/components/Confetti';
 
@@ -19,6 +20,7 @@ export default function ExamResultsPageWrapper() {
 function ExamResultsPage() {
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId') || 'exam_001';
+  const { user } = useAuth();
 
   const [data, setData] = useState<GetExamResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,23 @@ function ExamResultsPage() {
     ? '差一點點，再練習一下！'
     : '別灰心，學習就是這樣一步步來的！';
 
+  // Mock previous score for comparison (in real app, fetched from API)
+  const previousScore = 62;
+  const scoreDiff = score - previousScore;
+
+  // Mock consecutive decline detection (in real app, fetched from API)
+  const recentScores = [75, 68, score]; // last 3 scores
+  const consecutiveDeclines = recentScores.slice(1).filter((s, i) => s < recentScores[i]).length;
+  const showAiCoachIntervention = consecutiveDeclines >= 2;
+
+  // Mock completion stats
+  const totalTimeMinutes = 38;
+  const avgTimePerQuestion = Math.round((totalTimeMinutes * 60) / questions.length);
+  const markedQuestions = userAnswers.filter(a => a.isMarkedForReview);
+  const markedCorrectRate = markedQuestions.length > 0
+    ? Math.round((markedQuestions.filter(a => a.isCorrect).length / markedQuestions.length) * 100)
+    : 0;
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <Confetti trigger={showConfetti} />
@@ -89,6 +108,34 @@ function ExamResultsPage() {
               <span className="text-6xl font-extrabold text-slate-900">{score}</span>
               <span className="text-xl font-medium text-slate-500 mb-1">/ 100</span>
             </div>
+            {/* Progress comparison */}
+            {scoreDiff !== 0 && (
+              <div className={`flex items-center justify-center gap-2 mb-4 px-4 py-2 rounded-lg ${
+                scoreDiff > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+              }`}>
+                {scoreDiff > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                <span className="text-sm font-bold">
+                  {scoreDiff > 0 ? `↑ 提升 ${scoreDiff} 分，幹得好！` : `↓ 較上次下降 ${Math.abs(scoreDiff)} 分，別氣餒！`}
+                </span>
+              </div>
+            )}
+
+            {/* AI Coach Intervention — triggered on 2+ consecutive score declines */}
+            {showAiCoachIntervention && (
+              <Link href="/review" className="block mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <BrainCircuit className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-amber-800">連續退步？讓 AI 教練幫你找出盲點</p>
+                    <p className="text-xs text-amber-600 mt-0.5">AI 教練已準備好個人化學習策略建議</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-amber-500 flex-shrink-0 ml-auto" />
+                </div>
+              </Link>
+            )}
+
             <div className="flex items-center justify-between text-sm text-slate-500 bg-slate-50 rounded-xl p-4 border border-slate-100">
               <div className="text-center">
                 <span className="block font-bold text-emerald-600 text-lg">{correctCount}</span>
@@ -107,12 +154,37 @@ function ExamResultsPage() {
             </div>
           </div>
 
-          {/* AI Summary */}
+          {/* Completion Stats */}
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-            <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <BrainCircuit className="h-5 w-5 text-emerald-500" /> AI 分析摘要
+            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-indigo-500" /> 完賽數據
             </h3>
-            <p className="text-sm text-slate-600 leading-relaxed">{aiSummary}</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 bg-slate-50 rounded-xl">
+                <span className="block text-lg font-bold text-slate-900">{totalTimeMinutes} 分</span>
+                <span className="text-xs text-slate-500">作答總時間</span>
+              </div>
+              <div className="text-center p-3 bg-slate-50 rounded-xl">
+                <span className="block text-lg font-bold text-slate-900">{avgTimePerQuestion} 秒</span>
+                <span className="text-xs text-slate-500">平均每題</span>
+              </div>
+              <div className="text-center p-3 bg-slate-50 rounded-xl">
+                <span className="block text-lg font-bold text-slate-900 flex items-center justify-center gap-1">
+                  <Flag className="h-4 w-4 text-amber-500" /> {markedCorrectRate}%
+                </span>
+                <span className="text-xs text-slate-500">標記題答對率</span>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Summary */}
+          <div className="bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-3xl p-6 shadow-sm border border-indigo-100">
+            <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-indigo-500" />
+              <BrainCircuit className="h-5 w-5 text-emerald-500" />
+              AI 分析摘要
+            </h3>
+            <p className="text-sm text-slate-700 leading-relaxed">{aiSummary}</p>
           </div>
 
           {/* Action Card */}
@@ -140,7 +212,7 @@ function ExamResultsPage() {
             <div className="space-y-6">
               {domainAnalysis.map(d => {
                 const barColor = d.percentage < 60 ? 'bg-rose-500' : d.percentage >= 80 ? 'bg-emerald-500' : 'bg-amber-500';
-                const textColor = d.percentage < 60 ? 'text-rose-500' : d.percentage >= 80 ? 'text-emerald-600' : 'text-amber-500';
+                const textColor = d.percentage < 60 ? 'text-rose-600' : d.percentage >= 80 ? 'text-emerald-600' : 'text-amber-600';
                 return (
                   <div key={d.domain}>
                     <div className="flex justify-between text-sm mb-2">
@@ -192,9 +264,39 @@ function ExamResultsPage() {
         </div>
       </div>
 
+      {/* Score Card Sharing */}
+      <div className="mt-10 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+        <div className="absolute -right-16 -top-16 h-48 w-48 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute -left-12 -bottom-12 h-36 w-36 bg-indigo-500/10 rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <h3 className="text-lg font-bold mb-2">分享你的成績卡</h3>
+          <p className="text-sm text-slate-400 mb-6">生成精美的個人化成績圖卡，與朋友分享你的備考成果！</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">CertiMate Score Card</span>
+              <span className="text-xs text-slate-400">{new Date().toLocaleDateString('zh-TW')}</span>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-slate-300 mb-1">{user?.displayName || '考生'}</p>
+              <p className="text-xl font-bold mb-2">{exam.title}</p>
+              <p className="text-4xl font-extrabold text-emerald-400">{score} 分</p>
+              <p className="text-sm text-slate-400 mt-2 italic">&ldquo;{scoreMessage}&rdquo;</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+              <Share2 className="h-4 w-4" /> 分享至 LinkedIn
+            </button>
+            <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 border border-white/10">
+              <Download className="h-4 w-4" /> 下載圖卡
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Legal Disclaimer */}
-      <p className="mt-10 text-center text-xs text-slate-400 italic px-4">
-        免責聲明：本模擬考試結果僅反映當前熟悉度，並不保證實測通過率及 AI 解析結果的絕對正確性。
+      <p className="text-xs text-slate-400 italic text-center mt-6">
+        *本模擬考試結果僅反映當前熟悉度，並不保證實測通過率及 AI 解析結果的絕對正確性。*
       </p>
     </div>
   );

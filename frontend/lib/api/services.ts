@@ -263,6 +263,7 @@ export const dashboardService = {
       stats: {
         overallAccuracy: 76,
         totalMocksCompleted: 8,
+        totalQuestionsAnswered: 482,
         predictedPassRate: 72,
         examCountdown: { examName: 'PMP 考試', daysRemaining: 14 },
       },

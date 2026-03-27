@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BrainCircuit, ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw } from 'lucide-react';
+import { BrainCircuit, ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { reviewService, subjectService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
@@ -21,7 +21,7 @@ export default function ReviewBookPageWrapper() {
 function ReviewBookPage() {
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId');
-  const { isPro, isAuthenticated, loading: authLoading, onboardingCompleted } = useAuth();
+  const { isPro, isProPlus, isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
   const router = useRouter();
 
   // Subject state
@@ -34,6 +34,11 @@ function ReviewBookPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [showCitation, setShowCitation] = useState(false);
+
+  const isFreeUser = subscriptionTier === 'FREE';
+  const isPro199Only = subscriptionTier === 'PRO_199';
+  const canChat = isProPlus; // PRO_PLUS_399 or ULTRA_1599
 
   // Load subjects + guard
   useEffect(() => {
@@ -68,6 +73,7 @@ function ReviewBookPage() {
 
   // Load chat history for current question
   useEffect(() => {
+    setShowCitation(false);
     if (!data || data.wrongQuestions.length === 0) return;
     const questionId = data.wrongQuestions[currentIndex].question.id;
     reviewService.getChatHistory(questionId).then(setMessages);
@@ -263,6 +269,70 @@ function ReviewBookPage() {
                 </div>
               </div>
             )}
+
+            {/* Detailed Explanation */}
+            {question.explanationMarkdown && (
+              <div className="mt-8 rounded-xl border border-slate-200 overflow-hidden relative">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <BrainCircuit className="h-4 w-4 text-emerald-500" /> 詳細解析
+                  </div>
+                  {/* Citation button (visible to PRO_199+) */}
+                  {isPro && question.citationChunkId && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowCitation(prev => !prev)}
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium px-2 py-1 rounded-md hover:bg-blue-50"
+                      >
+                        <BookOpen className="h-3 w-3" /> 查看來源
+                      </button>
+                      {showCitation && (
+                        <div className="absolute right-0 top-full mt-1 z-20 w-72 bg-white border border-slate-200 rounded-xl shadow-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                            <span className="text-sm font-semibold text-slate-800">{question.citationDocTitle || '來源文件'}</span>
+                          </div>
+                          {question.citationPage && (
+                            <p className="text-xs text-slate-500">第 {question.citationPage} 頁</p>
+                          )}
+                          {!question.citationDocTitle && !question.citationPage && (
+                            <p className="text-xs text-slate-500">來源區塊 ID: {question.citationChunkId}</p>
+                          )}
+                          <button
+                            onClick={() => setShowCitation(false)}
+                            className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            關閉
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5 bg-white prose prose-sm prose-slate max-w-none relative">
+                  <div className={`text-sm text-slate-700 leading-relaxed whitespace-pre-line ${isFreeUser ? 'select-none' : ''}`}>
+                    {question.explanationMarkdown}
+                  </div>
+                  {/* FREE user glassmorphism paywall over explanation */}
+                  {isFreeUser && (
+                    <div className="absolute inset-0 backdrop-blur-md bg-white/60 z-10 flex items-center justify-center p-6">
+                      <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 max-w-sm text-center">
+                        <div className="mx-auto h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+                          <Lock className="h-6 w-6 text-indigo-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">升級 PRO 方案，解鎖完整詳解與 AI 教練</h3>
+                        <p className="text-sm text-slate-500 mb-5">
+                          完整的詳細解析與 AI 教練深度對話，助你徹底掌握每道錯題。
+                        </p>
+                        <Link href="/account" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-md">
+                          <Sparkles className="h-4 w-4" /> 立即升級
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -317,19 +387,37 @@ function ReviewBookPage() {
               </div>
             )}
 
-            {/* Free Version Overlay */}
-            {!isPro && (
-              <div className="absolute inset-x-0 bottom-0 top-32 backdrop-blur-md bg-white/40 z-10 flex flex-col items-center justify-center p-8 text-center border-t border-white/50">
+            {/* FREE: glassmorphism overlay blocking AI chat */}
+            {isFreeUser && (
+              <div className="absolute inset-x-0 bottom-0 top-32 backdrop-blur-md bg-white/60 z-10 flex flex-col items-center justify-center p-8 text-center border-t border-white/50">
                 <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 max-w-sm">
                   <div className="mx-auto h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
                     <Lock className="h-6 w-6 text-indigo-500" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">解鎖深度解析與無限追問</h3>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">升級 PRO 方案，解鎖完整詳解與 AI 教練</h3>
                   <p className="text-sm text-slate-500 mb-6">
-                    想知道為什麼你的答案是錯的？想看詳細推導與記憶口訣？升級 Pro 版，讓 AI 教練帶你突破盲點。
+                    完整的詳細解析與 AI 教練深度對話，助你徹底掌握每道錯題。
                   </p>
                   <Link href="/account" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md">
-                    <Sparkles className="h-4 w-4" /> 升級 Pro (NT$199/月)
+                    <Sparkles className="h-4 w-4" /> 立即升級
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* PRO_199: can see explanation but AI chat is locked */}
+            {isPro199Only && (
+              <div className="absolute inset-x-0 bottom-0 top-32 bg-white/90 z-10 flex flex-col items-center justify-center p-8 text-center">
+                <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 max-w-sm">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+                    <Lock className="h-6 w-6 text-indigo-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">AI 教練深度對話為 PRO+ 專屬功能</h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    升級至 PRO_PLUS 方案，解鎖 AI 教練無限追問與深度對話。
+                  </p>
+                  <Link href="/account" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md">
+                    <Sparkles className="h-4 w-4" /> 升級 PRO_PLUS (NT$399/月)
                   </Link>
                 </div>
               </div>
@@ -337,36 +425,57 @@ function ReviewBookPage() {
           </div>
 
           {/* Chat Input */}
-          <div className={`p-4 bg-white border-t border-slate-200 ${!isPro ? 'opacity-50 pointer-events-none' : ''}`}>
-            <div className="relative">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                placeholder="向 AI 教練追問..."
-                className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
-                disabled={!isPro || sending}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!isPro || sending || !chatInput.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="mt-2 flex justify-between items-center px-1">
-              <span className="text-[10px] text-slate-400">支援 KaTeX 數學公式渲染</span>
-              {sending && (
-                <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-                  <RefreshCw className="h-3 w-3 animate-spin" /> 思考中...
-                </span>
-              )}
-            </div>
-            <p className="mt-1.5 px-1 text-[10px] text-slate-400 italic leading-snug">
-              💡 AI 生成內容僅供參考，請隨時自行查證重要資訊。
-            </p>
+          <div className="p-4 bg-white border-t border-slate-200">
+            {/* PRO_199 lockout message */}
+            {isPro199Only && (
+              <div className="text-center py-3">
+                <p className="text-sm text-slate-500 font-medium mb-1">AI 教練深度對話為 PRO+ 專屬功能</p>
+                <Link href="/account" className="text-xs text-emerald-600 hover:text-emerald-700 underline transition-colors">
+                  升級至 PRO_PLUS 解鎖
+                </Link>
+              </div>
+            )}
+            {/* FREE lockout - input hidden */}
+            {isFreeUser && (
+              <div className="text-center py-3 opacity-50">
+                <p className="text-sm text-slate-400">升級方案以使用 AI 教練</p>
+              </div>
+            )}
+            {/* Functional chat input for PRO_PLUS / ULTRA */}
+            {canChat && (
+              <>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="向 AI 教練追問..."
+                    className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
+                    disabled={sending}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sending || !chatInput.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="mt-2 flex justify-between items-center px-1">
+                  <span className="text-[10px] text-slate-400">支援 KaTeX 數學公式渲染</span>
+                  {sending && (
+                    <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin" /> 思考中...
+                    </span>
+                  )}
+                </div>
+                {/* Legal disclaimer */}
+                <p className="text-xs text-slate-400 italic mt-2">
+                  *AI 生成內容僅供參考，請隨時自行查證重要資訊。*
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>

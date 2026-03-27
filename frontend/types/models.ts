@@ -85,6 +85,8 @@ export interface Question {
   correctAnswer: string; // option label e.g. 'B'
   explanationMarkdown: string;
   citationChunkId: string | null;
+  citationDocTitle?: string | null;
+  citationPage?: number | null;
   tags: string[]; // knowledge domain tags e.g. ['風險管理', 'IAM']
 }
 
@@ -95,6 +97,7 @@ export interface UserAnswer {
   examId: string;
   isCorrect: boolean;
   userChoice: string; // option label e.g. 'C'
+  isMarkedForReview?: boolean;
   ebbinghausNextReview: string | null; // ISO timestamp
   ebbinghausMultiplier: number;
 }
@@ -143,6 +146,7 @@ export interface LearningStreak {
   freezesRemaining: number;
   freezesPerWeek: number;
   lastActiveDate: string; // ISO date YYYY-MM-DD
+  freezeConsumedToday?: boolean; // true if a streak freeze was consumed since last active
 }
 
 export interface ChatMessage {
@@ -213,6 +217,9 @@ export interface UserSubject {
 
 export interface OnboardingFormData {
   displayName: string;
+  age?: number;
+  education?: string;
+  occupation?: string;
   subjects: Array<{
     subjectId: string;
     subjectName: string;

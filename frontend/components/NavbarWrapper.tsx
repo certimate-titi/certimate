@@ -5,6 +5,6 @@ import Navbar from './Navbar';
 
 export default function NavbarWrapper() {
   const pathname = usePathname();
-  if (pathname === '/onboarding') return null;
+  if (pathname === '/onboarding' || pathname === '/exam/workspace') return null;
   return <Navbar />;
 }

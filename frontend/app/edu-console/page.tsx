@@ -155,79 +155,102 @@ export default function EduConsolePage() {
             </div>
           ) : (
             <>
-          {/* KPI Overview Bar (Redmenta: class health at a glance) */}
+          {/* KPI Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div className="bg-indigo-50 rounded-2xl p-5 shadow-sm border border-indigo-100">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-indigo-500" />
-                <span className="text-xs text-slate-500 font-medium">總學生數</span>
+                <span className="text-xs text-slate-500 font-medium">日活躍用戶</span>
               </div>
-              <div className="text-3xl font-extrabold text-slate-900">{students.length}</div>
+              <div className="text-3xl font-extrabold text-slate-900">32</div>
+              <div className="text-xs text-emerald-600 font-medium mt-1">+5 vs 昨日</div>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div className="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-100">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <BarChart3 className="h-4 w-4 text-emerald-500" />
                 <span className="text-xs text-slate-500 font-medium">活躍率</span>
               </div>
-              <div className="text-3xl font-extrabold text-emerald-600">
-                {students.length > 0 ? Math.round((activeCount / students.length) * 100) : 0}%
-              </div>
+              <div className="text-3xl font-extrabold text-emerald-600">78%</div>
+              <div className="text-xs text-emerald-600 font-medium mt-1">+3%</div>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-rose-100">
+            <div className="bg-amber-50 rounded-2xl p-5 shadow-sm border border-amber-100">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-rose-500" />
-                <span className="text-xs text-slate-500 font-medium">需關注</span>
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="text-xs text-slate-500 font-medium">需關注學員</span>
               </div>
-              <div className="text-3xl font-extrabold text-rose-600">{atRiskStudents.length}</div>
+              <div className="text-3xl font-extrabold text-amber-600">4</div>
+              <div className="text-xs text-emerald-600 font-medium mt-1">-1</div>
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div className="bg-blue-50 rounded-2xl p-5 shadow-sm border border-blue-100">
               <div className="flex items-center gap-2 mb-2">
-                <Target className="h-4 w-4 text-amber-500" />
-                <span className="text-xs text-slate-500 font-medium">班級平均分</span>
+                <TrendingUp className="h-4 w-4 text-blue-500" />
+                <span className="text-xs text-slate-500 font-medium">班級平均</span>
               </div>
-              <div className="text-3xl font-extrabold text-slate-900">{avgScore}</div>
+              <div className="text-3xl font-extrabold text-slate-900">72.5</div>
+              <div className="text-xs text-emerald-600 font-medium mt-1">+2.1</div>
             </div>
           </div>
 
-          {/* ── At-Risk Early Warning (Redmenta: early detection) ── */}
-          {atRiskStudents.length > 0 && (
-            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="h-5 w-5 text-rose-500" />
-                <h2 className="text-base font-bold text-rose-800">早期預警：需要關注的學生</h2>
-                <span className="ml-auto text-xs text-rose-500 font-medium">{atRiskStudents.length} 位</span>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                {atRiskStudents.map(s => {
-                  const weakest = [...s.competencies].sort((a, b) => a.score - b.score)[0];
-                  return (
-                    <div key={s.id} className="bg-white rounded-xl p-4 border border-rose-100 flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-sm font-bold text-rose-600">
-                        {s.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900 text-sm">{s.name}</span>
-                          <TrendIcon trend={s.trend} />
-                          <span className="text-xs text-slate-400 ml-auto flex items-center gap-1">
-                            <Clock className="h-3 w-3" />{s.lastActiveLabel}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          最弱項：<span className="text-rose-600 font-medium">{weakest.label}</span>
-                          （{weakest.score} 分）• 平均 {s.averageScore} 分
-                        </p>
-                      </div>
-                      <button className="shrink-0 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
-                        <Sparkles className="h-3 w-3" />
-                        AI 補強
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* ── 預警中心 ── */}
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-rose-500" />
+              <h2 className="text-base font-bold text-rose-800">預警中心</h2>
             </div>
-          )}
+            <div className="space-y-3">
+              {[
+                { name: '王小明', reason: '平均分低於 60', score: 45, action: 'AI 補強建議' },
+                { name: '李大華', reason: '連續 3 次退步', trend: 'down' as const, action: '查看詳情' },
+                { name: '張美玲', reason: '超過 5 天未登入', lastActive: '7 天前', action: '發送提醒' },
+              ].map((item) => (
+                <div key={item.name} className="bg-white rounded-xl p-4 border border-rose-100 flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-900 text-sm">{item.name}</span>
+                      {item.trend === 'down' && <TrendingDown className="h-4 w-4 text-rose-500" />}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {item.reason}
+                      {item.score !== undefined && <span className="text-rose-600 font-medium"> (分數: {item.score})</span>}
+                      {item.lastActive && <span className="text-slate-400"> · 最後活躍: {item.lastActive}</span>}
+                    </p>
+                  </div>
+                  <button className="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+                    {item.action}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 班級弱點分析 ── */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-rose-500" />
+              <h2 className="text-base font-bold text-slate-900">班級弱點分析</h2>
+            </div>
+            <div className="space-y-4">
+              {[
+                { topic: '風險管理 - 風險回應策略', errorRate: 68 },
+                { topic: '品質管理 - 品質控制工具', errorRate: 55 },
+                { topic: '採購管理 - 合約類型', errorRate: 48 },
+              ].map((item) => (
+                <div key={item.topic}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-slate-700 font-medium">{item.topic}</span>
+                    <span className="text-rose-600 font-bold">{item.errorRate}%</span>
+                  </div>
+                  <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-rose-500 rounded-full"
+                      style={{ width: `${item.errorRate}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* ── Quick Actions ── */}
           <div className="grid md:grid-cols-3 gap-4">

@@ -136,6 +136,7 @@ export interface GetDashboardResponse {
   stats: {
     overallAccuracy: number;
     totalMocksCompleted: number;
+    totalQuestionsAnswered: number;
     predictedPassRate: number;
     examCountdown: {
       examName: string;
@@ -252,6 +253,9 @@ export interface GetSubjectCatalogResponse {
 
 export interface SubmitOnboardingRequest {
   displayName: string;
+  age?: number;
+  education?: string;
+  occupation?: string;
   subjects: Array<{
     subjectId: string;
     examDate: string;

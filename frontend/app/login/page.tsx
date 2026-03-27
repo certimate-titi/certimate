@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BrainCircuit, ArrowRight } from 'lucide-react';
+import { BrainCircuit, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/firebase';
 import { useAuth } from '@/lib/auth-context';
@@ -31,6 +31,7 @@ export default function LoginPage() {
   const { onboardingCompleted, loginAsDemoUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleMockLogin = (account: typeof MOCK_ACCOUNTS[0]) => {
     loginAsDemoUser(
@@ -50,7 +51,7 @@ export default function LoginPage() {
       router.push(onboardingCompleted ? '/dashboard' : '/onboarding');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || '登入失敗，請稍後再試。');
+      setError('帳號或密碼錯誤，請重新輸入。');
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +76,16 @@ export default function LoginPage() {
               <label htmlFor="email-address" className="sr-only">電子郵件</label>
               <input id="email-address" name="email" type="email" autoComplete="email" required className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="電子郵件" />
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="password" className="sr-only">密碼</label>
-              <input id="password" name="password" type="password" autoComplete="current-password" required className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="密碼" />
+              <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required className="appearance-none rounded-xl relative block w-full px-4 py-3 pr-12 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="密碼" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 

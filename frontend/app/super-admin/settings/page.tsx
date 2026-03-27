@@ -59,6 +59,24 @@ export default function SettingsPage() {
     }
   };
 
+  const [featureFlags, setFeatureFlags] = useState([
+    { id: 'enable_notion_sync', name: 'Notion 同步功能', description: '是否開放 Notion 同步功能', enabled: true },
+    { id: 'enable_socratic_tutor_v2', name: '新版 AI 教練', description: '蘇格拉底式引導 V2', enabled: false },
+    { id: 'enable_b2b_dashboard', name: 'B2B 管理後台', description: '機構管理員專屬介面', enabled: true },
+    { id: 'enable_weekly_report', name: '每週學習報告', description: '每週自動寄送學習進度報告至用戶信箱', enabled: false },
+  ]);
+
+  const toggleFlag = (flagId: string) => {
+    setFeatureFlags(prev => prev.map(f => f.id === flagId ? { ...f, enabled: !f.enabled } : f));
+  };
+
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    displayMode: 'banner',
+    scheduleDate: '',
+  });
+
   const [admins, setAdmins] = useState([
     { id: 'adm_1', name: '系統管理員', email: 'admin@certimate.com', role: 'Super Admin', joined: '2025-12-01' },
     { id: 'adm_2', name: '營運專員', email: 'ops@certimate.com', role: 'Admin', joined: '2026-01-10' },
@@ -244,42 +262,95 @@ export default function SettingsPage() {
             )}
 
             {activeTab === 'announcements' && (
-              <div className="p-8 space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-slate-900">公告管理</h3>
-                  <button className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all flex items-center gap-2">
-                    <Plus className="h-4 w-4" /> 新增公告
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    { title: '系統維護預告', type: '維護', status: '排程中', date: '2026-03-20' },
-                    { title: '新功能：AI 教練 V2 上線', type: '功能', status: '發布中', date: '2026-03-15' },
-                    { title: '緊急修復：OCR 辨識問題', type: '警告', status: '已結束', date: '2026-03-12' },
-                  ].map((ann) => (
-                    <div key={ann.title} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all group">
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "h-10 w-10 rounded-xl flex items-center justify-center",
-                          ann.type === '維護' && "bg-blue-50 text-blue-600",
-                          ann.type === '功能' && "bg-emerald-50 text-emerald-600",
-                          ann.type === '警告' && "bg-rose-50 text-rose-600"
-                        )}>
-                          <Bell className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{ann.title}</p>
-                          <p className="text-xs text-slate-500">{ann.type} • {ann.date}</p>
-                        </div>
+              <div className="p-8 space-y-8">
+                {/* Announcement Form */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-6">建立系統公告</h3>
+                  <div className="space-y-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">公告標題</label>
+                      <input
+                        type="text"
+                        value={announcementForm.title}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                        placeholder="輸入公告標題..."
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">公告內容</label>
+                      <textarea
+                        value={announcementForm.content}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                        placeholder="輸入公告內容..."
+                        rows={4}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-all resize-none"
+                      />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">顯示方式</label>
+                        <select
+                          value={announcementForm.displayMode}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, displayMode: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-all"
+                        >
+                          <option value="banner">全站橫幅 (Banner)</option>
+                          <option value="notification">站內通知 (Notification)</option>
+                          <option value="email">Email 推播</option>
+                        </select>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-medium text-slate-500">{ann.status}</span>
-                        <button className="p-2 text-slate-400 hover:text-rose-500 transition-all">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">排程發布日期</label>
+                        <input
+                          type="date"
+                          value={announcementForm.scheduleDate}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, scheduleDate: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 transition-all"
+                        />
                       </div>
                     </div>
-                  ))}
+                    <div className="flex justify-end pt-2">
+                      <button className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                        <Plus className="h-4 w-4" /> 建立公告
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Existing Announcements */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">已建立公告</h3>
+                  <div className="space-y-4">
+                    {[
+                      { title: '系統維護預告', type: '維護', status: '排程中', date: '2026-03-20' },
+                      { title: '新功能：AI 教練 V2 上線', type: '功能', status: '發布中', date: '2026-03-15' },
+                      { title: '緊急修復：OCR 辨識問題', type: '警告', status: '已結束', date: '2026-03-12' },
+                    ].map((ann) => (
+                      <div key={ann.title} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all group">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "h-10 w-10 rounded-xl flex items-center justify-center",
+                            ann.type === '維護' && "bg-blue-50 text-blue-600",
+                            ann.type === '功能' && "bg-emerald-50 text-emerald-600",
+                            ann.type === '警告' && "bg-rose-50 text-rose-600"
+                          )}>
+                            <Bell className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{ann.title}</p>
+                            <p className="text-xs text-slate-500">{ann.type} • {ann.date}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-medium text-slate-500">{ann.status}</span>
+                          <button className="p-2 text-slate-400 hover:text-rose-500 transition-all">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -288,23 +359,30 @@ export default function SettingsPage() {
               <div className="p-8 space-y-6">
                 <h3 className="text-lg font-bold text-slate-900 mb-6">Feature Flags</h3>
                 <div className="space-y-4">
-                  {[
-                    { id: 'enable_notion_sync', name: 'Notion 同步功能', description: '是否開放 Notion 同步功能', enabled: true },
-                    { id: 'enable_socratic_tutor_v2', name: '新版 AI 教練', description: '蘇格拉底式引導 V2', enabled: false },
-                    { id: 'enable_b2b_dashboard', name: 'B2B 管理後台', description: '機構管理員專屬介面', enabled: true },
-                  ].map((flag) => (
+                  {featureFlags.map((flag) => (
                     <div key={flag.id} className="flex items-center justify-between p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">{flag.name}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-bold text-slate-900">{flag.name}</p>
+                          <span className={cn(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded uppercase",
+                            flag.enabled ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
+                          )}>
+                            {flag.enabled ? 'ON' : 'OFF'}
+                          </span>
+                        </div>
                         <p className="text-xs text-slate-500 font-mono">{flag.id}</p>
                         <p className="text-xs text-slate-500 mt-1">{flag.description}</p>
                       </div>
-                      <button className={cn(
-                        "w-12 h-6 rounded-full transition-all relative",
-                        flag.enabled ? "bg-emerald-500" : "bg-slate-300"
-                      )}>
+                      <button
+                        onClick={() => toggleFlag(flag.id)}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-all relative cursor-pointer",
+                          flag.enabled ? "bg-emerald-500" : "bg-slate-300"
+                        )}
+                      >
                         <div className={cn(
-                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
                           flag.enabled ? "right-1" : "left-1"
                         )}></div>
                       </button>
