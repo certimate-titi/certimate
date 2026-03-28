@@ -103,10 +103,12 @@ class DashboardService:
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
 
-        allowed_fields = {"display_name", "age", "education", "career"}
+        allowed_fields = {"display_name", "age", "education", "career", "daily_study_minutes"}
         for field, value in data.items():
             if field in allowed_fields and value is not None:
                 setattr(user, field, value)
+            elif field == "learning_style" and value is not None:
+                user.learning_preference = value
 
         self.db.commit()
         return {"message": "個人資料已更新"}

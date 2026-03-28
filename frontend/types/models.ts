@@ -32,6 +32,11 @@ export interface User {
   onboardingCompleted: boolean;
   role: UserRole;
   createdAt: string; // ISO timestamp
+  age?: number | null;
+  education?: string | null;
+  occupation?: string | null;
+  dailyStudyMinutes?: number;
+  learningStyle?: LearningStyle;
 }
 
 export interface UserUsageLog {

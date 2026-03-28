@@ -33,6 +33,8 @@ class ProfileUpdateRequest(BaseModel):
     age: int | None = None
     education: str | None = None
     career: str | None = None
+    daily_study_minutes: int | None = None
+    learning_style: str | None = None
 
 
 @router.patch("/profile")

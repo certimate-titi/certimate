@@ -1,18 +1,81 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/firebase';
 import type { User, SubscriptionTier, UserRole } from '@/types';
+import { apiClient, getStoredToken, setStoredToken, clearStoredToken } from '@/lib/api/client';
 
-interface DemoUserInfo {
+/** Backend plan → frontend tier mapping */
+const PLAN_TO_TIER: Record<string, SubscriptionTier> = {
+  FREE: 'FREE',
+  PRO: 'PRO_199',
+  PRO_PLUS: 'PRO_PLUS_399',
+  ULTRA: 'ULTRA_1599',
+};
+
+/** Backend role → frontend role mapping */
+function mapRole(backendRole: string): UserRole {
+  if (backendRole === 'ADMIN' || backendRole === 'SUPER_ADMIN') return 'ADMIN';
+  return 'USER';
+}
+
+function mapTier(backendPlan: string): SubscriptionTier {
+  return PLAN_TO_TIER[backendPlan] || 'FREE';
+}
+
+interface BackendLoginResponse {
+  access_token: string;
+  user: {
+    email: string;
+    subscription_plan: string;
+    subscription_tier: string;
+    role: string;
+    status: string;
+  };
+  redirect_to: string;
+  nav_items: { label: string; path: string }[];
+}
+
+interface BackendMeResponse {
+  id: string;
   email: string;
-  displayName: string;
-  role: UserRole;
+  display_name: string;
+  avatar_url: string;
+  subscription_plan: string;
+  subscription_tier: string;
+  role: string;
+  status: string;
+  onboarding_completed: boolean;
+  age?: number | null;
+  education?: string | null;
+  occupation?: string | null;
+  daily_study_minutes?: number;
+  learning_style?: string;
+  nav_items: { label: string; path: string }[];
+}
+
+function backendMeToUser(me: BackendMeResponse): User {
+  const tier = mapTier(me.subscription_plan);
+  return {
+    id: me.id,
+    email: me.email,
+    displayName: me.display_name || me.email.split('@')[0],
+    avatarUrl: me.avatar_url || null,
+    subscriptionTier: tier,
+    subscriptionStatus: 'ACTIVE',
+    currentPeriodEnd: null,
+    stripeCustomerId: null,
+    onboardingCompleted: me.onboarding_completed,
+    role: mapRole(me.role),
+    createdAt: new Date().toISOString(),
+    age: me.age ?? null,
+    education: me.education ?? null,
+    occupation: me.occupation ?? null,
+    dailyStudyMinutes: me.daily_study_minutes ?? 30,
+    learningStyle: (me.learning_style as User['learningStyle']) ?? 'hybrid',
+  };
 }
 
 interface AuthContextValue {
-  firebaseUser: FirebaseUser | null;
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
@@ -24,116 +87,66 @@ interface AuthContextValue {
   setSubscriptionTier: (tier: SubscriptionTier) => void;
   onboardingCompleted: boolean;
   setOnboardingCompleted: (completed: boolean) => void;
-  loginAsDemoUser: (info: DemoUserInfo, tier: SubscriptionTier, onboardingDone: boolean) => void;
+  loginWithCredentials: (email: string, password: string) => Promise<{ redirect_to: string }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const TIER_STORAGE_KEY = 'certimate_demo_tier';
-const ONBOARDING_STORAGE_KEY = 'certimate_onboarding_completed';
-const DEMO_USER_KEY = 'certimate_demo_user';
-
-const ls = {
-  get: (key: string) => (typeof window !== 'undefined' ? window.localStorage?.getItem(key) : null),
-  set: (key: string, val: string) => { if (typeof window !== 'undefined') window.localStorage?.setItem(key, val); },
-  remove: (key: string) => { if (typeof window !== 'undefined') window.localStorage?.removeItem(key); },
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscriptionTier, setTierState] = useState<SubscriptionTier>('FREE');
-  const [onboardingCompleted, setOnboardingCompletedState] = useState(false);
-  const [demoUser, setDemoUserState] = useState<DemoUserInfo | null>(null);
 
-  // Load saved state from localStorage
+  // Fetch current user from backend using stored JWT
+  const fetchMe = useCallback(async (): Promise<User | null> => {
+    const token = getStoredToken();
+    if (!token) return null;
+    try {
+      const me = await apiClient.get<BackendMeResponse>('/auth/me');
+      return backendMeToUser(me);
+    } catch {
+      clearStoredToken();
+      return null;
+    }
+  }, []);
+
+  // On mount: validate stored token
   useEffect(() => {
-    const savedTier = ls.get(TIER_STORAGE_KEY) as SubscriptionTier | null;
-    if (savedTier === 'FREE' || savedTier === 'PRO_199' || savedTier === 'PRO_PLUS_399' || savedTier === 'ULTRA_1599') {
-      setTierState(savedTier);
-    }
-    if (ls.get(ONBOARDING_STORAGE_KEY) === 'true') {
-      setOnboardingCompletedState(true);
-    }
-    const savedDemo = ls.get(DEMO_USER_KEY);
-    if (savedDemo) {
-      try { setDemoUserState(JSON.parse(savedDemo)); } catch { /* ignore */ }
-    }
-  }, []);
-
-  const setSubscriptionTier = useCallback((tier: SubscriptionTier) => {
-    setTierState(tier);
-    ls.set(TIER_STORAGE_KEY, tier);
-  }, []);
-
-  const setOnboardingCompleted = useCallback((completed: boolean) => {
-    setOnboardingCompletedState(completed);
-    ls.set(ONBOARDING_STORAGE_KEY, String(completed));
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      setFirebaseUser(fbUser);
+    fetchMe().then((u) => {
+      setUser(u);
       setLoading(false);
     });
-    return unsubscribe;
-  }, []);
+  }, [fetchMe]);
 
-  const user: User | null = firebaseUser
-    ? {
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName ?? '學習者',
-        avatarUrl: firebaseUser.photoURL,
-        subscriptionTier,
-        subscriptionStatus: 'ACTIVE',
-        currentPeriodEnd: null,
-        stripeCustomerId: null,
-        onboardingCompleted,
-        role: 'USER',
-        createdAt: firebaseUser.metadata.creationTime ?? new Date().toISOString(),
-      }
-    : demoUser
-    ? {
-        id: `demo_${demoUser.email}`,
-        email: demoUser.email,
-        displayName: demoUser.displayName,
-        avatarUrl: null,
-        subscriptionTier,
-        subscriptionStatus: 'ACTIVE',
-        currentPeriodEnd: null,
-        stripeCustomerId: null,
-        onboardingCompleted,
-        role: demoUser.role,
-        createdAt: new Date().toISOString(),
-      }
-    : null;
-
-  const loginAsDemoUser = useCallback((info: DemoUserInfo, tier: SubscriptionTier, onboardingDone: boolean) => {
-    setDemoUserState(info);
-    setTierState(tier);
-    setOnboardingCompletedState(onboardingDone);
-    ls.set(DEMO_USER_KEY, JSON.stringify(info));
-    ls.set(TIER_STORAGE_KEY, tier);
-    ls.set(ONBOARDING_STORAGE_KEY, String(onboardingDone));
+  const loginWithCredentials = useCallback(async (email: string, password: string) => {
+    const res = await apiClient.post<BackendLoginResponse>('/auth/login', { email, password });
+    setStoredToken(res.access_token);
+    const me = await apiClient.get<BackendMeResponse>('/auth/me');
+    const u = backendMeToUser(me);
+    setUser(u);
+    return { redirect_to: res.redirect_to };
   }, []);
 
   const signOut = useCallback(async () => {
-    if (firebaseUser) await firebaseSignOut(auth);
-    setDemoUserState(null);
-    setTierState('FREE');
-    setOnboardingCompletedState(false);
-    ls.remove(DEMO_USER_KEY);
-    ls.remove(TIER_STORAGE_KEY);
-    ls.remove(ONBOARDING_STORAGE_KEY);
-  }, [firebaseUser]);
+    clearStoredToken();
+    setUser(null);
+  }, []);
+
+  const setSubscriptionTier = useCallback((tier: SubscriptionTier) => {
+    setUser((prev) => (prev ? { ...prev, subscriptionTier: tier } : null));
+  }, []);
+
+  const setOnboardingCompleted = useCallback((completed: boolean) => {
+    setUser((prev) => (prev ? { ...prev, onboardingCompleted: completed } : null));
+  }, []);
+
+  const subscriptionTier = user?.subscriptionTier ?? 'FREE';
+  const onboardingCompleted = user?.onboardingCompleted ?? false;
 
   const value: AuthContextValue = {
-    firebaseUser,
     user,
     loading,
-    isAuthenticated: !!firebaseUser || !!demoUser,
+    isAuthenticated: !!user,
     isPro: subscriptionTier === 'PRO_199' || subscriptionTier === 'PRO_PLUS_399' || subscriptionTier === 'ULTRA_1599',
     isProPlus: subscriptionTier === 'PRO_PLUS_399' || subscriptionTier === 'ULTRA_1599',
     isUltra: subscriptionTier === 'ULTRA_1599',
@@ -142,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSubscriptionTier,
     onboardingCompleted,
     setOnboardingCompleted,
-    loginAsDemoUser,
+    loginWithCredentials,
     signOut,
   };
 

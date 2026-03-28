@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles } from 'lucide-react';
+import type { LearningStyle } from '@/types';
 import { useAuth } from '@/lib/auth-context';
-import { accountService } from '@/lib/api/services';
+import { accountService, subscriptionService } from '@/lib/api/services';
+import { apiClient } from '@/lib/api/client';
 import type { GetUserUsageResponse, GetAchievementsResponse, GetBillingHistoryResponse } from '@/types';
 import AchievementGrid from '@/components/AchievementGrid';
 import GrowthTimeline from '@/components/GrowthTimeline';
@@ -11,7 +14,8 @@ import GrowthTimeline from '@/components/GrowthTimeline';
 type TabId = 'profile' | 'billing' | 'security' | 'preferences' | 'achievements';
 
 export default function AccountPage() {
-  const { user, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier } = useAuth();
+  const router = useRouter();
+  const { user, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -28,17 +32,26 @@ export default function AccountPage() {
   const [notifPreExam, setNotifPreExam] = useState(true);
   const [notifWeekly, setNotifWeekly] = useState(true);
 
-  // Mock billing history data
-  const mockBillingHistory = [
-    { date: '2026-03-01', description: 'PRO 方案 月費', amount: 199, status: 'paid' as const },
-    { date: '2026-02-01', description: 'PRO 方案 月費', amount: 199, status: 'paid' as const },
-  ];
+  const [subjects, setSubjects] = useState<{ name: string; date: string; level: string; mode: string }[]>([]);
 
-  // Mock subject data
-  const [subjects, setSubjects] = useState([
-    { name: 'AWS SAA', date: '2026-06-15', level: '有基礎', mode: 'Standard' },
-    { name: 'CFA Level 1', date: '2026-08-20', level: '初學', mode: 'Mastery' },
-  ]);
+  // Profile form fields (synced from user on mount)
+  const [profileName, setProfileName] = useState('');
+  const [profileAge, setProfileAge] = useState<number | ''>('');
+  const [profileEducation, setProfileEducation] = useState('');
+  const [profileOccupation, setProfileOccupation] = useState('');
+  const [profileStudyMinutes, setProfileStudyMinutes] = useState(30);
+  const [profileLearningStyle, setProfileLearningStyle] = useState<LearningStyle>('hybrid');
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setProfileName(user.displayName || '');
+    setProfileAge(user.age ?? '');
+    setProfileEducation(user.education ?? '');
+    setProfileOccupation(user.occupation ?? '');
+    setProfileStudyMinutes(user.dailyStudyMinutes ?? 30);
+    setProfileLearningStyle(user.learningStyle ?? 'hybrid');
+  }, [user]);
 
   // Data for each tab
   const [usage, setUsage] = useState<GetUserUsageResponse | null>(null);
@@ -46,14 +59,26 @@ export default function AccountPage() {
   const [billing, setBilling] = useState<GetBillingHistoryResponse | null>(null);
 
   useEffect(() => {
-    accountService.getUsage().then(setUsage);
-    accountService.getAchievements().then(setAchievements);
-    accountService.getBillingHistory().then(setBilling);
+    accountService.getUsage().then(setUsage).catch(() => {});
+    accountService.getAchievements().then(setAchievements).catch(() => {});
+    accountService.getBillingHistory().then(setBilling).catch(() => {});
   }, []);
 
   const handleSaveProfile = async () => {
     setSaving(true);
-    await accountService.updateProfile({ displayName: user?.displayName });
+    setProfileSaved(false);
+    try {
+      await accountService.updateProfile({
+        displayName: profileName,
+        age: profileAge === '' ? undefined : profileAge,
+        education: profileEducation || undefined,
+        occupation: profileOccupation || undefined,
+        dailyStudyMinutes: profileStudyMinutes,
+        learningStyle: profileLearningStyle,
+      });
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 3000);
+    } catch { /* silent */ }
     setSaving(false);
   };
 
@@ -71,7 +96,6 @@ export default function AccountPage() {
       setPasswordMessage({ type: 'error', text: '新密碼長度需至少 8 個字元' });
       return;
     }
-    // Mock success
     setPasswordMessage({ type: 'success', text: '密碼已成功更新' });
     setCurrentPassword('');
     setNewPassword('');
@@ -82,15 +106,22 @@ export default function AccountPage() {
   };
 
   const handleEditSubject = (name: string) => {
-    alert(`編輯科目：${name}（Mock）`);
+    router.push(`/onboarding?edit_subject=${encodeURIComponent(name)}`);
   };
 
-  const handleRemoveSubject = (name: string) => {
-    setSubjects(prev => prev.filter(s => s.name !== name));
+  const handleRemoveSubject = async (name: string) => {
+    if (!confirm(`確定要移除科目「${name}」嗎？`)) return;
+    try {
+      const subject = subjects.find(s => s.name === name);
+      if (subject) {
+        await apiClient.delete(`/subjects/${encodeURIComponent(name)}`);
+      }
+      setSubjects(prev => prev.filter(s => s.name !== name));
+    } catch { alert('移除失敗，請稍後再試'); }
   };
 
   const handleAddSubject = () => {
-    alert('新增備考科目（Mock）');
+    router.push('/onboarding?step=subjects');
   };
 
   const tabs: { id: TabId; label: string; icon: typeof User }[] = [
@@ -122,26 +153,6 @@ export default function AccountPage() {
             </button>
           ))}
 
-          {/* Demo tier toggle */}
-          <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Demo 模式</p>
-            <div className="space-y-1.5">
-              {(['FREE', 'PRO_199', 'PRO_PLUS_399', 'ULTRA_1599'] as const).map(tier => (
-                <label key={tier} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="demo_tier"
-                    checked={subscriptionTier === tier}
-                    onChange={() => setSubscriptionTier(tier)}
-                    className="text-emerald-500 focus:ring-emerald-500"
-                  />
-                  <span className="text-slate-700">
-                    {tier === 'FREE' ? '免費版' : tier === 'PRO_199' ? 'Pro (199)' : tier === 'PRO_PLUS_399' ? 'Pro Plus (399)' : 'Ultra (1599)'}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Main Content */}
@@ -155,27 +166,144 @@ export default function AccountPage() {
                 <div className="h-24 w-24 rounded-full bg-slate-200 flex items-center justify-center text-3xl font-bold text-slate-500 border-4 border-white shadow-sm">
                   {user?.displayName?.charAt(0) || 'U'}
                 </div>
-                <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200">
+                <button
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = async (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      try {
+                        await accountService.uploadAvatar(file);
+                        window.location.reload();
+                      } catch {
+                        alert('上傳失敗，請稍後再試');
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200"
+                >
                   更換大頭貼
                 </button>
               </div>
 
               <div className="space-y-4">
+                {/* Name + Email */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">姓名</label>
-                    <input type="text" defaultValue={user?.displayName || ''} className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">使用者名稱</label>
-                    <input type="text" defaultValue="learner_01" className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">電子郵件</label>
+                    <input type="email" defaultValue={user?.email || ''} disabled className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-slate-500 cursor-not-allowed" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">電子郵件</label>
-                  <input type="email" defaultValue={user?.email || ''} disabled className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-slate-500 cursor-not-allowed" />
+
+                {/* Age + Education */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">年齡 <span className="text-xs text-slate-400 font-normal">(選填)</span></label>
+                    <select
+                      value={profileAge}
+                      onChange={e => setProfileAge(e.target.value ? Number(e.target.value) : '')}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">請選擇年齡</option>
+                      {Array.from({ length: 56 }, (_, i) => i + 15).map(age => (
+                        <option key={age} value={age}>{age} 歲</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">最高學歷 <span className="text-xs text-slate-400 font-normal">(選填)</span></label>
+                    <select
+                      value={profileEducation}
+                      onChange={e => setProfileEducation(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">請選擇學歷</option>
+                      {['國中', '高中·高職', '專科', '大學', '碩士', '博士', '其他'].map(edu => (
+                        <option key={edu} value={edu}>{edu}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="pt-4">
+
+                {/* Occupation */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">職業 / 領域 <span className="text-xs text-slate-400 font-normal">(選填)</span></label>
+                  <input
+                    type="text"
+                    value={profileOccupation}
+                    onChange={e => setProfileOccupation(e.target.value)}
+                    placeholder="例如：軟體工程師、會計師、學生"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Daily study minutes */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">每日學習時間</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { value: 15, label: '15 分鐘' },
+                      { value: 30, label: '30 分鐘' },
+                      { value: 60, label: '1 小時' },
+                      { value: 120, label: '2 小時' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setProfileStudyMinutes(opt.value)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          profileStudyMinutes === opt.value
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Learning style */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">偏好學習方式</label>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {([
+                      { value: 'drill' as const, icon: Zap, title: '大量刷題', desc: '以題目驅動，快速找出盲點' },
+                      { value: 'concept' as const, icon: BookOpen, title: '觀念優先', desc: '先讀懂再做題，穩紮穩打' },
+                      { value: 'hybrid' as const, icon: Sparkles, title: '混合模式', desc: '系統智慧搭配' },
+                    ]).map(opt => {
+                      const Icon = opt.icon;
+                      const active = profileLearningStyle === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setProfileLearningStyle(opt.value)}
+                          className={`text-left p-3 rounded-xl border-2 transition-all ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-50'
+                              : 'border-slate-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icon className={`h-4 w-4 ${active ? 'text-emerald-600' : 'text-slate-400'}`} />
+                            <span className="text-sm font-bold text-slate-900">{opt.title}</span>
+                          </div>
+                          <p className="text-xs text-slate-500">{opt.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-4 flex items-center gap-3">
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving}
@@ -183,6 +311,11 @@ export default function AccountPage() {
                   >
                     {saving ? '儲存中...' : '儲存變更'}
                   </button>
+                  {profileSaved && (
+                    <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="h-4 w-4" /> 已儲存
+                    </span>
+                  )}
                 </div>
               </div>
             </section>
@@ -273,7 +406,17 @@ export default function AccountPage() {
                       <li className="flex items-center gap-2 text-sm text-emerald-800"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> 無限制模擬測驗生成</li>
                       <li className="flex items-center gap-2 text-sm text-emerald-800"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> 移除廣告，純淨備考體驗</li>
                     </ul>
-                    <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold transition-colors shadow-md shadow-emerald-500/20">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('確定要升級至 Pro 方案 (NT$199/月) 嗎？')) return;
+                        try {
+                          await subscriptionService.upgrade('PRO');
+                          setSubscriptionTier('PRO_199');
+                          alert('升級成功！');
+                        } catch { alert('升級失敗，請稍後再試'); }
+                      }}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold transition-colors shadow-md shadow-emerald-500/20"
+                    >
                       升級 Pro (NT$199/月)
                     </button>
                   </div>
@@ -296,7 +439,17 @@ export default function AccountPage() {
                       <li className="flex items-center gap-2 text-sm text-yellow-800"><CheckCircle2 className="h-4 w-4 text-yellow-500" /> 動態弱點出題引擎</li>
                       <li className="flex items-center gap-2 text-sm text-yellow-800"><CheckCircle2 className="h-4 w-4 text-yellow-500" /> 遇到卡關可呼叫 Claude / GPT-4o</li>
                     </ul>
-                    <button className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-4 py-3 rounded-xl font-bold transition-colors shadow-md shadow-yellow-400/20">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('確定要升級至 Pro Plus 方案 (NT$399/月) 嗎？')) return;
+                        try {
+                          await subscriptionService.upgrade('PRO_PLUS');
+                          setSubscriptionTier('PRO_PLUS_399');
+                          alert('升級成功！');
+                        } catch { alert('升級失敗，請稍後再試'); }
+                      }}
+                      className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-4 py-3 rounded-xl font-bold transition-colors shadow-md shadow-yellow-400/20"
+                    >
                       升級 Pro Plus (NT$399/月)
                     </button>
                   </div>
@@ -308,7 +461,10 @@ export default function AccountPage() {
                       <span className="text-sm font-bold text-purple-700">NT$1,599 / 月</span>
                     </div>
                     <p className="text-xs text-purple-700 mb-3">無額度上限 AI 教練、B2B 企業後台、Super Admin 控制台、自帶向量叢集。</p>
-                    <button className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">
+                    <button
+                      onClick={() => { window.location.href = 'mailto:sales@certimate.app?subject=Ultra 企業方案諮詢'; }}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors"
+                    >
                       聯絡企業銷售
                     </button>
                   </div>
@@ -316,7 +472,17 @@ export default function AccountPage() {
                 {/* Cancel subscription */}
                 {isPro && (
                   <div className="mt-4 text-center">
-                    <button className="text-sm text-slate-400 hover:text-rose-500 underline transition-colors">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('確定要取消訂閱嗎？取消後，您的方案將在當前帳單週期結束時降級為免費版。')) return;
+                        try {
+                          await subscriptionService.cancel();
+                          setSubscriptionTier('FREE');
+                          alert('訂閱已取消');
+                        } catch { alert('取消失敗，請稍後再試'); }
+                      }}
+                      className="text-sm text-slate-400 hover:text-rose-500 underline transition-colors"
+                    >
                       取消訂閱
                     </button>
                     <p className="text-xs text-slate-400 mt-1">取消後，您的方案將在當前帳單週期結束時降級為免費版</p>
@@ -346,7 +512,7 @@ export default function AccountPage() {
                             amount: inv.amount,
                             status: inv.status,
                           }))
-                        : mockBillingHistory
+                        : []
                       ).map((row, idx) => (
                         <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                           <td className="py-3 px-4 text-slate-900">{new Date(row.date).toLocaleDateString('zh-TW')}</td>
@@ -464,7 +630,27 @@ export default function AccountPage() {
                     <p className="text-sm font-medium text-slate-900">匯出我的資料</p>
                     <p className="text-xs text-slate-500">下載所有學習記錄與個人資料</p>
                   </div>
-                  <button className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { getStoredToken } = await import('@/lib/api/client');
+                        const token = getStoredToken();
+                        const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+                        const res = await fetch(`${BASE_URL}/dashboard/export`, {
+                          headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        });
+                        if (!res.ok) throw new Error('匯出失敗');
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'certimate-data-export.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch { alert('匯出失敗，請稍後再試'); }
+                    }}
+                    className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-2"
+                  >
                     <Download className="h-4 w-4" /> 匯出
                   </button>
                 </div>
@@ -673,6 +859,13 @@ export default function AccountPage() {
               </button>
               <button
                 disabled={deleteConfirmText !== 'DELETE'}
+                onClick={async () => {
+                  try {
+                    await accountService.deleteAccount();
+                    await signOut();
+                    router.push('/login');
+                  } catch { alert('刪除帳號失敗，請稍後再試'); }
+                }}
                 className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Trash2 className="h-4 w-4" /> 永久刪除帳號

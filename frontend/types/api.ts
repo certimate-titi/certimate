@@ -34,12 +34,14 @@ export interface LoginRequest {
 export interface SignupRequest {
   email: string;
   password: string;
-  displayName: string;
+  displayName?: string;
 }
 
 export interface AuthResponse {
   user: User;
   token: string;
+  access_token?: string;
+  redirect_to?: string;
 }
 
 // ===========================
@@ -180,6 +182,11 @@ export interface GetNodeDetailResponse {
 export interface UpdateProfileRequest {
   displayName?: string;
   username?: string;
+  age?: number | null;
+  education?: string | null;
+  occupation?: string | null;
+  dailyStudyMinutes?: number;
+  learningStyle?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -258,6 +265,7 @@ export interface SubmitOnboardingRequest {
   occupation?: string;
   subjects: Array<{
     subjectId: string;
+    subjectName?: string;
     examDate: string;
     selfAssessment: SelfAssessmentLevel;
   }>;
@@ -280,6 +288,7 @@ export interface GetUserSubjectsResponse {
 
 export interface AddUserSubjectRequest {
   subjectId: string;
+  subjectName?: string;
   examDate: string;
   selfAssessment: SelfAssessmentLevel;
 }

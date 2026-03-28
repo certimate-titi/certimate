@@ -1,9 +1,11 @@
 /**
  * API Service Layer
  *
- * 每個函式目前返回 mock 資料，後端就緒後改為呼叫 apiClient。
- * 函式簽名即 API 契約——後端實作時不應改變。
+ * All service functions call the real backend API via apiClient.
+ * The function signatures are the API contract.
  */
+
+import { apiClient } from './client';
 
 import type {
   AuthResponse,
@@ -12,7 +14,6 @@ import type {
   UploadDocumentRequest,
   UploadDocumentResponse,
   GetDocumentsResponse,
-  KnowledgeNode,
   CreateExamRequest,
   CreateExamResponse,
   SubmitExamRequest,
@@ -36,68 +37,32 @@ import type {
   GetUserSubjectsResponse,
   AddUserSubjectRequest,
   AddUserSubjectResponse,
-  ExamSetupConfig,
-  DailyQuest,
-  Achievement,
-  LearningStreak,
-  GrowthMilestone,
-  Student,
-  SubjectCatalogItem,
-  UserSubject,
-  SelfAssessmentLevel,
-  LearningStyle,
-  AdminKPI,
-  SystemAlert,
-  PromoCode,
-  FeatureFlag,
   ChatMessage,
 } from '@/types';
-
-import {
-  mockUser,
-  mockUsage,
-  mockDocuments,
-  mockExams,
-  mockExam,
-  mockQuestions,
-  mockUserAnswers,
-  mockDomainAnalysis,
-  mockKnowledgeNodes,
-  mockStreak,
-  mockDailyQuests,
-  mockActivityItems,
-  mockReviewCalendar,
-  mockChatMessages,
-  mockAchievements,
-  mockMilestones,
-  mockStudents,
-  mockSubjectCatalog,
-  mockUserSubjects,
-  mockNodeDetails,
-  mockAdminSubjectStats,
-} from './mock-data';
-
-// Simulate network delay
-const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
 // ===========================
 // Auth Service
 // ===========================
 
 export const authService = {
-  async login(_req: LoginRequest): Promise<AuthResponse> {
-    await delay();
-    return { user: mockUser, token: 'mock-jwt-token' };
+  async login(req: LoginRequest): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>('/auth/login', req);
   },
 
-  async signup(_req: SignupRequest): Promise<AuthResponse> {
-    await delay();
-    return { user: { ...mockUser, email: _req.email, displayName: _req.displayName }, token: 'mock-jwt-token' };
+  async signup(req: SignupRequest): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>('/auth/register', {
+      email: req.email,
+      password: req.password,
+      agreed_to_terms: true,
+    });
   },
 
   async getCurrentUser(): Promise<AuthResponse | null> {
-    await delay(100);
-    return { user: mockUser, token: 'mock-jwt-token' };
+    try {
+      return await apiClient.get<AuthResponse>('/auth/me');
+    } catch {
+      return null;
+    }
   },
 };
 
@@ -106,31 +71,31 @@ export const authService = {
 // ===========================
 
 export const documentService = {
-  async upload(_req: UploadDocumentRequest): Promise<UploadDocumentResponse> {
-    await delay(500);
-    const title = _req.title || _req.file?.name || 'YouTube 影片';
-    return {
-      document: {
-        ...mockDocuments[0],
-        id: `doc_${Date.now()}`,
-        subjectId: _req.subjectId,
-        title,
-        sourceType: _req.youtubeUrl ? 'YOUTUBE_URL' : 'PDF',
-        status: 'PROCESSING',
-        createdAt: new Date().toISOString(),
-      },
-      taskId: `task_${Date.now()}`,
-    };
+  async upload(req: UploadDocumentRequest): Promise<UploadDocumentResponse> {
+    if (req.youtubeUrl) {
+      return apiClient.post<UploadDocumentResponse>('/resources/youtube', {
+        youtube_url: req.youtubeUrl,
+        subject_id: req.subjectId,
+      });
+    }
+    // File upload
+    const formData = new FormData();
+    if (req.file) formData.append('file', req.file);
+    if (req.subjectId) formData.append('subject_id', req.subjectId);
+    if (req.title) formData.append('filename', req.title);
+    return apiClient.upload<UploadDocumentResponse>('/resources/upload', formData);
   },
 
   async list(): Promise<GetDocumentsResponse> {
-    await delay();
-    return { documents: mockDocuments, total: mockDocuments.length };
+    return apiClient.get<GetDocumentsResponse>('/resources');
   },
 
   async getById(documentId: string): Promise<GetDocumentsResponse['documents'][0] | null> {
-    await delay(100);
-    return mockDocuments.find(d => d.id === documentId) ?? null;
+    try {
+      return await apiClient.get(`/resources/${documentId}`);
+    } catch {
+      return null;
+    }
   },
 };
 
@@ -139,63 +104,36 @@ export const documentService = {
 // ===========================
 
 export const examService = {
-  async create(_req: CreateExamRequest): Promise<CreateExamResponse> {
-    // Simulate multi-stage generation (the UI shows progress via stages)
-    await delay(2000);
-    return {
-      exam: { ...mockExam, id: `exam_${Date.now()}`, score: null, createdAt: new Date().toISOString() },
-      questions: mockQuestions,
-    };
+  async create(req: CreateExamRequest): Promise<CreateExamResponse> {
+    // Step 1: Create exam config
+    const configRes = await apiClient.post<{ exam_id: string }>('/exams/config', {
+      document_ids: req.config?.selectedDocumentIds || [],
+      question_count: req.config?.questionCount || 10,
+      difficulty: req.config?.difficulty || 2,
+      question_types: req.config?.questionTypes,
+    });
+    // Step 2: Generate questions
+    const genRes = await apiClient.post<CreateExamResponse>(`/exams/${configRes.exam_id}/generate`);
+    return genRes;
   },
 
   async getExam(examId: string): Promise<CreateExamResponse> {
-    await delay();
-    return {
-      exam: { ...mockExam, id: examId },
-      questions: mockQuestions,
-    };
+    return apiClient.get<CreateExamResponse>(`/exams/${examId}/resume`);
   },
 
   async submit(req: SubmitExamRequest): Promise<SubmitExamResponse> {
-    await delay(800);
-    // Calculate score from submitted answers
-    let correct = 0;
-    const userAnswers = req.answers.map((a, i) => {
-      const question = mockQuestions.find(q => q.id === a.questionId);
-      const isCorrect = question ? a.userChoice === question.correctAnswer : false;
-      if (isCorrect) correct++;
-      return {
-        id: `ua_${Date.now()}_${i}`,
-        userId: mockUser.id,
-        questionId: a.questionId,
-        examId: req.examId,
-        isCorrect,
-        userChoice: a.userChoice,
-        ebbinghausNextReview: isCorrect ? null : new Date(Date.now() + 86400000).toISOString(),
-        ebbinghausMultiplier: isCorrect ? 2.0 : 1.0,
-      };
-    });
-
-    const score = Math.round((correct / req.answers.length) * 100);
-
-    return {
-      exam: { ...mockExam, id: req.examId, score },
-      userAnswers,
-      domainAnalysis: mockDomainAnalysis,
-      aiSummary: `你在本次測驗中答對了 ${correct}/${req.answers.length} 題（${score}%）。風險管理章節表現最需加強，建議重點複習「風險回應策略」與「定性風險分析」的核心概念。整合管理部分表現優異，繼續保持！`,
-    };
+    // Save each answer then submit
+    for (const answer of req.answers) {
+      await apiClient.post(`/exams/${req.examId}/answers`, {
+        question_id: answer.questionId,
+        user_choice: answer.userChoice,
+      });
+    }
+    return apiClient.post<SubmitExamResponse>(`/exams/${req.examId}/submit`);
   },
 
   async getResults(examId: string): Promise<GetExamResultsResponse> {
-    await delay();
-    const exam = mockExams.find(e => e.id === examId) || mockExam;
-    return {
-      exam,
-      questions: mockQuestions.filter(q => q.examId === examId),
-      userAnswers: mockUserAnswers.filter(ua => ua.examId === examId),
-      domainAnalysis: mockDomainAnalysis,
-      aiSummary: '你在風險管理章節表現最需加強，建議重點複習「風險回應策略」與「定性風險分析」。整合管理與範圍管理章節表現優異，繼續保持！',
-    };
+    return apiClient.get<GetExamResultsResponse>(`/exams/${examId}/result`);
   },
 };
 
@@ -205,45 +143,27 @@ export const examService = {
 
 export const reviewService = {
   async getWrongQuestions(examId?: string, subjectId?: string): Promise<GetReviewQuestionsResponse> {
-    await delay();
-    let wrongAnswers = mockUserAnswers.filter(ua => !ua.isCorrect);
-
-    if (examId) {
-      wrongAnswers = wrongAnswers.filter(ua => ua.examId === examId);
-    } else if (subjectId) {
-      // 根據學科過濾：找出該學科下的所有文檔，再找出關聯這些文檔的考試
-      const subjectDocIds = mockDocuments.filter(d => d.subjectId === subjectId).map(d => d.id);
-      const subjectExamIds = mockExams.filter(e => subjectDocIds.includes(e.documentId)).map(e => e.id);
-      wrongAnswers = wrongAnswers.filter(ua => subjectExamIds.includes(ua.examId));
-    }
-
-    const firstWrongExam = mockExams.find(e => e.id === (examId || (wrongAnswers[0]?.examId)));
-
-    return {
-      examId: examId || (subjectId ? `all_${subjectId}` : 'all'),
-      examTitle: examId ? (firstWrongExam?.title ?? '專屬測驗') : subjectId ? `${subjectId === 'subj_pmp' ? 'PMP' : 'AWS'} 全學科錯題本` : '所有錯題本',
-      wrongQuestions: wrongAnswers.map(ua => ({
-        question: mockQuestions.find(q => q.id === ua.questionId)!,
-        userAnswer: ua,
-      })),
-    };
+    const params = new URLSearchParams();
+    if (examId) params.set('exam_id', examId);
+    if (subjectId) params.set('subject_id', subjectId);
+    const qs = params.toString();
+    return apiClient.get<GetReviewQuestionsResponse>(`/wrong-answers${qs ? `?${qs}` : ''}`);
   },
 
-  async getChatHistory(_questionId: string): Promise<ChatMessage[]> {
-    await delay(200);
-    return mockChatMessages;
+  async getChatHistory(questionId: string): Promise<ChatMessage[]> {
+    try {
+      const res = await apiClient.get<{ messages: ChatMessage[] }>(`/wrong-answers/questions/${questionId}/coach`);
+      return res.messages || [];
+    } catch {
+      return [];
+    }
   },
 
   async sendMessage(req: SendChatMessageRequest): Promise<SendChatMessageResponse> {
-    await delay(1200);
-    return {
-      reply: {
-        id: `msg_${Date.now()}`,
-        role: 'ai',
-        content: `針對你的問題「${req.message}」，讓我從另一個角度來解釋。\n\n在這個情境中，關鍵在於理解「正式流程」與「緊急處理」的區別。專案管理框架中，大多數變更都需要經過正式審查，但緊急情況下可以有例外機制。\n\n重點是：即使在緊急情況下，事後仍需要補辦正式流程。`,
-        timestamp: new Date().toISOString(),
-      },
-    };
+    return apiClient.post<SendChatMessageResponse>(
+      `/wrong-answers/questions/${req.questionId}/coach`,
+      { message: req.message },
+    );
   },
 };
 
@@ -251,29 +171,25 @@ export const reviewService = {
 // Dashboard Service
 // ===========================
 
+// ===========================
+// Announcements (Public)
+// ===========================
+
+export const announcementService = {
+  async getActive(): Promise<{ announcements: { id: string; title: string; content: string; type: string; display_mode: string }[] }> {
+    return apiClient.get('/announcements');
+  },
+};
+
+// ===========================
+
 export const dashboardService = {
   async get(): Promise<GetDashboardResponse> {
-    await delay();
-    return {
-      user: mockUser,
-      streak: mockStreak,
-      dailyQuests: mockDailyQuests,
-      activityItems: mockActivityItems,
-      reviewCalendar: mockReviewCalendar,
-      stats: {
-        overallAccuracy: 76,
-        totalMocksCompleted: 8,
-        totalQuestionsAnswered: 482,
-        predictedPassRate: 72,
-        examCountdown: { examName: 'PMP 考試', daysRemaining: 14 },
-      },
-      domainStrengths: mockDomainAnalysis,
-    };
+    return apiClient.get<GetDashboardResponse>('/dashboard');
   },
 
-  async completeDailyQuest(_req: CompleteDailyQuestRequest): Promise<void> {
-    await delay(200);
-    // In real implementation, updates the quest status on the server
+  async completeDailyQuest(req: CompleteDailyQuestRequest): Promise<void> {
+    await apiClient.post(`/dashboard/quests/${req.questId}/complete`);
   },
 };
 
@@ -282,49 +198,15 @@ export const dashboardService = {
 // ===========================
 
 export const knowledgeService = {
-  async getMap(_documentId?: string): Promise<GetKnowledgeMapResponse> {
-    await delay();
-    return {
-      documents: mockDocuments,
-      nodes: mockKnowledgeNodes,
-      rootNodeId: 'kn_pmp_root',
-    };
+  async getMap(subjectId?: string): Promise<GetKnowledgeMapResponse> {
+    const path = subjectId
+      ? `/knowledge-map/subjects/${subjectId}/nodes`
+      : '/knowledge-map/layout';
+    return apiClient.get<GetKnowledgeMapResponse>(path);
   },
 
   async getNodeDetail(nodeId: string): Promise<GetNodeDetailResponse> {
-    await delay(200);
-    // 遞迴展平節點以尋找任何深度的節點
-    const flattenNodes = (nodes: KnowledgeNode[]): KnowledgeNode[] => {
-      let result: KnowledgeNode[] = [];
-      nodes.forEach(n => {
-        result.push(n);
-        if (n.children && n.children.length > 0) {
-          result = result.concat(flattenNodes(n.children));
-        }
-      });
-      return result;
-    };
-
-    const flatNodes = flattenNodes(mockKnowledgeNodes);
-    const node = flatNodes.find(n => n.id === nodeId) ?? flatNodes[0];
-
-    // 優先使用專屬的詳細 Mock 資料
-    if (mockNodeDetails[nodeId]) {
-      return mockNodeDetails[nodeId];
-    }
-
-    // 後備方案：生成基本的溯源資訊
-    const doc = mockDocuments.find(d => d.id === node.documentId);
-    return {
-      node,
-      citationText: '「該節點的詳細原文正在解析中。此處為 Mock 的基礎溯源文本，用於展示佈局效果。」',
-      citationSource: {
-        type: doc?.sourceType === 'YOUTUBE_URL' ? 'youtube' : 'pdf',
-        documentTitle: doc?.title ?? '參考文件',
-        page: 1,
-        sourceUrl: doc?.sourceUrl ?? '',
-      },
-    };
+    return apiClient.get<GetNodeDetailResponse>(`/knowledge-map/nodes/${nodeId}`);
   },
 };
 
@@ -333,39 +215,51 @@ export const knowledgeService = {
 // ===========================
 
 export const accountService = {
-  async updateProfile(_req: UpdateProfileRequest): Promise<void> {
-    await delay(500);
+  async updateProfile(req: UpdateProfileRequest): Promise<void> {
+    await apiClient.patch('/dashboard/profile', {
+      display_name: req.displayName,
+      age: req.age,
+      education: req.education,
+      career: req.occupation,
+      daily_study_minutes: req.dailyStudyMinutes,
+      learning_style: req.learningStyle,
+    });
+  },
+
+  async uploadAvatar(file: File): Promise<void> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    await apiClient.upload('/dashboard/profile/avatar', formData);
   },
 
   async getUsage(): Promise<GetUserUsageResponse> {
-    await delay();
-    return {
-      usage: mockUsage,
-      limits: {
-        documentsPerMonth: 5,
-        examsPerMonth: 3,
-        aiQueriesPerDay: 10,
-        visionOcrPagesPerMonth: 5,
-        maxFileSizeMB: 10,
-      },
-    };
+    return apiClient.get<GetUserUsageResponse>('/dashboard/usage');
   },
 
   async getAchievements(): Promise<GetAchievementsResponse> {
-    await delay();
-    return {
-      achievements: mockAchievements,
-      milestones: mockMilestones,
-    };
+    return apiClient.get<GetAchievementsResponse>('/dashboard/achievements');
   },
 
   async getBillingHistory(): Promise<GetBillingHistoryResponse> {
-    await delay();
-    return {
-      invoices: [
-        { id: 'inv_001', date: '2026-03-01', amount: 0, currency: 'TWD', status: 'paid', pdfUrl: null },
-      ],
-    };
+    return apiClient.get<GetBillingHistoryResponse>('/subscriptions/invoices');
+  },
+
+  async deleteAccount(): Promise<void> {
+    await apiClient.delete('/auth/delete-account');
+  },
+};
+
+// ===========================
+// Subscription Service
+// ===========================
+
+export const subscriptionService = {
+  async upgrade(plan: string): Promise<void> {
+    await apiClient.post('/subscriptions/upgrade', { plan });
+  },
+
+  async cancel(): Promise<void> {
+    await apiClient.post('/subscriptions/cancel');
   },
 };
 
@@ -375,23 +269,179 @@ export const accountService = {
 
 export const adminService = {
   async getStudentList(subjectId?: string): Promise<GetStudentListResponse> {
-    await delay();
-    
-    // 過濾學員：如果指定了學科，則僅顯示已報名該學科的學員
-    const filteredStudents = subjectId 
-      ? mockStudents.filter(s => s.enrolledSubjectIds?.includes(subjectId))
-      : mockStudents;
+    const params = subjectId ? `?subject_id=${subjectId}` : '';
+    return apiClient.get<GetStudentListResponse>(`/b2b/dashboard${params}`);
+  },
+};
 
-    // 獲取學科專屬統計（如果有的話，否則回退到 PMP 預設值）
-    const stats = subjectId && mockAdminSubjectStats[subjectId] 
-      ? mockAdminSubjectStats[subjectId]
-      : mockAdminSubjectStats['subj_pmp'];
+// ===========================
+// Super Admin Service
+// ===========================
 
-    return {
-      students: filteredStudents,
-      total: filteredStudents.length,
-      classStats: stats,
-    };
+export const superAdminService = {
+  async getUsers(params?: { search?: string; tier?: string; page?: number }): Promise<{ users: unknown[]; total: number }> {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set('keyword', params.search);
+    if (params?.tier && params.tier !== 'All') qs.set('plan', params.tier);
+    if (params?.page) qs.set('page', String(params.page));
+    const q = qs.toString();
+    return apiClient.get(`/admin/users${q ? `?${q}` : ''}`);
+  },
+
+  async getUserDetail(userId: string): Promise<Record<string, unknown>> {
+    return apiClient.get(`/admin/users/${userId}`);
+  },
+
+  async exportUsersCSV(): Promise<Blob> {
+    const token = (await import('./client')).getStoredToken();
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+    const res = await fetch(`${BASE_URL}/admin/users/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+    return res.blob();
+  },
+
+  async suspendUser(userId: string, reason?: string): Promise<void> {
+    await apiClient.post('/admin/users/suspend', { target_user_id: userId, reason });
+  },
+
+  async activateUser(userId: string): Promise<void> {
+    await apiClient.post('/admin/users/activate', { target_user_id: userId });
+  },
+
+  async adjustRole(email: string, role: string): Promise<void> {
+    await apiClient.post('/admin/users/adjust-role', { target_email: email, role });
+  },
+
+  async deleteUser(userId: string, confirmName: string): Promise<void> {
+    await apiClient.post('/admin/users/delete', { target_user_id: userId, confirm_name: confirmName });
+  },
+
+  async getSettings(): Promise<Record<string, unknown>> {
+    return apiClient.get('/admin/settings');
+  },
+
+  async getFeatureFlags(): Promise<{ flags: { id: string; name: string; description: string; enabled: boolean }[] }> {
+    return apiClient.get('/admin/system-settings/feature-flags');
+  },
+
+  async getAdmins(): Promise<{ admins: { id: string; name: string; email: string; role: string; joined: string }[] }> {
+    return apiClient.get('/admin/users?role=admin');
+  },
+
+  async getAnnouncements(): Promise<{ announcements: { id: string; title: string; content: string; display_mode: string; created_at: string }[] }> {
+    return apiClient.get('/admin/system-settings/announcements');
+  },
+
+  async getPlanQuotas(): Promise<{ quotas: { label: string; key: string; free: number | string; pro: number | string; pro_plus: number | string; ultra: number | string }[] }> {
+    const raw = await apiClient.get<{ quotas: { plan: string; monthly_uploads: number; monthly_exams: number; daily_ai_chats: number; monthly_vision_pages: number; max_file_size_mb: number }[] }>('/admin/system-settings/plan-quotas');
+    if (!Array.isArray(raw?.quotas)) return { quotas: [] };
+    // Transform: per-plan rows → per-parameter rows
+    const planMap: Record<string, Record<string, number | string>> = {};
+    for (const q of raw.quotas) {
+      planMap[q.plan] = q as unknown as Record<string, number | string>;
+    }
+    const params = [
+      { label: '每月上傳數', key: 'monthly_uploads' },
+      { label: '每月考試數', key: 'monthly_exams' },
+      { label: '每日 AI 對話數', key: 'daily_ai_chats' },
+      { label: '每月 Vision 頁數', key: 'monthly_vision_pages' },
+      { label: '最大檔案大小 (MB)', key: 'max_file_size_mb' },
+    ];
+    const quotas = params.map(p => ({
+      label: p.label,
+      key: p.key,
+      free: planMap['FREE']?.[p.key] ?? '--',
+      pro: planMap['PRO']?.[p.key] ?? '--',
+      pro_plus: planMap['PRO_PLUS']?.[p.key] ?? '--',
+      ultra: planMap['ULTRA']?.[p.key] ?? '--',
+    }));
+    return { quotas };
+  },
+
+  async getModelRouting(): Promise<Record<string, unknown>> {
+    return apiClient.get('/admin/system-settings/model-routing');
+  },
+
+  async updateModelRouting(plan: string, taskType: string, model: string): Promise<void> {
+    await apiClient.put(`/admin/system-settings/model-routing/${plan}/${taskType}`, { primary_model: model });
+  },
+
+  async updatePlanQuota(plan: string, quotas: Record<string, unknown>): Promise<void> {
+    await apiClient.put(`/admin/system-settings/plan-quota/${plan}`, quotas);
+  },
+
+  async createAnnouncement(data: { title: string; content: string; display_mode: string; schedule_date?: string }): Promise<void> {
+    await apiClient.post('/admin/system-settings/announcements', data);
+  },
+
+  async deactivateAnnouncement(id: string): Promise<void> {
+    await apiClient.put(`/admin/system-settings/announcements/${id}/deactivate`, {});
+  },
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await apiClient.delete(`/admin/system-settings/announcements/${id}`);
+  },
+
+  async updateFeatureFlag(flagId: string, enabled: boolean): Promise<void> {
+    await apiClient.put(`/admin/system-settings/feature-flags/${flagId}`, { enabled });
+  },
+
+  async getFinanceOverview(): Promise<{ mrr: number; arpu: number; churn_rate: number; ltv: number; mrr_trend: string; arpu_trend: string; churn_trend: string; ltv_trend: string }> {
+    return apiClient.get('/admin/finance/overview');
+  },
+
+  async getFinanceTransactions(): Promise<{ transactions: { id: string; user: string; amount: string; plan: string; status: string; time: string }[] }> {
+    return apiClient.get('/admin/finance/transactions');
+  },
+
+  async getMrrTrend(): Promise<{ data: { name: string; new: number; expansion: number; churn: number }[] }> {
+    return apiClient.get('/admin/finance/mrr-trend');
+  },
+
+  async getSubscriptionDistribution(): Promise<{ distribution: { name: string; value: number; color: string }[] }> {
+    return apiClient.get('/admin/finance/subscription-distribution');
+  },
+
+  async getModerationQueue(): Promise<{ items: { id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[] }> {
+    return apiClient.get('/admin/moderation/queue');
+  },
+
+  async getModerationStats(): Promise<{ pending_reports: number; auto_flagged_today: number; cooled_users: number; false_positive_rate: string }> {
+    return apiClient.get('/admin/moderation/stats');
+  },
+
+  async getAbuseMonitoring(): Promise<{ items: { id: string; user: string; metric: string; count: string; status: string; time: string }[] }> {
+    return apiClient.get('/admin/moderation/abuse');
+  },
+
+  async getContentReviewQueue(): Promise<{ items: { id: number; type: string; content: string; reporter: string; status: 'pending' | 'resolved'; date: string }[] }> {
+    return apiClient.get('/admin/moderation/content-review');
+  },
+
+  async approveContent(itemId: string): Promise<void> {
+    await apiClient.post(`/admin/moderation/${itemId}/approve`);
+  },
+
+  async rejectContent(itemId: string): Promise<void> {
+    await apiClient.post(`/admin/moderation/${itemId}/reject`);
+  },
+
+  async getAuditLogs(): Promise<{ logs: { id: string; timestamp: string; admin_id: string; admin_email: string; action: string; target_type: string; target_id: string; details: string; ip_address: string }[] }> {
+    return apiClient.get('/admin/system-settings/audit-logs');
+  },
+
+  async getDashboardAlerts(): Promise<{ alerts: { id: number; type: string; message: string; time: string }[]; system_alerts: { severity: string; message: string; time: string }[] }> {
+    return apiClient.get('/admin/dashboard/alerts');
+  },
+
+  async getSystemLoad(): Promise<{ cpu_percent: number; db_connections_percent: number; cache_hit_rate: number }> {
+    return apiClient.get('/admin/dashboard/system-load');
+  },
+
+  async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number }[] }> {
+    return apiClient.get('/admin/dashboard/charts');
   },
 };
 
@@ -401,21 +451,20 @@ export const adminService = {
 
 export const onboardingService = {
   async getSubjectCatalog(): Promise<GetSubjectCatalogResponse> {
-    await delay();
-    return { subjects: mockSubjectCatalog };
+    return apiClient.get<GetSubjectCatalogResponse>('/onboarding/subjects');
   },
 
   async submit(req: SubmitOnboardingRequest): Promise<SubmitOnboardingResponse> {
-    await delay(800);
-    const userSubjects: UserSubject[] = req.subjects.map((s, i) => ({
-      id: `us_${Date.now()}_${i}`,
-      subjectId: s.subjectId,
-      subjectName: mockSubjectCatalog.find(c => c.id === s.subjectId)?.name ?? s.subjectId,
-      examDate: s.examDate,
-      selfAssessment: s.selfAssessment,
-      createdAt: new Date().toISOString(),
-    }));
-    return { success: true, userSubjects };
+    return apiClient.post<SubmitOnboardingResponse>('/onboarding/complete', {
+      display_name: req.displayName,
+      subjects: req.subjects.map(s => ({
+        subject_name: s.subjectName || s.subjectId,
+        exam_date: s.examDate,
+        self_assessed_level: s.selfAssessment,
+      })),
+      daily_study_minutes: req.dailyStudyMinutes,
+      learning_preference: req.learningStyle,
+    });
   },
 };
 
@@ -425,21 +474,31 @@ export const onboardingService = {
 
 export const subjectService = {
   async getUserSubjects(): Promise<GetUserSubjectsResponse> {
-    await delay();
-    return { subjects: mockUserSubjects };
+    const raw = await apiClient.get<{
+      subjects?: Array<{
+        id?: string;
+        name?: string;
+        subject_name?: string;
+        exam_date?: string;
+        self_assessed_level?: string;
+      }>;
+    }>('/onboarding/summary');
+    const subjects = (raw.subjects || []).map((s, i) => ({
+      id: s.id || `subject_${i}`,
+      subjectId: s.id || `subject_${i}`,
+      subjectName: s.subject_name || s.name || '',
+      examDate: s.exam_date || '',
+      selfAssessment: (s.self_assessed_level || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+      createdAt: new Date().toISOString(),
+    }));
+    return { subjects };
   },
 
   async addSubject(req: AddUserSubjectRequest): Promise<AddUserSubjectResponse> {
-    await delay(500);
-    const catalog = mockSubjectCatalog.find(s => s.id === req.subjectId);
-    const subject: UserSubject = {
-      id: `us_${Date.now()}`,
-      subjectId: req.subjectId,
-      subjectName: catalog?.name ?? req.subjectId,
-      examDate: req.examDate,
-      selfAssessment: req.selfAssessment,
-      createdAt: new Date().toISOString(),
-    };
-    return { subject };
+    return apiClient.post<AddUserSubjectResponse>('/subjects', {
+      subject_name: req.subjectName || req.subjectId,
+      exam_date: req.examDate,
+      self_assessed_level: req.selfAssessment,
+    });
   },
 };
