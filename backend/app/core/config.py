@@ -57,6 +57,17 @@ class Settings:
         self.PROJECT_NAME: str = "CertiMate API"
         self.DEBUG: bool = os.environ.get("DEBUG", "true").lower() == "true"
 
+        # AI / RAG 設定
+        self.ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
+        self.VOYAGE_API_KEY: str = os.environ.get("VOYAGE_API_KEY", "")
+        self.CLAUDE_MODEL: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+        self.CLAUDE_PDF_MODEL: str = os.environ.get("CLAUDE_PDF_MODEL", "claude-sonnet-4-20250514")
+        self.VOYAGE_EMBED_MODEL: str = os.environ.get("VOYAGE_EMBED_MODEL", "voyage-3")
+        self.CHUNK_SIZE_TOKENS: int = int(os.environ.get("CHUNK_SIZE_TOKENS", "512"))
+        self.CHUNK_OVERLAP_TOKENS: int = int(os.environ.get("CHUNK_OVERLAP_TOKENS", "64"))
+        self.RETRIEVAL_TOP_K: int = int(os.environ.get("RETRIEVAL_TOP_K", "10"))
+        self.EMBEDDING_DIMENSIONS: int = int(os.environ.get("EMBEDDING_DIMENSIONS", "1024"))
+
 
 # 單例實例
 paths = Paths()

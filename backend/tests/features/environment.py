@@ -36,7 +36,7 @@ def _try_start_postgres():
     from sqlalchemy.orm import sessionmaker
 
     _postgres_container = PostgresContainer(
-        image="postgres:15",
+        image="pgvector/pgvector:pg15",
         username="postgres",
         password="postgres",
         dbname="certimate-api_test"

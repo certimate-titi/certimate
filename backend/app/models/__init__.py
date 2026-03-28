@@ -42,6 +42,7 @@ from app.models.anomaly_record import AnomalyRecord  # noqa: F401, E402
 from app.models.maintenance_task import MaintenanceTask  # noqa: F401, E402
 from app.models.maintenance_schedule import MaintenanceSchedule  # noqa: F401, E402
 from app.models.maintenance_notification import MaintenanceNotification  # noqa: F401, E402
+from app.models.resource_chunk import ResourceChunk  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -80,4 +81,5 @@ __all__ = [
     "MaintenanceTask",
     "MaintenanceSchedule",
     "MaintenanceNotification",
+    "ResourceChunk",
 ]

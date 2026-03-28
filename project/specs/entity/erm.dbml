@@ -303,6 +303,28 @@ Table knowledge_nodes {
 Ref: knowledge_nodes.resource_id > resources.id [delete: cascade]
 Ref: knowledge_nodes.parent_id > knowledge_nodes.id
 
+Table resource_chunks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  resource_id uuid [not null]
+  node_id uuid [note: '關聯的知識節點']
+  chunk_index integer [not null]
+  content text [not null]
+  token_count integer [not null]
+  source_page_start integer [note: 'PDF 起始頁碼']
+  source_page_end integer [note: 'PDF 結束頁碼']
+  metadata_json json [note: '額外中繼資料']
+  embedding "vector(1024)" [note: 'Voyage AI voyage-3 embedding']
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    resource_id
+    (embedding) [type: ivfflat, note: 'vector_cosine_ops']
+  }
+}
+
+Ref: resource_chunks.resource_id > resources.id [delete: cascade]
+Ref: resource_chunks.node_id > knowledge_nodes.id [delete: set null]
+
 Table node_mastery {
   id uuid [pk, default: `gen_random_uuid()`]
   user_id uuid [not null]

@@ -5,9 +5,14 @@ Implements the 4-stage AI prompt pipeline:
   Stage 2: 考題生成 (Question generation)
   Stage 3: 干擾項優化 (Distractor optimization)
   Stage 4: 格式化輸出 (Formatted output)
+
+Supports two modes:
+  - RAG mode: uses Claude API with retrieved document context (when ANTHROPIC_API_KEY is set)
+  - Mock mode: generates placeholder data (fallback when API unavailable)
 """
 
 import json
+import logging
 import random
 import uuid
 from collections import Counter
@@ -15,17 +20,31 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.exam import Exam, ExamStatus
 from app.models.knowledge_node import KnowledgeNode
 from app.models.prompt_template import PromptTemplate, PromptTemplateHistory
 from app.models.question import Question
 from app.models.user import User, UserRole
 
+logger = logging.getLogger(__name__)
+
 
 class AiGenerationService:
 
     def __init__(self, db: Session):
         self.db = db
+        self._settings = get_settings()
+        self._rag_enabled = bool(self._settings.ANTHROPIC_API_KEY)
+
+        if self._rag_enabled:
+            from app.services.claude_service import ClaudeService
+            from app.services.retrieval_service import RetrievalService
+            self._claude = ClaudeService()
+            self._retrieval = RetrievalService(db)
+        else:
+            self._claude = None
+            self._retrieval = None
 
     # ------------------------------------------------------------------ #
     # Public: full pipeline
@@ -56,6 +75,18 @@ class AiGenerationService:
         # Build user context
         user_context = self._build_user_context(user)
 
+        # Retrieve RAG context if enabled
+        rag_context = ""
+        if self._rag_enabled and self._retrieval:
+            resource_ids = list({n.resource_id for n in nodes if n.resource_id})
+            if resource_ids:
+                try:
+                    query = f"考點分析：{', '.join(n.name for n in nodes[:5])}"
+                    chunks = self._retrieval.retrieve(query, resource_ids)
+                    rag_context = self._retrieval.build_context_string(chunks)
+                except Exception as e:
+                    logger.warning("RAG retrieval failed, falling back to mock: %s", e)
+
         # Execute 4 stages
         progress_events = []
 
@@ -74,7 +105,7 @@ class AiGenerationService:
 
         # Stage 2
         stage2_result = self._stage2_question_generation(
-            stage1_result, difficulty_dist, user_context, total_q
+            stage1_result, difficulty_dist, user_context, total_q, rag_context
         )
         progress_events.append({
             "percentage": 50, "stage": "階段 2",
@@ -82,7 +113,7 @@ class AiGenerationService:
         })
 
         # Stage 3
-        stage3_result = self._stage3_distractor_optimization(stage2_result, user_context)
+        stage3_result = self._stage3_distractor_optimization(stage2_result, user_context, rag_context)
         progress_events.append({
             "percentage": 75, "stage": "階段 3",
             "message": "AI 教練正在設計考題陷阱與詳解...",
@@ -185,12 +216,23 @@ class AiGenerationService:
     # Stage 2: Question Generation
     # ------------------------------------------------------------------ #
 
-    def _stage2_question_generation(self, stage1, difficulty_dist, user_context, total_q):
-        """Generate raw questions based on exam points."""
-        points = stage1["exam_points"]
-        questions = []
+    def _stage2_question_generation(self, stage1, difficulty_dist, user_context, total_q, rag_context=""):
+        """Generate raw questions based on exam points.
 
-        # Calculate difficulty counts
+        When RAG is enabled and context is available, uses Claude to generate
+        real questions from document content. Falls back to mock data otherwise.
+        """
+        points = stage1["exam_points"]
+
+        # Try Claude-powered generation
+        if self._rag_enabled and self._claude and rag_context:
+            try:
+                return self._stage2_claude(points, difficulty_dist, user_context, total_q, rag_context)
+            except Exception as e:
+                logger.warning("Stage 2 Claude call failed, falling back to mock: %s", e)
+
+        # Fallback: mock generation
+        questions = []
         easy_count = round(total_q * difficulty_dist.get("easy", 30) / 100)
         hard_count = round(total_q * difficulty_dist.get("hard", 20) / 100)
         medium_count = total_q - easy_count - hard_count
@@ -202,14 +244,9 @@ class AiGenerationService:
         )
         random.shuffle(difficulty_pool)
 
-        # Distribute questions across points
         for i in range(total_q):
             point = points[i % len(points)]
             diff = difficulty_pool[i] if i < len(difficulty_pool) else "medium"
-
-            use_simple = (user_context and user_context.get("level") == "simple")
-            prefix = "" if not use_simple else ""
-
             q = {
                 "question_text": f"{point['name']}相關考題第{i+1}題",
                 "correct_answer": f"正確答案_{i+1}",
@@ -220,21 +257,64 @@ class AiGenerationService:
 
         return {"questions": questions, "total": len(questions)}
 
+    def _stage2_claude(self, points, difficulty_dist, user_context, total_q, rag_context):
+        """Use Claude to generate questions from RAG context."""
+        prompt_ctx = self._build_prompt_contexts(user_context)
+        point_names = [p["name"] for p in points]
+
+        system_prompt = (
+            "你是一位專業的考題出題老師。根據提供的文件內容，出一組高品質的考題。\n"
+            "每題必須基於文件中的實際內容，不得憑空捏造。\n"
+            f"個人化上下文：{prompt_ctx.get('stage_2', '無')}"
+        )
+
+        user_prompt = (
+            f"請根據以下考點，出 {total_q} 題選擇題。\n\n"
+            f"考點：{', '.join(point_names)}\n"
+            f"難度分布：簡單 {difficulty_dist.get('easy', 30)}%、中等 {difficulty_dist.get('medium', 50)}%、困難 {difficulty_dist.get('hard', 20)}%\n\n"
+            f"回傳 JSON 格式：\n"
+            f'{{"questions": [{{"question_text": "...", "correct_answer": "...", "difficulty": "easy|medium|hard", "exam_point": "考點名稱"}}]}}'
+        )
+
+        result = self._claude.generate_with_context(system_prompt, user_prompt, rag_context)
+        parsed = json.loads(result) if isinstance(result, str) else result
+
+        # Handle markdown-wrapped JSON
+        if isinstance(parsed, str):
+            text = parsed.strip()
+            if text.startswith("```"):
+                lines = text.split("\n")
+                text = "\n".join(lines[1:-1])
+            parsed = json.loads(text)
+
+        questions = parsed.get("questions", [])
+        return {"questions": questions[:total_q], "total": len(questions[:total_q])}
+
     # ------------------------------------------------------------------ #
     # Stage 3: Distractor Optimization
     # ------------------------------------------------------------------ #
 
-    def _stage3_distractor_optimization(self, stage2, user_context):
-        """Add distractors and explanations to each question."""
-        questions = stage2["questions"]
-        result = []
+    def _stage3_distractor_optimization(self, stage2, user_context, rag_context=""):
+        """Add distractors and explanations to each question.
 
+        When RAG is enabled, uses Claude to create high-quality distractors
+        based on document content. Falls back to mock otherwise.
+        """
+        questions = stage2["questions"]
+
+        # Try Claude-powered distractor generation
+        if self._rag_enabled and self._claude and rag_context and questions:
+            try:
+                return self._stage3_claude(questions, user_context, rag_context)
+            except Exception as e:
+                logger.warning("Stage 3 Claude call failed, falling back to mock: %s", e)
+
+        # Fallback: mock distractors
+        result = []
         for i, q in enumerate(questions):
             correct = q["correct_answer"]
-            # Generate 3 distractors
             distractors = [f"干擾項_{chr(65+j)}_{i+1}" for j in range(3)]
 
-            # Build 4 options with random placement of correct answer
             options = distractors.copy()
             correct_idx = random.randint(0, 3)
             options.insert(correct_idx, correct)
@@ -251,14 +331,44 @@ class AiGenerationService:
             result.append({
                 "question_text": q["question_text"],
                 "difficulty": q["difficulty"],
-                "exam_point": q["exam_point"],
+                "exam_point": q.get("exam_point", ""),
                 "options": options,
                 "correct_index": correct_idx,
-                "explanation": f"本題考察{q['exam_point']}，正確答案為{correct}。",
+                "explanation": f"本題考察{q.get('exam_point', '')}，正確答案為{correct}。",
                 "distractor_reasons": distractor_reasons,
             })
 
         return {"questions": result, "total": len(result)}
+
+    def _stage3_claude(self, questions, user_context, rag_context):
+        """Use Claude to generate distractors and explanations."""
+        prompt_ctx = self._build_prompt_contexts(user_context)
+
+        system_prompt = (
+            "你是一位專業的考題設計師。為每道選擇題設計 3 個高品質的干擾選項和詳細解釋。\n"
+            "干擾選項應基於常見迷思概念，而非明顯錯誤。\n"
+            f"個人化上下文：{prompt_ctx.get('stage_3', '無')}"
+        )
+
+        q_json = json.dumps(questions, ensure_ascii=False)
+        user_prompt = (
+            f"以下是 {len(questions)} 道考題（已有題幹和正確答案）。\n"
+            f"請為每題新增：options（4 個選項陣列）、correct_index（正確答案索引 0-3）、"
+            f"explanation（詳解）、distractor_reasons（各錯誤選項的解釋）。\n\n"
+            f"考題：{q_json}\n\n"
+            f"回傳 JSON 格式：{{'questions': [...]}}"
+        )
+
+        result = self._claude.generate_with_context(system_prompt, user_prompt, rag_context)
+        parsed = json.loads(result) if isinstance(result, str) else result
+        if isinstance(parsed, str):
+            text = parsed.strip()
+            if text.startswith("```"):
+                lines = text.split("\n")
+                text = "\n".join(lines[1:-1])
+            parsed = json.loads(text)
+
+        return {"questions": parsed.get("questions", []), "total": len(parsed.get("questions", []))}
 
     # ------------------------------------------------------------------ #
     # Stage 4: Formatted Output

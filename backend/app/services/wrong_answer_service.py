@@ -167,25 +167,76 @@ class WrongAnswerService:
 
     def _generate_coach_reply(self, question: Question, message: str, tone: str,
                               history_context: str | None = None) -> str:
-        """生成 AI 教練回覆（模擬）。"""
+        """生成 AI 教練回覆。
+
+        When RAG is enabled, uses Claude with document context.
+        Falls back to mock responses otherwise.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
         node = None
         if question.node_id:
             node = self.db.query(KnowledgeNode).filter_by(id=question.node_id).first()
         node_name = node.name if node else "此概念"
 
+        # Try Claude + RAG
+        from app.core.config import get_settings
+        settings = get_settings()
+        if settings.ANTHROPIC_API_KEY and node and node.resource_id:
+            try:
+                from app.services.claude_service import ClaudeService
+                from app.services.retrieval_service import RetrievalService
+
+                retrieval = RetrievalService(self.db)
+                claude = ClaudeService()
+
+                chunks = retrieval.retrieve(
+                    f"{node_name}: {message}",
+                    [node.resource_id],
+                    top_k=5,
+                )
+                context = retrieval.build_context_string(chunks, max_tokens=2000)
+
+                tone_instruction = {
+                    "simple": "請使用淺顯易懂的語言和生活化比喻來解釋",
+                    "technical": "可以使用專業術語和技術細節來解釋",
+                }.get(tone, "請使用適中的語言來解釋")
+
+                system_prompt = (
+                    f"你是一位耐心的 AI 教練，正在幫助學生複習錯題。\n"
+                    f"{tone_instruction}。\n"
+                    f"回答要基於文件內容，並引用相關頁碼。\n"
+                    f"鼓勵學生，但不要過度使用 emoji。"
+                )
+
+                user_prompt = (
+                    f"學生在以下題目答錯了：\n"
+                    f"題目：{question.content}\n"
+                    f"正確答案：{question.correct_answer}\n"
+                    f"詳解：{question.explanation or '無'}\n\n"
+                    f"學生的問題：{message}"
+                )
+
+                if history_context:
+                    user_prompt += f"\n\n補充：學生之前在 {history_context} 也曾答錯。"
+
+                return claude.generate_with_context(system_prompt, user_prompt, context, max_tokens=1024)
+            except Exception as e:
+                logger.warning("AI Coach Claude call failed, falling back to mock: %s", e)
+
+        # Fallback: mock replies
         if tone == "simple":
             reply = (
-                f"別擔心，我來用簡單的方式幫你理解！😊\n\n"
-                f"關於 {node_name}，想像一下，像是餐廳在尖峰時段自動增加服務生，"
-                f"這就好比 Auto Scaling 的概念。\n\n"
+                f"別擔心，我來用簡單的方式幫你理解！\n\n"
+                f"關於 {node_name}，{question.explanation or '這個概念需要深入理解。'}\n\n"
                 f"加油，你一定可以學會的！"
             )
         elif tone == "technical":
             reply = (
-                f"關於 {node_name}，這涉及 CloudWatch Alarm 與 Target Tracking Policy 的整合。\n\n"
-                f"當 CloudWatch 偵測到 CPU 使用率超過閾值時，會觸發 Scaling Policy。\n"
-                f"你可以透過 AWS CLI 指令 `aws autoscaling describe-policies` 來查看設定。\n\n"
-                f"相關 API 參數：`TargetTrackingConfiguration.TargetValue`。"
+                f"關於 {node_name}，讓我深入說明。\n\n"
+                f"{question.explanation or '這個概念需要深入理解。'}\n\n"
+                f"建議參考相關技術文件了解更多細節。"
             )
         else:
             reply = (
