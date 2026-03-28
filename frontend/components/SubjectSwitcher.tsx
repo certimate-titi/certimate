@@ -23,9 +23,9 @@ export default function SubjectSwitcher({
     <div className="bg-white border-b border-slate-200">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
-          {subjects.map(subject => {
+          {subjects.filter(s => s && s.id).map(subject => {
             const isActive = subject.id === activeSubjectId;
-            const daysLeft = differenceInDays(parseISO(subject.examDate), new Date());
+            const daysLeft = subject.examDate ? differenceInDays(parseISO(subject.examDate), new Date()) : -1;
 
             return (
               <button

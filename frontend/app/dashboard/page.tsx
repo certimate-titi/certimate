@@ -11,10 +11,11 @@ import StreakCounter from '@/components/StreakCounter';
 import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
 export default function DashboardPage() {
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra, subscriptionTier } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra, subscriptionTier } = useAuth();
   const router = useRouter();
   const [showModeTooltip, setShowModeTooltip] = useState(false);
 
@@ -47,25 +48,48 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isAuthenticated || !onboardingCompleted) return;
     subjectService.getUserSubjects().then(res => {
-      setSubjects(res.subjects);
-      if (res.subjects.length > 0) {
+      setSubjects(res.subjects || []);
+      if (res.subjects && res.subjects.length > 0) {
         setActiveSubjectId(res.subjects[0].id);
       }
-    });
+    }).catch(() => setSubjects([]));
   }, [isAuthenticated, onboardingCompleted]);
 
   // Load dashboard data
   useEffect(() => {
     if (!isAuthenticated || !onboardingCompleted) return;
     dashboardService.get().then(d => {
-      setData(d);
+      // Ensure all expected fields have defaults for backend compatibility
+      setData({
+        ...d,
+        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
+        dailyQuests: d.dailyQuests || [],
+        activityItems: d.activityItems || [],
+        reviewCalendar: d.reviewCalendar || [],
+        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+        domainStrengths: d.domainStrengths || [],
+      });
+      setLoading(false);
+    }).catch(() => {
+      setData({
+        user: null as any,
+        streak: { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
+        dailyQuests: [],
+        activityItems: [],
+        reviewCalendar: [],
+        stats: { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+        domainStrengths: [],
+      });
       setLoading(false);
     });
   }, [activeSubjectId, isAuthenticated, onboardingCompleted]);
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    if (!activeSubjectId) return;
+    if (!activeSubjectId) {
+      alert('請先選擇或新增備考科目後再上傳資源');
+      return;
+    }
     setUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
@@ -95,7 +119,10 @@ export default function DashboardPage() {
 
   const handleYoutubeSubmit = useCallback(async () => {
     if (!youtubeUrl.trim()) return;
-    if (!activeSubjectId) return;
+    if (!activeSubjectId) {
+      alert('請先選擇或新增備考科目後再上傳資源');
+      return;
+    }
     setUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
@@ -127,15 +154,23 @@ export default function DashboardPage() {
 
   const handleAddSubject = useCallback(async (selected: SelectedSubject[]) => {
     for (const s of selected) {
-      const res = await subjectService.addSubject({
+      await subjectService.addSubject({
         subjectId: s.subjectId,
+        subjectName: s.subjectName,
         examDate: s.examDate,
         selfAssessment: s.selfAssessment,
       });
-      setSubjects(prev => [...prev, res.subject]);
     }
+    // Reload subjects from backend
+    try {
+      const res = await subjectService.getUserSubjects();
+      setSubjects(res.subjects);
+      if (res.subjects.length > 0 && !activeSubjectId) {
+        setActiveSubjectId(res.subjects[0].id);
+      }
+    } catch { /* silent */ }
     setShowAddSubject(false);
-  }, []);
+  }, [activeSubjectId]);
 
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
     return (
@@ -169,21 +204,31 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* System Announcements */}
+      <AnnouncementBanner />
+
       {/* Subject Switcher */}
-      {subjects.length > 0 && (
+      {subjects.length > 0 ? (
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
           onSwitch={setActiveSubjectId}
           onAddSubject={() => setShowAddSubject(true)}
         />
-      )}
+      ) : isAuthenticated && onboardingCompleted ? (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="container mx-auto max-w-6xl flex items-center justify-between">
+            <span className="text-sm text-amber-800">尚未建立備考科目，請先新增科目以開始學習</span>
+            <button onClick={() => setShowAddSubject(true)} className="text-sm font-bold text-amber-700 hover:text-amber-900 underline">新增科目</button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">早安，{data.user.displayName}！</h1>
+            <h1 className="text-3xl font-bold text-slate-900">早安，{user?.displayName || '學習者'}！</h1>
             <div className="flex items-center gap-3 mt-1">
               <p className="text-slate-500">今天想從哪裡開始複習？</p>
               {/* Task Mode Badge */}
@@ -276,6 +321,14 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <Upload className="h-5 w-5 text-emerald-500" /> 快速匯入學習資源
               </h2>
+
+              {!activeSubjectId && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                  尚未選擇備考科目，請先{' '}
+                  <button onClick={() => setShowAddSubject(true)} className="font-bold underline">新增科目</button>{' '}
+                  後再上傳資源。
+                </div>
+              )}
 
               {/* Upload Status Feedback */}
               {uploadStatus === 'pending' && (
