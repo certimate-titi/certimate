@@ -47,11 +47,12 @@ def get_system_settings(
 def search_users(
     keyword: Optional[str] = None,
     plan: Optional[str] = None,
+    role: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
     service = AdminService(db)
-    result = service.search_users(actor_id=user_id, keyword=keyword, plan=plan)
+    result = service.search_users(actor_id=user_id, keyword=keyword, plan=plan, role=role)
     return _handle_result(result)
 
 
@@ -89,7 +90,8 @@ def get_user_detail(
 
 class AdjustSubscriptionRequest(BaseModel):
     plan: str
-    otp: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 @router.post("/users/{target_user_id}/adjust-subscription")
@@ -104,7 +106,8 @@ def adjust_subscription(
         actor_id=user_id,
         target_user_id=target_user_id,
         new_plan=body.plan,
-        otp=body.otp,
+        start_date=body.start_date,
+        end_date=body.end_date,
     )
     return _handle_result(result)
 
@@ -127,5 +130,93 @@ def suspend_user(
         actor_id=user_id,
         target_user_id=body.target_user_id,
         reason=body.reason,
+    )
+    return _handle_result(result)
+
+
+# ── Activate User ────────────────────────────────────────────────────────────
+
+class ActivateUserRequest(BaseModel):
+    target_user_id: Optional[str] = None
+
+
+@router.post("/users/activate")
+def activate_user(
+    body: ActivateUserRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.activate_user(
+        actor_id=user_id,
+        target_user_id=body.target_user_id,
+    )
+    return _handle_result(result)
+
+
+# ── Adjust Role ─────────────────────────────────────────────────────────────
+
+class AdjustRoleRequest(BaseModel):
+    target_user_id: Optional[str] = None
+    target_email: Optional[str] = None
+    role: str  # 'admin' or 'user'
+
+
+@router.post("/users/adjust-role")
+def adjust_role(
+    body: AdjustRoleRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.adjust_role(
+        actor_id=user_id,
+        target_user_id=body.target_user_id,
+        target_email=body.target_email,
+        new_role=body.role,
+    )
+    return _handle_result(result)
+
+
+# ── Delete User ─────────────────────────────────────────────────────────────
+
+class DeleteUserRequest(BaseModel):
+    target_user_id: str
+    confirm_name: str
+
+
+@router.post("/users/delete")
+def delete_user(
+    body: DeleteUserRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.delete_user(
+        actor_id=user_id,
+        target_user_id=body.target_user_id,
+        confirm_name=body.confirm_name,
+    )
+    return _handle_result(result)
+
+
+# ── Notify User ──────────────────────────────────────────────────────────────
+
+class NotifyUserRequest(BaseModel):
+    message: str
+
+
+@router.post("/users/{target_user_id}/notify")
+def notify_user(
+    target_user_id: str,
+    body: NotifyUserRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.notify_user(
+        actor_id=user_id,
+        target_user_id=target_user_id,
+        message=body.message,
     )
     return _handle_result(result)

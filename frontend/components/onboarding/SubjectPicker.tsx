@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, PlusCircle } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import type { SubjectCatalogItem, SubjectCategory } from '@/types';
 import { onboardingService } from '@/lib/api/services';
@@ -37,6 +37,7 @@ export default function SubjectPicker({
   const [activeCategory, setActiveCategory] = useState<SubjectCategory | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selected, setSelected] = useState<SelectedSubject[]>(initialSelected);
+  const [customName, setCustomName] = useState('');
 
   useEffect(() => {
     onboardingService.getSubjectCatalog().then(res => {
@@ -94,6 +95,23 @@ export default function SubjectPicker({
 
   const removeSelected = (index: number) => {
     setSelected(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addCustomSubject = () => {
+    const name = customName.trim();
+    if (!name) return;
+    const customId = `custom_${Date.now()}`;
+    if (selected.some(s => s.subjectName === name)) return;
+    setSelected(prev => [
+      ...prev,
+      {
+        subjectId: customId,
+        subjectName: name,
+        examDate: defaultExamDate,
+        selfAssessment: 'beginner' as const,
+      },
+    ]);
+    setCustomName('');
   };
 
   const handleConfirm = () => {
@@ -169,8 +187,36 @@ export default function SubjectPicker({
               );
             })}
           </div>
-          {filteredSubjects.length === 0 && (
+          {filteredSubjects.length === 0 && activeCategory !== '其他' && (
             <p className="text-center text-slate-400 py-8">找不到符合的科目</p>
+          )}
+
+          {/* Custom subject input — shown under "其他" category */}
+          {activeCategory === '其他' && (
+            <div className="mt-3 p-4 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50">
+              <p className="text-xs font-bold text-emerald-700 mb-2">
+                <PlusCircle className="h-3.5 w-3.5 inline -mt-0.5 mr-1" />
+                自訂備考科目
+              </p>
+              <p className="text-xs text-slate-500 mb-2">找不到你要考的證照？直接輸入科目名稱新增。</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customName}
+                  onChange={e => setCustomName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addCustomSubject(); }}
+                  placeholder="輸入科目名稱，例如：室內設計乙級"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <button
+                  onClick={addCustomSubject}
+                  disabled={!customName.trim()}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                >
+                  新增
+                </button>
+              </div>
+            </div>
           )}
         </div>
 

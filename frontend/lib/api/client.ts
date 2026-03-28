@@ -1,15 +1,27 @@
-import { auth } from '@/firebase';
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+const TOKEN_KEY = 'certimate_jwt_token';
+
+export function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearStoredToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
-  const user = auth.currentUser;
-  if (user) {
-    const token = await user.getIdToken();
+  const token = getStoredToken();
+  if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -26,13 +38,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiClient = {
   async get<T>(path: string): Promise<T> {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     const response = await fetch(`${BASE_URL}${path}`, { headers });
     return handleResponse<T>(response);
   },
 
   async post<T>(path: string, body?: unknown): Promise<T> {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
       headers,
@@ -42,7 +54,7 @@ export const apiClient = {
   },
 
   async put<T>(path: string, body?: unknown): Promise<T> {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'PUT',
       headers,
@@ -51,8 +63,18 @@ export const apiClient = {
     return handleResponse<T>(response);
   },
 
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const headers = getAuthHeaders();
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: 'PATCH',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return handleResponse<T>(response);
+  },
+
   async delete<T>(path: string): Promise<T> {
-    const headers = await getAuthHeaders();
+    const headers = getAuthHeaders();
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'DELETE',
       headers,
@@ -61,10 +83,9 @@ export const apiClient = {
   },
 
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const user = auth.currentUser;
     const headers: Record<string, string> = {};
-    if (user) {
-      const token = await user.getIdToken();
+    const token = getStoredToken();
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     // Don't set Content-Type — browser sets it with boundary for multipart

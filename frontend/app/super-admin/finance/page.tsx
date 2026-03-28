@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api/client';
+import { superAdminService } from '@/lib/api/services';
 import { 
   CreditCard, 
   DollarSign, 
@@ -38,39 +40,64 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Mock Data
-const mrrTrendData = [
-  { name: '03/12', new: 1200, expansion: 400, churn: 150 },
-  { name: '03/13', new: 1350, expansion: 450, churn: 100 },
-  { name: '03/14', new: 1100, expansion: 300, churn: 200 },
-  { name: '03/15', new: 1450, expansion: 500, churn: 120 },
-  { name: '03/16', new: 1600, expansion: 600, churn: 80 },
-  { name: '03/17', new: 1550, expansion: 550, churn: 110 },
-  { name: '03/18', new: 1720, expansion: 650, churn: 90 },
-];
+interface FinanceOverview {
+  mrr: number;
+  arpu: number;
+  churn_rate: number;
+  ltv: number;
+  mrr_trend: string;
+  arpu_trend: string;
+  churn_trend: string;
+  ltv_trend: string;
+}
 
-const planDistribution = [
-  { name: 'Free', value: 3500, color: '#94a3b8' },
-  { name: 'Pro', value: 1250, color: '#10b981' },
-  { name: 'Ultra', value: 500, color: '#6366f1' },
-];
-
-const transactions = [
-  { id: 'txn_1', user: '張小明', amount: '$29.99', plan: 'Ultra', status: 'success', time: '2026-03-18 14:30' },
-  { id: 'txn_2', user: '李華', amount: '$14.99', plan: 'Pro', status: 'success', time: '2026-03-18 10:15' },
-  { id: 'txn_3', user: '王大同', amount: '$29.99', plan: 'Ultra', status: 'failed', time: '2026-03-18 09:00' },
-  { id: 'txn_4', user: '陳美玲', amount: '$29.99', plan: 'Ultra', status: 'success', time: '2026-03-17 15:45' },
-  { id: 'txn_5', user: '林志豪', amount: '$14.99', plan: 'Pro', status: 'refunded', time: '2026-03-17 22:30' },
-];
-
-const financeKpis = [
-  { label: 'MRR (每月經常性收入)', value: '$15,200', trend: '+15.2%', icon: DollarSign, color: 'emerald' },
-  { label: 'ARPU (平均用戶收入)', value: '$3.1', trend: '+5.4%', icon: TrendingUp, color: 'blue' },
-  { label: 'Churn Rate (流失率)', value: '2.4%', trend: '-0.5%', icon: ArrowDownRight, color: 'rose' },
-  { label: 'LTV (終身價值)', value: '$145', trend: '+8.2%', icon: CreditCard, color: 'indigo' },
-];
+function buildFinanceKpis(data: FinanceOverview | null) {
+  if (!data) {
+    return [
+      { label: '每月經常性收入', value: '--', trend: '--', icon: DollarSign, color: 'emerald' },
+      { label: '平均用戶收入', value: '--', trend: '--', icon: TrendingUp, color: 'blue' },
+      { label: '用戶流失率', value: '--', trend: '--', icon: ArrowDownRight, color: 'rose' },
+      { label: '用戶終身價值', value: '--', trend: '--', icon: CreditCard, color: 'indigo' },
+    ];
+  }
+  return [
+    { label: '每月經常性收入', value: `NT$ ${data.mrr.toLocaleString()}`, trend: data.mrr_trend || '--', icon: DollarSign, color: 'emerald' },
+    { label: '平均用戶收入', value: `NT$ ${data.arpu.toLocaleString()}`, trend: data.arpu_trend || '--', icon: TrendingUp, color: 'blue' },
+    { label: '用戶流失率', value: `${(data.churn_rate * 100).toFixed(1)}%`, trend: data.churn_trend || '--', icon: ArrowDownRight, color: 'rose' },
+    { label: '用戶終身價值', value: `NT$ ${data.ltv.toLocaleString()}`, trend: data.ltv_trend || '--', icon: CreditCard, color: 'indigo' },
+  ];
+}
 
 export default function FinancePage() {
+  const [overview, setOverview] = useState<FinanceOverview | null>(null);
+  const [mrrTrendData, setMrrTrendData] = useState<{ name: string; new: number; expansion: number; churn: number }[]>([]);
+  const [planDistribution, setPlanDistribution] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [transactions, setTransactions] = useState<{ id: string; user: string; amount: string; plan: string; status: string; time: string }[]>([]);
+  const [txnSearch, setTxnSearch] = useState('');
+  const [txnStatusFilter, setTxnStatusFilter] = useState('all');
+  const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
+
+  useEffect(() => {
+    superAdminService.getFinanceOverview().then(setOverview).catch(() => {});
+    superAdminService.getMrrTrend().then(res => {
+      if (Array.isArray(res.data)) setMrrTrendData(res.data);
+    }).catch(() => {});
+    superAdminService.getSubscriptionDistribution().then(res => {
+      if (Array.isArray(res.distribution)) setPlanDistribution(res.distribution);
+    }).catch(() => {});
+    superAdminService.getFinanceTransactions().then(res => {
+      if (Array.isArray(res.transactions)) setTransactions(res.transactions);
+    }).catch(() => {});
+  }, []);
+
+  const financeKpis = buildFinanceKpis(overview);
+
+  const filteredTransactions = transactions.filter(txn => {
+    const matchesSearch = !txnSearch || txn.id.toLowerCase().includes(txnSearch.toLowerCase()) || txn.user.toLowerCase().includes(txnSearch.toLowerCase());
+    const matchesStatus = txnStatusFilter === 'all' || txn.status === txnStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end">
@@ -79,7 +106,23 @@ export default function FinancePage() {
           <p className="text-slate-500">掌握金流狀況、訂閱轉換與成本分析</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2">
+          <button
+            onClick={async () => {
+              try {
+                const { superAdminService } = await import('@/lib/api/services');
+                const data = await superAdminService.getFinanceTransactions();
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `finance-report-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch { alert('匯出失敗，請稍後再試'); }
+            }}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
             <Download className="h-4 w-4" /> 匯出財務報表
           </button>
         </div>
@@ -117,12 +160,12 @@ export default function FinancePage() {
         <section className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-500" /> MRR 趨勢分析
+              <TrendingUp className="h-5 w-5 text-emerald-500" /> 每月經常性收入趨勢分析
             </h2>
             <div className="flex gap-2">
-              <button className="px-3 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 rounded-lg">New MRR</button>
-              <button className="px-3 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg">Expansion</button>
-              <button className="px-3 py-1 text-xs font-bold bg-rose-50 text-rose-600 rounded-lg">Churn</button>
+              <button className="px-3 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 rounded-lg">新增收入</button>
+              <button className="px-3 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg">擴增收入</button>
+              <button className="px-3 py-1 text-xs font-bold bg-rose-50 text-rose-600 rounded-lg">流失收入</button>
             </div>
           </div>
           <div className="h-[300px] w-full">
@@ -159,7 +202,7 @@ export default function FinancePage() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {planDistribution.map((entry, index) => (
+                  {(Array.isArray(planDistribution) ? planDistribution : []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -169,7 +212,7 @@ export default function FinancePage() {
             </ResponsiveContainer>
           </div>
           <div className="mt-6 space-y-3">
-            {planDistribution.map((plan) => (
+            {(Array.isArray(planDistribution) ? planDistribution : []).map((plan) => (
               <div key={plan.name} className="flex justify-between items-center text-sm">
                 <span className="text-slate-500">{plan.name}</span>
                 <span className="font-bold text-slate-900">{plan.value} 用戶</span>
@@ -188,15 +231,24 @@ export default function FinancePage() {
           <div className="flex gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="搜尋交易 ID 或用戶..." 
+              <input
+                type="text"
+                placeholder="搜尋交易 ID 或用戶..."
+                value={txnSearch}
+                onChange={(e) => setTxnSearch(e.target.value)}
                 className="pl-10 pr-4 py-1.5 bg-slate-50 border-transparent focus:bg-white focus:border-emerald-500 rounded-lg text-xs transition-all outline-none"
               />
             </div>
-            <button className="p-1.5 bg-slate-50 border-transparent hover:bg-slate-100 rounded-lg transition-all">
-              <Filter className="h-4 w-4 text-slate-500" />
-            </button>
+            <select
+              value={txnStatusFilter}
+              onChange={(e) => setTxnStatusFilter(e.target.value)}
+              className="bg-slate-50 border-transparent rounded-lg text-xs px-3 py-1.5 outline-none"
+            >
+              <option value="all">全部狀態</option>
+              <option value="success">交易成功</option>
+              <option value="failed">交易失敗</option>
+              <option value="refunded">已退款</option>
+            </select>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -213,8 +265,9 @@ export default function FinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {transactions.map((txn) => (
-                <tr key={txn.id} className="hover:bg-slate-50/50 transition-colors">
+              {filteredTransactions.map((txn) => (
+                <React.Fragment key={txn.id}>
+                <tr className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 text-sm font-mono text-slate-500">{txn.id}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">{txn.user}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">{txn.amount}</td>
@@ -245,11 +298,29 @@ export default function FinancePage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-500">{txn.time}</td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all">
-                      詳情
+                    <button
+                      onClick={() => setSelectedTxnId(selectedTxnId === txn.id ? null : txn.id)}
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                    >
+                      {selectedTxnId === txn.id ? '收合' : '詳情'}
                     </button>
                   </td>
                 </tr>
+                {selectedTxnId === txn.id && (
+                  <tr className="bg-slate-50">
+                    <td colSpan={7} className="px-6 py-4">
+                      <div className="grid grid-cols-3 gap-4 text-xs">
+                        <div><span className="text-slate-500">交易 ID：</span><span className="font-mono font-bold">{txn.id}</span></div>
+                        <div><span className="text-slate-500">用戶：</span><span className="font-bold">{txn.user}</span></div>
+                        <div><span className="text-slate-500">金額：</span><span className="font-bold">{txn.amount}</span></div>
+                        <div><span className="text-slate-500">方案：</span><span className="font-bold">{txn.plan}</span></div>
+                        <div><span className="text-slate-500">狀態：</span><span className="font-bold">{txn.status === 'success' ? '交易成功' : txn.status === 'failed' ? '交易失敗' : '已退款'}</span></div>
+                        <div><span className="text-slate-500">時間：</span><span className="font-bold">{txn.time}</span></div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

@@ -1,15 +1,21 @@
+@ignore @command
 Feature: 平台管理後台 — 權限驗證與用戶管理
 
   Background:
-    Given 系統中有以下管理角色說明（僅文件用途）
+    Given 系統中有以下管理角色：
+      | 角色代碼      | 權限範圍                                         |
+      | super_admin  | 所有權限，包含管理員帳號 CRUD 與系統設定           |
+      | admin        | 用戶管理、內容審核、財務檢視（唯讀系統設定除外）   |
+      | org_admin    | 僅限自己機構的學生管理與派卷分析                   |
+      | user         | 個人學習功能                                      |
     And 系統中有以下使用者帳號：
-      | 使用者 ID | Email                   | 訂閱方案  | 角色        | 狀態    |
-      | 1        | super@certimate.com     | ULTRA     | SUPER_ADMIN | active  |
-      | 2        | ops@certimate.com       | ULTRA     | ADMIN       | active  |
-      | 3        | org@school.com          | ULTRA     | ORG_ADMIN   | active  |
-      | 4        | alice@example.com       | PRO       | USER        | active  |
-      | 5        | bob@example.com         | FREE      | USER        | active  |
-      | 6        | cooling@example.com     | PRO_PLUS  | USER        | cooling |
+      | 使用者 ID | Email                   | 訂閱方案      | 角色         | 狀態   |
+      | 1        | super@certimate.com     | ULTRA_1599    | super_admin  | active |
+      | 2        | ops@certimate.com       | ULTRA_1599    | admin        | active |
+      | 3        | org@school.com          | ULTRA_1599    | org_admin    | active |
+      | 4        | alice@example.com       | PRO_199       | user         | active |
+      | 5        | bob@example.com         | FREE          | user         | active |
+      | 6        | cooling@example.com     | PRO_PLUS_399  | user         | cooling |
 
   # ========== 權限驗證 ==========
 
@@ -72,6 +78,32 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | ai_token_today      | 今日 AI Token 消耗  |
         | queue_depth         | 當前任務佇列深度    |
 
+  Rule: 後置（回應）- 趨勢圖表應支援最長 90 天範圍
+
+    Example: 查看 90 天用戶成長趨勢
+      When 使用者 "super@certimate.com" 查看營運趨勢圖表，時間範圍為 "90d"
+      Then 操作成功
+      And 回應應包含 90 筆每日 DAU 與 MAU 資料點
+
+  Rule: 後置（回應）- AI 成本分析應按模型分列消耗量
+
+    Example: 查看 AI 成本分析取得各模型消耗
+      When 使用者 "super@certimate.com" 查看 AI 成本分析
+      Then 操作成功
+      And 回應應包含以下模型的 Token 消耗量：
+        | 模型               |
+        | gemini-1.5-flash   |
+        | claude-3.5-sonnet  |
+        | gpt-4o             |
+
+  Rule: 後置（狀態）- Worker 失敗率超過 5% 時應觸發異常警報
+
+    Example: 失敗率超標時觸發紅色警報與 Email 通知
+      Given 過去 1 小時 Worker 任務失敗率為 8%
+      When 系統執行異常偵測排程
+      Then 營運儀表板應顯示紅色警報卡片，內容為「Worker 失敗率異常：8%」
+      And 系統應發送 Email 通知至所有 admin 與 super_admin
+
   # ========== 用戶管理 ==========
 
   Rule: 後置（回應）- 用戶搜尋應支援 Email、方案與狀態篩選
@@ -80,10 +112,10 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       When 使用者 "ops@certimate.com" 搜尋用戶，關鍵字為 "alice"
       Then 操作成功
       And 回應應包含使用者 "alice@example.com" 的摘要資訊：
-        | 欄位     | 值                |
+        | 欄位     | 值            |
         | email    | alice@example.com |
-        | plan     | PRO               |
-        | status   | active            |
+        | plan     | PRO_199       |
+        | status   | active        |
 
     Example: 依訂閱方案篩選用戶
       When 使用者 "ops@certimate.com" 篩選用戶，方案為 "FREE"
@@ -106,19 +138,19 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
 
   Rule: 後置（狀態）- super_admin 手動調整用戶訂閱應即時生效
 
-    Example: super_admin 將 FREE 用戶升級為 PRO 成功
-      When 使用者 "super@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO"，OTP 為 "123456"
+    Example: super_admin 將 FREE 用戶升級為 PRO_199 成功
+      When 使用者 "super@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，起始日期為 "2026-04-01"，結束日期為 "2026-07-01"
       Then 操作成功
-      And 使用者 5 的訂閱方案應為 "PRO"
+      And 使用者 5 的訂閱方案應為 "PRO_199"
       And 系統應記錄審計日誌：
         | 欄位     | 值                              |
         | admin_id | 1                               |
         | action   | adjust_subscription             |
         | target   | 使用者 5                         |
-        | details  | FREE → PRO                      |
+        | details  | FREE → PRO_199                  |
 
     Example: admin 角色無法調整訂閱
-      When 使用者 "ops@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO"，OTP 為 "123456"
+      When 使用者 "ops@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，起始日期為 "2026-04-01"，結束日期為 "2026-07-01"
       Then 操作失敗，錯誤為「權限不足，僅 super_admin 可調整訂閱」
 
   Rule: 後置（狀態）- 停權帳號應記錄原因並寫入審計日誌
@@ -127,15 +159,85 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       When 使用者 "ops@certimate.com" 停權使用者 5 的帳號，原因為 "違反使用條款"
       Then 操作成功
       And 使用者 5 的狀態應為 "suspended"
+      And 使用者 "bob@example.com" 應無法登入系統
       And 系統應記錄審計日誌：
         | 欄位     | 值                   |
         | action   | suspend_user         |
         | target   | 使用者 5              |
         | details  | 違反使用條款          |
 
+  Rule: 後置（狀態）- 恢復帳號應將狀態改回 active 並寫入審計日誌
+
+    Example: 恢復用戶帳號成功
+      Given 使用者 5 的狀態為 "suspended"
+      When 使用者 "ops@certimate.com" 恢復使用者 5 的帳號
+      Then 操作成功
+      And 使用者 5 的狀態應為 "active"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | activate_user        |
+        | target   | 使用者 5              |
+        | details  | 恢復用戶帳號          |
+
+  Rule: 後置（狀態）- super_admin 可調整用戶角色
+
+    Example: super_admin 將一般用戶升級為 admin
+      When 使用者 "super@certimate.com" 將使用者 5 的角色調整為 "admin"
+      Then 操作成功
+      And 使用者 5 的角色應為 "admin"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | adjust_role          |
+
+  Rule: 後置（狀態）- super_admin 可刪除用戶帳號（需確認名稱）
+
+    Example: 刪除用戶帳號成功（確認名稱正確）
+      When 使用者 "super@certimate.com" 刪除使用者 5 的帳號，確認名稱為 "bob@example.com"
+      Then 操作成功
+      And 使用者 5 的狀態應為 "deleted"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | delete_user          |
+
+    Example: 刪除用戶帳號失敗（確認名稱不符）
+      When 使用者 "super@certimate.com" 刪除使用者 5 的帳號，確認名稱為 "wrong_name"
+      Then 操作失敗，錯誤為「確認名稱不符，請輸入「bob@example.com」」
+
+  Rule: 後置（狀態）- 管理員可發送通知給指定用戶
+
+    Example: 發送通知給用戶成功
+      When 使用者 "ops@certimate.com" 發送通知給使用者 5，訊息為 "您的帳號已恢復正常"
+      Then 操作成功
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | notify_user          |
+        | target   | 使用者 5              |
+
+    Example: 發送空白通知失敗
+      When 使用者 "ops@certimate.com" 發送通知給使用者 5，訊息為 ""
+      Then 操作失敗，錯誤為「通知訊息不可為空」
+
+  Rule: 後置（回應）- 用戶搜尋應排除管理員角色
+
+    Example: 用戶列表不包含管理員帳號
+      When 使用者 "ops@certimate.com" 搜尋用戶，關鍵字為 ""
+      Then 操作成功
+      And 回應不應包含角色為 "admin" 或 "super_admin" 的使用者
+
+  Rule: 後置（狀態）- super_admin 可透過 Email 調整用戶角色
+
+    Example: 透過 Email 將一般用戶升級為管理員
+      When 使用者 "super@certimate.com" 透過 Email "bob@example.com" 將角色調整為 "admin"
+      Then 操作成功
+      And 使用者 5 的角色應為 "admin"
+
+    Example: 透過不存在的 Email 調整角色失敗
+      When 使用者 "super@certimate.com" 透過 Email "notexist@example.com" 將角色調整為 "admin"
+      Then 操作失敗，錯誤為「目標使用者不存在，請確認 Email 是否正確」
+
   Rule: 後置（回應）- 批量匯出應產生包含篩選結果的 CSV 檔案
 
-    Example: 匯出 PRO 方案用戶 CSV
-      When 使用者 "ops@certimate.com" 匯出用戶 CSV，篩選方案為 "PRO"
+    Example: 匯出 PRO_199 方案用戶 CSV
+      When 使用者 "ops@certimate.com" 匯出用戶 CSV，篩選方案為 "PRO_199"
       Then 操作成功
       And 回應應為 CSV 檔案，包含欄位：email、display_name、plan、status、created_at

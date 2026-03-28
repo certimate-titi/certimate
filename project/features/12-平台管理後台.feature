@@ -139,7 +139,7 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
   Rule: 後置（狀態）- super_admin 手動調整用戶訂閱應即時生效
 
     Example: super_admin 將 FREE 用戶升級為 PRO_199 成功
-      When 使用者 "super@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，OTP 為 "123456"
+      When 使用者 "super@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，起始日期為 "2026-04-01"，結束日期為 "2026-07-01"
       Then 操作成功
       And 使用者 5 的訂閱方案應為 "PRO_199"
       And 系統應記錄審計日誌：
@@ -150,7 +150,7 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | details  | FREE → PRO_199                  |
 
     Example: admin 角色無法調整訂閱
-      When 使用者 "ops@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，OTP 為 "123456"
+      When 使用者 "ops@certimate.com" 將使用者 5 的訂閱方案調整為 "PRO_199"，起始日期為 "2026-04-01"，結束日期為 "2026-07-01"
       Then 操作失敗，錯誤為「權限不足，僅 super_admin 可調整訂閱」
 
   Rule: 後置（狀態）- 停權帳號應記錄原因並寫入審計日誌
@@ -165,6 +165,75 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | action   | suspend_user         |
         | target   | 使用者 5              |
         | details  | 違反使用條款          |
+
+  Rule: 後置（狀態）- 恢復帳號應將狀態改回 active 並寫入審計日誌
+
+    Example: 恢復用戶帳號成功
+      Given 使用者 5 的狀態為 "suspended"
+      When 使用者 "ops@certimate.com" 恢復使用者 5 的帳號
+      Then 操作成功
+      And 使用者 5 的狀態應為 "active"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | activate_user        |
+        | target   | 使用者 5              |
+        | details  | 恢復用戶帳號          |
+
+  Rule: 後置（狀態）- super_admin 可調整用戶角色
+
+    Example: super_admin 將一般用戶升級為 admin
+      When 使用者 "super@certimate.com" 將使用者 5 的角色調整為 "admin"
+      Then 操作成功
+      And 使用者 5 的角色應為 "admin"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | adjust_role          |
+
+  Rule: 後置（狀態）- super_admin 可刪除用戶帳號（需確認名稱）
+
+    Example: 刪除用戶帳號成功（確認名稱正確）
+      When 使用者 "super@certimate.com" 刪除使用者 5 的帳號，確認名稱為 "bob@example.com"
+      Then 操作成功
+      And 使用者 5 的狀態應為 "deleted"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | delete_user          |
+
+    Example: 刪除用戶帳號失敗（確認名稱不符）
+      When 使用者 "super@certimate.com" 刪除使用者 5 的帳號，確認名稱為 "wrong_name"
+      Then 操作失敗，錯誤為「確認名稱不符，請輸入「bob@example.com」」
+
+  Rule: 後置（狀態）- 管理員可發送通知給指定用戶
+
+    Example: 發送通知給用戶成功
+      When 使用者 "ops@certimate.com" 發送通知給使用者 5，訊息為 "您的帳號已恢復正常"
+      Then 操作成功
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | notify_user          |
+        | target   | 使用者 5              |
+
+    Example: 發送空白通知失敗
+      When 使用者 "ops@certimate.com" 發送通知給使用者 5，訊息為 ""
+      Then 操作失敗，錯誤為「通知訊息不可為空」
+
+  Rule: 後置（回應）- 用戶搜尋應排除管理員角色
+
+    Example: 用戶列表不包含管理員帳號
+      When 使用者 "ops@certimate.com" 搜尋用戶，關鍵字為 ""
+      Then 操作成功
+      And 回應不應包含角色為 "admin" 或 "super_admin" 的使用者
+
+  Rule: 後置（狀態）- super_admin 可透過 Email 調整用戶角色
+
+    Example: 透過 Email 將一般用戶升級為管理員
+      When 使用者 "super@certimate.com" 透過 Email "bob@example.com" 將角色調整為 "admin"
+      Then 操作成功
+      And 使用者 5 的角色應為 "admin"
+
+    Example: 透過不存在的 Email 調整角色失敗
+      When 使用者 "super@certimate.com" 透過 Email "notexist@example.com" 將角色調整為 "admin"
+      Then 操作失敗，錯誤為「目標使用者不存在，請確認 Email 是否正確」
 
   Rule: 後置（回應）- 批量匯出應產生包含篩選結果的 CSV 檔案
 

@@ -134,6 +134,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         occupation: state.formData.occupation,
         subjects: state.formData.subjects.map(s => ({
           subjectId: s.subjectId,
+          subjectName: s.subjectName,
           examDate: s.examDate,
           selfAssessment: s.selfAssessment,
         })),

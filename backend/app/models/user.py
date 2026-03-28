@@ -81,6 +81,7 @@ class User(Base):
     next_billing_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True)
     )
+    plan_source: Mapped[str | None] = mapped_column(String(20))  # 'payment' or 'admin'
     stripe_customer_id: Mapped[str | None] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(
         Enum(UserRole, name="user_role", create_type=False,

@@ -12,6 +12,28 @@ from app.services.admin_settings_service import AdminSettingsService
 router = APIRouter(prefix="/admin/system-settings")
 
 
+# ── System Maintenance ───────────────────────────────────────────────────────
+
+@router.post("/reset-ai-limits")
+def reset_ai_limits(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.reset_ai_limits(actor_id=user_id)
+    return _handle_result(result)
+
+
+@router.post("/clear-cache")
+def clear_cache(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.clear_cache(actor_id=user_id)
+    return _handle_result(result)
+
+
 def _handle_result(result: dict):
     if result.get("error"):
         status_code = result.get("status_code", 400)
@@ -20,6 +42,17 @@ def _handle_result(result: dict):
 
 
 # ── AI Model Routing ──────────────────────────────────────────────────────────
+
+
+@router.get("/model-routing")
+def get_model_routing(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.get_model_routing(actor_id=user_id)
+    return _handle_result(result)
+
 
 class UpdateModelRoutingRequest(BaseModel):
     primary_model: str
@@ -47,6 +80,17 @@ def update_model_routing(
 
 # ── Plan Quota ────────────────────────────────────────────────────────────────
 
+
+@router.get("/plan-quotas")
+def get_plan_quotas(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.get_plan_quotas(actor_id=user_id)
+    return _handle_result(result)
+
+
 class UpdatePlanQuotaRequest(BaseModel):
     monthly_uploads: Optional[int] = None
     monthly_exams: Optional[int] = None
@@ -69,6 +113,17 @@ def update_plan_quota(
 
 # ── System Announcements ──────────────────────────────────────────────────────
 
+
+@router.get("/announcements")
+def get_announcements(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.get_announcements(actor_id=user_id)
+    return _handle_result(result)
+
+
 class CreateAnnouncementRequest(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
@@ -89,7 +144,40 @@ def create_announcement(
     return _handle_result(result)
 
 
+@router.put("/announcements/{announcement_id}/deactivate")
+def deactivate_announcement(
+    announcement_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.deactivate_announcement(actor_id=user_id, announcement_id=announcement_id)
+    return _handle_result(result)
+
+
+@router.delete("/announcements/{announcement_id}")
+def delete_announcement(
+    announcement_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.delete_announcement(actor_id=user_id, announcement_id=announcement_id)
+    return _handle_result(result)
+
+
 # ── Feature Flags ─────────────────────────────────────────────────────────────
+
+
+@router.get("/feature-flags")
+def get_feature_flags(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.get_feature_flags(actor_id=user_id)
+    return _handle_result(result)
+
 
 class UpdateFeatureFlagRequest(BaseModel):
     enabled: Optional[bool] = None

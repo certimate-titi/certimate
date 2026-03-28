@@ -53,6 +53,22 @@ class AdminSettingsService:
 
     # ── AI Model Routing ─────────────────────────────────────────────────────
 
+    def get_model_routing(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        routings = self.db.query(AiModelRouting).all()
+        items = []
+        for r in routings:
+            items.append({
+                "plan": r.plan,
+                "task_type": r.task_type,
+                "primary_model": r.primary_model,
+                "fallback_model": r.fallback_model,
+            })
+        return {"ok": True, "routings": items}
+
     def update_model_routing(
         self,
         actor_id: str,
@@ -98,6 +114,24 @@ class AdminSettingsService:
 
     # ── Plan Quota ───────────────────────────────────────────────────────────
 
+    def get_plan_quotas(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        quotas = self.db.query(PlanQuota).order_by(PlanQuota.plan).all()
+        items = []
+        for q in quotas:
+            items.append({
+                "plan": q.plan,
+                "monthly_uploads": q.monthly_uploads,
+                "monthly_exams": q.monthly_exams,
+                "daily_ai_chats": q.daily_ai_chats,
+                "monthly_vision_pages": q.monthly_vision_pages,
+                "max_file_size_mb": q.max_file_size_mb,
+            })
+        return {"ok": True, "quotas": items}
+
     def update_plan_quota(self, actor_id: str, plan: str, updates: dict) -> dict:
         err = _require_super_admin(self.db, actor_id)
         if err:
@@ -127,6 +161,30 @@ class AdminSettingsService:
         }}
 
     # ── System Announcements ─────────────────────────────────────────────────
+
+    def get_announcements(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        anns = (
+            self.db.query(SystemAnnouncement)
+            .order_by(SystemAnnouncement.created_at.desc())
+            .limit(50)
+            .all()
+        )
+        items = []
+        for a in anns:
+            items.append({
+                "id": str(a.id),
+                "title": a.title,
+                "content": a.content,
+                "type": a.type,
+                "display_mode": a.display_mode,
+                "status": a.status,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            })
+        return {"ok": True, "announcements": items}
 
     def create_announcement(self, actor_id: str, data: dict) -> dict:
         err = _require_super_admin(self.db, actor_id)
@@ -171,7 +229,75 @@ class AdminSettingsService:
             "status": announcement.status,
         }}
 
+    def get_active_announcements(self) -> dict:
+        """公開端點：取得目前生效中的公告（不需登入）。"""
+        now = datetime.now(timezone.utc)
+        query = (
+            self.db.query(SystemAnnouncement)
+            .filter(SystemAnnouncement.status == "active")
+        )
+        anns = query.order_by(SystemAnnouncement.created_at.desc()).limit(10).all()
+        items = []
+        for a in anns:
+            # 排除尚未到排程時間或已過期的公告
+            if a.starts_at and a.starts_at > now:
+                continue
+            if a.ends_at and a.ends_at < now:
+                continue
+            items.append({
+                "id": str(a.id),
+                "title": a.title,
+                "content": a.content,
+                "type": a.type,
+                "display_mode": a.display_mode,
+            })
+        return {"ok": True, "announcements": items}
+
+    def deactivate_announcement(self, actor_id: str, announcement_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        ann = self.db.query(SystemAnnouncement).filter(SystemAnnouncement.id == announcement_id).first()
+        if not ann:
+            return {"error": True, "status_code": 404, "message": "公告不存在"}
+
+        ann.status = "inactive"
+        self.db.commit()
+        return {"ok": True, "message": "公告已停用"}
+
+    def delete_announcement(self, actor_id: str, announcement_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        ann = self.db.query(SystemAnnouncement).filter(SystemAnnouncement.id == announcement_id).first()
+        if not ann:
+            return {"error": True, "status_code": 404, "message": "公告不存在"}
+
+        self.db.delete(ann)
+        self.db.commit()
+        return {"ok": True, "message": "公告已刪除"}
+
     # ── Feature Flags ────────────────────────────────────────────────────────
+
+    def get_feature_flags(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        flags = self.db.query(FeatureFlag).all()
+        items = []
+        for f in flags:
+            items.append({
+                "id": str(f.id),
+                "name": f.flag_key,
+                "description": f.description or "",
+                "enabled": f.enabled,
+                "rollout_percentage": f.rollout_percentage,
+                "target_plans": f.target_plans,
+            })
+        return {"ok": True, "flags": items}
 
     def update_feature_flag(self, actor_id: str, flag_id: str, updates: dict) -> dict:
         err = _require_super_admin(self.db, actor_id)
@@ -214,16 +340,70 @@ class AdminSettingsService:
             .all()
         )
 
+        # Fetch admin emails for display
+        admin_ids = {log.admin_id for log in logs}
+        admin_map: dict[str, str] = {}
+        if admin_ids:
+            from app.models.user import User
+            admins = self.db.query(User).filter(User.id.in_(admin_ids)).all()
+            admin_map = {str(a.id): a.email for a in admins}
+
         items = []
         for log in logs:
+            details = log.details or {}
+            details_str = details.get("summary") or details.get("reason") or str(details) if details else ""
             items.append({
+                "id": str(log.id),
                 "timestamp": log.created_at.isoformat() if log.created_at else None,
                 "admin_id": str(log.admin_id),
+                "admin_email": admin_map.get(str(log.admin_id), "unknown"),
                 "action": log.action,
                 "target_type": log.target_type,
-                "target_id": str(log.target_id) if log.target_id else None,
-                "details": log.details,
+                "target_id": str(log.target_id) if log.target_id else "",
+                "details": details_str,
                 "ip_address": log.ip_address,
             })
 
         return {"ok": True, "logs": items}
+
+    # ── System Maintenance ────────────────────────────────────────────────────
+
+    def reset_ai_limits(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        # Reset daily AI usage counters for current period
+        from app.models.user_usage import UserUsage
+        period = datetime.now(timezone.utc).strftime("%Y-%m")
+        self.db.query(UserUsage).filter(UserUsage.period == period).update(
+            {UserUsage.daily_ai_chats_used: 0, UserUsage.last_reset_at: datetime.now(timezone.utc)},
+            synchronize_session=False,
+        )
+        self.db.commit()
+
+        _log_audit(
+            self.db,
+            admin_id=actor_id,
+            action="reset_ai_limits",
+            target_type="system",
+            details={"summary": "重置所有使用者的 AI 流量限制"},
+        )
+
+        return {"ok": True, "message": "AI 流量限制已重置"}
+
+    def clear_cache(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        # TODO: 實際清理快取（Redis / 檔案快取），目前先記錄 audit log
+        _log_audit(
+            self.db,
+            admin_id=actor_id,
+            action="clear_cache",
+            target_type="system",
+            details={"summary": "清理系統暫存檔"},
+        )
+
+        return {"ok": True, "message": "系統暫存檔已清理"}

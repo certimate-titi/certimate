@@ -20,64 +20,11 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth, AdminAction } from '@/firebase';
+import { AdminAction } from '@/firebase';
+import { superAdminService } from '@/lib/api/services';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string;
-    email?: string | null;
-    emailVerified?: boolean;
-    isAnonymous?: boolean;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, userObj?: any) {
-  const currentUser = userObj || auth.currentUser;
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: currentUser?.uid,
-      email: currentUser?.email,
-      emailVerified: currentUser?.emailVerified,
-      isAnonymous: currentUser?.isAnonymous,
-      tenantId: currentUser?.tenantId,
-      providerInfo: currentUser?.providerData?.map((provider: any) => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
 }
 
 interface AuditLog {
@@ -88,56 +35,7 @@ interface AuditLog {
   targetId: string;
   details: string;
   timestamp: Date | null;
-  metadata?: Record<string, any>;
 }
-
-const MOCK_LOGS: AuditLog[] = [
-  {
-    id: 'mock-1',
-    adminId: 'admin-123',
-    adminEmail: 'son731202@gmail.com',
-    action: AdminAction.CREATE_ADMIN,
-    targetId: 'new-admin-456',
-    details: '新增了系統管理員帳號',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    id: 'mock-2',
-    adminId: 'admin-123',
-    adminEmail: 'son731202@gmail.com',
-    action: AdminAction.UPDATE_SETTINGS,
-    targetId: 'sys-settings',
-    details: '更新了系統維護狀態',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-  {
-    id: 'mock-3',
-    adminId: 'admin-789',
-    adminEmail: 'other.admin@example.com',
-    action: AdminAction.SUSPEND_USER,
-    targetId: 'user-999',
-    details: '因違反社群規定停權用戶',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-  },
-  {
-    id: 'mock-4',
-    adminId: 'admin-123',
-    adminEmail: 'son731202@gmail.com',
-    action: AdminAction.ADJUST_SUBSCRIPTION,
-    targetId: 'user-111',
-    details: '手動升級用戶為 Premium 方案',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48),
-  },
-  {
-    id: 'mock-5',
-    adminId: 'admin-789',
-    adminEmail: 'other.admin@example.com',
-    action: AdminAction.DELETE_ADMIN,
-    targetId: 'old-admin-000',
-    details: '移除了離職員工的管理員權限',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 72),
-  }
-];
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -145,65 +43,32 @@ export default function AuditLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('All');
-  const [isAuthReady, setIsAuthReady] = useState(false);
-
-  const [user, setUser] = useState<any>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 10;
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthReady(true);
-      if (!currentUser) {
-        setLoading(false);
-        setLogs(MOCK_LOGS);
-        setError(null);
-      }
+    superAdminService.getAuditLogs().then(res => {
+      if (!Array.isArray(res?.logs)) { setLoading(false); return; }
+      const mapped: AuditLog[] = res.logs.map((log) => ({
+        id: log.id || '',
+        adminId: log.admin_id || '',
+        adminEmail: log.admin_email || 'Unknown',
+        action: log.action || '',
+        targetId: log.target_id || '',
+        details: typeof log.details === 'string' ? log.details : JSON.stringify(log.details || ''),
+        timestamp: log.timestamp ? new Date(log.timestamp) : null,
+      }));
+      setLogs(mapped);
+      setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+      setError('載入日誌失敗，請稍後再試。');
     });
-    return () => unsubscribeAuth();
   }, []);
-
-  useEffect(() => {
-    if (!isAuthReady) return;
-    if (!user) return;
-
-    const q = query(
-      collection(db, 'admin_audit_logs'),
-      orderBy('timestamp', 'desc'),
-      limit(100)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedLogs: AuditLog[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        fetchedLogs.push({
-          id: doc.id,
-          adminId: data.adminId,
-          adminEmail: data.adminEmail || 'Unknown',
-          action: data.action,
-          targetId: data.targetId,
-          details: data.details,
-          timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : (data.timestamp ? new Date(data.timestamp) : null),
-          metadata: data.metadata,
-        });
-      });
-      
-      // 先期開發階段：如果沒有真實資料，先載入 Mock 日誌
-      setLogs(fetchedLogs.length > 0 ? fetchedLogs : MOCK_LOGS);
-      setLoading(false);
-      setError(null);
-    }, (err) => {
-      console.warn('載入真實日誌失敗，先期開發階段改為顯示 Mock 日誌', err);
-      setLoading(false);
-      setLogs(MOCK_LOGS);
-      setError(null); // 隱藏錯誤訊息，直接顯示 Mock 資料
-    });
-
-    return () => unsubscribe();
-  }, [isAuthReady, user]);
 
   const getActionConfig = (action: string) => {
     switch (action) {
@@ -225,14 +90,24 @@ export default function AuditLogsPage() {
   };
 
   const filteredLogs = logs.filter(log => {
-    const matchesSearch = 
+    const matchesSearch =
       log.adminEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.targetId.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesAction = selectedAction === 'All' || log.action === selectedAction;
 
-    return matchesSearch && matchesAction;
+    let matchesDate = true;
+    if (dateFrom && log.timestamp) {
+      matchesDate = log.timestamp >= new Date(dateFrom);
+    }
+    if (dateTo && log.timestamp && matchesDate) {
+      const endDate = new Date(dateTo);
+      endDate.setDate(endDate.getDate() + 1);
+      matchesDate = log.timestamp < endDate;
+    }
+
+    return matchesSearch && matchesAction && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
@@ -317,11 +192,44 @@ export default function AuditLogsPage() {
               <option key={action} value={action}>{getActionConfig(action).label}</option>
             ))}
           </select>
-          <button className="px-4 py-2 bg-slate-50 border-transparent hover:bg-slate-100 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+          <button
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className={cn("px-4 py-2 bg-slate-50 border-transparent hover:bg-slate-100 rounded-xl text-sm font-medium transition-all flex items-center gap-2", showDateFilter && "bg-emerald-50 text-emerald-600")}
+          >
             <Filter className="h-4 w-4" /> 進階篩選
           </button>
         </div>
       </div>
+
+      {/* Date Filter Panel */}
+      {showDateFilter && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">開始日期</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">結束日期</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500"
+            />
+          </div>
+          <button
+            onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
+            className="px-4 py-2 bg-slate-100 rounded-xl text-sm font-medium hover:bg-slate-200 transition-all"
+          >
+            清除日期
+          </button>
+        </div>
+      )}
 
       {/* Logs Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">

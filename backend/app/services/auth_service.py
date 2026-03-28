@@ -119,22 +119,26 @@ class AuthService:
             password_hash=_hash_password(password),
             auth_provider="email",
             subscription_plan=SubscriptionPlan.FREE,
-            status=UserStatus.PENDING,
+            status=UserStatus.ACTIVE,
             role=UserRole.USER,
             agreed_to_terms=True,
         )
         saved_user = self.repo.save(user)
 
+        # Auto-login: generate token so frontend can redirect immediately
+        token = _generate_token(str(saved_user.id))
+
         return {
             "error": False,
+            "access_token": token,
             "email": saved_user.email,
             "user": {
                 "email": saved_user.email,
                 "subscription_plan": _enum_value(saved_user.subscription_plan),
                 "status": _enum_value(saved_user.status),
             },
-            "verification_email_sent": True,
-            "message": "帳號已建立，驗證信已發送",
+            "redirect_to": "/onboarding",
+            "message": "帳號已建立",
         }
 
     def login(self, email: str, password: str) -> dict:

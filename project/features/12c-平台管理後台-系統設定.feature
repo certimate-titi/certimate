@@ -67,6 +67,32 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       Then 操作成功
       And 公告狀態應為 "active"
 
+  Rule: 後置（狀態）- super_admin 可停用已建立的公告
+
+    Example: 停用公告成功
+      Given 系統中有一則 active 狀態的公告，ID 為 "ann-1"，標題為 "系統維護通知"
+      When 使用者 "super@certimate.com" 停用公告 "ann-1"
+      Then 操作成功
+      And 公告 "ann-1" 的狀態應為 "inactive"
+
+  Rule: 後置（狀態）- super_admin 可刪除已建立的公告
+
+    Example: 刪除公告成功
+      Given 系統中有一則公告，ID 為 "ann-2"，標題為 "臨時公告"
+      When 使用者 "super@certimate.com" 刪除公告 "ann-2"
+      Then 操作成功
+      And 系統中不應存在公告 "ann-2"
+
+  Rule: 後置（回應）- 一般用戶可讀取生效中的公告
+
+    Example: 一般用戶取得 banner 類型公告
+      Given 系統中有一則 active 狀態的公告，標題為 "新功能上線"，顯示方式為 "banner"
+      And 系統中有一則 inactive 狀態的公告，標題為 "已停用公告"
+      When 一般用戶查詢公開公告列表
+      Then 操作成功
+      And 回應應包含標題為 "新功能上線" 的公告
+      And 回應不應包含標題為 "已停用公告" 的公告
+
   # ========== Feature Flag ==========
 
   Rule: 後置（狀態）- 更新 Feature Flag 上線比例應即時生效
@@ -89,6 +115,26 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
         | 欄位     | 值                         |
         | action   | create_admin               |
         | details  | newops@certimate.com admin |
+
+  # ========== 系統維運操作 ==========
+
+  Rule: 後置（狀態）- 重置 AI 流量限制應清除所有用戶的冷卻狀態
+
+    Example: super_admin 重置 AI 流量限制成功
+      When 使用者 "super@certimate.com" 重置 AI 流量限制
+      Then 操作成功
+      And 系統應記錄審計日誌：
+        | 欄位    | 值                  |
+        | action  | reset_ai_limits     |
+
+  Rule: 後置（狀態）- 清理系統暫存檔應返回清理結果
+
+    Example: super_admin 清理系統暫存檔成功
+      When 使用者 "super@certimate.com" 清理系統暫存檔
+      Then 操作成功
+      And 系統應記錄審計日誌：
+        | 欄位    | 值                  |
+        | action  | clear_cache         |
 
   # ========== 審計日誌 ==========
 

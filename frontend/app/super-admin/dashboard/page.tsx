@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api/client';
 import { 
   Users, 
   TrendingUp, 
@@ -34,60 +36,65 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Mock Data
-const userGrowthData = [
-  { name: '03/12', dau: 1200, mau: 4500 },
-  { name: '03/13', dau: 1350, mau: 4600 },
-  { name: '03/14', dau: 1100, mau: 4650 },
-  { name: '03/15', dau: 1450, mau: 4800 },
-  { name: '03/16', dau: 1600, mau: 5000 },
-  { name: '03/17', dau: 1550, mau: 5100 },
-  { name: '03/18', dau: 1720, mau: 5250 },
-];
+import { superAdminService } from '@/lib/api/services';
 
-const revenueData = [
-  { name: '03/12', mrr: 12000, arpu: 2.5 },
-  { name: '03/13', mrr: 12500, arpu: 2.6 },
-  { name: '03/14', mrr: 12800, arpu: 2.7 },
-  { name: '03/15', mrr: 13200, arpu: 2.8 },
-  { name: '03/16', mrr: 14000, arpu: 2.9 },
-  { name: '03/17', mrr: 14500, arpu: 3.0 },
-  { name: '03/18', mrr: 15200, arpu: 3.1 },
-];
+interface DashboardData {
+  dau: number;
+  mau: number;
+  new_registrations: number;
+  conversion_rate: number;
+  mrr: number;
+  ai_token_today: number;
+  queue_depth: number;
+}
 
-const aiCostData = [
-  { name: '03/12', gemini: 45, claude: 30, gpt4: 25 },
-  { name: '03/13', gemini: 50, claude: 35, gpt4: 28 },
-  { name: '03/14', gemini: 48, claude: 32, gpt4: 26 },
-  { name: '03/15', gemini: 55, claude: 40, gpt4: 30 },
-  { name: '03/16', gemini: 60, claude: 45, gpt4: 35 },
-  { name: '03/17', gemini: 58, claude: 42, gpt4: 32 },
-  { name: '03/18', gemini: 65, claude: 50, gpt4: 40 },
-];
-
-const kpiCards = [
-  { label: 'DAU / MAU', value: '1,234 / 8,567', change: '+12.5%', changeDir: 'up' as const, icon: Users, color: 'emerald' },
-  { label: '新註冊', value: '156', sub: '本週', change: '+8.2%', changeDir: 'up' as const, icon: TrendingUp, color: 'blue' },
-  { label: '轉換率', value: '12.3%', change: '+1.2%', changeDir: 'up' as const, icon: Zap, color: 'amber' },
-  { label: 'MRR', value: 'NT$ 234,500', change: '+15.2%', changeDir: 'up' as const, icon: DollarSign, color: 'indigo' },
-  { label: 'AI Token 成本', value: 'NT$ 45,200', change: '+5.4%', changeDir: 'up' as const, icon: Cpu, color: 'rose' },
-  { label: '任務佇列', value: '12 任務', change: '正常', changeDir: 'neutral' as const, icon: Clock, color: 'slate' },
-];
-
-const alerts = [
-  { id: 1, type: 'error', message: 'Worker 任務失敗率超過 5%', time: '10 分鐘前' },
-  { id: 2, type: 'warning', message: '用戶 ID: 12345 觸發 Rate Limit', time: '25 分鐘前' },
-  { id: 3, type: 'info', message: 'Cloud SQL 連線數達到 75%', time: '1 小時前' },
-  { id: 4, type: 'warning', message: 'OpenRouter 單日費用接近預算上限', time: '2 小時前' },
-];
-
-const systemAlerts = [
-  { severity: 'warning' as const, message: 'AI Token 使用量接近月度預算 85%', time: '2 小時前' },
-  { severity: 'info' as const, message: '資料庫備份已完成', time: '6 小時前' },
-  { severity: 'critical' as const, message: 'Worker queue depth exceeded threshold', time: '1 天前' },
-];
+function buildKpiCards(data: DashboardData | null): { label: string; value: string; sub?: string; change: string; changeDir: 'up' | 'down' | 'neutral'; icon: typeof Users; color: string }[] {
+  if (!data) {
+    return [
+      { label: '日活躍 / 月活躍用戶', value: '--', change: '--', changeDir: 'neutral', icon: Users, color: 'emerald' },
+      { label: '新註冊', value: '--', sub: '本週', change: '--', changeDir: 'neutral', icon: TrendingUp, color: 'blue' },
+      { label: '轉換率', value: '--', change: '--', changeDir: 'neutral', icon: Zap, color: 'amber' },
+      { label: '每月經常性收入', value: '--', change: '--', changeDir: 'neutral', icon: DollarSign, color: 'indigo' },
+      { label: 'AI 使用成本', value: '--', change: '--', changeDir: 'neutral', icon: Cpu, color: 'rose' },
+      { label: '任務佇列', value: '--', change: '--', changeDir: 'neutral', icon: Clock, color: 'slate' },
+    ];
+  }
+  return [
+    { label: '日活躍 / 月活躍用戶', value: `${data.dau.toLocaleString()} / ${data.mau.toLocaleString()}`, change: '--', changeDir: 'neutral', icon: Users, color: 'emerald' },
+    { label: '新註冊', value: data.new_registrations.toLocaleString(), sub: '本週', change: '--', changeDir: 'neutral', icon: TrendingUp, color: 'blue' },
+    { label: '轉換率', value: `${(data.conversion_rate * 100).toFixed(1)}%`, change: '--', changeDir: 'neutral', icon: Zap, color: 'amber' },
+    { label: '每月經常性收入', value: `NT$ ${data.mrr.toLocaleString()}`, change: '--', changeDir: 'neutral', icon: DollarSign, color: 'indigo' },
+    { label: 'AI 使用成本', value: data.ai_token_today.toLocaleString(), change: '--', changeDir: 'neutral', icon: Cpu, color: 'rose' },
+    { label: '任務佇列', value: data.queue_depth.toLocaleString(), change: '--', changeDir: 'neutral', icon: Clock, color: 'slate' },
+  ];
+}
 
 export default function OperationsDashboard() {
+  const router = useRouter();
+  const [dashData, setDashData] = useState<DashboardData | null>(null);
+  const [alerts, setAlerts] = useState<{ id: number; type: string; message: string; time: string }[]>([]);
+  const [systemAlerts, setSystemAlerts] = useState<{ severity: string; message: string; time: string }[]>([]);
+  const [systemLoad, setSystemLoad] = useState({ cpu_percent: 0, db_connections_percent: 0, cache_hit_rate: 0 });
+  const [userGrowthData, setUserGrowthData] = useState<{ name: string; dau: number; mau: number }[]>([]);
+  const [aiCostData, setAiCostData] = useState<{ name: string; gemini: number; claude: number; gpt4: number }[]>([]);
+
+  useEffect(() => {
+    apiClient.get<DashboardData>('/admin/dashboard').then(setDashData).catch(() => {});
+    superAdminService.getDashboardAlerts().then(res => {
+      if (Array.isArray(res?.alerts)) setAlerts(res.alerts);
+      if (Array.isArray(res?.system_alerts)) setSystemAlerts(res.system_alerts);
+    }).catch(() => {});
+    superAdminService.getSystemLoad().then(res => {
+      if (res && typeof res.cpu_percent === 'number') setSystemLoad(res);
+    }).catch(() => {});
+    superAdminService.getDashboardCharts().then(res => {
+      if (Array.isArray(res?.user_growth)) setUserGrowthData(res.user_growth);
+      if (Array.isArray(res?.ai_cost)) setAiCostData(res.ai_cost);
+    }).catch(() => {});
+  }, []);
+
+  const kpiCards = buildKpiCards(dashData);
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-end">
@@ -96,10 +103,31 @@ export default function OperationsDashboard() {
           <p className="text-slate-500">即時監控系統健康度與商業指標</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all">
+          <button
+            onClick={async () => {
+              try {
+                const blob = await superAdminService.exportUsersCSV();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch { alert('匯出失敗，請稍後再試'); }
+            }}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all"
+          >
             匯出報表
           </button>
-          <button className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20">
+          <button
+            onClick={() => {
+              apiClient.get<DashboardData>('/admin/dashboard').then(setDashData).catch(() => {});
+              superAdminService.getDashboardAlerts().then(res => { if (Array.isArray(res?.alerts)) setAlerts(res.alerts); if (Array.isArray(res?.system_alerts)) setSystemAlerts(res.system_alerts); }).catch(() => {});
+              superAdminService.getSystemLoad().then(res => { if (res && typeof res.cpu_percent === 'number') setSystemLoad(res); }).catch(() => {});
+              superAdminService.getDashboardCharts().then(res => { if (Array.isArray(res?.user_growth)) setUserGrowthData(res.user_growth); if (Array.isArray(res?.ai_cost)) setAiCostData(res.ai_cost); }).catch(() => {});
+            }}
+            className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+          >
             即時重新整理
           </button>
         </div>
@@ -222,13 +250,19 @@ export default function OperationsDashboard() {
                     <p className="text-sm font-medium text-slate-900 leading-tight mb-1">{alert.message}</p>
                     <p className="text-xs text-slate-500">{alert.time}</p>
                   </div>
-                  <button className="opacity-0 group-hover:opacity-100 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all">
+                  <button
+                    onClick={() => router.push('/super-admin/moderation')}
+                    className="opacity-0 group-hover:opacity-100 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                  >
                     處理
                   </button>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-all">
+            <button
+              onClick={() => router.push('/super-admin/audit-logs')}
+              className="w-full mt-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-all"
+            >
               查看所有警報 &rarr;
             </button>
           </section>
@@ -284,33 +318,30 @@ export default function OperationsDashboard() {
               <Activity className="h-5 w-5 text-indigo-500" /> 系統負載儀表
             </h2>
             <div className="space-y-6">
-              <div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  <span>Cloud Run CPU</span>
-                  <span className="text-emerald-600">32%</span>
+              {[
+                { label: 'Cloud Run CPU', value: systemLoad.cpu_percent, color: 'emerald' },
+                { label: 'Cloud SQL 連線數', value: systemLoad.db_connections_percent, color: 'amber' },
+                { label: 'Redis 快取命中率', value: systemLoad.cache_hit_rate, color: 'indigo' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    <span>{item.label}</span>
+                    <span className={cn(
+                      item.color === 'emerald' && "text-emerald-600",
+                      item.color === 'amber' && "text-amber-600",
+                      item.color === 'indigo' && "text-indigo-600"
+                    )}>{item.value}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={cn(
+                      "h-full rounded-full",
+                      item.color === 'emerald' && "bg-emerald-500",
+                      item.color === 'amber' && "bg-amber-500",
+                      item.color === 'indigo' && "bg-indigo-500"
+                    )} style={{ width: `${item.value}%` }}></div>
+                  </div>
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '32%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  <span>Cloud SQL 連線數</span>
-                  <span className="text-amber-600">75%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: '75%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  <span>Redis 快取命中率</span>
-                  <span className="text-indigo-600">94%</span>
-                </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: '94%' }}></div>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
         </div>

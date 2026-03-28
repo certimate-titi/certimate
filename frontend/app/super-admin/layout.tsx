@@ -20,8 +20,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { auth } from '@/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useAuth } from '@/lib/auth-context';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,22 +43,12 @@ export default function SuperAdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserEmail(user.email);
-      } else {
-        setUserEmail(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const { user, signOut: authSignOut } = useAuth();
+  const userEmail = user?.email ?? null;
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await authSignOut();
       router.push('/login');
     } catch (error) {
       console.error('Logout failed', error);

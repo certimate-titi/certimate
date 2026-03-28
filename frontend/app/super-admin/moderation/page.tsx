@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ShieldAlert, 
   ShieldCheck, 
@@ -26,34 +27,41 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Mock Data
-const moderationQueue = [
-  { id: 'mod_1', user: '張小明', type: 'file', content: 'PMP_Exam_Dump_2026.pdf', reason: '異常大檔案 (150MB)', status: 'flagged', time: '10 分鐘前' },
-  { id: 'mod_2', user: '李華', type: 'image', content: 'math_problem_01.png', reason: 'OCR 辨識失敗', status: 'pending', time: '25 分鐘前' },
-  { id: 'mod_3', user: '王大同', type: 'chat', content: '如何破解系統限制？', reason: '關鍵字觸發 (破解)', status: 'flagged', time: '1 小時前' },
-  { id: 'mod_4', user: '陳美玲', type: 'file', content: 'Notes.md', reason: '內容檢舉 (版權)', status: 'reported', time: '2 小時前' },
-];
-
-const abuseMonitoring = [
-  { id: 'abs_1', user: 'usr_123', metric: '超綱問答轟炸', count: '15 次 / 10 分鐘', status: 'cooling', time: '即時' },
-  { id: 'abs_2', user: 'usr_456', metric: 'Token 異常消耗', count: '2.5M / 1 小時', status: 'flagged', time: '5 分鐘前' },
-  { id: 'abs_3', user: 'usr_789', metric: '高頻 API 呼叫', count: '500 次 / 1 分鐘', status: 'blocked', time: '15 分鐘前' },
-];
-
-const reportStats = [
-  { label: '待處理檢舉', value: '12', color: 'rose' },
-  { label: '今日自動標記', value: '45', color: 'amber' },
-  { label: '已冷卻用戶', value: '8', color: 'indigo' },
-  { label: '系統誤報率', value: '1.2%', color: 'emerald' },
-];
-
-const contentReviewQueue = [
-  { id: 1, type: '使用者上傳', content: '疑似包含版權內容', reporter: '系統自動', status: 'pending' as const, date: '2026-03-26' },
-  { id: 2, type: 'AI 對話', content: '偵測到超出範圍的提問', reporter: '系統自動', status: 'pending' as const, date: '2026-03-25' },
-];
+import { superAdminService } from '@/lib/api/services';
 
 export default function ModerationPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('queue');
+  const [queueFilter, setQueueFilter] = useState('all');
+  const [moderationQueue, setModerationQueue] = useState<{ id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[]>([]);
+  const [abuseMonitoring, setAbuseMonitoring] = useState<{ id: string; user: string; metric: string; count: string; status: string; time: string }[]>([]);
+  const [contentReviewQueue, setContentReviewQueue] = useState<{ id: number; type: string; content: string; reporter: string; status: 'pending' | 'resolved'; date: string }[]>([]);
+  const [reportStats, setReportStats] = useState([
+    { label: '待處理檢舉', value: '--', color: 'rose' },
+    { label: '今日自動標記', value: '--', color: 'amber' },
+    { label: '已冷卻用戶', value: '--', color: 'indigo' },
+    { label: '系統誤報率', value: '--', color: 'emerald' },
+  ]);
+
+  useEffect(() => {
+    superAdminService.getModerationStats().then(stats => {
+      setReportStats([
+        { label: '待處理檢舉', value: String(stats.pending_reports ?? 0), color: 'rose' },
+        { label: '今日自動標記', value: String(stats.auto_flagged_today ?? 0), color: 'amber' },
+        { label: '已冷卻用戶', value: String(stats.cooled_users ?? 0), color: 'indigo' },
+        { label: '系統誤報率', value: stats.false_positive_rate ?? '--', color: 'emerald' },
+      ]);
+    }).catch(() => {});
+    superAdminService.getModerationQueue().then(res => {
+      if (Array.isArray(res?.items)) setModerationQueue(res.items);
+    }).catch(() => {});
+    superAdminService.getAbuseMonitoring().then(res => {
+      if (Array.isArray(res?.items)) setAbuseMonitoring(res.items);
+    }).catch(() => {});
+    superAdminService.getContentReviewQueue().then(res => {
+      if (Array.isArray(res?.items)) setContentReviewQueue(res.items);
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -63,7 +71,10 @@ export default function ModerationPage() {
           <p className="text-slate-500">防止平台濫用，維護內容品質與合規</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2">
+          <button
+            onClick={() => router.push('/super-admin/audit-logs')}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
             審核日誌
           </button>
         </div>
@@ -114,13 +125,33 @@ export default function ModerationPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await superAdminService.approveContent(String(item.id));
+                        setContentReviewQueue(prev => prev.filter(i => i.id !== item.id));
+                      } catch { alert('操作失敗'); }
+                    }}
+                    className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5" /> 通過
                   </button>
-                  <button className="px-3 py-1.5 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center gap-1.5">
+                  <button
+                    onClick={async () => {
+                      if (!confirm('確定要移除此內容嗎？')) return;
+                      try {
+                        await superAdminService.rejectContent(String(item.id));
+                        setContentReviewQueue(prev => prev.filter(i => i.id !== item.id));
+                      } catch { alert('操作失敗'); }
+                    }}
+                    className="px-3 py-1.5 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center gap-1.5"
+                  >
                     <XCircle className="h-3.5 w-3.5" /> 移除
                   </button>
-                  <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-1.5">
+                  <button
+                    onClick={() => alert(`檢舉詳情：\n類型：${item.type}\n內容：${item.content}\n回報者：${item.reporter}\n日期：${item.date}`)}
+                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-1.5"
+                  >
                     <Search className="h-3.5 w-3.5" /> 查看詳情
                   </button>
                 </div>
@@ -138,13 +169,20 @@ export default function ModerationPage() {
               <ShieldAlert className="h-5 w-5 text-rose-500" /> 待審核佇列
             </h2>
             <div className="flex gap-2">
-              <button className="p-1.5 bg-slate-50 border-transparent hover:bg-slate-100 rounded-lg transition-all">
-                <Filter className="h-4 w-4 text-slate-500" />
-              </button>
+              <select
+                value={queueFilter}
+                onChange={(e) => setQueueFilter(e.target.value)}
+                className="bg-slate-50 border-transparent rounded-lg text-xs px-3 py-1.5 outline-none"
+              >
+                <option value="all">全部</option>
+                <option value="flagged">系統標記</option>
+                <option value="reported">用戶檢舉</option>
+                <option value="pending">待處理</option>
+              </select>
             </div>
           </div>
           <div className="divide-y divide-slate-100">
-            {moderationQueue.map((item) => (
+            {moderationQueue.filter(item => queueFilter === 'all' || item.status === queueFilter).map((item) => (
               <div key={item.id} className="p-6 hover:bg-slate-50/50 transition-all group">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-4">
@@ -181,20 +219,43 @@ export default function ModerationPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await superAdminService.approveContent(item.id);
+                        setModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                      } catch { alert('操作失敗'); }
+                    }}
+                    className="flex-1 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  >
                     <ShieldCheck className="h-4 w-4" /> 通過審核
                   </button>
-                  <button className="flex-1 py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm('確定要刪除此內容並警告用戶嗎？')) return;
+                      try {
+                        await superAdminService.rejectContent(item.id);
+                        setModerationQueue(prev => prev.filter(i => i.id !== item.id));
+                      } catch { alert('操作失敗'); }
+                    }}
+                    className="flex-1 py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                  >
                     <XCircle className="h-4 w-4" /> 刪除並警告
                   </button>
-                  <button className="p-2 bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-900 rounded-xl transition-all">
+                  <button
+                    onClick={() => alert(`審核項目詳情：\n用戶：${item.user}\n類型：${item.type}\n內容：${item.content}\n原因：${item.reason}\n時間：${item.time}`)}
+                    className="p-2 bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-900 rounded-xl transition-all"
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          <button className="w-full py-4 text-sm font-bold text-slate-500 hover:text-slate-900 bg-slate-50/50 transition-all border-t border-slate-100">
+          <button
+            onClick={() => setQueueFilter('all')}
+            className="w-full py-4 text-sm font-bold text-slate-500 hover:text-slate-900 bg-slate-50/50 transition-all border-t border-slate-100"
+          >
             查看所有佇列 &rarr;
           </button>
         </section>
@@ -225,14 +286,20 @@ export default function ModerationPage() {
                   <p className="text-xs text-slate-500 mb-1">{abuse.metric}</p>
                   <div className="flex justify-between items-end">
                     <p className="text-sm font-bold text-slate-900">{abuse.count}</p>
-                    <button className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all">
+                    <button
+                      onClick={() => router.push('/super-admin/audit-logs')}
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                    >
                       查看日誌
                     </button>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-all">
+            <button
+              onClick={() => router.push('/super-admin/audit-logs')}
+              className="w-full mt-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-all"
+            >
               查看所有異常 &rarr;
             </button>
           </section>
@@ -241,15 +308,38 @@ export default function ModerationPage() {
           <section className="bg-slate-900 p-6 rounded-3xl shadow-xl shadow-slate-900/20">
             <h2 className="font-bold text-white mb-4">管理員快速操作</h2>
             <div className="space-y-2">
-              <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group">
+              <button
+                onClick={() => router.push('/super-admin/settings')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group"
+              >
                 <span className="text-sm font-medium">發布全站公告</span>
                 <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
               </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group">
+              <button
+                onClick={async () => {
+                  if (!confirm('確定要重置所有用戶的 AI 流量限制嗎？')) return;
+                  try {
+                    const { apiClient } = await import('@/lib/api/client');
+                    await apiClient.post('/admin/system-settings/reset-ai-limits');
+                    alert('AI 流量限制已重置');
+                  } catch { alert('重置失敗，請稍後再試'); }
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group"
+              >
                 <span className="text-sm font-medium">重置 AI 流量限制</span>
                 <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
               </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group">
+              <button
+                onClick={async () => {
+                  if (!confirm('確定要清理系統暫存檔嗎？')) return;
+                  try {
+                    const { apiClient } = await import('@/lib/api/client');
+                    await apiClient.post('/admin/system-settings/clear-cache');
+                    alert('系統暫存檔已清理');
+                  } catch { alert('清理失敗，請稍後再試'); }
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-all group"
+              >
                 <span className="text-sm font-medium">清理系統暫存檔</span>
                 <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
               </button>

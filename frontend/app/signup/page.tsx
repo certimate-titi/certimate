@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BrainCircuit, ArrowRight, X, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { authService } from '@/lib/api/services';
 
 /* ─────────────────────────────────────────────
    Modal component
@@ -151,13 +154,19 @@ function getPasswordStrength(password: string): { level: 'weak' | 'medium' | 'st
 }
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { loginWithCredentials } = useAuth();
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [termsError, setTermsError] = useState('');
   const [termsChecked, setTermsChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const passwordStrength = getPasswordStrength(password);
 
@@ -169,13 +178,32 @@ export default function SignupPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!termsChecked) {
-      e.preventDefault();
       setTermsError('請閱讀並同意服務條款與隱私權政策');
       return;
     }
     setTermsError('');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Register the account
+      await authService.signup({ email, password, displayName: name || undefined });
+      // Login to set token + update auth context user state
+      const { redirect_to } = await loginWithCredentials(email, password);
+      router.push(redirect_to || '/onboarding');
+    } catch (err: unknown) {
+      setIsLoading(false);
+      const message = err instanceof Error ? err.message : '註冊失敗';
+      try {
+        const parsed = JSON.parse(message.replace(/^API Error \d+: /, ''));
+        setError(parsed.detail || parsed.message || '註冊失敗，請稍後再試。');
+      } catch {
+        setError(message || '註冊失敗，請稍後再試。');
+      }
+    }
   };
 
   return (
@@ -202,15 +230,21 @@ export default function SignupPage() {
             </p>
           </div>
           
-          <form className="mt-8 space-y-6" action="#" method="POST" onSubmit={handleSubmit}>
+          {error && (
+            <div className="p-3 bg-rose-50 text-rose-600 text-sm rounded-xl border border-rose-100">
+              {error}
+            </div>
+          )}
+
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
                 <label htmlFor="name" className="sr-only">姓名</label>
-                <input id="name" name="name" type="text" className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="姓名（選填）" />
+                <input id="name" name="name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm" placeholder="姓名（選填）" />
               </div>
               <div>
                 <label htmlFor="email-address" className="sr-only">電子郵件</label>
-                <input id="email-address" name="email" type="email" autoComplete="email" required className={`appearance-none rounded-xl relative block w-full px-4 py-3 border ${emailError ? 'border-red-400' : 'border-slate-300'} placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm`} placeholder="電子郵件" onBlur={(e) => validateEmail(e.target.value)} onChange={(e) => { if (emailError) validateEmail(e.target.value); }} />
+                <input id="email-address" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => { setEmail(e.target.value); if (emailError) validateEmail(e.target.value); }} className={`appearance-none rounded-xl relative block w-full px-4 py-3 border ${emailError ? 'border-red-400' : 'border-slate-300'} placeholder-slate-500 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm`} placeholder="電子郵件" onBlur={(e) => validateEmail(e.target.value)} />
                 {emailError && <p className="mt-1 text-xs text-red-500">{emailError}</p>}
               </div>
               <div>
@@ -261,8 +295,11 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <button type="submit" className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors shadow-md shadow-emerald-500/20">
-                免費註冊
+              <button type="submit" disabled={isLoading} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors shadow-md shadow-emerald-500/20 disabled:opacity-50">
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                ) : null}
+                {isLoading ? '註冊中...' : '免費註冊'}
               </button>
             </div>
           </form>

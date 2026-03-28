@@ -19,26 +19,38 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { logAdminAction, AdminAction } from '@/firebase';
+import { superAdminService } from '@/lib/api/services';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Mock Data
-const users = [
-  { id: 'usr_1', name: '張小明', email: 'ming@example.com', tier: 'Ultra', status: 'active', lastLogin: '2026-03-18 14:30', joined: '2026-01-15', tokens: '125k' },
-  { id: 'usr_2', name: '李華', email: 'hua@example.com', tier: 'Pro', status: 'active', lastLogin: '2026-03-18 10:15', joined: '2026-02-10', tokens: '45k' },
-  { id: 'usr_3', name: '王大同', email: 'datong@example.com', tier: 'Free', status: 'suspended', lastLogin: '2026-03-15 09:00', joined: '2026-03-01', tokens: '2k' },
-  { id: 'usr_4', name: '陳美玲', email: 'meiling@example.com', tier: 'Ultra', status: 'active', lastLogin: '2026-03-18 15:45', joined: '2025-12-20', tokens: '210k' },
-  { id: 'usr_5', name: '林志豪', email: 'zhihao@example.com', tier: 'Pro', status: 'cooling', lastLogin: '2026-03-17 22:30', joined: '2026-02-25', tokens: '88k' },
-  { id: 'usr_6', name: '趙敏', email: 'zhaomin@example.com', tier: 'Free', status: 'active', lastLogin: '2026-03-18 08:20', joined: '2026-03-10', tokens: '5k' },
-  { id: 'usr_7', name: '孫悟空', email: 'wukong@example.com', tier: 'Ultra', status: 'active', lastLogin: '2026-03-18 12:00', joined: '2026-01-05', tokens: '350k' },
-  { id: 'usr_8', name: '唐三藏', email: 'sanzang@example.com', tier: 'Pro', status: 'active', lastLogin: '2026-03-18 11:30', joined: '2026-02-15', tokens: '12k' },
-];
-
 export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTier, setSelectedTier] = useState('All');
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; tier: string; status: string; lastLogin: string; joined: string; tokens: string }[]>([]);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
+
+  React.useEffect(() => {
+    superAdminService.getUsers({ search: searchTerm, tier: selectedTier }).then((res) => {
+      const mapped = (res.users || []).map((u: unknown) => {
+        const rec = u as Record<string, unknown>;
+        return {
+          id: (rec.id as string) || '',
+          name: (rec.display_name as string) || (rec.name as string) || (rec.email as string) || '--',
+          email: (rec.email as string) || '',
+          tier: (rec.plan as string) || (rec.tier as string) || 'FREE',
+          status: (rec.status as string) || 'active',
+          lastLogin: (rec.last_login_at as string) || (rec.lastLogin as string) || '--',
+          joined: (rec.created_at as string) || (rec.joined as string) || '--',
+          tokens: (rec.tokens as string) || '--',
+        };
+      });
+      setUsers(mapped);
+    }).catch(() => {});
+  }, [searchTerm, selectedTier]);
 
   return (
     <div className="space-y-8">
@@ -48,16 +60,31 @@ export default function UserManagementPage() {
           <p className="text-slate-500">管理所有用戶的完整生命週期與權限</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+          <button
+            onClick={async () => {
+              try {
+                const blob = await superAdminService.exportUsersCSV();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'users-export.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch { alert('匯出失敗，請稍後再試'); }
+            }}
+            className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+          >
             <Download className="h-4 w-4" /> 匯出 CSV
           </button>
-          <button 
+          <button
             onClick={async () => {
-              const email = prompt('請輸入新管理員 Email:');
-              if (email) {
-                await logAdminAction(AdminAction.CREATE_ADMIN, 'new', `嘗試新增管理員: ${email}`);
-                alert('已記錄新增請求');
-              }
+              const email = prompt('請輸入要升級為管理員的使用者 Email:');
+              if (!email) return;
+              try {
+                await superAdminService.adjustRole(email, 'admin');
+                await logAdminAction(AdminAction.CREATE_ADMIN, email, `新增管理員: ${email}`);
+                alert('管理員已新增');
+              } catch { alert('新增失敗，請確認 Email 是否正確'); }
             }}
             className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
@@ -89,7 +116,10 @@ export default function UserManagementPage() {
             <option value="Pro">Pro</option>
             <option value="Ultra">Ultra</option>
           </select>
-          <button className="px-4 py-2 bg-slate-50 border-transparent hover:bg-slate-100 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+          <button
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            className={cn("px-4 py-2 bg-slate-50 border-transparent hover:bg-slate-100 rounded-xl text-sm font-medium transition-all flex items-center gap-2", showFilterPanel && "bg-emerald-50 text-emerald-600")}
+          >
             <Filter className="h-4 w-4" /> 進階篩選
           </button>
         </div>
@@ -111,7 +141,7 @@ export default function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {users.map((user) => (
+              {users.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage).map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -153,10 +183,14 @@ export default function UserManagementPage() {
                     {user.tokens}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-500">
-                    {user.lastLogin}
+                    {user.lastLogin && user.lastLogin !== '--'
+                      ? new Date(user.lastLogin).toLocaleDateString('zh-TW')
+                      : '--'}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-500">
-                    {user.joined}
+                    {user.joined && user.joined !== '--'
+                      ? new Date(user.joined).toLocaleDateString('zh-TW')
+                      : '--'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -167,17 +201,32 @@ export default function UserManagementPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <button className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="發送通知">
+                      <button
+                        onClick={async () => {
+                          const msg = prompt(`發送通知給 ${user.name}：`);
+                          if (!msg) return;
+                          try {
+                            const { apiClient } = await import('@/lib/api/client');
+                            await apiClient.post(`/admin/users/${user.id}/notify`, { message: msg });
+                            alert('通知已發送');
+                          } catch { alert('發送失敗'); }
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                        title="發送通知"
+                      >
                         <Mail className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={async () => {
-                          if (confirm(`確定要停權用戶 ${user.name} 嗎？`)) {
+                          const reason = prompt(`請輸入停權用戶 ${user.name} 的原因：`);
+                          if (!reason) return;
+                          try {
+                            await superAdminService.suspendUser(user.id, reason);
                             await logAdminAction(AdminAction.SUSPEND_USER, user.id, `停權了用戶: ${user.email}`);
-                            alert('用戶已停權並記錄日誌');
-                          }
+                            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'suspended' } : u));
+                          } catch { alert('停權失敗'); }
                         }}
-                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all" 
+                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
                         title="停權帳號"
                       >
                         <ShieldAlert className="h-4 w-4" />
@@ -191,30 +240,54 @@ export default function UserManagementPage() {
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-          <p className="text-xs font-medium text-slate-500">顯示 1 到 8 筆，共 1,240 筆用戶</p>
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-slate-400 hover:text-slate-900 disabled:opacity-50" disabled>
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, '...', 12].map((page, i) => (
-                <button 
-                  key={i}
-                  className={cn(
-                    "w-8 h-8 text-xs font-bold rounded-lg transition-all",
-                    page === 1 ? "bg-emerald-500 text-white" : "text-slate-500 hover:bg-slate-200"
-                  )}
+        {users.length > 0 && (() => {
+          const totalPages = Math.ceil(users.length / usersPerPage);
+          return (
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs font-medium text-slate-500">
+                顯示 {(currentPage - 1) * usersPerPage + 1} 到 {Math.min(currentPage * usersPerPage, users.length)} 筆，共 {users.length} 筆用戶
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 text-slate-400 hover:text-slate-900 disabled:opacity-50"
                 >
-                  {page}
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-              ))}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum = i + 1;
+                    if (totalPages > 5 && currentPage > 3) {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    if (pageNum > totalPages) pageNum = totalPages - 4 + i;
+                    if (pageNum < 1) pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={cn(
+                          "w-8 h-8 text-xs font-bold rounded-lg transition-all",
+                          currentPage === pageNum ? "bg-emerald-500 text-white" : "text-slate-500 hover:bg-slate-200"
+                        )}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 text-slate-400 hover:text-slate-900 disabled:opacity-50"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <button className="p-2 text-slate-400 hover:text-slate-900">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+          );
+        })()}
       </div>
     </div>
   );

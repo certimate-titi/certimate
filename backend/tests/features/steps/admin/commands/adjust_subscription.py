@@ -3,8 +3,8 @@
 from behave import when
 
 
-@when('使用者 "{email}" 將使用者 {user_key} 的訂閱方案調整為 "{plan}"，OTP 為 "{otp}"')
-def step_impl(context, email, user_key, plan, otp):
+@when('使用者 "{email}" 將使用者 {user_key} 的訂閱方案調整為 "{plan}"，起始日期為 "{start_date}"，結束日期為 "{end_date}"')
+def step_impl(context, email, user_key, plan, start_date, end_date):
     actor_id = context.ids[email]
     token = context.jwt_helper.generate_token(actor_id)
 
@@ -12,7 +12,7 @@ def step_impl(context, email, user_key, plan, otp):
 
     response = context.api_client.post(
         f"/api/v1/admin/users/{target_id}/adjust-subscription",
-        json={"plan": plan, "otp": otp},
+        json={"plan": plan, "start_date": start_date, "end_date": end_date},
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

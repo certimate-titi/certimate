@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { superAdminService } from '@/lib/api/services';
 import { 
   ChevronLeft, 
   Mail, 
@@ -39,48 +40,80 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Mock Data for a single user
-const userData = {
-  id: 'usr_1',
-  name: '張小明',
-  email: 'ming@example.com',
-  avatar: '張',
-  tier: 'Ultra',
-  status: 'active',
-  joined: '2026-01-15',
-  method: 'Google SSO',
-  stripeId: 'cus_Q9z2x8v1',
-  expiry: '2027-01-15',
-  usage: {
-    uploads: 142,
-    exams: 85,
-    qna: 1240,
-    ocr: 320
-  },
-  tokens: {
-    today: '12.5k',
-    month: '340k',
-    distribution: [
-      { name: 'Gemini Flash', value: 65, color: '#10b981' },
-      { name: 'Claude Sonnet', value: 25, color: '#6366f1' },
-      { name: 'GPT-4o', value: 10, color: '#f59e0b' },
-    ]
-  },
-  logins: [
-    { time: '2026-03-18 14:30', ip: '114.32.1.45', device: 'Chrome / macOS' },
-    { time: '2026-03-18 09:15', ip: '114.32.1.45', device: 'Chrome / macOS' },
-    { time: '2026-03-17 21:00', ip: '223.140.5.12', device: 'Safari / iPhone' },
-    { time: '2026-03-17 10:20', ip: '114.32.1.45', device: 'Chrome / macOS' },
-  ],
-  abnormal: [
-    { type: 'Rate Limit', detail: '10 分鐘內超過 100 次請求', time: '2026-03-10' },
-    { type: 'Moderation', detail: '上傳檔案包含敏感關鍵字', time: '2026-02-28' },
-  ]
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  tier: string;
+  status: string;
+  joined: string;
+  method: string;
+  stripeId: string;
+  expiry: string;
+  planSource: 'payment' | 'admin' | 'unknown';
+  usage: { uploads: number; exams: number; qna: number; ocr: number };
+  tokens: { today: string; month: string; distribution: { name: string; value: number; color: string }[] };
+  logins: { time: string; ip: string; device: string }[];
+  abnormal: { type: string; detail: string; time: string }[];
+}
+
+const defaultUserData: UserData = {
+  id: '--', name: '--', email: '--', avatar: '-', tier: '--', status: '--',
+  joined: '--', method: '--', stripeId: '--', expiry: '--', planSource: 'unknown',
+  usage: { uploads: 0, exams: 0, qna: 0, ocr: 0 },
+  tokens: { today: '0', month: '0', distribution: [] },
+  logins: [], abnormal: [],
 };
 
 export default function UserDetailsPage() {
   const params = useParams();
   const userId = params.userId;
+  const [userData, setUserData] = useState<UserData>(defaultUserData);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [planStartDate, setPlanStartDate] = useState('');
+  const [planEndDate, setPlanEndDate] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+
+  useEffect(() => {
+    if (!userId) return;
+    superAdminService.getUserDetail(String(userId)).then((raw) => {
+      const profile = (raw.profile || {}) as Record<string, unknown>;
+      const subscription = (raw.subscription || {}) as Record<string, unknown>;
+      const behavior = (raw.behavior || {}) as Record<string, unknown>;
+      const tokenUsage = (raw.token_usage || {}) as Record<string, unknown>;
+      const anomalies = (raw.anomalies || {}) as Record<string, unknown>;
+
+      setUserData({
+        id: String(raw.id || userId),
+        name: String(profile.display_name || profile.name || profile.email || '--'),
+        email: String(profile.email || '--'),
+        avatar: String(profile.display_name || profile.name || profile.email || '-').charAt(0),
+        tier: String(subscription.plan || '--'),
+        status: String(subscription.status || profile.status || 'active'),
+        joined: String(profile.created_at || '--'),
+        method: String(profile.auth_method || '--'),
+        stripeId: String(subscription.stripe_id || '--'),
+        expiry: String(subscription.next_billing_date || '--'),
+        planSource: (subscription.plan_source as 'payment' | 'admin') || 'unknown',
+        usage: {
+          uploads: Number((raw.usage as Record<string, unknown>)?.uploads || 0),
+          exams: Number((raw.usage as Record<string, unknown>)?.exams || 0),
+          qna: Number((raw.usage as Record<string, unknown>)?.qna || 0),
+          ocr: Number((raw.usage as Record<string, unknown>)?.ocr || 0),
+        },
+        tokens: {
+          today: String(tokenUsage.remaining_quota || '0'),
+          month: String(tokenUsage.monthly_tokens || '0'),
+          distribution: [],
+        },
+        logins: Array.isArray(raw.login_history) ? (raw.login_history as { time: string; ip: string; device: string }[]) : [],
+        abnormal: Array.isArray((anomalies.cooling_records)) ? (anomalies.cooling_records as { type: string; detail: string; time: string }[]) : [],
+      });
+    }).catch(() => {});
+  }, [userId]);
 
   return (
     <div className="space-y-8">
@@ -137,13 +170,39 @@ export default function UserDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 mt-8">
-              <button className="py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
+              <button
+                onClick={async () => {
+                  if (!confirm('確定要恢復此用戶帳號？')) return;
+                  try {
+                    await superAdminService.activateUser(String(userId));
+                    setUserData(prev => ({ ...prev, status: 'active' }));
+                  } catch { alert('操作失敗'); }
+                }}
+                className="py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+              >
                 <ShieldCheck className="h-4 w-4" /> 恢復正常
               </button>
-              <button className="py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+              <button
+                onClick={async () => {
+                  const reason = prompt('請輸入停權原因:');
+                  if (!reason) return;
+                  try {
+                    await superAdminService.suspendUser(String(userId), reason);
+                    setUserData(prev => ({ ...prev, status: 'suspended' }));
+                    alert('帳號已停權');
+                  } catch { alert('操作失敗'); }
+                }}
+                className="py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+              >
                 <ShieldAlert className="h-4 w-4" /> 停權帳號
               </button>
             </div>
+            <button
+              onClick={() => { setDeleteConfirmName(''); setShowDeleteModal(true); }}
+              className="w-full mt-3 py-2 bg-white border border-rose-200 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all"
+            >
+              刪除用戶帳號
+            </button>
           </section>
 
           {/* Subscription Details */}
@@ -154,18 +213,43 @@ export default function UserDetailsPage() {
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">當前方案</p>
-                <div className="flex justify-between items-end">
-                  <p className="text-lg font-bold text-slate-900">{userData.tier}</p>
-                  <p className="text-xs text-slate-500">到期日: {userData.expiry}</p>
+                <p className="text-lg font-bold text-slate-900">{userData.tier}</p>
+              </div>
+              <div className="space-y-3 px-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> 有效期限
+                  </span>
+                  <span className="text-slate-900 font-medium">
+                    {userData.expiry && userData.expiry !== '--'
+                      ? `至 ${userData.expiry.split('T')[0]}`
+                      : '未設定'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">權限來源</span>
+                  <span className={cn(
+                    "text-xs font-bold px-2 py-0.5 rounded-lg",
+                    userData.planSource === 'payment' && "bg-blue-50 text-blue-600",
+                    userData.planSource === 'admin' && "bg-amber-50 text-amber-600",
+                    userData.planSource === 'unknown' && "bg-slate-100 text-slate-500"
+                  )}>
+                    {userData.planSource === 'payment' && '信用卡付款'}
+                    {userData.planSource === 'admin' && '管理員調整'}
+                    {userData.planSource === 'unknown' && '未記錄'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Stripe ID</span>
+                  <span className="font-mono text-slate-900 flex items-center gap-1">
+                    {userData.stripeId} <ExternalLink className="h-3 w-3" />
+                  </span>
                 </div>
               </div>
-              <div className="flex justify-between text-sm px-2">
-                <span className="text-slate-500">Stripe ID</span>
-                <span className="font-mono text-slate-900 flex items-center gap-1">
-                  {userData.stripeId} <ExternalLink className="h-3 w-3" />
-                </span>
-              </div>
-              <button className="w-full py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all">
+              <button
+                onClick={() => { setSelectedPlan(userData.tier); setPlanStartDate(new Date().toISOString().split('T')[0]); setPlanEndDate(''); setShowPlanModal(true); }}
+                className="w-full py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all"
+              >
                 調整訂閱等級
               </button>
             </div>
@@ -246,7 +330,7 @@ export default function UserDetailsPage() {
                       <span className="text-emerald-600">{userData.tokens.today}</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '45%' }}></div>
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(Number(userData.tokens.today) || 0, 100)}%` }}></div>
                     </div>
                   </div>
                   <div>
@@ -255,12 +339,17 @@ export default function UserDetailsPage() {
                       <span className="text-indigo-600">{userData.tokens.month}</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: '68%' }}></div>
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(Number(userData.tokens.month) || 0, 100)}%` }}></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <button className="mt-8 w-full py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
+              <button
+                onClick={() => {
+                  alert(`用量日誌摘要：\n今日 Token：${userData.tokens.today}\n本月 Token：${userData.tokens.month}\n上傳文件：${userData.usage.uploads}\n生成考試：${userData.usage.exams}\nAI 問答：${userData.usage.qna}\nVision OCR：${userData.usage.ocr}`);
+                }}
+                className="mt-8 w-full py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+              >
                 查看詳細用量日誌
               </button>
             </section>
@@ -313,6 +402,121 @@ export default function UserDetailsPage() {
           </div>
         </div>
       </div>
+      {/* 調整訂閱等級 Modal */}
+      {showPlanModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPlanModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">調整訂閱等級</h3>
+            <p className="text-sm text-slate-500 mb-4">目前方案：<span className="font-bold text-slate-900">{userData.tier}</span></p>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {['FREE', 'PRO', 'PRO_PLUS', 'ULTRA'].map(plan => (
+                <button
+                  key={plan}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={cn(
+                    "py-3 rounded-xl text-sm font-bold transition-all border",
+                    selectedPlan === plan
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-emerald-300"
+                  )}
+                >
+                  {plan}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1 block">起始日期</label>
+                <input
+                  type="date"
+                  value={planStartDate}
+                  onChange={e => setPlanStartDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-500 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1 block">結束日期</label>
+                <input
+                  type="date"
+                  value={planEndDate}
+                  onChange={e => setPlanEndDate(e.target.value)}
+                  min={planStartDate}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-500 transition-all"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowPlanModal(false)}
+                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+              >
+                取消
+              </button>
+              <button
+                onClick={async () => {
+                  if (!selectedPlan || !planStartDate || !planEndDate) { alert('請選擇方案並設定有效期限'); return; }
+                  if (planEndDate < planStartDate) { alert('結束日期不能早於起始日期'); return; }
+                  try {
+                    const { apiClient } = await import('@/lib/api/client');
+                    await apiClient.post(`/admin/users/${userId}/adjust-subscription`, { plan: selectedPlan, start_date: planStartDate, end_date: planEndDate });
+                    setUserData(prev => ({ ...prev, tier: selectedPlan, expiry: planEndDate, planSource: 'admin' }));
+                    setShowPlanModal(false);
+                    alert('訂閱等級已更新');
+                  } catch { alert('調整失敗，請稍後再試'); }
+                }}
+                className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+              >
+                確認調整
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 刪除用戶確認 Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-rose-600 mb-2">刪除用戶帳號</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              此操作將永久刪除用戶 <span className="font-bold text-slate-900">{userData.name}</span> 的帳號，無法復原。
+            </p>
+            <div className="p-4 bg-rose-50 rounded-xl border border-rose-100 mb-4">
+              <p className="text-xs text-rose-700 mb-2">
+                請輸入用戶名稱 <span className="font-bold">「{userData.name}」</span> 以確認刪除：
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmName}
+                onChange={e => setDeleteConfirmName(e.target.value)}
+                placeholder={userData.name}
+                className="w-full px-4 py-2 bg-white border border-rose-200 rounded-xl text-sm outline-none focus:border-rose-500 transition-all"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+              >
+                取消
+              </button>
+              <button
+                disabled={deleteConfirmName !== userData.name}
+                onClick={async () => {
+                  try {
+                    await superAdminService.deleteUser(String(userId), deleteConfirmName);
+                    setShowDeleteModal(false);
+                    alert('用戶已刪除');
+                    window.location.href = '/super-admin/users';
+                  } catch { alert('刪除失敗，請確認名稱是否正確'); }
+                }}
+                className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl text-sm font-bold hover:bg-rose-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                確認刪除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

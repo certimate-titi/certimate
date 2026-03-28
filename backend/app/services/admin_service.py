@@ -109,7 +109,7 @@ class AdminService:
 
     # ── User Search ──────────────────────────────────────────────────────────
 
-    def search_users(self, actor_id: str, keyword: str | None = None, plan: str | None = None) -> dict:
+    def search_users(self, actor_id: str, keyword: str | None = None, plan: str | None = None, role: str | None = None) -> dict:
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -123,16 +123,25 @@ class AdminService:
                 query = query.filter(User.subscription_plan == plan_enum)
             except ValueError:
                 return {"error": True, "status_code": 400, "message": f"無效的方案：{plan}"}
+        if role == "admin":
+            # 只顯示管理員（admin + super_admin）
+            query = query.filter(User.role.in_([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+        elif role is None:
+            # 預設排除管理員，只顯示一般用戶
+            query = query.filter(User.role.in_([UserRole.USER, UserRole.ORG_ADMIN]))
 
         users = query.all()
         return {
             "users": [
                 {
                     "email": u.email,
+                    "display_name": u.display_name or "",
                     "plan": _get_plan(u),
                     "status": _get_status(u),
                     "role": _get_role(u),
                     "id": str(u.id),
+                    "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
                 }
                 for u in users
             ]
@@ -156,6 +165,7 @@ class AdminService:
                 "display_name": target.display_name,
                 "email": target.email,
                 "role": _get_role(target),
+                "status": _get_status(target),
                 "created_at": target.created_at.isoformat() if target.created_at else None,
             },
             "subscription": {
@@ -168,6 +178,7 @@ class AdminService:
                 "next_billing_date": (
                     target.next_billing_date.isoformat() if target.next_billing_date else None
                 ),
+                "plan_source": target.plan_source or "unknown",
             },
             "behavior": {
                 "last_login_at": target.last_login_at.isoformat() if target.last_login_at else None,
@@ -188,7 +199,8 @@ class AdminService:
     # ── Adjust Subscription ──────────────────────────────────────────────────
 
     def adjust_subscription(
-        self, actor_id: str, target_user_id: str, new_plan: str, otp: str
+        self, actor_id: str, target_user_id: str, new_plan: str,
+        start_date: str | None = None, end_date: str | None = None,
     ) -> dict:
         actor = self._get_user(actor_id)
         if not actor:
@@ -207,6 +219,15 @@ class AdminService:
             return {"error": True, "status_code": 400, "message": f"無效的方案：{new_plan}"}
 
         target.subscription_plan = plan_enum
+        target.plan_source = "admin"
+
+        if end_date:
+            from datetime import date as date_type
+            try:
+                target.next_billing_date = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                pass
+
         self.db.commit()
         self.db.refresh(target)
 
@@ -215,7 +236,11 @@ class AdminService:
             action="adjust_subscription",
             target_type="user",
             target_id=target_user_id,
-            details={"from": old_plan, "to": new_plan, "summary": f"{old_plan} → {new_plan}"},
+            details={
+                "from": old_plan, "to": new_plan,
+                "start_date": start_date, "end_date": end_date,
+                "summary": f"{old_plan} → {new_plan}",
+            },
         )
 
         return {"success": True, "old_plan": old_plan, "new_plan": new_plan}
@@ -250,6 +275,124 @@ class AdminService:
         )
 
         return {"success": True}
+
+    # ── Activate User ─────────────────────────────────────────────────────────
+
+    def activate_user(self, actor_id: str, target_user_id: str | None) -> dict:
+        if not target_user_id:
+            return {"error": True, "status_code": 422, "message": "必要參數未提供"}
+
+        actor = self._get_user(actor_id)
+        if not actor:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+        if _get_role(actor) not in ("admin", "super_admin"):
+            return {"error": True, "status_code": 403, "message": "權限不足，無法存取管理後台"}
+
+        target = self._get_user(target_user_id)
+        if not target:
+            return {"error": True, "status_code": 404, "message": "目標使用者不存在"}
+
+        target.status = UserStatus.ACTIVE
+        self.db.commit()
+
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="activate_user",
+            target_type="user",
+            target_id=target_user_id,
+            details={"summary": "恢復用戶帳號"},
+        )
+
+        return {"success": True}
+
+    # ── Adjust Role ────────────────────────────────────────────────────────────
+
+    def adjust_role(self, actor_id: str, target_user_id: str | None = None, target_email: str | None = None, new_role: str = "user") -> dict:
+        err = self._require_super_admin(actor_id)
+        if err:
+            return err
+
+        target = None
+        if target_email:
+            target = self.db.query(User).filter(User.email == target_email).first()
+        elif target_user_id:
+            target = self._get_user(target_user_id)
+        if not target:
+            return {"error": True, "status_code": 404, "message": "目標使用者不存在，請確認 Email 是否正確"}
+
+        try:
+            role_enum = UserRole(new_role)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": f"無效的角色：{new_role}"}
+
+        old_role = _get_role(target)
+        target.role = role_enum
+        self.db.commit()
+
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="adjust_role",
+            target_type="user",
+            target_id=target_user_id,
+            details={"from": old_role, "to": new_role, "summary": f"{old_role} → {new_role}"},
+        )
+
+        return {"success": True, "old_role": old_role, "new_role": new_role}
+
+    # ── Delete User ───────────────────────────────────────────────────────────
+
+    def delete_user(self, actor_id: str, target_user_id: str, confirm_name: str) -> dict:
+        err = self._require_super_admin(actor_id)
+        if err:
+            return err
+
+        target = self._get_user(target_user_id)
+        if not target:
+            return {"error": True, "status_code": 404, "message": "目標使用者不存在"}
+
+        # Verify confirmation name matches
+        actual_name = target.display_name or target.email
+        if confirm_name != actual_name:
+            return {"error": True, "status_code": 400, "message": f"確認名稱不符，請輸入「{actual_name}」"}
+
+        # Soft delete: set status to DELETED
+        target.status = UserStatus.DELETED
+        self.db.commit()
+
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="delete_user",
+            target_type="user",
+            target_id=target_user_id,
+            details={"summary": f"刪除用戶 {target.email}"},
+        )
+
+        return {"success": True}
+
+    # ── Notify User ──────────────────────────────────────────────────────────
+
+    def notify_user(self, actor_id: str, target_user_id: str, message: str) -> dict:
+        err = self._require_admin(actor_id)
+        if err:
+            return err
+
+        target = self._get_user(target_user_id)
+        if not target:
+            return {"error": True, "status_code": 404, "message": "目標使用者不存在"}
+
+        if not message.strip():
+            return {"error": True, "status_code": 400, "message": "通知訊息不可為空"}
+
+        # TODO: 實際發送通知（Email / 站內通知），目前先記錄 audit log
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="notify_user",
+            target_type="user",
+            target_id=target_user_id,
+            details={"message": message, "email": target.email},
+        )
+
+        return {"success": True, "message": f"通知已發送給 {target.email}"}
 
     # ── Export CSV ───────────────────────────────────────────────────────────
 

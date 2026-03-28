@@ -22,6 +22,7 @@ from app.api.ecpay import router as ecpay_router
 from app.api.feedback import router as feedback_router
 from app.api.community import router as community_router
 from app.api.anomaly import router as anomaly_router
+from app.api.announcements import router as announcements_router
 
 router = APIRouter()
 
@@ -45,3 +46,4 @@ router.include_router(ecpay_router, tags=["ecpay"])
 router.include_router(feedback_router, tags=["feedback"])
 router.include_router(community_router, tags=["community"])
 router.include_router(anomaly_router, tags=["anomaly"])
+router.include_router(announcements_router, tags=["announcements"])

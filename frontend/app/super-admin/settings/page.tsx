@@ -22,6 +22,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { logAdminAction, AdminAction } from '@/firebase';
+import { superAdminService } from '@/lib/api/services';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,29 +43,57 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Save AI routing
+      if (activeTab === 'ai') {
+        await superAdminService.updateModelRouting('FREE', 'basic', aiRouting.freeBasic);
+        await superAdminService.updateModelRouting('FREE', 'fallback', aiRouting.freeFallback);
+        await superAdminService.updateModelRouting('PRO', 'advanced', aiRouting.proBasic);
+        await superAdminService.updateModelRouting('PRO', 'fallback', aiRouting.proFallback);
+      }
+      // Save plan quotas
+      if (activeTab === 'plans') {
+        const planUpdates: Record<string, Record<string, number>> = { FREE: {}, PRO: {}, PRO_PLUS: {}, ULTRA: {} };
+        for (const row of planQuotas) {
+          planUpdates['FREE'][row.key] = Number(row.free) || 0;
+          planUpdates['PRO'][row.key] = Number(row.pro) || 0;
+          planUpdates['PRO_PLUS'][row.key] = Number(row.pro_plus) || 0;
+          planUpdates['ULTRA'][row.key] = Number(row.ultra) || 0;
+        }
+        for (const [plan, updates] of Object.entries(planUpdates)) {
+          await superAdminService.updatePlanQuota(plan, updates);
+        }
+      }
+      // Save feature flags
+      if (activeTab === 'flags') {
+        for (const flag of featureFlags) {
+          await superAdminService.updateFeatureFlag(flag.id, flag.enabled);
+        }
+      }
+      // Save announcements
+      if (activeTab === 'announcements' && announcementForm.title) {
+        await superAdminService.createAnnouncement({
+          title: announcementForm.title,
+          content: announcementForm.content,
+          display_mode: announcementForm.displayMode,
+          schedule_date: announcementForm.scheduleDate || undefined,
+        });
+        setAnnouncementForm({ title: '', content: '', displayMode: 'banner', scheduleDate: '' });
+      }
       await logAdminAction(
         AdminAction.UPDATE_SETTINGS,
         activeTab,
         `更新了 ${tabs.find(t => t.id === activeTab)?.name} 的系統設定`
       );
-      
-      alert('設定已儲存並記錄至審計日誌');
+      alert('設定已儲存');
     } catch (error) {
       console.error(error);
+      alert('儲存失敗，請稍後再試');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const [featureFlags, setFeatureFlags] = useState([
-    { id: 'enable_notion_sync', name: 'Notion 同步功能', description: '是否開放 Notion 同步功能', enabled: true },
-    { id: 'enable_socratic_tutor_v2', name: '新版 AI 教練', description: '蘇格拉底式引導 V2', enabled: false },
-    { id: 'enable_b2b_dashboard', name: 'B2B 管理後台', description: '機構管理員專屬介面', enabled: true },
-    { id: 'enable_weekly_report', name: '每週學習報告', description: '每週自動寄送學習進度報告至用戶信箱', enabled: false },
-  ]);
+  const [featureFlags, setFeatureFlags] = useState<{ id: string; name: string; description: string; enabled: boolean }[]>([]);
 
   const toggleFlag = (flagId: string) => {
     setFeatureFlags(prev => prev.map(f => f.id === flagId ? { ...f, enabled: !f.enabled } : f));
@@ -77,40 +106,99 @@ export default function SettingsPage() {
     scheduleDate: '',
   });
 
-  const [admins, setAdmins] = useState([
-    { id: 'adm_1', name: '系統管理員', email: 'admin@certimate.com', role: 'Super Admin', joined: '2025-12-01' },
-    { id: 'adm_2', name: '營運專員', email: 'ops@certimate.com', role: 'Admin', joined: '2026-01-10' },
-  ]);
+  const [admins, setAdmins] = useState<{ id: string; name: string; email: string; role: string; joined: string }[]>([]);
+  const [planQuotas, setPlanQuotas] = useState<{ label: string; key: string; free: number | string; pro: number | string; pro_plus: number | string; ultra: number | string }[]>([]);
+  const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string; display_mode: string; created_at: string }[]>([]);
+  const [aiRouting, setAiRouting] = useState({
+    freeBasic: 'gemini-1.5-flash', freeFallback: 'llama-3-8b',
+    proBasic: 'claude-3.5-sonnet', proFallback: 'gpt-4o',
+    timeout: 3000, retries: 2,
+  });
+
+  React.useEffect(() => {
+    superAdminService.getModelRouting().then(res => {
+      const routings = (res as Record<string, unknown>).routings;
+      if (Array.isArray(routings)) {
+        const map: Record<string, Record<string, string>> = {};
+        for (const r of routings as { plan: string; task_type: string; primary_model: string; fallback_model: string }[]) {
+          if (!map[r.plan]) map[r.plan] = {};
+          map[r.plan][r.task_type] = r.primary_model;
+          map[r.plan][r.task_type + '_fallback'] = r.fallback_model || '';
+        }
+        setAiRouting(prev => ({
+          freeBasic: map['FREE']?.['basic'] || prev.freeBasic,
+          freeFallback: map['FREE']?.['basic_fallback'] || prev.freeFallback,
+          proBasic: map['PRO']?.['advanced'] || prev.proBasic,
+          proFallback: map['PRO']?.['advanced_fallback'] || prev.proFallback,
+          timeout: prev.timeout,
+          retries: prev.retries,
+        }));
+      }
+    }).catch(() => {});
+    superAdminService.getFeatureFlags().then(res => {
+      if (Array.isArray(res?.flags)) setFeatureFlags(res.flags);
+    }).catch(() => {});
+    superAdminService.getAdmins().then(res => {
+      const mapped = ((res as unknown as { users?: unknown[] }).users || (res as unknown as { admins?: unknown[] }).admins || []).map((u: unknown) => {
+        const user = u as Record<string, unknown>;
+        return {
+          id: String(user.id || ''),
+          name: String(user.display_name || user.name || user.email || '--'),
+          email: String(user.email || ''),
+          role: String(user.role || 'Admin'),
+          joined: String(user.created_at || user.joined || '--'),
+        };
+      });
+      setAdmins(mapped);
+    }).catch(() => {});
+    superAdminService.getPlanQuotas().then(res => {
+      if (res.quotas?.length) setPlanQuotas(res.quotas);
+    }).catch(() => {});
+    superAdminService.getAnnouncements().then(res => {
+      if (Array.isArray(res?.announcements)) setAnnouncements(res.announcements);
+    }).catch(() => {});
+  }, []);
 
   const handleAddAdmin = async () => {
     const email = prompt('請輸入新管理員的 Email:');
     if (!email) return;
 
-    const newAdmin = {
-      id: `adm_${Date.now()}`,
-      name: '新管理員',
-      email,
-      role: 'Admin',
-      joined: new Date().toISOString().split('T')[0]
-    };
+    try {
+      await superAdminService.adjustRole(email, 'admin');
 
-    setAdmins([...admins, newAdmin]);
-    await logAdminAction(
-      AdminAction.CREATE_ADMIN,
-      newAdmin.id,
-      `新增了管理員帳號: ${email}`
-    );
+      // 重新從 API 取得最新管理員列表
+      const res = await superAdminService.getAdmins();
+      const mapped = ((res as unknown as { users?: unknown[] }).users || (res as unknown as { admins?: unknown[] }).admins || []).map((u: unknown) => {
+        const user = u as Record<string, unknown>;
+        return {
+          id: String(user.id || ''),
+          name: String(user.display_name || user.name || user.email || '--'),
+          email: String(user.email || ''),
+          role: String(user.role || 'Admin'),
+          joined: String(user.created_at || user.joined || '--'),
+        };
+      });
+      setAdmins(mapped);
+      await logAdminAction(
+        AdminAction.CREATE_ADMIN,
+        email,
+        `新增了管理員帳號: ${email}`
+      );
+    } catch { alert('新增管理員失敗，請確認 Email 是否正確'); }
   };
 
   const handleDeleteAdmin = async (id: string, email: string) => {
     if (!confirm(`確定要刪除管理員 ${email} 嗎？`)) return;
 
-    setAdmins(admins.filter(a => a.id !== id));
-    await logAdminAction(
-      AdminAction.DELETE_ADMIN,
-      id,
-      `刪除了管理員帳號: ${email}`
-    );
+    try {
+      await superAdminService.adjustRole(email, 'user');
+      setAdmins(admins.filter(a => a.id !== id));
+      await logAdminAction(
+        AdminAction.DELETE_ADMIN,
+        id,
+        `刪除了管理員帳號: ${email}`
+      );
+    } catch { alert('刪除管理員失敗'); }
   };
 
   return (
@@ -121,7 +209,20 @@ export default function SettingsPage() {
           <p className="text-slate-500">免改 code 即時調整系統行為參數與權限</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2">
+          <button
+            onClick={async () => {
+              if (!confirm('確定要重置所有設定為預設值嗎？此操作無法復原。')) return;
+              try {
+                // Reload from API
+                superAdminService.getFeatureFlags().then(res => {
+      if (Array.isArray(res?.flags)) setFeatureFlags(res.flags);
+    }).catch(() => {});
+                setAnnouncementForm({ title: '', content: '', displayMode: 'banner', scheduleDate: '' });
+                alert('已重置為預設值，請點擊「儲存所有設定」以套用');
+              } catch { alert('重置失敗'); }
+            }}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
             <RefreshCw className="h-4 w-4" /> 重置為預設
           </button>
           <button 
@@ -174,14 +275,14 @@ export default function SettingsPage() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">基本任務模型</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
+                        <select value={aiRouting.freeBasic} onChange={e => setAiRouting(p => ({ ...p, freeBasic: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
                           <option>gemini-1.5-flash</option>
                           <option>llama-3-8b</option>
                         </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">備援模型 (Fallback)</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
+                        <select value={aiRouting.freeFallback} onChange={e => setAiRouting(p => ({ ...p, freeFallback: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
                           <option>llama-3-8b</option>
                           <option>gemini-1.5-flash</option>
                         </select>
@@ -194,7 +295,7 @@ export default function SettingsPage() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">進階任務模型</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
+                        <select value={aiRouting.proBasic} onChange={e => setAiRouting(p => ({ ...p, proBasic: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
                           <option>claude-3.5-sonnet</option>
                           <option>gpt-4o</option>
                           <option>gemini-1.5-pro</option>
@@ -202,7 +303,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">備援模型 (Fallback)</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
+                        <select value={aiRouting.proFallback} onChange={e => setAiRouting(p => ({ ...p, proFallback: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
                           <option>gpt-4o</option>
                           <option>claude-3.5-sonnet</option>
                         </select>
@@ -215,11 +316,11 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex-1 space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Timeout 閾值 (ms)</label>
-                        <input type="number" defaultValue={3000} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
+                        <input type="number" value={aiRouting.timeout} onChange={e => setAiRouting(p => ({ ...p, timeout: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
                       </div>
                       <div className="flex-1 space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">重試次數</label>
-                        <input type="number" defaultValue={2} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
+                        <input type="number" value={aiRouting.retries} onChange={e => setAiRouting(p => ({ ...p, retries: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
                       </div>
                     </div>
                   </section>
@@ -230,34 +331,34 @@ export default function SettingsPage() {
             {activeTab === 'plans' && (
               <div className="p-8 space-y-8">
                 <h3 className="text-lg font-bold text-slate-900 mb-6">方案限額調整</h3>
+                {planQuotas.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-sm">尚無方案限額設定，請先於資料庫建立 plan_quotas 資料</div>
+                ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100">
                         <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">參數</th>
-                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Free</th>
-                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Pro</th>
-                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Ultra</th>
+                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">FREE</th>
+                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">PRO</th>
+                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">PRO_PLUS</th>
+                        <th className="py-4 text-xs font-bold uppercase tracking-wider text-slate-500">ULTRA</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {[
-                        { label: '每月上傳文件數', free: 5, pro: 50, ultra: '無限' },
-                        { label: '每月考試生成次數', free: 3, pro: 30, ultra: '無限' },
-                        { label: 'AI 問答次數/日', free: 10, pro: 100, ultra: '無限' },
-                        { label: 'Vision OCR 頁數/月', free: 5, pro: 100, ultra: 500 },
-                        { label: '單檔大小上限 (MB)', free: 10, pro: 50, ultra: 200 },
-                      ].map((row) => (
-                        <tr key={row.label}>
+                      {planQuotas.map((row) => (
+                        <tr key={row.key}>
                           <td className="py-4 text-sm font-medium text-slate-700">{row.label}</td>
-                          <td className="py-4"><input type="text" defaultValue={row.free} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
-                          <td className="py-4"><input type="text" defaultValue={row.pro} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
-                          <td className="py-4"><input type="text" defaultValue={row.ultra} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
+                          <td className="py-4"><input type="number" value={row.free} onChange={e => setPlanQuotas(prev => prev.map(r => r.key === row.key ? { ...r, free: e.target.value } : r))} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
+                          <td className="py-4"><input type="number" value={row.pro} onChange={e => setPlanQuotas(prev => prev.map(r => r.key === row.key ? { ...r, pro: e.target.value } : r))} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
+                          <td className="py-4"><input type="number" value={row.pro_plus} onChange={e => setPlanQuotas(prev => prev.map(r => r.key === row.key ? { ...r, pro_plus: e.target.value } : r))} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
+                          <td className="py-4"><input type="number" value={row.ultra} onChange={e => setPlanQuotas(prev => prev.map(r => r.key === row.key ? { ...r, ultra: e.target.value } : r))} className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-emerald-500" /></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                )}
               </div>
             )}
 
@@ -311,7 +412,24 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex justify-end pt-2">
-                      <button className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                      <button
+                        onClick={async () => {
+                          if (!announcementForm.title || !announcementForm.content) { alert('請填寫標題和內容'); return; }
+                          try {
+                            await superAdminService.createAnnouncement({
+                              title: announcementForm.title,
+                              content: announcementForm.content,
+                              display_mode: announcementForm.displayMode,
+                              schedule_date: announcementForm.scheduleDate || undefined,
+                            });
+                            setAnnouncementForm({ title: '', content: '', displayMode: 'banner', scheduleDate: '' });
+                            const res = await superAdminService.getAnnouncements();
+                            if (Array.isArray(res?.announcements)) setAnnouncements(res.announcements);
+                            alert('公告已建立');
+                          } catch { alert('建立公告失敗'); }
+                        }}
+                        className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                      >
                         <Plus className="h-4 w-4" /> 建立公告
                       </button>
                     </div>
@@ -321,36 +439,57 @@ export default function SettingsPage() {
                 {/* Existing Announcements */}
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 mb-4">已建立公告</h3>
-                  <div className="space-y-4">
-                    {[
-                      { title: '系統維護預告', type: '維護', status: '排程中', date: '2026-03-20' },
-                      { title: '新功能：AI 教練 V2 上線', type: '功能', status: '發布中', date: '2026-03-15' },
-                      { title: '緊急修復：OCR 辨識問題', type: '警告', status: '已結束', date: '2026-03-12' },
-                    ].map((ann) => (
-                      <div key={ann.title} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all group">
-                        <div className="flex items-center gap-4">
-                          <div className={cn(
-                            "h-10 w-10 rounded-xl flex items-center justify-center",
-                            ann.type === '維護' && "bg-blue-50 text-blue-600",
-                            ann.type === '功能' && "bg-emerald-50 text-emerald-600",
-                            ann.type === '警告' && "bg-rose-50 text-rose-600"
-                          )}>
-                            <Bell className="h-5 w-5" />
+                  {announcements.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">
+                      尚無已建立的公告
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {announcements.map((a) => (
+                        <div key={a.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-bold text-slate-900">{a.title}</p>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 uppercase">{a.display_mode}</span>
+                              {(a as unknown as Record<string, unknown>).status === 'inactive' && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500">已停用</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await superAdminService.deactivateAnnouncement(a.id);
+                                    const res = await superAdminService.getAnnouncements();
+                                    if (Array.isArray(res?.announcements)) setAnnouncements(res.announcements);
+                                  } catch { alert('停用失敗'); }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all"
+                                title="停用公告"
+                              >
+                                <Bell className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`確定要刪除公告「${a.title}」嗎？`)) return;
+                                  try {
+                                    await superAdminService.deleteAnnouncement(a.id);
+                                    setAnnouncements(prev => prev.filter(x => x.id !== a.id));
+                                  } catch { alert('刪除失敗'); }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                title="刪除公告"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">{ann.title}</p>
-                            <p className="text-xs text-slate-500">{ann.type} • {ann.date}</p>
-                          </div>
+                          <p className="text-xs text-slate-600 mb-1">{a.content}</p>
+                          <p className="text-xs text-slate-400">{a.created_at}</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-medium text-slate-500">{ann.status}</span>
-                          <button className="p-2 text-slate-400 hover:text-rose-500 transition-all">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MessageSquarePlus, Upload, CheckCircle2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
@@ -17,7 +17,7 @@ const FEEDBACK_TYPES: { value: FeedbackType; label: string; emoji: string }[] = 
 
 export default function FeedbackPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [type, setType] = useState<FeedbackType | null>(null);
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
@@ -26,9 +26,19 @@ export default function FeedbackPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!user) {
-    router.push('/login?redirect=/feedback');
-    return null;
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.replace('/login?redirect=/feedback');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,10 +76,20 @@ export default function FeedbackPage() {
     if (content.length > 2000) { setError('內容不得超過 2000 個字元'); return; }
 
     setIsSubmitting(true);
-    // Mock submission
-    await new Promise(r => setTimeout(r, 800));
-    setIsSubmitting(false);
-    setSubmitted(true);
+    try {
+      const formData = new FormData();
+      formData.append('type', type);
+      formData.append('subject', subject.trim());
+      formData.append('content', content.trim());
+      attachments.forEach(file => formData.append('attachments', file));
+      const { apiClient } = await import('@/lib/api/client');
+      await apiClient.upload('/feedback', formData);
+      setSubmitted(true);
+    } catch (err) {
+      setError('提交失敗，請稍後再試。');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -212,29 +232,11 @@ export default function FeedbackPage() {
           </form>
         </div>
 
-        {/* My feedback history */}
+        {/* My feedback history — loaded from API */}
         <div className="mt-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
           <h2 className="text-lg font-bold text-slate-900 mb-4">我的反饋紀錄</h2>
-          <div className="space-y-3">
-            {[
-              { id: 'FB-001', type: 'BUG', subject: '模擬機考計時顯示異常', status: 'PENDING', date: '2026-03-20' },
-              { id: 'FB-003', type: 'CONTENT_ERROR', subject: '題目 Q-123 答案有誤', status: 'RESOLVED', date: '2026-03-15' },
-            ].map(fb => (
-              <div key={fb.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-100 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-slate-400">{fb.id}</span>
-                  <span className="text-sm text-slate-700">{fb.subject}</span>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  fb.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                  fb.status === 'REVIEWING' ? 'bg-blue-100 text-blue-700' :
-                  fb.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' :
-                  'bg-slate-100 text-slate-600'
-                }`}>
-                  {fb.status === 'PENDING' ? '待處理' : fb.status === 'REVIEWING' ? '處理中' : fb.status === 'RESOLVED' ? '已解決' : '已關閉'}
-                </span>
-              </div>
-            ))}
+          <div className="text-center py-8 text-slate-400 text-sm">
+            尚無反饋紀錄
           </div>
         </div>
       </div>
