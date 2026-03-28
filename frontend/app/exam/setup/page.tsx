@@ -70,23 +70,23 @@ export default function ExamSetupPage() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
       if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
-    });
+    }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
   // Load & filter docs by active subject
   useEffect(() => {
     if (!activeSubjectId) return;
-    
+
     setLoadingDocs(true);
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
     const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
 
     documentService.list().then(res => {
-      setDocuments(res.documents.filter(d => 
+      setDocuments(res.documents.filter(d =>
         d.status === 'COMPLETED' && d.subjectId === targetSubjectId
       ));
       setLoadingDocs(false);
-    });
+    }).catch(() => setLoadingDocs(false));
   }, [activeSubjectId, subjects]);
 
   const tierLimit = TIER_QUESTION_LIMITS[subscriptionTier];

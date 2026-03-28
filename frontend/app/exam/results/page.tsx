@@ -33,7 +33,7 @@ function ExamResultsPage() {
       if (res.exam.score !== null && res.exam.score >= 80) {
         setTimeout(() => setShowConfetti(true), 300);
       }
-    });
+    }).catch(() => setLoading(false));
   }, [examId]);
 
   if (loading || !data) {
@@ -67,17 +67,16 @@ function ExamResultsPage() {
     ? '差一點點，再練習一下！'
     : '別灰心，學習就是這樣一步步來的！';
 
-  // Mock previous score for comparison (in real app, fetched from API)
-  const previousScore = 62;
-  const scoreDiff = score - previousScore;
+  // Previous score comparison (from API data when available)
+  const extData = data as GetExamResultsResponse & { previousScore?: number; consecutiveDeclines?: number; totalTimeMinutes?: number };
+  const previousScore = extData.previousScore ?? null;
+  const scoreDiff = previousScore !== null ? score - previousScore : 0;
 
-  // Mock consecutive decline detection (in real app, fetched from API)
-  const recentScores = [75, 68, score]; // last 3 scores
-  const consecutiveDeclines = recentScores.slice(1).filter((s, i) => s < recentScores[i]).length;
-  const showAiCoachIntervention = consecutiveDeclines >= 2;
+  // Consecutive decline detection (from API data when available)
+  const showAiCoachIntervention = extData.consecutiveDeclines ? extData.consecutiveDeclines >= 2 : false;
 
-  // Mock completion stats
-  const totalTimeMinutes = 38;
+  // Completion stats (from API data when available)
+  const totalTimeMinutes = extData.totalTimeMinutes ?? Math.round(questions.length * 0.8);
   const avgTimePerQuestion = Math.round((totalTimeMinutes * 60) / questions.length);
   const markedQuestions = userAnswers.filter(a => a.isMarkedForReview);
   const markedCorrectRate = markedQuestions.length > 0
@@ -109,7 +108,7 @@ function ExamResultsPage() {
               <span className="text-xl font-medium text-slate-500 mb-1">/ 100</span>
             </div>
             {/* Progress comparison */}
-            {scoreDiff !== 0 && (
+            {previousScore !== null && scoreDiff !== 0 && (
               <div className={`flex items-center justify-center gap-2 mb-4 px-4 py-2 rounded-lg ${
                 scoreDiff > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
               }`}>

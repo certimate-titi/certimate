@@ -70,7 +70,7 @@ function MockExamWorkspacePage() {
       }
 
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [examId]);
 
   // Auto-save to localStorage (debounced)

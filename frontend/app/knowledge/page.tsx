@@ -53,7 +53,7 @@ export default function KnowledgeBasePage() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
       if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
-    });
+    }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
   // Load & filter knowledge map by active subject
@@ -84,7 +84,7 @@ export default function KnowledgeBasePage() {
       // Auto-expand first-level nodes
       setExpandedNodes(new Set(filteredNodes.map(n => n.id)));
       setLoadingDocs(false);
-    });
+    }).catch(() => setLoadingDocs(false));
   }, [activeSubjectId]);
 
   const handleNodeClick = async (nodeId: string) => {
@@ -117,12 +117,13 @@ export default function KnowledgeBasePage() {
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
     setChatLoading(true);
     if (!isProPlus) setFreeQueriesLeft(q => q - 1);
-    // Simulate AI response
-    await new Promise(r => setTimeout(r, 1200));
-    setChatMessages(prev => [...prev, {
-      role: 'ai',
-      content: `關於「${selectedNodeDetail?.node.label}」：\n\n針對你的問題「${text}」，讓我從原文來解釋。根據教材中的描述，這個概念的核心在於...\n\n你覺得這樣解釋清楚嗎？如果還有不懂的地方，可以繼續追問。`,
-    }]);
+    try {
+      const { apiClient } = await import('@/lib/api/client');
+      const res = await apiClient.post<{ message: string }>(`/knowledge-map/nodes/${selectedNodeDetail?.node.id}/chat`, { message: text });
+      setChatMessages(prev => [...prev, { role: 'ai', content: res.message }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'ai', content: '抱歉，暫時無法回覆。請稍後再試。' }]);
+    }
     setChatLoading(false);
   };
 

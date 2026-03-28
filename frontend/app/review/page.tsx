@@ -55,7 +55,7 @@ function ReviewBookPage() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
       if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
-    });
+    }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ function ReviewBookPage() {
     reviewService.getWrongQuestions(examId || undefined, targetSubjectId).then(res => {
       setData(res);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [examId, activeSubjectId, subjects]);
 
   // Load chat history for current question
@@ -76,7 +76,7 @@ function ReviewBookPage() {
     setShowCitation(false);
     if (!data || data.wrongQuestions.length === 0) return;
     const questionId = data.wrongQuestions[currentIndex].question.id;
-    reviewService.getChatHistory(questionId).then(setMessages);
+    reviewService.getChatHistory(questionId).then(setMessages).catch(() => {});
   }, [data, currentIndex]);
 
   const handleSendMessage = useCallback(async () => {
