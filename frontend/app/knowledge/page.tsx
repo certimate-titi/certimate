@@ -243,86 +243,98 @@ export default function KnowledgeBasePage() {
         </div>
       </header>
 
-      {/* Main Content Area - Restructured: Resource | Citation+AI Tutor | Mind Map */}
+      {/* Main Content: Left Resources (collapsible) | Right: Top MindMap + Bottom Detail */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* Left Panel: Resource List */}
-        <div className="w-64 border-r border-slate-200 bg-white flex flex-col shrink-0">
-          <div className="p-3 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">已解析資源</h2>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1 rounded transition-colors ${viewMode === 'grid' ? 'bg-slate-100 text-slate-700' : 'hover:bg-slate-100 text-slate-400'}`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1 rounded transition-colors ${viewMode === 'list' ? 'bg-slate-100 text-slate-700' : 'hover:bg-slate-100 text-slate-400'}`}
-              >
-                <List className="h-3.5 w-3.5" />
+        {/* Left Panel: Resource List (collapsible) */}
+        {!mindMapCollapsed && (
+          <div className="w-56 border-r border-slate-200 bg-white flex flex-col shrink-0">
+            <div className="p-3 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-700">已解析資源</h2>
+              <button onClick={() => setMindMapCollapsed(true)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
-          </div>
 
-          <div className={`flex-1 overflow-y-auto p-2 ${viewMode === 'grid' ? 'grid grid-cols-2 gap-2 content-start' : 'space-y-1'}`}>
-            {loadingDocs ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className={`bg-slate-100 rounded-lg animate-pulse ${viewMode === 'grid' ? 'h-24' : 'h-14'}`} />
-              ))
-            ) : (
-              documents.map(doc => {
-                const isActive = doc.id === selectedDocId;
-                const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
-                const isFailed = doc.status === 'FAILED';
-                const isPending = doc.status === 'PENDING' || doc.status === 'PROCESSING';
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => !isFailed && setSelectedDocId(doc.id)}
-                    className={`group p-2.5 rounded-lg border cursor-pointer transition-colors relative ${
-                      isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
-                    } ${isFailed ? 'opacity-60' : ''}`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="mt-0.5 bg-white p-1 rounded shadow-sm border border-slate-100">
-                        <Icon className={`h-4 w-4 ${color}`} />
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {loadingDocs ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="bg-slate-100 rounded-lg animate-pulse h-12" />
+                ))
+              ) : (
+                documents.map(doc => {
+                  const isActive = doc.id === selectedDocId;
+                  const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
+                  const isFailed = doc.status === 'FAILED';
+                  const isPending = doc.status === 'PENDING' || doc.status === 'PROCESSING';
+                  return (
+                    <div
+                      key={doc.id}
+                      onClick={() => !isFailed && setSelectedDocId(doc.id)}
+                      className={`group p-2 rounded-lg border cursor-pointer transition-colors relative ${
+                        isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      } ${isFailed ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className={`h-4 w-4 shrink-0 ${color}`} />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xs font-medium truncate">{doc.title}</h3>
+                          <p className="text-[10px] text-slate-400">
+                            {isPending ? '解析中...' : isFailed ? '失敗' : doc.sourceType}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
+                          className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`text-xs font-medium truncate ${isActive ? 'text-slate-900' : 'text-slate-700'}`}>{doc.title}</h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {isPending ? '解析中...' : isFailed ? '解析失敗' : doc.sourceType === 'YOUTUBE_URL' ? 'YouTube' : doc.sourceType}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }}
-                        className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Ultra Upsell / Sync */}
-          <div className="p-3 border-t border-slate-200 bg-slate-50">
-            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/10 rounded-bl-full"></div>
-              <h4 className="text-xs font-bold text-indigo-900 mb-1">自動同步排程</h4>
-              <p className="text-[10px] text-indigo-700/80 mb-2">連接 Notion 或 Google Drive</p>
-              <Link href="/account" className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                解鎖 Ultra 版 <ArrowRight className="h-3 w-3" />
-              </Link>
+                  );
+                })
+              )}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Center Panel: Citation & AI Tutor (Core Soul — 70-75%) */}
-        <div className={`flex-1 bg-white flex flex-col overflow-hidden border-r border-slate-200 ${mindMapCollapsed ? '' : 'min-w-0'}`}>
+        {/* Collapsed: show toggle button */}
+        {mindMapCollapsed && (
+          <button
+            onClick={() => setMindMapCollapsed(false)}
+            className="w-8 bg-slate-50 border-r border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0"
+            title="展開資源列表"
+          >
+            <FileText className="h-4 w-4 text-slate-400" />
+          </button>
+        )}
+
+        {/* Right: Top MindMap + Bottom Detail */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Top: Mind Map (horizontal, scrollable) */}
+          <div className="border-b border-slate-200 bg-white shrink-0">
+            <div className="px-4 py-2 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Network className="h-4 w-4 text-emerald-500" /> 知識心智圖
+              </h3>
+              <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> 精熟</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 部分</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> 需加強</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300" /> 未測驗</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto overflow-y-auto max-h-64 p-3">
+              <MindMapTree
+                nodes={mindMapNodes}
+                selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as Record<string, unknown>).node_id as string || null : null}
+                onNodeClick={handleNodeClick}
+              />
+            </div>
+          </div>
+
+          {/* Bottom: Node Detail + AI Coach */}
+          <div className="flex-1 bg-white flex flex-col overflow-hidden">
           {loadingDetail ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="space-y-4 animate-pulse w-full max-w-2xl px-8">
@@ -530,46 +542,11 @@ export default function KnowledgeBasePage() {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-              點擊右側心智圖節點以查看溯源原文與 AI 教練
+              點擊上方心智圖節點以查看溯源原文與 AI 教練
             </div>
           )}
-        </div>
-
-        {/* Right Panel: Mind Map Navigator (25-30%) */}
-        {!mindMapCollapsed && (
-          <div className="w-80 bg-white flex flex-col shrink-0 border-l border-slate-100">
-            <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Network className="h-4 w-4 text-emerald-500" /> 知識心智圖
-              </h3>
-              <button
-                onClick={() => setMindMapCollapsed(true)}
-                className="text-xs text-slate-400 hover:text-slate-600"
-              >
-                收合
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              <MindMapTree
-                nodes={mindMapNodes}
-                selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as Record<string, unknown>).node_id as string || null : null}
-                onNodeClick={handleNodeClick}
-              />
-            </div>
           </div>
-        )}
-
-        {/* Mind Map Collapsed Toggle */}
-        {mindMapCollapsed && (
-          <button
-            onClick={() => setMindMapCollapsed(false)}
-            className="w-10 bg-slate-50 border-l border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0"
-            title="展開心智圖導航"
-          >
-            <Network className="h-4 w-4 text-slate-400" />
-          </button>
-        )}
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -602,7 +579,7 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
       )}
-      </div>
+      </div>{/* closes flex-1 flex flex-col outer container */}
     </>
   );
 }
