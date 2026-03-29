@@ -79,6 +79,42 @@ def get_resource(
     }
 
 
+@router.delete("/resources/{resource_id}")
+def delete_resource(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """刪除資源及其關聯的 chunks 和 knowledge nodes。"""
+    from app.models.resource import Resource
+    from app.models.knowledge_node import KnowledgeNode
+    from app.models.resource_chunk import ResourceChunk
+
+    resource = db.query(Resource).filter(
+        Resource.id == resource_id, Resource.user_id == user_id
+    ).first()
+    if resource is None:
+        raise HTTPException(status_code=404, detail="資源不存在")
+
+    rid = resource.id
+    # Delete chunks
+    db.query(ResourceChunk).filter_by(resource_id=rid).delete()
+    # Delete knowledge nodes
+    db.query(KnowledgeNode).filter_by(resource_id=rid).delete()
+    # Delete resource
+    db.delete(resource)
+    db.commit()
+
+    # Delete file from disk
+    if resource.gcs_path:
+        try:
+            Path(resource.gcs_path).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    return {"message": "資源已刪除"}
+
+
 def _process_in_background(resource_id: str, db_url: str):
     """在背景 thread 中執行文件解析（獨立 DB session）。"""
     import threading

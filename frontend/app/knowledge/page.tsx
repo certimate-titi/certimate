@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, MoreVertical, LayoutGrid, List, Network, ArrowRight, Send, Lock, Trash2, AlertTriangle, ChevronRight, ChevronDown, MessageCircle, X } from 'lucide-react';
-import { knowledgeService, subjectService } from '@/lib/api/services';
+import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
@@ -162,7 +162,11 @@ export default function KnowledgeBasePage() {
   };
 
   const handleDeleteDocument = async (docId: string) => {
+    try {
+      await documentService.delete(docId);
+    } catch { /* silent */ }
     setDocuments(prev => prev.filter(d => d.id !== docId));
+    setNodes(prev => prev.filter(n => n.resourceId !== docId));
     setDeleteConfirmId(null);
     if (selectedDocId === docId) setSelectedDocId(null);
   };

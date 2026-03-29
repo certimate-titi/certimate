@@ -113,6 +113,10 @@ export const documentService = {
       return null;
     }
   },
+
+  async delete(documentId: string): Promise<void> {
+    await apiClient.delete(`/resources/${documentId}`);
+  },
 };
 
 // ===========================
