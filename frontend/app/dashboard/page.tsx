@@ -469,7 +469,7 @@ export default function DashboardPage() {
                 <Sparkles className="h-5 w-5 text-amber-500" /> 每日任務
               </h2>
               <div className="space-y-2">
-                {data.dailyQuests.map(quest => (
+                {(data.dailyQuests || []).map(quest => (
                   <DailyQuestCard key={quest.id} quest={quest} />
                 ))}
               </div>
@@ -481,7 +481,7 @@ export default function DashboardPage() {
                 <AlertCircle className="h-5 w-5 text-indigo-500" /> 待辦提醒
               </h2>
               <div className="space-y-3">
-                {data.activityItems.map(item => {
+                {(data.activityItems || []).map(item => {
                   const iconMap = {
                     error_review: TrendingUp,
                     incomplete_exam: BookOpen,
@@ -578,8 +578,8 @@ export default function DashboardPage() {
                 <h3 className="text-xs font-bold text-slate-900 mb-2">今日特訓 (3月19日)</h3>
                 <div className="space-y-1.5">
                   {data.reviewCalendar
-                    .filter(r => new Date(r.date).getDate() === 19)
-                    .flatMap(r => r.topics)
+                    .filter(r => r?.date && new Date(r.date).getDate() === new Date().getDate())
+                    .flatMap(r => r.topics || [])
                     .slice(0, 3)
                     .map((topic, idx) => {
                       const colors = ['bg-rose-500', 'bg-amber-500', 'bg-emerald-500'];
