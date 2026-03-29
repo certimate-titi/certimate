@@ -138,8 +138,10 @@ export default function ExamSetupPage() {
           questionTypes: Array.from(questionTypes),
         },
       });
-      setGeneratedExamId(result.exam.id);
-    } catch {
+      const examId = result.exam?.id || result.exam_id || result.examId;
+      setGeneratedExamId(examId);
+    } catch (e) {
+      console.error('Exam generation failed:', e);
       setIsGenerating(false);
     }
   }, [selectedDocIds, questionCount, difficulty, questionTypes]);

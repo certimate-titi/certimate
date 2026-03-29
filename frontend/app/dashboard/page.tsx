@@ -654,23 +654,29 @@ export default function DashboardPage() {
                     <div className="h-full w-px bg-slate-200 absolute" />
                     <div className="w-full h-px bg-slate-200 absolute rotate-45" />
                     <div className="w-full h-px bg-slate-200 absolute -rotate-45" />
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                      <polygon points="50,15 80,40 70,80 30,75 15,45" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" strokeWidth="2" />
-                    </svg>
+                    {data.domainStrengths.length > 0 && (
+                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                        <polygon points="50,15 80,40 70,80 30,75 15,45" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" strokeWidth="2" />
+                      </svg>
+                    )}
                   </div>
-                  {data.domainStrengths.slice(0, 4).map((d, i) => {
-                    const positions = [
-                      'top-2 left-1/2 -translate-x-1/2',
-                      'bottom-2 left-1/2 -translate-x-1/2',
-                      'left-2 top-1/2 -translate-y-1/2',
-                      'right-2 top-1/2 -translate-y-1/2',
-                    ];
-                    return (
-                      <span key={i} className={`absolute ${positions[i]} text-[10px] font-medium text-slate-500`}>
-                        {d.domain.split(' ')[0]}
-                      </span>
-                    );
-                  })}
+                  {data.domainStrengths.length === 0 ? (
+                    <span className="absolute text-xs text-slate-400">尚無測驗資料</span>
+                  ) : (
+                    data.domainStrengths.slice(0, 4).map((d, i) => {
+                      const positions = [
+                        'top-2 left-1/2 -translate-x-1/2',
+                        'bottom-2 left-1/2 -translate-x-1/2',
+                        'left-2 top-1/2 -translate-y-1/2',
+                        'right-2 top-1/2 -translate-y-1/2',
+                      ];
+                      return (
+                        <span key={i} className={`absolute ${positions[i]} text-[10px] font-medium text-slate-500`}>
+                          {d.domain.split(' ')[0]}
+                        </span>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </section>

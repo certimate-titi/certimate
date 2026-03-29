@@ -7,6 +7,7 @@
 
 import { apiClient } from './client';
 
+import type { DocumentSourceType, DocumentStatus } from '@/types/models';
 import type {
   AuthResponse,
   LoginRequest,
@@ -87,7 +88,22 @@ export const documentService = {
   },
 
   async list(): Promise<GetDocumentsResponse> {
-    return apiClient.get<GetDocumentsResponse>('/resources');
+    const raw = await apiClient.get<{ resources: Array<Record<string, unknown>> }>('/resources');
+    const documents = (raw.resources || []).map((r): GetDocumentsResponse['documents'][0] => ({
+      id: (r.id as string) || '',
+      userId: '',
+      subjectId: (r.subject_id as string) || '',
+      sourceType: ((r.resource_type as string) || 'pdf').toUpperCase() as DocumentSourceType,
+      title: (r.filename as string) || '',
+      sourceUrl: (r.youtube_url as string) || '',
+      mcpParsedTranscriptUrl: null,
+      status: ((r.status as string) || '') as DocumentStatus,
+      fileSizeBytes: ((r.file_size_mb as number) || 0) * 1024 * 1024,
+      visionRequired: false,
+      createdAt: (r.created_at as string) || new Date().toISOString(),
+      updatedAt: (r.created_at as string) || new Date().toISOString(),
+    }));
+    return { documents };
   },
 
   async getById(documentId: string): Promise<GetDocumentsResponse['documents'][0] | null> {
@@ -113,12 +129,38 @@ export const examService = {
       question_types: req.config?.questionTypes,
     });
     // Step 2: Generate questions
-    const genRes = await apiClient.post<CreateExamResponse>(`/exams/${configRes.exam_id}/generate`);
-    return genRes;
+    const genRes = await apiClient.post<Record<string, unknown>>(`/exams/${configRes.exam_id}/generate`);
+    // Normalize response: ensure exam.id is available
+    return {
+      ...genRes,
+      exam: { id: configRes.exam_id, ...(genRes.exam as Record<string, unknown> || {}) },
+      exam_id: configRes.exam_id,
+    } as unknown as CreateExamResponse;
   },
 
   async getExam(examId: string): Promise<CreateExamResponse> {
-    return apiClient.get<CreateExamResponse>(`/exams/${examId}/resume`);
+    const raw = await apiClient.get<Record<string, unknown>>(`/exams/${examId}/resume`);
+    const rawQuestions = (raw.questions || []) as Array<Record<string, unknown>>;
+    const rawExam = (raw.exam || {}) as Record<string, unknown>;
+    return {
+      exam: {
+        id: (rawExam.id as string) || examId,
+        title: (rawExam.title as string) || '模擬測驗',
+        totalQuestions: (rawExam.total_questions as number) || rawQuestions.length,
+      },
+      questions: rawQuestions.map(q => ({
+        id: (q.id as string) || '',
+        examId,
+        questionType: ((q.type as string) || 'single_choice').toUpperCase() as 'MULTIPLE_CHOICE',
+        contentText: (q.content as string) || '',
+        contentImageUrl: null,
+        options: (q.options as Array<{ label: string; text: string }>) || [],
+        correctAnswer: '',
+        explanationMarkdown: '',
+        citationChunkId: null,
+        tags: [],
+      })),
+    } as unknown as CreateExamResponse;
   },
 
   async submit(req: SubmitExamRequest): Promise<SubmitExamResponse> {
@@ -198,11 +240,11 @@ export const dashboardService = {
 // ===========================
 
 export const knowledgeService = {
-  async getMap(subjectId?: string): Promise<GetKnowledgeMapResponse> {
+  async getMap(subjectId?: string): Promise<Record<string, unknown>> {
     const path = subjectId
       ? `/knowledge-map/subjects/${subjectId}/nodes`
       : '/knowledge-map/layout';
-    return apiClient.get<GetKnowledgeMapResponse>(path);
+    return apiClient.get<Record<string, unknown>>(path);
   },
 
   async getNodeDetail(nodeId: string): Promise<GetNodeDetailResponse> {

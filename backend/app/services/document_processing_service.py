@@ -127,13 +127,16 @@ class DocumentProcessingService:
             # Step 4: Chunk text
             chunks_data = self._chunk_sections(extracted["sections"])
 
-            # Step 5: Embed chunks (skip if no Voyage API key)
+            # Step 5: Embed chunks (skip if no Voyage API key or on error)
             chunk_texts = [c["content"] for c in chunks_data]
+            embeddings = [None] * len(chunk_texts)
             if self.embedding_service:
-                embeddings = self.embedding_service.embed_texts(chunk_texts)
+                try:
+                    embeddings = self.embedding_service.embed_texts(chunk_texts)
+                except Exception as e:
+                    logger.warning("Embedding failed (chunks saved without vectors): %s", e)
             else:
                 logger.info("Skipping embeddings (VOYAGE_API_KEY not set)")
-                embeddings = [None] * len(chunk_texts)
 
             # Step 6: Store chunks
             self._store_chunks(resource, chunks_data, embeddings, nodes)
@@ -174,12 +177,21 @@ class DocumentProcessingService:
     def _extract_from_pdf(self, resource: Resource) -> dict:
         """Extract text from PDF.
 
-        Uses Claude API if available, otherwise falls back to local extraction.
+        Uses local extraction first (fast, no API cost).
+        Falls back to Claude API only when local extraction fails.
         """
         file_path = self._resolve_file_path(resource)
         pdf_bytes = Path(file_path).read_bytes()
 
-        # Try Claude first
+        # Try local extraction first (fast, free)
+        try:
+            result = self._extract_pdf_local(pdf_bytes, resource.name)
+            if result.get("sections"):
+                return result
+        except Exception as e:
+            logger.warning("Local PDF extraction failed: %s", e)
+
+        # Fallback to Claude API (for scanned/image-heavy PDFs)
         if self.claude:
             try:
                 raw = self.claude.parse_pdf(pdf_bytes, PDF_EXTRACTION_PROMPT)
@@ -202,10 +214,9 @@ class DocumentProcessingService:
                         raise
                 return result
             except Exception as e:
-                logger.warning("Claude PDF parsing failed, falling back to local: %s", e)
+                logger.warning("Claude PDF parsing also failed: %s", e)
 
-        # Local fallback: extract raw text from PDF
-        return self._extract_pdf_local(pdf_bytes, resource.name)
+        raise ValueError("無法解析 PDF 文件")
 
     def _extract_pdf_local(self, pdf_bytes: bytes, name: str) -> dict:
         """Extract text from PDF using local libraries (no API needed).

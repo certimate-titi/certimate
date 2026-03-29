@@ -4,6 +4,10 @@ import os
 from pathlib import Path
 from functools import lru_cache
 
+# Load .env file (only if it exists, does NOT override system env vars)
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent.parent.parent / ".env", override=True)
+
 
 class Paths:
     """專案路徑管理。"""
@@ -57,12 +61,20 @@ class Settings:
         self.PROJECT_NAME: str = "CertiMate API"
         self.DEBUG: bool = os.environ.get("DEBUG", "true").lower() == "true"
 
-        # AI / RAG 設定
+        # AI / RAG 設定 — API Keys
         self.ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
+        self.OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
+        self.GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
         self.VOYAGE_API_KEY: str = os.environ.get("VOYAGE_API_KEY", "")
+
+        # AI / RAG 設定 — 預設模型（可被 ai_model_routings 表覆蓋）
         self.CLAUDE_MODEL: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
         self.CLAUDE_PDF_MODEL: str = os.environ.get("CLAUDE_PDF_MODEL", "claude-sonnet-4-20250514")
+        self.OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o")
+        self.GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
         self.VOYAGE_EMBED_MODEL: str = os.environ.get("VOYAGE_EMBED_MODEL", "voyage-3")
+
+        # RAG 參數
         self.CHUNK_SIZE_TOKENS: int = int(os.environ.get("CHUNK_SIZE_TOKENS", "512"))
         self.CHUNK_OVERLAP_TOKENS: int = int(os.environ.get("CHUNK_OVERLAP_TOKENS", "64"))
         self.RETRIEVAL_TOP_K: int = int(os.environ.get("RETRIEVAL_TOP_K", "10"))

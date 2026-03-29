@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BrainCircuit, ArrowRight, X, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, X, Eye, EyeOff } from 'lucide-react';
+import TiTiLogo from '@/components/TiTiLogo';
 import { useAuth } from '@/lib/auth-context';
 import { authService } from '@/lib/api/services';
 
@@ -221,8 +222,8 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-xl border border-slate-100">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-              <BrainCircuit className="h-8 w-8 text-emerald-600" />
+            <div className="mx-auto flex items-center justify-center mb-4">
+              <TiTiLogo size={48} />
             </div>
             <h2 className="text-3xl font-extrabold text-slate-900">建立帳號</h2>
             <p className="mt-2 text-sm text-slate-600">

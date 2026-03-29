@@ -35,15 +35,19 @@ class AiGenerationService:
     def __init__(self, db: Session):
         self.db = db
         self._settings = get_settings()
-        self._rag_enabled = bool(self._settings.ANTHROPIC_API_KEY)
+        self._rag_enabled = bool(
+            self._settings.ANTHROPIC_API_KEY
+            or self._settings.OPENAI_API_KEY
+            or self._settings.GEMINI_API_KEY
+        )
 
         if self._rag_enabled:
-            from app.services.claude_service import ClaudeService
+            from app.services.llm_service import LLMService
             from app.services.retrieval_service import RetrievalService
-            self._claude = ClaudeService()
+            self._llm = LLMService(db=db)
             self._retrieval = RetrievalService(db)
         else:
-            self._claude = None
+            self._llm = None
             self._retrieval = None
 
     # ------------------------------------------------------------------ #
@@ -225,7 +229,7 @@ class AiGenerationService:
         points = stage1["exam_points"]
 
         # Try Claude-powered generation
-        if self._rag_enabled and self._claude and rag_context:
+        if self._rag_enabled and self._llm and rag_context:
             try:
                 return self._stage2_claude(points, difficulty_dist, user_context, total_q, rag_context)
             except Exception as e:
@@ -276,7 +280,7 @@ class AiGenerationService:
             f'{{"questions": [{{"question_text": "...", "correct_answer": "...", "difficulty": "easy|medium|hard", "exam_point": "考點名稱"}}]}}'
         )
 
-        result = self._claude.generate_with_context(system_prompt, user_prompt, rag_context)
+        result = self._llm.generate_with_context(system_prompt, user_prompt, rag_context)
         parsed = json.loads(result) if isinstance(result, str) else result
 
         # Handle markdown-wrapped JSON
@@ -303,7 +307,7 @@ class AiGenerationService:
         questions = stage2["questions"]
 
         # Try Claude-powered distractor generation
-        if self._rag_enabled and self._claude and rag_context and questions:
+        if self._rag_enabled and self._llm and rag_context and questions:
             try:
                 return self._stage3_claude(questions, user_context, rag_context)
             except Exception as e:
@@ -359,7 +363,7 @@ class AiGenerationService:
             f"回傳 JSON 格式：{{'questions': [...]}}"
         )
 
-        result = self._claude.generate_with_context(system_prompt, user_prompt, rag_context)
+        result = self._llm.generate_with_context(system_prompt, user_prompt, rag_context)
         parsed = json.loads(result) if isinstance(result, str) else result
         if isinstance(parsed, str):
             text = parsed.strip()

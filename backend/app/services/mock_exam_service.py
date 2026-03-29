@@ -114,6 +114,18 @@ class MockExamService:
         if exam.user_id != uid:
             return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
 
+        # Auto-start if READY
+        if exam.status == ExamStatus.READY:
+            exam.status = ExamStatus.IN_PROGRESS
+            exam.started_at = datetime.now(timezone.utc)
+            self.db.commit()
+
+        # Get questions
+        from app.models.question import Question
+        questions = self.db.query(Question).filter_by(
+            exam_id=exam.id
+        ).order_by(Question.question_number).all()
+
         # Get saved answers
         answers = self.db.query(Answer).filter_by(
             exam_id=exam.id, user_id=uid
@@ -122,7 +134,28 @@ class MockExamService:
         return {
             "error": False,
             "exam_id": str(exam.id),
+            "exam": {
+                "id": str(exam.id),
+                "title": getattr(exam, 'title', None) or "模擬測驗",
+                "status": exam.status.value if hasattr(exam.status, 'value') else exam.status,
+                "total_questions": exam.total_questions,
+            },
             "status": exam.status.value if hasattr(exam.status, 'value') else exam.status,
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "content": q.content,
+                    "options": [
+                        {"label": "A", "text": q.option_a or ""},
+                        {"label": "B", "text": q.option_b or ""},
+                        {"label": "C", "text": q.option_c or ""},
+                        {"label": "D", "text": q.option_d or ""},
+                    ],
+                    "type": q.type.value if hasattr(q.type, 'value') else (q.type or "single_choice"),
+                    "questionNumber": q.question_number,
+                }
+                for q in questions
+            ],
             "answers": [
                 {
                     "question_id": str(a.question_id),

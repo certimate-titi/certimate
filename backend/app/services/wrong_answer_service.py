@@ -165,12 +165,69 @@ class WrongAnswerService:
             return "advanced"
         return "general"
 
+    def _check_relevance(self, question: Question, message: str, node_name: str) -> bool:
+        """用 LLM 判斷用戶提問是否與題目/科目概念相關。
+
+        若無可用 LLM API key，fallback 到關鍵字檢查。
+        Returns True if relevant, False if off-topic.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        from app.core.config import get_settings
+        settings = get_settings()
+
+        has_llm = bool(
+            settings.ANTHROPIC_API_KEY
+            or settings.OPENAI_API_KEY
+            or settings.GEMINI_API_KEY
+        )
+
+        if has_llm:
+            try:
+                from app.services.llm_service import LLMService
+                llm = LLMService(db=self.db)
+
+                system_prompt = (
+                    "你是一位嚴格的學術相關性判斷器。\n"
+                    "判斷學生的提問是否與以下題目或知識概念相關。\n"
+                    "相關的定義包括：\n"
+                    "- 直接詢問題目的解法、概念、原理\n"
+                    "- 詢問相關的延伸知識或背景知識\n"
+                    "- 詢問類似題型的解題方法\n"
+                    "- 對正確答案或選項提出疑問\n\n"
+                    "不相關的定義包括：\n"
+                    "- 完全無關的閒聊（天氣、心情、日常）\n"
+                    "- 要求寫作、翻譯、寫程式等非學習相關任務\n"
+                    "- 詢問與考試科目完全無關的領域知識\n\n"
+                    "只回覆 RELEVANT 或 IRRELEVANT，不要有其他文字。"
+                )
+
+                user_prompt = (
+                    f"題目：{question.content}\n"
+                    f"知識點：{node_name}\n"
+                    f"正確答案：{question.correct_answer}\n\n"
+                    f"學生提問：{message}"
+                )
+
+                result = llm.generate(system_prompt, user_prompt, max_tokens=16)
+                return "RELEVANT" in result.upper()
+            except Exception as e:
+                logger.warning("Relevance check LLM call failed, allowing by default: %s", e)
+                return True  # LLM 失敗時寬容處理，允許回答
+
+        # 無 LLM 時 fallback：只要不在明顯超綱關鍵字就算相關
+        return True
+
     def _generate_coach_reply(self, question: Question, message: str, tone: str,
-                              history_context: str | None = None) -> str:
+                              history_context: str | None = None) -> str | dict:
         """生成 AI 教練回覆。
 
-        When RAG is enabled, uses Claude with document context.
-        Falls back to mock responses otherwise.
+        Flow:
+        1. 先判斷問題是否與題目/概念相關 → 不相關則拒絕回答
+        2. 有 RAG context → generate_with_context
+        3. 有 LLM 但無 RAG → 純 LLM 回答
+        4. 無 LLM → mock 回答
         """
         import logging
         logger = logging.getLogger(__name__)
@@ -180,23 +237,28 @@ class WrongAnswerService:
             node = self.db.query(KnowledgeNode).filter_by(id=question.node_id).first()
         node_name = node.name if node else "此概念"
 
-        # Try Claude + RAG
+        # Step 1: 相關性判斷
+        if not self._check_relevance(question, message, node_name):
+            return {
+                "rejected": True,
+                "message": "此問題與目前的題目或學習主題無關，請聚焦在考試相關的問題上。",
+            }
+
+        # Step 2: Try LLM (with or without RAG)
         from app.core.config import get_settings
         settings = get_settings()
-        if settings.ANTHROPIC_API_KEY and node and node.resource_id:
+        has_llm = bool(
+            settings.ANTHROPIC_API_KEY
+            or settings.OPENAI_API_KEY
+            or settings.GEMINI_API_KEY
+        )
+
+        if has_llm:
             try:
-                from app.services.claude_service import ClaudeService
+                from app.services.llm_service import LLMService
                 from app.services.retrieval_service import RetrievalService
 
-                retrieval = RetrievalService(self.db)
-                claude = ClaudeService()
-
-                chunks = retrieval.retrieve(
-                    f"{node_name}: {message}",
-                    [node.resource_id],
-                    top_k=5,
-                )
-                context = retrieval.build_context_string(chunks, max_tokens=2000)
+                llm = LLMService(db=self.db)
 
                 tone_instruction = {
                     "simple": "請使用淺顯易懂的語言和生活化比喻來解釋",
@@ -206,7 +268,6 @@ class WrongAnswerService:
                 system_prompt = (
                     f"你是一位耐心的 AI 教練，正在幫助學生複習錯題。\n"
                     f"{tone_instruction}。\n"
-                    f"回答要基於文件內容，並引用相關頁碼。\n"
                     f"鼓勵學生，但不要過度使用 emoji。"
                 )
 
@@ -221,11 +282,29 @@ class WrongAnswerService:
                 if history_context:
                     user_prompt += f"\n\n補充：學生之前在 {history_context} 也曾答錯。"
 
-                return claude.generate_with_context(system_prompt, user_prompt, context, max_tokens=1024)
-            except Exception as e:
-                logger.warning("AI Coach Claude call failed, falling back to mock: %s", e)
+                # Try RAG if resource exists
+                if node and node.resource_id and settings.VOYAGE_API_KEY:
+                    retrieval = RetrievalService(self.db)
+                    chunks = retrieval.retrieve(
+                        f"{node_name}: {message}",
+                        [node.resource_id],
+                        top_k=5,
+                    )
+                    context = retrieval.build_context_string(chunks, max_tokens=2000)
 
-        # Fallback: mock replies
+                    if context.strip():
+                        system_prompt += "\n回答要基於文件內容，並引用相關頁碼。"
+                        return llm.generate_with_context(
+                            system_prompt, user_prompt, context, max_tokens=1024
+                        )
+
+                # No RAG context available → pure LLM
+                return llm.generate(system_prompt, user_prompt, max_tokens=1024)
+
+            except Exception as e:
+                logger.warning("AI Coach LLM call failed, falling back to mock: %s", e)
+
+        # Step 3: Fallback — mock replies (no LLM available)
         if tone == "simple":
             reply = (
                 f"別擔心，我來用簡單的方式幫你理解！\n\n"
@@ -357,7 +436,16 @@ class WrongAnswerService:
 
         # Generate reply
         if question:
-            reply = self._generate_coach_reply(question, message, tone, history_context)
+            result = self._generate_coach_reply(question, message, tone, history_context)
+            # _generate_coach_reply may return a dict with "rejected" flag
+            if isinstance(result, dict) and result.get("rejected"):
+                return {
+                    "reply": result["message"],
+                    "content": result["message"],
+                    "streaming": True,
+                    "rejected": True,
+                }
+            reply = result
         else:
             reply = f"加油！讓我來幫你理解這個概念。\n\n繼續努力，你做得很好！"
 

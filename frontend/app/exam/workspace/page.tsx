@@ -51,8 +51,8 @@ function MockExamWorkspacePage() {
   useEffect(() => {
     const storageKey = `${STORAGE_KEY_PREFIX}${examId}`;
     examService.getExam(examId).then(res => {
-      setQuestions(res.questions);
-      setExamTitle(res.exam.title);
+      setQuestions(res.questions || []);
+      setExamTitle(res.exam?.title || '模擬測驗');
 
       // Restore from localStorage if exists
       const saved = localStorage.getItem(storageKey);
@@ -255,7 +255,7 @@ function MockExamWorkspacePage() {
             {/* Question Header */}
             <div className="flex items-start justify-between mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100">
-                {currentQuestion.tags[0] || '一般題'}
+                {currentQuestion.tags?.[0] || '一般題'}
               </div>
               <button
                 onClick={() => toggleMark(currentQuestion.id)}

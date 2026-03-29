@@ -16,6 +16,7 @@ mypy>=1.0.0
 # FastAPI
 fastapi>=0.109.0
 uvicorn>=0.27.0
+python-multipart>=0.0.6
 
 # Database
 sqlalchemy>=2.0.0
@@ -29,8 +30,13 @@ httpx>=0.26.0
 # Authentication
 PyJWT>=2.8.0
 
+# Env management
+python-dotenv>=1.0.0
+
 # AI / RAG
 anthropic>=0.40.0
+openai>=1.30.0
+google-genai>=1.0.0
 voyageai>=0.3.0
 pgvector>=0.3.0
 tiktoken>=0.7.0

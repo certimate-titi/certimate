@@ -204,6 +204,7 @@ class OnboardingService:
         for j in journeys:
             subj = self.db.query(Subject).filter_by(id=j.subject_id).first()
             subjects.append({
+                "id": str(subj.id) if subj else str(j.subject_id),
                 "name": subj.name if subj else "Unknown",
                 "exam_date": j.exam_date.isoformat() if j.exam_date else None,
                 "self_assessed_level": j.self_assessed_level,

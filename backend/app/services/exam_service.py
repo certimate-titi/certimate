@@ -39,6 +39,10 @@ class ExamService:
 
         total_capacity = sum(n.available_questions or 0 for n in nodes)
 
+        # If no pre-set capacity but nodes exist, allow AI generation (default 5 per node)
+        if total_capacity == 0 and nodes:
+            total_capacity = len(nodes) * 5
+
         # 先檢查可出題數限制
         if question_count > total_capacity:
             return {

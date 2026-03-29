@@ -15,9 +15,12 @@ router = APIRouter(prefix="/exams")
 
 
 class ExamConfigRequest(BaseModel):
-    node_ids: list[str]
+    node_ids: list[str] | None = None
+    document_ids: list[str] | None = None
     question_count: int
+    difficulty: int | None = None
     difficulty_distribution: dict | None = None
+    question_types: list[str] | None = None
 
 
 def _handle_result(result: dict):
@@ -33,12 +36,38 @@ def submit_exam_config(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    node_ids = body.node_ids or []
+
+    # If document_ids provided but no node_ids, resolve nodes from documents
+    if not node_ids and body.document_ids:
+        from app.models.knowledge_node import KnowledgeNode
+        from app.models.resource import Resource
+        import uuid as _uuid
+        resource_ids = [_uuid.UUID(did) for did in body.document_ids]
+        nodes = db.query(KnowledgeNode).filter(
+            KnowledgeNode.resource_id.in_(resource_ids)
+        ).all()
+        node_ids = [str(n.id) for n in nodes]
+
+    if not node_ids:
+        raise HTTPException(status_code=400, detail={"message": "請至少選擇一個知識範圍"})
+
+    # Build difficulty distribution from difficulty level if provided
+    diff_dist = body.difficulty_distribution
+    if not diff_dist and body.difficulty:
+        diff_map = {
+            1: {"easy": 60, "medium": 30, "hard": 10},
+            2: {"easy": 30, "medium": 50, "hard": 20},
+            3: {"easy": 10, "medium": 30, "hard": 60},
+        }
+        diff_dist = diff_map.get(body.difficulty, {"easy": 30, "medium": 50, "hard": 20})
+
     service = ExamService(db)
     result = service.submit_config(
-        node_ids=body.node_ids,
+        node_ids=node_ids,
         question_count=body.question_count,
         user_id=user_id,
-        difficulty_distribution=body.difficulty_distribution,
+        difficulty_distribution=diff_dist,
     )
     return _handle_result(result)
 

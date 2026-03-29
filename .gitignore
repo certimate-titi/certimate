@@ -30,3 +30,6 @@ coverage/
 __pycache__/
 *.pyc
 *.pyo
+
+# Uploaded files (local dev)
+backend/uploads/

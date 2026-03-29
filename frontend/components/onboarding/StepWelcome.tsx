@@ -1,7 +1,7 @@
 'use client';
 
-import { BrainCircuit } from 'lucide-react';
 import { useOnboarding } from '@/lib/onboarding-context';
+import TiTiLogo from '@/components/TiTiLogo';
 
 const educationOptions = [
   '國中',
@@ -22,14 +22,13 @@ export default function StepWelcome() {
     <div className="flex flex-col items-center text-center max-w-md mx-auto">
       {/* Welcome animation */}
       <div className="relative mb-8">
-        <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center animate-[scale-in_0.6s_ease-out]">
-          <BrainCircuit className="h-12 w-12 text-emerald-600" />
+        <div className="flex items-center justify-center animate-[scale-in_0.6s_ease-out]">
+          <TiTiLogo size={64} />
         </div>
-        <div className="absolute inset-0 w-24 h-24 bg-emerald-200/50 rounded-full animate-ping" />
       </div>
 
       <h2 className="text-3xl font-bold text-slate-900 mb-3">
-        歡迎加入 CertiMate！
+        歡迎加入 TiTi！
       </h2>
       <p className="text-slate-500 mb-2">
         讓我們花不到 2 分鐘，為你打造專屬的學習計畫。

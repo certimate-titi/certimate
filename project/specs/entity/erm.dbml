@@ -742,22 +742,14 @@ Table content_reports {
 Ref: content_reports.reporter_id > users.id
 Ref: content_reports.resolved_by > users.id
 
-Table model_routing_config {
+Table ai_model_routings {
   id uuid [pk, default: `gen_random_uuid()`]
-  plan subscription_plan [not null]
+  plan varchar(50) [not null, note: 'FREE | PRO_199 | PRO_PLUS_399 | ULTRA_1599']
   task_type varchar(50) [not null, note: 'basic | advanced | vision_ocr']
-  primary_model varchar(100) [not null]
+  primary_model varchar(100) [not null, note: 'e.g. claude-sonnet-4-20250514']
   fallback_model varchar(100)
-  fallback_timeout_ms integer [default: 3000]
-  updated_by uuid
   updated_at timestamptz [default: `now()`]
-
-  indexes {
-    (plan, task_type) [unique]
-  }
 }
-
-Ref: model_routing_config.updated_by > users.id
 
 Table plan_quotas {
   id uuid [pk, default: `gen_random_uuid()`]

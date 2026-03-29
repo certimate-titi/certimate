@@ -12,13 +12,17 @@ const app = initializeApp(config);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth();
 
-// Test Connection
+// Test Connection (only when Firebase is properly configured)
 async function testConnection() {
+  if (!config.apiKey || config.apiKey === 'dummy-api-key-for-build') {
+    // Firebase not configured — skip connection test (using JWT auth instead)
+    return;
+  }
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+      console.warn("Firebase connection unavailable. JWT auth is unaffected.");
     }
   }
 }

@@ -70,19 +70,28 @@ export default function KnowledgeBasePage() {
     setDeleteConfirmId(null);
     setMindMapCollapsed(false);
 
-    knowledgeService.getMap().then(mapRes => {
-      const activeSubject = subjects.find(s => s.id === activeSubjectId);
-      const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
-      const filteredDocuments = mapRes.documents.filter(d => d.subjectId === targetSubjectId);
-      const docsById = Object.fromEntries(filteredDocuments.map(d => [d.id, d])) as Record<string, Document>;
-      const filteredNodes = filterKnowledgeNodesBySubject(mapRes.nodes, docsById, targetSubjectId);
+    const activeSubject = subjects.find(s => s.id === activeSubjectId);
+    const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
 
-      setDocuments(filteredDocuments);
-      setNodes(filteredNodes);
-      setSelectedDocId(filteredDocuments[0]?.id ?? null);
+    knowledgeService.getMap(targetSubjectId).then((mapRes: Record<string, unknown>) => {
+      // Backend returns "resources", frontend expects "documents"
+      const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
+      const allDocuments: Document[] = rawResources.map(r => ({
+        id: r.id,
+        title: r.name || r.title || '',
+        type: (r.type || r.resource_type || 'pdf') as Document['type'],
+        subjectId: targetSubjectId,
+        status: 'completed' as Document['status'],
+        createdAt: r.created_at || new Date().toISOString(),
+      }));
+      const allNodes = ((mapRes.nodes || []) as KnowledgeNode[]);
+
+      setDocuments(allDocuments);
+      setNodes(allNodes);
+      setSelectedDocId(allDocuments[0]?.id ?? null);
 
       // Auto-expand first-level nodes
-      setExpandedNodes(new Set(filteredNodes.map(n => n.id)));
+      setExpandedNodes(new Set(allNodes.map(n => n.id)));
       setLoadingDocs(false);
     }).catch(() => setLoadingDocs(false));
   }, [activeSubjectId]);
@@ -91,8 +100,33 @@ export default function KnowledgeBasePage() {
     setLoadingDetail(true);
     setChatMessages([]);
     setFreeQueriesLeft(isPro199 ? 0 : 3);
-    const detail = await knowledgeService.getNodeDetail(nodeId);
-    setSelectedNodeDetail(detail);
+    try {
+      const raw = await knowledgeService.getNodeDetail(nodeId) as Record<string, unknown>;
+      const srcCitation = (raw.source_citation || {}) as Record<string, unknown>;
+      // Normalize: backend returns flat fields, frontend expects nested objects
+      const detail = {
+        node: {
+          id: nodeId,
+          label: (raw.node_name as string) || '',
+          name: (raw.node_name as string) || '',
+          masteryLevel: 'not_tested' as string,
+          masteryRate: 0,
+        },
+        citationSource: {
+          type: (raw.source_type as string) || 'pdf',
+          documentTitle: (raw.node_name as string) || '',
+          page: (srcCitation.source_page_number as number) || null,
+          timestampStart: (srcCitation.source_timestamp_seconds as number) || null,
+          sourceUrl: '',
+        },
+        sourceText: (raw.source_text as string) || '（無原文摘要）',
+        sourceType: (raw.source_type as string) || 'pdf',
+        sourceRef: (raw.source_ref as string) || '',
+      } as GetNodeDetailResponse;
+      setSelectedNodeDetail(detail);
+    } catch {
+      // Silently handle errors
+    }
     setLoadingDetail(false);
   };
 
@@ -296,17 +330,17 @@ export default function KnowledgeBasePage() {
                 <div className="max-w-3xl mx-auto px-8 py-6">
                   {/* Node Title & Mastery */}
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedNodeDetail.node.label}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedNodeDetail.node?.label || node.name || selectedNodeDetail.node?.name}</h2>
                     <div className="flex items-center gap-3">
                       <div className={`inline-flex px-2 py-0.5 rounded text-xs font-bold border ${
-                        selectedNodeDetail.node.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        selectedNodeDetail.node.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        selectedNodeDetail.node.masteryLevel === 'weak' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        selectedNodeDetail.node?.masteryLevel === 'weak' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                         'bg-slate-50 text-slate-500 border-slate-200'
                       }`}>
-                        {selectedNodeDetail.node.masteryLevel === 'mastered' ? '已精通' :
-                         selectedNodeDetail.node.masteryLevel === 'partial' ? '部分掌握' :
-                         selectedNodeDetail.node.masteryLevel === 'weak' ? '需加強' : '未測驗'}
+                        {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '已精通' :
+                         selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分掌握' :
+                         selectedNodeDetail.node?.masteryLevel === 'weak' ? '需加強' : '未測驗'}
                       </div>
                       <button className="text-xs text-emerald-600 font-medium hover:text-emerald-700">
                         生成此節點測驗
@@ -321,25 +355,25 @@ export default function KnowledgeBasePage() {
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">溯源定位</h4>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-500">
-                        {selectedNodeDetail.citationSource.type === 'youtube' ? (
+                        {selectedNodeDetail.citationSource?.type === 'youtube' ? (
                           <Youtube className="h-3 w-3 text-red-500" />
                         ) : (
                           <FileText className="h-3 w-3 text-blue-500" />
                         )}
-                        {selectedNodeDetail.citationSource.documentTitle}
+                        {selectedNodeDetail.citationSource?.documentTitle}
                         <span className="text-slate-400">
-                          {selectedNodeDetail.citationSource.type === 'youtube'
-                            ? ` ${Math.floor((selectedNodeDetail.citationSource.timestampStart || 0) / 60)}:${String((selectedNodeDetail.citationSource.timestampStart || 0) % 60).padStart(2, '0')}`
-                            : ` p.${selectedNodeDetail.citationSource.page}`}
+                          {selectedNodeDetail.citationSource?.type === 'youtube'
+                            ? ` ${Math.floor((selectedNodeDetail.citationSource?.timestampStart || 0) / 60)}:${String((selectedNodeDetail.citationSource?.timestampStart || 0) % 60).padStart(2, '0')}`
+                            : ` p.${selectedNodeDetail.citationSource?.page}`}
                         </span>
                       </div>
                     </div>
 
                     {/* YouTube Embed Player */}
-                    {selectedNodeDetail.citationSource.type === 'youtube' && selectedNodeDetail.citationSource.sourceUrl && (
+                    {selectedNodeDetail.citationSource?.type === 'youtube' && selectedNodeDetail.citationSource?.sourceUrl && (
                       <div className="aspect-video bg-black">
                         <iframe
-                          src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource.sourceUrl)}?start=${selectedNodeDetail.citationSource.timestampStart || 0}&autoplay=0`}
+                          src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`}
                           className="w-full h-full"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
@@ -541,7 +575,7 @@ export default function KnowledgeBasePage() {
                       ) : (
                         <div className="w-3.5 shrink-0" />
                       )}
-                      <span className={`text-sm truncate ${isActive ? nodeMasteryText : nodeMasteryText}`}>{node.label}</span>
+                      <span className={`text-sm truncate ${isActive ? nodeMasteryText : nodeMasteryText}`}>{node.label || node.name}</span>
                     </button>
 
                     {/* Children */}
@@ -575,7 +609,7 @@ export default function KnowledgeBasePage() {
                               }`}
                             >
                               <div className={`w-2 h-2 rounded-full shrink-0 ${masteryDot}`} />
-                              <span className="text-xs truncate">{child.label}</span>
+                              <span className="text-xs truncate">{child.label || child.name}</span>
                             </button>
                           );
                         })}

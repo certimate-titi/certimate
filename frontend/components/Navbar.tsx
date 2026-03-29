@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BookOpen, LayoutDashboard, BrainCircuit, PenTool, User, Menu, X, LogOut, ShieldCheck, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/lib/auth-context';
+import TiTiLogo from '@/components/TiTiLogo';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,8 +32,7 @@ export default function Navbar() {
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
           <Link href="/" className="flex items-center gap-2">
-            <BrainCircuit className="h-6 w-6 text-emerald-500" />
-            <span className="text-xl font-bold tracking-tight text-slate-900">CertiMate</span>
+            <TiTiLogo size={28} />
           </Link>
         </div>
 
