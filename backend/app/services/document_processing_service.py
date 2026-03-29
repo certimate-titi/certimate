@@ -232,8 +232,22 @@ class DocumentProcessingService:
                 page = doc[page_num]
                 text = page.get_text()
                 if text.strip():
+                    # Extract title: find first meaningful line (skip page numbers, dots, short lines)
+                    title = None
+                    for line in text.strip().split('\n'):
+                        line = line.strip()
+                        if not line or len(line) < 4:
+                            continue
+                        # Skip lines that are page numbers (e.g. "1-1", "3-2"), dots, or special chars
+                        if re.match(r'^[\d\-\.]+$', line) or line.startswith('...') or line.startswith('\uf07d'):
+                            continue
+                        title = line[:60]
+                        break
+                    if not title:
+                        title = f"第 {page_num + 1} 頁"
+
                     sections.append({
-                        "title": f"第 {page_num + 1} 頁",
+                        "title": f"p.{page_num + 1} {title}",
                         "content": text.strip(),
                         "page_start": page_num + 1,
                         "page_end": page_num + 1,
