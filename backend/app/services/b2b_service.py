@@ -20,11 +20,13 @@ class B2BService:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
 
         plan = user.subscription_plan.value if hasattr(user.subscription_plan, 'value') else str(user.subscription_plan)
-        if plan != "ULTRA":
+        role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        is_admin = role in ("admin", "super_admin", "ADMIN", "SUPER_ADMIN")
+
+        if plan != "ULTRA" and not is_admin:
             return {"error": True, "status_code": 403, "message": "此功能僅限 ULTRA 方案用戶使用"}
 
-        role = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        if role != "org_admin":
+        if role != "org_admin" and not is_admin:
             return {"error": True, "status_code": 403, "message": "您沒有機構管理員權限"}
 
         institution = self.db.query(Institution).filter_by(admin_user_id=user_uuid).first()
