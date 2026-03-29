@@ -7,7 +7,7 @@ import { AuthProvider } from '@/lib/auth-context';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'CertiMate | AI 賦能證照考試平台',
+  title: 'TiTi | AI 賦能證照考試平台',
   description: 'AI 賦能證照考試平台，打破單向學習',
 };
 

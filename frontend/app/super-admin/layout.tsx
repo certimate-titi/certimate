@@ -11,13 +11,13 @@ import {
   Settings, 
   Menu, 
   X, 
-  BrainCircuit,
   LogOut,
   Bell,
   Search,
   History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import TiTiLogo from '@/components/TiTiLogo';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useAuth } from '@/lib/auth-context';
@@ -65,10 +65,10 @@ export default function SuperAdminLayout({
         )}
       >
         <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <BrainCircuit className="h-8 w-8 text-emerald-400 shrink-0" />
+          <TiTiLogo size={32} />
           {isSidebarOpen && (
             <span className="ml-3 font-bold text-xl tracking-tight truncate">
-              CertiMate <span className="text-xs text-slate-400 font-normal">Admin</span>
+              TiTi <span className="text-xs text-slate-400 font-normal">Admin</span>
             </span>
           )}
         </div>
