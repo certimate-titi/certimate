@@ -3,11 +3,15 @@
 import uuid
 from datetime import date
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.learning_journey import LearningJourney
+from app.models.exam import Exam, ExamStatus
+from app.models.answer import Answer
+from app.models.question import Question
 
 
 class DashboardService:
@@ -75,24 +79,90 @@ class DashboardService:
             "days_left": days_left,
         }
 
-        # Build radar chart data from NodeMastery (joined via KnowledgeNode)
-        # KnowledgeNode links to Resource, not Subject directly.
-        # We return empty nodes if none exist yet.
-        radar_data = []
+        # --- Exam statistics ---
+        active_subject_id = uuid.UUID(active["subject_id"])
 
-        radar_chart = {
-            "subject": active_subject_name,
-            "nodes": radar_data,
+        # Total questions answered
+        total_answered = (
+            self.db.query(func.count(Answer.id))
+            .join(Exam, Exam.id == Answer.exam_id)
+            .filter(
+                Answer.user_id == user_uuid,
+                Exam.subject_id == active_subject_id,
+                Answer.selected_answer.isnot(None),
+            )
+            .scalar() or 0
+        )
+
+        # Correct answers
+        correct_answered = (
+            self.db.query(func.count(Answer.id))
+            .join(Exam, Exam.id == Answer.exam_id)
+            .filter(
+                Answer.user_id == user_uuid,
+                Exam.subject_id == active_subject_id,
+                Answer.is_correct == True,  # noqa: E712
+            )
+            .scalar() or 0
+        )
+
+        # Wrong answers count
+        wrong_count = (
+            self.db.query(func.count(Answer.id))
+            .join(Exam, Exam.id == Answer.exam_id)
+            .filter(
+                Answer.user_id == user_uuid,
+                Exam.subject_id == active_subject_id,
+                Answer.is_correct == False,  # noqa: E712
+            )
+            .scalar() or 0
+        )
+
+        # Incomplete exams
+        incomplete_exams = (
+            self.db.query(func.count(Exam.id))
+            .filter(
+                Exam.user_id == user_uuid,
+                Exam.subject_id == active_subject_id,
+                Exam.status.in_([ExamStatus.READY, ExamStatus.IN_PROGRESS]),
+            )
+            .scalar() or 0
+        )
+
+        overall_accuracy = round((correct_answered / total_answered * 100)) if total_answered > 0 else 0
+        predicted_pass = min(100, overall_accuracy + 10) if total_answered >= 10 else 0
+
+        stats = {
+            "totalQuestionsAnswered": total_answered,
+            "overallAccuracy": overall_accuracy,
+            "predictedPassRate": predicted_pass,
+            "totalMocksCompleted": (
+                self.db.query(func.count(Exam.id))
+                .filter(
+                    Exam.user_id == user_uuid,
+                    Exam.subject_id == active_subject_id,
+                    Exam.status == ExamStatus.SUBMITTED,
+                )
+                .scalar() or 0
+            ),
+            "examCountdown": {
+                "examName": active_subject_name,
+                "daysRemaining": days_left,
+            } if days_left is not None else None,
         }
+
+        # Domain strengths (from exam results by knowledge node)
+        domain_strengths = []
 
         return {
             "subjects": subjects_list,
             "active_subject": active_subject_name,
             "add_subject_entry": True,
             "exam_countdown": exam_countdown,
-            "radar_chart": radar_chart,
+            "stats": stats,
+            "domainStrengths": domain_strengths,
             "quick_upload": {"enabled": True},
-            "todo_reminders": {"wrong_answers": 0, "incomplete_exams": 0},
+            "todo_reminders": {"wrong_answers": wrong_count, "incomplete_exams": incomplete_exams},
         }
 
     def update_profile(self, user_id: str, data: dict) -> dict:
