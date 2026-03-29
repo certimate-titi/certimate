@@ -78,17 +78,22 @@ export default function UserManagementPage() {
           </button>
           <button
             onClick={async () => {
-              const email = prompt('請輸入要升級為管理員的使用者 Email:');
+              const email = prompt('請輸入新用戶的 Email:');
               if (!email) return;
+              const password = prompt('請設定密碼（至少 8 碼）:');
+              if (!password || password.length < 8) { alert('密碼至少 8 碼'); return; }
+              const displayName = prompt('顯示名稱（可選）:') || '';
               try {
-                await superAdminService.adjustRole(email, 'admin');
-                await logAdminAction(AdminAction.CREATE_ADMIN, email, `新增管理員: ${email}`);
-                alert('管理員已新增');
-              } catch { alert('新增失敗，請確認 Email 是否正確'); }
+                const { apiClient } = await import('@/lib/api/client');
+                await apiClient.post('/auth/register', { email, password, display_name: displayName });
+                await logAdminAction(AdminAction.CREATE_ADMIN, email, `新增用戶: ${email}`);
+                alert('用戶已建立');
+                window.location.reload();
+              } catch { alert('新增失敗，可能 Email 已存在'); }
             }}
             className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
-            <UserPlus className="h-4 w-4" /> 新增管理員
+            <UserPlus className="h-4 w-4" /> 新增用戶
           </button>
         </div>
       </div>
