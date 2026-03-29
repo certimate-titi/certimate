@@ -82,7 +82,7 @@ export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: Ex
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              className="mx-auto h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-8"
+              className="mx-auto h-20 w-20 rounded-full bg-white flex items-center justify-center mb-8 shadow-lg shadow-emerald-500/30"
             >
               <TiTiLogo size={48} />
             </motion.div>

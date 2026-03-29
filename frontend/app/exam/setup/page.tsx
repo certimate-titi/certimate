@@ -180,30 +180,21 @@ function ExamSetupPage() {
       const examId = result.exam?.id || result.exam_id || result.examId;
       generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
+      // Navigate immediately after API completes
+      router.push(`/exam/workspace?examId=${examId}`);
     } catch (e) {
       console.error('Exam generation failed:', e);
       setIsGenerating(false);
     }
-  }, [selectedDocIds, questionCount, difficulty, questionTypes]);
+  }, [selectedDocIds, questionCount, difficulty, questionTypes, router]);
 
-  // Navigate when loading animation completes (uses ref to avoid stale closure)
+  // Backup: navigate when loading animation completes
   const handleLoadingComplete = useCallback(() => {
     const examId = generatedExamIdRef.current;
     if (examId) {
       router.push(`/exam/workspace?examId=${examId}`);
     }
   }, [router]);
-
-  // Backup: navigate when generatedExamId state updates
-  useEffect(() => {
-    if (generatedExamId) {
-      // Give overlay a moment to show 100%, then navigate
-      const timer = setTimeout(() => {
-        router.push(`/exam/workspace?examId=${generatedExamId}`);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [generatedExamId, router]);
 
   const difficultyLabels = ['基礎概念', '綜合應用', '情境魔王題'];
   const qtLabels: Record<QuestionType, string> = {
