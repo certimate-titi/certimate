@@ -1,14 +1,22 @@
-"""DocumentProcessingService — orchestrates PDF→Claude→chunks→embeddings pipeline.
+"""DocumentProcessingService — orchestrates the full document processing pipeline.
 
-Supports two modes:
-  - Full AI mode: Claude parses PDF/images, Voyage AI generates embeddings (requires API keys)
-  - Local mode: extracts text locally for TXT/Markdown/PDF, skips embeddings (no API keys needed)
+Pipeline (per spec: 資源上傳與解析流程.md):
+  1. Copyright check (scan first 2 pages for restricted keywords)
+  2. Text extraction (pymupdf / pdfplumber / Claude Vision)
+  3. Text cleaning (remove headers/footers/watermarks)
+  4. AI structure analysis (chapters → sections → subsections)
+  5. Smart chunking (by section boundaries, then token-based)
+  6. Multi-level knowledge node creation
+  7. Embedding (Voyage AI → pgvector)
+  8. Markdown normalization & storage
+  9. Original file cleanup
 """
 
 import json
 import logging
 import re
 import uuid
+from collections import Counter
 from pathlib import Path
 
 import tiktoken
@@ -22,55 +30,36 @@ from app.repositories.resource_chunk_repository import ResourceChunkRepository
 
 logger = logging.getLogger(__name__)
 
-# Media type mapping for image files
+# --- Constants ---
+
 IMAGE_MEDIA_TYPES = {
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".webp": "image/webp",
-    ".bmp": "image/bmp",
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".webp": "image/webp", ".bmp": "image/bmp",
 }
 
-PDF_EXTRACTION_PROMPT = """請分析這份 PDF 文件，並以 JSON 格式回傳其結構化內容。
-
-要求：
-1. 將文件拆分為有意義的章節（sections）
-2. 每個 section 包含：title（標題）、content（該段落的完整內容）、page_start（起始頁碼）、page_end（結束頁碼）
-3. 保留原文內容，不要摘要或省略
-4. 如果有表格，將其轉為 Markdown 表格格式
-5. 數學公式保留原始表達
-
-回傳格式：
-```json
-{
-  "title": "文件標題",
-  "sections": [
-    {
-      "title": "章節標題",
-      "content": "章節完整內容...",
-      "page_start": 1,
-      "page_end": 2
-    }
-  ]
-}
-```"""
+COPYRIGHT_KEYWORDS = [
+    "授權嚴禁轉載", "版權所有", "嚴禁翻印", "未經授權不得複製",
+    "All Rights Reserved", "Confidential", "Do Not Distribute",
+    "嚴禁任何形式之轉載", "禁止轉載",
+]
 
 IMAGE_OCR_PROMPT = """請辨識這張圖片中的所有文字內容，並以結構化方式輸出。
-
-要求：
-1. 完整辨識所有可見文字
-2. 保留段落結構
-3. 如有表格，轉為 Markdown 表格格式
-4. 如有數學公式，保留原始表達
-
+要求：1. 完整辨識所有可見文字 2. 保留段落結構 3. 表格轉 Markdown 4. 數學公式保留原始表達
 以純文字格式回傳辨識結果。"""
+
+STRUCTURE_ANALYSIS_PROMPT = (
+    "你是文件結構分析專家。根據以下每頁的內容摘要，分析文件的章節結構。\n"
+    "產出一個巢狀的章節目錄，每個項目包含 title（標題）和 page_start（起始頁碼）。\n"
+    "結構應有 1-3 層深度（章 → 節 → 小節）。\n"
+    "只回傳 JSON，不要 markdown 標記。格式：\n"
+    '{"chapters": [{"title": "章標題", "page_start": 1, "page_end": 5, '
+    '"sections": [{"title": "節標題", "page_start": 1, "page_end": 2, '
+    '"subsections": [{"title": "小節", "page_start": 1}]}]}]}'
+)
 
 
 class DocumentProcessingService:
-    """Orchestrates the full document processing pipeline:
-    upload → parse → chunk → embed → store.
-    """
+    """Full document processing pipeline: upload → parse → chunk → embed → store."""
 
     def __init__(self, db: Session):
         self.db = db
@@ -78,9 +67,9 @@ class DocumentProcessingService:
         self.chunk_repo = ResourceChunkRepository(db)
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
-        # AI services — only initialized when API keys are available
         self.claude = None
         self.embedding_service = None
+        self._llm = None
 
         if self.settings.ANTHROPIC_API_KEY:
             from app.services.claude_service import ClaudeService
@@ -90,58 +79,80 @@ class DocumentProcessingService:
             from app.services.embedding_service import EmbeddingService
             self.embedding_service = EmbeddingService()
 
-    def process_resource(self, resource_id: uuid.UUID) -> dict:
-        """Main entry point: process a resource end-to-end.
+        has_llm = bool(
+            self.settings.ANTHROPIC_API_KEY
+            or self.settings.OPENAI_API_KEY
+            or self.settings.GEMINI_API_KEY
+        )
+        if has_llm:
+            from app.services.llm_service import LLMService
+            self._llm = LLMService(db=db)
 
-        1. Mark as PROCESSING
-        2. Extract text (by type)
-        3. Create knowledge nodes
-        4. Chunk text
-        5. Embed chunks
-        6. Store chunks with embeddings
-        7. Mark as COMPLETED (or FAILED)
-        """
+    # ================================================================
+    # Main entry point
+    # ================================================================
+
+    def process_resource(self, resource_id: uuid.UUID) -> dict:
+        """Main pipeline: copyright → extract → clean → structure → chunk → embed → store → cleanup."""
         resource = self.db.query(Resource).filter_by(id=resource_id).first()
         if not resource:
             return {"error": True, "message": "資源不存在"}
 
-        # Mark as processing
         resource.status = ResourceStatus.PROCESSING
         self.db.commit()
 
         try:
+            # Step 0: Copyright check (PDF only)
+            resource_type = resource.type.value if hasattr(resource.type, "value") else str(resource.type)
+            if resource_type == "pdf":
+                file_path = self._resolve_file_path(resource)
+                pdf_bytes = Path(file_path).read_bytes()
+                self._check_copyright(pdf_bytes)
+
             # Step 1: Extract text
             extracted = self._extract_text(resource)
             if not extracted.get("sections"):
                 raise ValueError("文件解析未產出任何內容")
 
-            # Step 2: Delete old chunks (for reprocessing)
+            # Step 2: Clean text
+            if resource_type == "pdf":
+                extracted["sections"] = self._clean_page_texts(extracted["sections"])
+
+            # Step 3: AI structure analysis (regroup flat pages into chapters)
+            if resource_type == "pdf" and len(extracted["sections"]) > 3:
+                structured = self._analyze_document_structure(extracted["sections"], extracted.get("title", ""))
+                if structured:
+                    extracted["sections"] = structured
+
+            # Step 4: Delete old data (for reprocessing)
             self.chunk_repo.delete_by_resource_id(resource_id)
-            # Delete old knowledge nodes
             self.db.query(KnowledgeNode).filter_by(resource_id=resource_id).delete()
             self.db.flush()
 
-            # Step 3: Create knowledge nodes
+            # Step 5: Create multi-level knowledge nodes
             nodes = self._create_knowledge_nodes(resource, extracted)
 
-            # Step 4: Chunk text
+            # Step 6: Smart chunking
             chunks_data = self._chunk_sections(extracted["sections"])
 
-            # Step 5: Embed chunks (skip if no Voyage API key or on error)
+            # Step 7: Embed
             chunk_texts = [c["content"] for c in chunks_data]
             embeddings = [None] * len(chunk_texts)
             if self.embedding_service:
                 try:
                     embeddings = self.embedding_service.embed_texts(chunk_texts)
                 except Exception as e:
-                    logger.warning("Embedding failed (chunks saved without vectors): %s", e)
-            else:
-                logger.info("Skipping embeddings (VOYAGE_API_KEY not set)")
+                    logger.warning("Embedding failed: %s", e)
 
-            # Step 6: Store chunks
+            # Step 8: Store chunks
             self._store_chunks(resource, chunks_data, embeddings, nodes)
 
-            # Step 7: Mark completed
+            # Step 9: Save normalized markdown
+            md_path = self._save_normalized_markdown(resource, extracted)
+
+            # Step 10: Cleanup original file
+            self._cleanup_original_file(resource)
+
             resource.status = ResourceStatus.COMPLETED
             self.db.commit()
 
@@ -149,6 +160,7 @@ class DocumentProcessingService:
                 "status": "completed",
                 "chunks_created": len(chunks_data),
                 "nodes_created": len(nodes),
+                "markdown_path": md_path,
             }
 
         except Exception as e:
@@ -161,10 +173,35 @@ class DocumentProcessingService:
                 self.db.commit()
             return {"error": True, "message": str(e)}
 
+    # ================================================================
+    # Step 0: Copyright Check
+    # ================================================================
+
+    def _check_copyright(self, pdf_bytes: bytes):
+        """Scan first 2 pages for copyright/restricted keywords. Raises if found."""
+        try:
+            import fitz
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            sample_text = ""
+            for i in range(min(2, len(doc))):
+                sample_text += doc[i].get_text() + "\n"
+            doc.close()
+        except Exception:
+            return  # Can't extract → skip check
+
+        for kw in COPYRIGHT_KEYWORDS:
+            if kw.lower() in sample_text.lower():
+                raise ValueError(
+                    f"偵測到版權限制關鍵字「{kw}」，請確認您擁有此文件的合法使用授權後重新上傳。"
+                )
+
+    # ================================================================
+    # Step 1: Text Extraction
+    # ================================================================
+
     def _extract_text(self, resource: Resource) -> dict:
         """Extract structured text from resource by type."""
         resource_type = resource.type.value if hasattr(resource.type, "value") else str(resource.type)
-
         if resource_type == "pdf":
             return self._extract_from_pdf(resource)
         elif resource_type in ("markdown", "txt"):
@@ -175,332 +212,244 @@ class DocumentProcessingService:
             raise ValueError(f"不支援的資源類型: {resource_type}")
 
     def _extract_from_pdf(self, resource: Resource) -> dict:
-        """Extract text from PDF.
-
-        Uses local extraction first (fast, no API cost).
-        Falls back to Claude API only when local extraction fails.
-        """
+        """Extract text from PDF using pymupdf, fallback to Claude for scanned PDFs."""
         file_path = self._resolve_file_path(resource)
         pdf_bytes = Path(file_path).read_bytes()
 
-        # Try local extraction first (fast, free)
+        # Try local extraction first
         try:
-            result = self._extract_pdf_local(pdf_bytes, resource.name)
-            if result.get("sections"):
-                return result
+            import fitz
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            pages = []
+            for i in range(len(doc)):
+                text = doc[i].get_text()
+                if text.strip():
+                    pages.append({"page_num": i + 1, "content": text.strip()})
+            doc.close()
+            if pages:
+                sections = [
+                    {"title": f"p.{p['page_num']}", "content": p["content"],
+                     "page_start": p["page_num"], "page_end": p["page_num"], "depth": 1}
+                    for p in pages
+                ]
+                return {"title": resource.name, "sections": sections}
         except Exception as e:
             logger.warning("Local PDF extraction failed: %s", e)
 
-        # Fallback to Claude API (for scanned/image-heavy PDFs)
+        # Fallback: Claude Vision for scanned PDFs
         if self.claude:
             try:
-                raw = self.claude.parse_pdf(pdf_bytes, PDF_EXTRACTION_PROMPT)
-                try:
-                    result = json.loads(raw)
-                except json.JSONDecodeError:
-                    text = raw.strip()
-                    if "```" in text:
-                        lines = text.split("\n")
-                        json_lines = []
-                        in_block = False
-                        for line in lines:
-                            if line.strip().startswith("```"):
-                                in_block = not in_block
-                                continue
-                            if in_block:
-                                json_lines.append(line)
-                        result = json.loads("\n".join(json_lines))
-                    else:
-                        raise
-                return result
+                from app.services.document_processing_service import PDF_EXTRACTION_PROMPT
+                raw = self.claude.parse_pdf(pdf_bytes, "請分析此 PDF 並以 JSON 回傳結構化內容。")
+                return self._parse_json_response(raw)
             except Exception as e:
-                logger.warning("Claude PDF parsing also failed: %s", e)
+                logger.warning("Claude PDF parsing failed: %s", e)
 
         raise ValueError("無法解析 PDF 文件")
-
-    def _extract_pdf_local(self, pdf_bytes: bytes, name: str) -> dict:
-        """Extract text from PDF using local libraries (no API needed).
-
-        Tries pymupdf (fitz) first, then falls back to reading raw bytes.
-        Uses AI to generate meaningful section titles when available.
-        """
-        # Try pymupdf
-        try:
-            import fitz  # pymupdf
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            pages = []
-            for page_num in range(len(doc)):
-                page = doc[page_num]
-                text = page.get_text()
-                if text.strip():
-                    pages.append({
-                        "page_num": page_num + 1,
-                        "content": text.strip(),
-                    })
-            doc.close()
-
-            if not pages:
-                raise ValueError("PDF 無文字內容")
-
-            # Use AI to generate chapter titles for each page
-            ai_titles = self._generate_page_titles(pages)
-
-            sections = []
-            for p in pages:
-                title = ai_titles.get(p["page_num"], f"第 {p['page_num']} 頁")
-                sections.append({
-                    "title": title,
-                    "content": p["content"],
-                    "page_start": p["page_num"],
-                    "page_end": p["page_num"],
-                })
-
-            if sections:
-                return {"title": name, "sections": sections}
-        except ImportError:
-            logger.info("pymupdf not installed, trying pdfplumber")
-        except Exception as e:
-            logger.warning("pymupdf extraction failed: %s", e)
-
-        # Try pdfplumber
-        try:
-            import pdfplumber
-            import io
-            sections = []
-            with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-                for i, page in enumerate(pdf.pages):
-                    text = page.extract_text() or ""
-                    if text.strip():
-                        sections.append({
-                            "title": f"第 {i + 1} 頁",
-                            "content": text.strip(),
-                            "page_start": i + 1,
-                            "page_end": i + 1,
-                        })
-            if sections:
-                return {"title": name, "sections": sections}
-        except ImportError:
-            logger.info("pdfplumber not installed")
-        except Exception as e:
-            logger.warning("pdfplumber extraction failed: %s", e)
-
-        # Final fallback: treat as binary, extract any readable text
-        try:
-            raw_text = pdf_bytes.decode("utf-8", errors="ignore")
-            # Extract text between BT and ET markers (PDF text objects)
-            text_parts = re.findall(r'\(([^)]+)\)', raw_text)
-            content = " ".join(t for t in text_parts if len(t) > 2)
-            if content.strip():
-                return {
-                    "title": name,
-                    "sections": [{"title": name, "content": content[:10000], "page_start": None, "page_end": None}],
-                }
-        except Exception:
-            pass
-
-        raise ValueError("無法解析 PDF 文件（請安裝 pymupdf: pip install pymupdf）")
 
     def _extract_from_text_file(self, resource: Resource) -> dict:
         """Read text/markdown file and split by headers."""
         file_path = self._resolve_file_path(resource)
         content = Path(file_path).read_text(encoding="utf-8")
 
-        # Split by markdown headers
         sections = []
         current_title = resource.name
+        current_depth = 1
         current_content: list[str] = []
 
         for line in content.split("\n"):
-            if line.startswith("# "):
+            if line.startswith("### "):
                 if current_content:
-                    sections.append({
-                        "title": current_title,
-                        "content": "\n".join(current_content).strip(),
-                        "page_start": None,
-                        "page_end": None,
-                    })
+                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
+                                     "page_start": None, "page_end": None, "depth": current_depth})
                 current_title = line.lstrip("# ").strip()
+                current_depth = 3
+                current_content = []
+            elif line.startswith("## "):
+                if current_content:
+                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
+                                     "page_start": None, "page_end": None, "depth": current_depth})
+                current_title = line.lstrip("# ").strip()
+                current_depth = 2
+                current_content = []
+            elif line.startswith("# "):
+                if current_content:
+                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
+                                     "page_start": None, "page_end": None, "depth": current_depth})
+                current_title = line.lstrip("# ").strip()
+                current_depth = 1
                 current_content = []
             else:
                 current_content.append(line)
 
         if current_content:
-            sections.append({
-                "title": current_title,
-                "content": "\n".join(current_content).strip(),
-                "page_start": None,
-                "page_end": None,
-            })
+            sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
+                             "page_start": None, "page_end": None, "depth": current_depth})
 
         return {"title": resource.name, "sections": sections}
 
     def _extract_from_image(self, resource: Resource) -> dict:
-        """Extract text from image using Claude Vision OCR.
-
-        Requires ANTHROPIC_API_KEY — no local fallback for image OCR.
-        """
+        """Extract text from image using Claude Vision OCR."""
         if not self.claude:
             raise ValueError("圖片 OCR 需要設定 ANTHROPIC_API_KEY")
-
         file_path = self._resolve_file_path(resource)
         image_bytes = Path(file_path).read_bytes()
-
         ext = Path(file_path).suffix.lower()
         media_type = IMAGE_MEDIA_TYPES.get(ext, "image/png")
-
         text = self.claude.parse_image(image_bytes, media_type, IMAGE_OCR_PROMPT)
+        return {"title": resource.name, "sections": [
+            {"title": resource.name, "content": text, "page_start": None, "page_end": None, "depth": 1}
+        ]}
 
-        return {
-            "title": resource.name,
-            "sections": [
-                {
-                    "title": resource.name,
-                    "content": text,
-                    "page_start": None,
-                    "page_end": None,
-                }
-            ],
-        }
+    # ================================================================
+    # Step 2: Text Cleaning
+    # ================================================================
 
-    def _generate_page_titles(self, pages: list[dict]) -> dict[int, str]:
-        """Use AI to generate meaningful chapter titles for each page.
+    def _clean_page_texts(self, sections: list[dict]) -> list[dict]:
+        """Remove repetitive headers/footers, watermarks, and page numbers."""
+        if len(sections) < 3:
+            return sections
 
-        Sends a summary of each page's content to LLM and gets back
-        structured chapter titles. Falls back to rule-based extraction if AI unavailable.
-        """
-        # Build a compact summary of each page (first 80 chars, max 30 pages)
-        page_summaries = []
-        for p in pages[:30]:
-            preview = p["content"][:80].replace('\n', ' ').strip()
-            page_summaries.append(f"p.{p['page_num']}: {preview}")
+        # Detect repetitive lines (appearing in 50%+ of pages)
+        line_counter: Counter = Counter()
+        for s in sections:
+            lines = set()
+            for line in s["content"].split("\n"):
+                stripped = line.strip()
+                if stripped and len(stripped) < 80:  # Only check short lines
+                    lines.add(stripped)
+            for line in lines:
+                line_counter[line] += 1
 
-        summary_text = "\n".join(page_summaries)
+        threshold = len(sections) * 0.5
+        repetitive_lines = {line for line, count in line_counter.items() if count >= threshold}
 
-        # Try AI title generation
-        has_llm = bool(
-            self.settings.ANTHROPIC_API_KEY
-            or self.settings.OPENAI_API_KEY
-            or self.settings.GEMINI_API_KEY
-        )
-
-        if has_llm:
-            try:
-                from app.services.llm_service import LLMService
-                llm = LLMService(db=self.db)
-
-                system_prompt = (
-                    "你是文件結構分析專家。根據每頁的開頭內容，為每頁生成一個簡短章節標題（10字以內）。\n"
-                    "標題範例：「序」「目錄」「第一章 考試科目」「3.1 No code概念」「AI應用領域」「資安風險」。\n"
-                    "只回傳 JSON，不要 markdown 標記。"
-                )
-
-                user_prompt = f"為以下頁面生成標題，JSON格式 {{\"titles\": {{\"頁碼\": \"標題\"}}}}：\n\n{summary_text}"
-
-                result = llm.generate(system_prompt, user_prompt, max_tokens=4000)
-
-                # Parse JSON (handle markdown blocks and truncated responses)
-                text = result.strip()
-                if "```" in text:
-                    lines = text.split("\n")
-                    inner = []
-                    in_block = False
-                    for line in lines:
-                        if line.strip().startswith("```"):
-                            in_block = not in_block
-                            continue
-                        if in_block:
-                            inner.append(line)
-                    text = "\n".join(inner)
-
-                # Fix truncated JSON: ensure it ends with }}
-                text = text.strip()
-                if not text.endswith("}"):
-                    # Find last complete key-value pair
-                    last_quote = text.rfind('"')
-                    if last_quote > 0:
-                        last_colon = text.rfind(':', 0, last_quote)
-                        last_comma = text.rfind(',', 0, last_colon) if last_colon > 0 else -1
-                        if last_comma > 0:
-                            text = text[:last_comma] + "}}"
-                        else:
-                            text = text + "}}"
-
-                # Replace curly quotes with straight quotes
-                text = text.replace('\u201c', '"').replace('\u201d', '"')
-                text = text.replace('\u300c', '"').replace('\u300d', '"')
-
-                parsed = json.loads(text)
-                titles = parsed.get("titles", parsed)
-                result = {int(k): str(v) for k, v in titles.items() if str(k).isdigit()}
-                if result:
-                    logger.info("AI generated %d page titles", len(result))
-                    return result
-
-            except Exception as e:
-                logger.warning("AI title generation failed, using fallback: %s", e)
-
-        # Fallback: rule-based title extraction
-        titles = {}
-        for p in pages:
-            title = None
-            for line in p["content"].split('\n'):
-                line = line.strip()
-                if not line or len(line) < 4:
+        # Clean each section
+        cleaned = []
+        for s in sections:
+            lines = s["content"].split("\n")
+            filtered = []
+            for line in lines:
+                stripped = line.strip()
+                # Skip repetitive headers/footers
+                if stripped in repetitive_lines:
                     continue
-                if re.match(r'^[\d\-\.]+$', line) or line.startswith('...') or line.startswith('\uf07d'):
+                # Skip pure page number lines
+                if re.match(r'^[\d\-\.]+$', stripped):
                     continue
-                title = line[:60]
-                break
-            titles[p["page_num"]] = title or f"第 {p['page_num']} 頁"
-        return titles
+                # Skip special characters (PDF artifacts)
+                if stripped and all(ord(c) > 0xF000 for c in stripped):
+                    continue
+                filtered.append(line)
 
-    def _resolve_file_path(self, resource: Resource) -> str:
-        """Resolve the file path for a resource.
+            content = "\n".join(filtered).strip()
+            if content:
+                cleaned.append({**s, "content": content})
 
-        For now, uses gcs_path as a local file path.
-        In production, this would download from GCS first.
+        return cleaned if cleaned else sections
+
+    # ================================================================
+    # Step 3: AI Document Structure Analysis
+    # ================================================================
+
+    def _analyze_document_structure(self, sections: list[dict], doc_title: str) -> list[dict] | None:
+        """Use AI to analyze document structure and produce multi-level chapters.
+
+        Returns restructured sections with depth 1-3, or None if AI unavailable/fails.
         """
-        if resource.gcs_path:
-            return resource.gcs_path
-        raise ValueError("資源無檔案路徑")
+        if not self._llm:
+            return None
 
-    def _create_knowledge_nodes(
-        self, resource: Resource, extracted: dict
-    ) -> list[KnowledgeNode]:
-        """Create hierarchical knowledge nodes from extracted structure."""
-        nodes: list[KnowledgeNode] = []
+        # Build page summaries for AI
+        summaries = []
+        for s in sections[:40]:
+            preview = s["content"][:120].replace('\n', ' ').strip()
+            page = s.get("page_start", "?")
+            summaries.append(f"p.{page}: {preview}")
 
-        # Root node
-        root = KnowledgeNode(
-            resource_id=resource.id,
-            parent_id=None,
-            name=extracted.get("title", resource.name),
-            depth=0,
-            sort_order=0,
-        )
-        self.db.add(root)
-        self.db.flush()
-        nodes.append(root)
-
-        # Child nodes for each section
-        for i, section in enumerate(extracted.get("sections", [])):
-            child = KnowledgeNode(
-                resource_id=resource.id,
-                parent_id=root.id,
-                name=section.get("title", f"段落 {i + 1}"),
-                depth=1,
-                sort_order=i + 1,
-                source_page_number=section.get("page_start"),
-                source_text=section.get("content", "")[:500],
+        try:
+            result = self._llm.generate(
+                STRUCTURE_ANALYSIS_PROMPT,
+                f"文件標題：{doc_title}\n\n" + "\n".join(summaries),
+                max_tokens=4000,
             )
-            self.db.add(child)
-            nodes.append(child)
 
-        self.db.flush()
-        return nodes
+            parsed = self._parse_json_response(result)
+            chapters = parsed.get("chapters", [])
+            if not chapters:
+                return None
+
+            # Flatten nested structure into sections with depth
+            return self._flatten_structure(chapters, sections)
+
+        except Exception as e:
+            logger.warning("AI structure analysis failed: %s", e)
+            return None
+
+    def _flatten_structure(self, chapters: list[dict], original_sections: list[dict]) -> list[dict]:
+        """Convert nested chapter structure to flat section list with depth."""
+        # Build page → content map from original sections
+        page_content: dict[int, str] = {}
+        for s in original_sections:
+            pn = s.get("page_start")
+            if pn:
+                page_content[pn] = s["content"]
+
+        result = []
+        for ch in chapters:
+            page_start = ch.get("page_start", 0)
+            page_end = ch.get("page_end", page_start)
+
+            # Chapter content: merge pages in range
+            ch_content = "\n\n".join(
+                page_content.get(p, "") for p in range(page_start, page_end + 1) if page_content.get(p)
+            )
+
+            ch_sections = ch.get("sections", [])
+            if ch_sections:
+                # Has sub-sections: chapter is a container, add sub-sections with content
+                for sec in ch_sections:
+                    sec_start = sec.get("page_start", page_start)
+                    sec_end = sec.get("page_end", sec_start)
+                    sec_content = "\n\n".join(
+                        page_content.get(p, "") for p in range(sec_start, sec_end + 1) if page_content.get(p)
+                    )
+
+                    subsections = sec.get("subsections", [])
+                    if subsections:
+                        for sub in subsections:
+                            sub_page = sub.get("page_start", sec_start)
+                            sub_content = page_content.get(sub_page, "")
+                            result.append({
+                                "title": sub.get("title", f"p.{sub_page}"),
+                                "content": sub_content,
+                                "page_start": sub_page, "page_end": sub_page,
+                                "depth": 3, "parent_title": sec.get("title", ""),
+                            })
+                    else:
+                        result.append({
+                            "title": sec.get("title", f"p.{sec_start}"),
+                            "content": sec_content,
+                            "page_start": sec_start, "page_end": sec_end,
+                            "depth": 2, "parent_title": ch.get("title", ""),
+                        })
+            else:
+                # No sub-sections: chapter is a leaf
+                result.append({
+                    "title": ch.get("title", f"p.{page_start}"),
+                    "content": ch_content,
+                    "page_start": page_start, "page_end": page_end,
+                    "depth": 1,
+                })
+
+        return result if result else None
+
+    # ================================================================
+    # Step 4: Smart Chunking
+    # ================================================================
 
     def _chunk_sections(self, sections: list[dict]) -> list[dict]:
-        """Split sections into overlapping chunks using tiktoken."""
+        """Smart chunking: respect section boundaries, then paragraph-based, then token sliding window."""
         chunk_size = self.settings.CHUNK_SIZE_TOKENS
         overlap = self.settings.CHUNK_OVERLAP_TOKENS
         all_chunks: list[dict] = []
@@ -515,71 +464,235 @@ class DocumentProcessingService:
             section_title = section.get("title", "")
             page_start = section.get("page_start")
             page_end = section.get("page_end")
+            depth = section.get("depth", 1)
 
             if len(tokens) <= chunk_size:
-                # Section fits in a single chunk
+                # Section fits in a single chunk — keep it whole
                 all_chunks.append({
-                    "content": content,
-                    "token_count": len(tokens),
-                    "source_page_start": page_start,
-                    "source_page_end": page_end,
-                    "section_title": section_title,
-                    "chunk_index": chunk_index,
+                    "content": content, "token_count": len(tokens),
+                    "source_page_start": page_start, "source_page_end": page_end,
+                    "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
                 })
                 chunk_index += 1
             else:
-                # Split into overlapping chunks
-                start = 0
-                while start < len(tokens):
-                    end = min(start + chunk_size, len(tokens))
-                    chunk_tokens = tokens[start:end]
-                    chunk_text = self.tokenizer.decode(chunk_tokens)
+                # Try paragraph-based splitting first
+                paragraphs = re.split(r'\n\n+', content)
+                current_chunk = ""
+                current_tokens = 0
 
+                for para in paragraphs:
+                    para_tokens = len(self.tokenizer.encode(para))
+
+                    if current_tokens + para_tokens <= chunk_size:
+                        current_chunk += ("\n\n" if current_chunk else "") + para
+                        current_tokens += para_tokens
+                    else:
+                        # Save current chunk
+                        if current_chunk:
+                            all_chunks.append({
+                                "content": current_chunk, "token_count": current_tokens,
+                                "source_page_start": page_start, "source_page_end": page_end,
+                                "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                            })
+                            chunk_index += 1
+
+                        # If single paragraph exceeds chunk_size, use token sliding window
+                        if para_tokens > chunk_size:
+                            para_toks = self.tokenizer.encode(para)
+                            start = 0
+                            while start < len(para_toks):
+                                end = min(start + chunk_size, len(para_toks))
+                                chunk_text = self.tokenizer.decode(para_toks[start:end])
+                                all_chunks.append({
+                                    "content": chunk_text, "token_count": end - start,
+                                    "source_page_start": page_start, "source_page_end": page_end,
+                                    "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                                })
+                                chunk_index += 1
+                                if end >= len(para_toks):
+                                    break
+                                start = end - overlap
+                            current_chunk = ""
+                            current_tokens = 0
+                        else:
+                            current_chunk = para
+                            current_tokens = para_tokens
+
+                # Don't forget the last chunk
+                if current_chunk:
                     all_chunks.append({
-                        "content": chunk_text,
-                        "token_count": len(chunk_tokens),
-                        "source_page_start": page_start,
-                        "source_page_end": page_end,
-                        "section_title": section_title,
-                        "chunk_index": chunk_index,
+                        "content": current_chunk, "token_count": current_tokens,
+                        "source_page_start": page_start, "source_page_end": page_end,
+                        "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
                     })
                     chunk_index += 1
 
-                    if end >= len(tokens):
-                        break
-                    start = end - overlap
-
         return all_chunks
 
-    def _store_chunks(
-        self,
-        resource: Resource,
-        chunks_data: list[dict],
-        embeddings: list[list[float]],
-        nodes: list[KnowledgeNode],
-    ) -> None:
-        """Create and store ResourceChunk instances with embeddings."""
-        # Build section_title → node_id mapping (child nodes start at index 1)
-        section_node_map: dict[str, uuid.UUID] = {}
-        for node in nodes[1:]:  # skip root
-            section_node_map[node.name] = node.id
+    # ================================================================
+    # Step 5: Multi-level Knowledge Nodes
+    # ================================================================
+
+    def _create_knowledge_nodes(self, resource: Resource, extracted: dict) -> list[KnowledgeNode]:
+        """Create multi-level knowledge node tree (depth 0-3)."""
+        nodes: list[KnowledgeNode] = []
+
+        # Root node (depth 0)
+        root = KnowledgeNode(
+            resource_id=resource.id, parent_id=None,
+            name=extracted.get("title", resource.name),
+            depth=0, sort_order=0,
+        )
+        self.db.add(root)
+        self.db.flush()
+        nodes.append(root)
+
+        # Track parents at each depth level for tree building
+        parent_stack = {0: root}  # depth → node
+
+        for i, section in enumerate(extracted.get("sections", [])):
+            depth = section.get("depth", 1)
+            parent_depth = depth - 1
+            parent = parent_stack.get(parent_depth, root)
+
+            node = KnowledgeNode(
+                resource_id=resource.id,
+                parent_id=parent.id,
+                name=section.get("title", f"段落 {i + 1}"),
+                depth=depth,
+                sort_order=i + 1,
+                source_page_number=section.get("page_start"),
+                source_text=section.get("content", "")[:500],
+            )
+            self.db.add(node)
+            self.db.flush()
+            nodes.append(node)
+            parent_stack[depth] = node
+
+        return nodes
+
+    # ================================================================
+    # Step 6: Store Chunks
+    # ================================================================
+
+    def _store_chunks(self, resource, chunks_data, embeddings, nodes):
+        """Store ResourceChunk instances with embeddings."""
+        # Build (title, depth) → node_id mapping
+        node_map: dict[tuple[str, int], uuid.UUID] = {}
+        for node in nodes[1:]:
+            node_map[(node.name, node.depth)] = node.id
 
         chunks = []
-        for i, chunk_data in enumerate(chunks_data):
-            # Find the matching knowledge node by section title
-            node_id = section_node_map.get(chunk_data.get("section_title", ""))
+        for i, cd in enumerate(chunks_data):
+            key = (cd.get("section_title", ""), cd.get("depth", 1))
+            node_id = node_map.get(key)
+            # Fallback: try matching by title only
+            if not node_id:
+                for (t, d), nid in node_map.items():
+                    if t == cd.get("section_title", ""):
+                        node_id = nid
+                        break
 
             chunk = ResourceChunk(
-                resource_id=resource.id,
-                node_id=node_id,
-                chunk_index=chunk_data["chunk_index"],
-                content=chunk_data["content"],
-                token_count=chunk_data["token_count"],
-                source_page_start=chunk_data.get("source_page_start"),
-                source_page_end=chunk_data.get("source_page_end"),
-                metadata_json={"section_title": chunk_data.get("section_title", "")},
+                resource_id=resource.id, node_id=node_id,
+                chunk_index=cd["chunk_index"], content=cd["content"],
+                token_count=cd["token_count"],
+                source_page_start=cd.get("source_page_start"),
+                source_page_end=cd.get("source_page_end"),
+                metadata_json={"section_title": cd.get("section_title", ""), "depth": cd.get("depth", 1)},
                 embedding=embeddings[i] if i < len(embeddings) else None,
             )
             chunks.append(chunk)
 
         self.chunk_repo.save_batch(chunks)
+
+    # ================================================================
+    # Step 7: Markdown Normalization
+    # ================================================================
+
+    def _save_normalized_markdown(self, resource: Resource, extracted: dict) -> str | None:
+        """Save a normalized .md version of the document."""
+        sections = extracted.get("sections", [])
+        if not sections:
+            return None
+
+        lines = [f"# {extracted.get('title', resource.name)}\n"]
+
+        for s in sections:
+            depth = s.get("depth", 1)
+            heading = "#" * (depth + 1)  # depth 1 → ##, depth 2 → ###
+            title = s.get("title", "")
+            content = s.get("content", "")
+            page = s.get("page_start")
+
+            if title:
+                page_ref = f" (p.{page})" if page else ""
+                lines.append(f"\n{heading} {title}{page_ref}\n")
+            if content:
+                lines.append(f"{content}\n")
+
+        md_content = "\n".join(lines)
+
+        # Save to uploads directory
+        user_id = str(resource.user_id)
+        upload_dir = Path(__file__).parent.parent.parent / "uploads" / user_id
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        md_path = upload_dir / f"{resource.id}.md"
+        md_path.write_text(md_content, encoding="utf-8")
+
+        logger.info("Saved normalized markdown: %s (%d chars)", md_path, len(md_content))
+        return str(md_path)
+
+    # ================================================================
+    # Step 8: Original File Cleanup
+    # ================================================================
+
+    def _cleanup_original_file(self, resource: Resource):
+        """Delete original PDF/image after successful processing. Keep .md."""
+        if not resource.gcs_path:
+            return
+        original = Path(resource.gcs_path)
+        if original.exists() and original.suffix.lower() != ".md":
+            try:
+                original.unlink()
+                logger.info("Deleted original file: %s", original)
+                resource.gcs_path = None
+            except Exception as e:
+                logger.warning("Failed to delete original file: %s", e)
+
+    # ================================================================
+    # Utilities
+    # ================================================================
+
+    def _resolve_file_path(self, resource: Resource) -> str:
+        if resource.gcs_path:
+            return resource.gcs_path
+        raise ValueError("資源無檔案路徑")
+
+    def _parse_json_response(self, text: str) -> dict:
+        """Parse JSON from LLM response, handling markdown blocks and truncation."""
+        text = text.strip()
+        if "```" in text:
+            lines = text.split("\n")
+            inner = []
+            in_block = False
+            for line in lines:
+                if line.strip().startswith("```"):
+                    in_block = not in_block
+                    continue
+                if in_block:
+                    inner.append(line)
+            text = "\n".join(inner)
+
+        text = text.strip()
+        # Fix truncated JSON
+        if not text.endswith("}"):
+            last_comma = text.rfind(",")
+            if last_comma > 0:
+                text = text[:last_comma] + "}}" * text[:last_comma].count("{")
+
+        # Replace curly/CJK quotes
+        text = text.replace('\u201c', '"').replace('\u201d', '"')
+        text = text.replace('\u300c', '"').replace('\u300d', '"')
+
+        return json.loads(text)
