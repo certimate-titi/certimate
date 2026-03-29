@@ -222,37 +222,39 @@ class DocumentProcessingService:
         """Extract text from PDF using local libraries (no API needed).
 
         Tries pymupdf (fitz) first, then falls back to reading raw bytes.
+        Uses AI to generate meaningful section titles when available.
         """
         # Try pymupdf
         try:
             import fitz  # pymupdf
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            sections = []
+            pages = []
             for page_num in range(len(doc)):
                 page = doc[page_num]
                 text = page.get_text()
                 if text.strip():
-                    # Extract title: find first meaningful line (skip page numbers, dots, short lines)
-                    title = None
-                    for line in text.strip().split('\n'):
-                        line = line.strip()
-                        if not line or len(line) < 4:
-                            continue
-                        # Skip lines that are page numbers (e.g. "1-1", "3-2"), dots, or special chars
-                        if re.match(r'^[\d\-\.]+$', line) or line.startswith('...') or line.startswith('\uf07d'):
-                            continue
-                        title = line[:60]
-                        break
-                    if not title:
-                        title = f"第 {page_num + 1} 頁"
-
-                    sections.append({
-                        "title": f"p.{page_num + 1} {title}",
+                    pages.append({
+                        "page_num": page_num + 1,
                         "content": text.strip(),
-                        "page_start": page_num + 1,
-                        "page_end": page_num + 1,
                     })
             doc.close()
+
+            if not pages:
+                raise ValueError("PDF 無文字內容")
+
+            # Use AI to generate chapter titles for each page
+            ai_titles = self._generate_page_titles(pages)
+
+            sections = []
+            for p in pages:
+                title = ai_titles.get(p["page_num"], f"第 {p['page_num']} 頁")
+                sections.append({
+                    "title": title,
+                    "content": p["content"],
+                    "page_start": p["page_num"],
+                    "page_end": p["page_num"],
+                })
+
             if sections:
                 return {"title": name, "sections": sections}
         except ImportError:
@@ -359,6 +361,98 @@ class DocumentProcessingService:
                 }
             ],
         }
+
+    def _generate_page_titles(self, pages: list[dict]) -> dict[int, str]:
+        """Use AI to generate meaningful chapter titles for each page.
+
+        Sends a summary of each page's content to LLM and gets back
+        structured chapter titles. Falls back to rule-based extraction if AI unavailable.
+        """
+        # Build a compact summary of each page (first 80 chars, max 30 pages)
+        page_summaries = []
+        for p in pages[:30]:
+            preview = p["content"][:80].replace('\n', ' ').strip()
+            page_summaries.append(f"p.{p['page_num']}: {preview}")
+
+        summary_text = "\n".join(page_summaries)
+
+        # Try AI title generation
+        has_llm = bool(
+            self.settings.ANTHROPIC_API_KEY
+            or self.settings.OPENAI_API_KEY
+            or self.settings.GEMINI_API_KEY
+        )
+
+        if has_llm:
+            try:
+                from app.services.llm_service import LLMService
+                llm = LLMService(db=self.db)
+
+                system_prompt = (
+                    "你是文件結構分析專家。根據每頁的開頭內容，為每頁生成一個簡短章節標題（10字以內）。\n"
+                    "標題範例：「序」「目錄」「第一章 考試科目」「3.1 No code概念」「AI應用領域」「資安風險」。\n"
+                    "只回傳 JSON，不要 markdown 標記。"
+                )
+
+                user_prompt = f"為以下頁面生成標題，JSON格式 {{\"titles\": {{\"頁碼\": \"標題\"}}}}：\n\n{summary_text}"
+
+                result = llm.generate(system_prompt, user_prompt, max_tokens=4000)
+
+                # Parse JSON (handle markdown blocks and truncated responses)
+                text = result.strip()
+                if "```" in text:
+                    lines = text.split("\n")
+                    inner = []
+                    in_block = False
+                    for line in lines:
+                        if line.strip().startswith("```"):
+                            in_block = not in_block
+                            continue
+                        if in_block:
+                            inner.append(line)
+                    text = "\n".join(inner)
+
+                # Fix truncated JSON: ensure it ends with }}
+                text = text.strip()
+                if not text.endswith("}"):
+                    # Find last complete key-value pair
+                    last_quote = text.rfind('"')
+                    if last_quote > 0:
+                        last_colon = text.rfind(':', 0, last_quote)
+                        last_comma = text.rfind(',', 0, last_colon) if last_colon > 0 else -1
+                        if last_comma > 0:
+                            text = text[:last_comma] + "}}"
+                        else:
+                            text = text + "}}"
+
+                # Replace curly quotes with straight quotes
+                text = text.replace('\u201c', '"').replace('\u201d', '"')
+                text = text.replace('\u300c', '"').replace('\u300d', '"')
+
+                parsed = json.loads(text)
+                titles = parsed.get("titles", parsed)
+                result = {int(k): str(v) for k, v in titles.items() if str(k).isdigit()}
+                if result:
+                    logger.info("AI generated %d page titles", len(result))
+                    return result
+
+            except Exception as e:
+                logger.warning("AI title generation failed, using fallback: %s", e)
+
+        # Fallback: rule-based title extraction
+        titles = {}
+        for p in pages:
+            title = None
+            for line in p["content"].split('\n'):
+                line = line.strip()
+                if not line or len(line) < 4:
+                    continue
+                if re.match(r'^[\d\-\.]+$', line) or line.startswith('...') or line.startswith('\uf07d'):
+                    continue
+                title = line[:60]
+                break
+            titles[p["page_num"]] = title or f"第 {p['page_num']} 頁"
+        return titles
 
     def _resolve_file_path(self, resource: Resource) -> str:
         """Resolve the file path for a resource.
