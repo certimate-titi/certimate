@@ -116,6 +116,8 @@ class WrongAnswerService:
 
         user = self.db.query(User).filter_by(id=user_uuid).first()
         plan = user.subscription_plan.value if user and user.subscription_plan else "FREE"
+        role = user.role.value if user and hasattr(user.role, 'value') else (user.role if user else "user")
+        is_admin = role in ("admin", "super_admin", "ADMIN", "SUPER_ADMIN")
 
         # Get knowledge node info for tip
         node = None
@@ -136,7 +138,7 @@ class WrongAnswerService:
             "tip": tip,
         }
 
-        if plan == "FREE":
+        if plan == "FREE" and not is_admin:
             result["deep_analysis_locked"] = True
             result["upgrade"] = {"target_plan": "PRO_199", "monthly_fee": 199}
         else:
@@ -373,8 +375,11 @@ class WrongAnswerService:
 
         user = self.db.query(User).filter_by(id=user_uuid).first()
         plan = user.subscription_plan.value if user and user.subscription_plan else "FREE"
+        role = user.role.value if user and hasattr(user.role, 'value') else (user.role if user else "user")
 
-        if plan == "FREE":
+        # Admin/super_admin bypass plan restrictions
+        is_admin = role in ("admin", "super_admin", "ADMIN", "SUPER_ADMIN")
+        if plan == "FREE" and not is_admin:
             return {"error": True, "status_code": 403, "message": "AI 教練對話為 PRO 以上方案專屬功能"}
 
         # Check cooldown

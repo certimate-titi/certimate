@@ -22,7 +22,7 @@ export default function ReviewBookPageWrapper() {
 function ReviewBookPage() {
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId');
-  const { isPro, isProPlus, isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
+  const { isPro, isProPlus, isAdmin, isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
   const router = useRouter();
 
   // Subject state
@@ -37,9 +37,9 @@ function ReviewBookPage() {
   const [sending, setSending] = useState(false);
   const [showCitation, setShowCitation] = useState(false);
 
-  const isFreeUser = subscriptionTier === 'FREE';
-  const isPro199Only = subscriptionTier === 'PRO_199';
-  const canChat = isProPlus; // PRO_PLUS_399 or ULTRA_1599
+  const isFreeUser = subscriptionTier === 'FREE' && !isAdmin;
+  const isPro199Only = subscriptionTier === 'PRO_199' && !isAdmin;
+  const canChat = isPro || isProPlus || isAdmin; // PRO, PRO_PLUS, ULTRA, ADMIN
 
   // Load subjects + guard
   useEffect(() => {
