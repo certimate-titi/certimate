@@ -71,13 +71,21 @@ class ExamService:
         resource = self.db.query(Resource).filter_by(id=nodes[0].resource_id).first()
         subject_id = resource.subject_id if resource else uuid.uuid4()
 
+        # 計算預估考試時間（每題 1.5 分鐘，最少 15 分鐘）
+        duration_minutes = max(15, int(question_count * 1.5))
+
+        # 將 node_ids 存入 difficulty_distribution 供 AI 生成使用
+        exam_config = dict(difficulty_distribution or {})
+        exam_config["node_ids"] = node_ids
+
         # 建立測驗
         exam = Exam(
             user_id=uid,
             subject_id=subject_id,
             status=ExamStatus.PENDING,
             total_questions=question_count,
-            difficulty_distribution=difficulty_distribution,
+            duration_minutes=duration_minutes,
+            difficulty_distribution=exam_config,
         )
         self.db.add(exam)
         self.db.commit()

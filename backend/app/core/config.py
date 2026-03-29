@@ -71,7 +71,7 @@ class Settings:
         self.CLAUDE_MODEL: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
         self.CLAUDE_PDF_MODEL: str = os.environ.get("CLAUDE_PDF_MODEL", "claude-sonnet-4-20250514")
         self.OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o")
-        self.GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        self.GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         self.VOYAGE_EMBED_MODEL: str = os.environ.get("VOYAGE_EMBED_MODEL", "voyage-3")
 
         # RAG 參數

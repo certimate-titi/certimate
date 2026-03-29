@@ -139,6 +139,7 @@ class MockExamService:
                 "title": getattr(exam, 'title', None) or "模擬測驗",
                 "status": exam.status.value if hasattr(exam.status, 'value') else exam.status,
                 "total_questions": exam.total_questions,
+                "duration_minutes": exam.duration_minutes or max(15, int((exam.total_questions or 10) * 1.5)),
             },
             "status": exam.status.value if hasattr(exam.status, 'value') else exam.status,
             "questions": [

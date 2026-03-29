@@ -147,6 +147,7 @@ export const examService = {
         id: (rawExam.id as string) || examId,
         title: (rawExam.title as string) || '模擬測驗',
         totalQuestions: (rawExam.total_questions as number) || rawQuestions.length,
+        timeLimit: ((rawExam.duration_minutes as number) || 15) * 60,
       },
       questions: rawQuestions.map(q => ({
         id: (q.id as string) || '',
@@ -175,7 +176,32 @@ export const examService = {
   },
 
   async getResults(examId: string): Promise<GetExamResultsResponse> {
-    return apiClient.get<GetExamResultsResponse>(`/exams/${examId}/result`);
+    const raw = await apiClient.get<Record<string, unknown>>(`/exams/${examId}/result`);
+
+    // Map backend flat response to frontend expected structure
+    const score = Number(raw.score) || 0;
+    const totalQuestions = (raw.total_questions as number) || 0;
+    const correctCount = (raw.correct_count as number) || 0;
+
+    return {
+      exam: {
+        id: (raw.exam_id as string) || examId,
+        title: (raw.title as string) || '模擬測驗',
+        score,
+        totalQuestions,
+        passingScore: Number(raw.passing_score) || 60,
+        passStatus: (raw.pass_status as string) || (score >= 60 ? '通過' : '未通過'),
+        timeSpent: (raw.time_spent_seconds as number) || 0,
+      },
+      questions: (raw.questions as GetExamResultsResponse['questions']) || [],
+      userAnswers: (raw.user_answers as GetExamResultsResponse['userAnswers']) || Array.from({ length: totalQuestions }, (_, i) => ({
+        questionId: `q_${i}`,
+        userChoice: null,
+        isCorrect: i < correctCount,
+      })),
+      domainAnalysis: (raw.domain_analysis as GetExamResultsResponse['domainAnalysis']) || [],
+      aiSummary: (raw.ai_summary as string) || '',
+    } as GetExamResultsResponse;
   },
 };
 

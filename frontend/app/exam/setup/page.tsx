@@ -140,11 +140,15 @@ export default function ExamSetupPage() {
       });
       const examId = result.exam?.id || result.exam_id || result.examId;
       setGeneratedExamId(examId);
+      // Navigate after a short delay for the loading animation to finish
+      setTimeout(() => {
+        router.push(`/exam/workspace?examId=${examId}`);
+      }, 1500);
     } catch (e) {
       console.error('Exam generation failed:', e);
       setIsGenerating(false);
     }
-  }, [selectedDocIds, questionCount, difficulty, questionTypes]);
+  }, [selectedDocIds, questionCount, difficulty, questionTypes, router]);
 
   const handleLoadingComplete = useCallback(() => {
     if (generatedExamId) {

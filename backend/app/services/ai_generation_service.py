@@ -228,14 +228,14 @@ class AiGenerationService:
         """
         points = stage1["exam_points"]
 
-        # Try Claude-powered generation
-        if self._rag_enabled and self._llm and rag_context:
+        # Try AI-powered generation (works with or without RAG context)
+        if self._rag_enabled and self._llm:
             try:
-                return self._stage2_claude(points, difficulty_dist, user_context, total_q, rag_context)
+                return self._stage2_claude(points, difficulty_dist, user_context, total_q, rag_context or "")
             except Exception as e:
-                logger.warning("Stage 2 Claude call failed, falling back to mock: %s", e)
+                logger.warning("Stage 2 AI call failed, falling back to mock: %s", e)
 
-        # Fallback: mock generation
+        # Fallback: generate questions from node source_text (no LLM needed)
         questions = []
         easy_count = round(total_q * difficulty_dist.get("easy", 30) / 100)
         hard_count = round(total_q * difficulty_dist.get("hard", 20) / 100)
@@ -248,51 +248,123 @@ class AiGenerationService:
         )
         random.shuffle(difficulty_pool)
 
+        # Gather source texts from knowledge nodes for question content
+        node_texts = {}
+        for p in points:
+            nid = p.get("node_id")
+            if nid:
+                node = self.db.query(KnowledgeNode).filter_by(id=uuid.UUID(nid)).first()
+                if node and node.source_text:
+                    node_texts[p["name"]] = node.source_text[:200]
+
         for i in range(total_q):
             point = points[i % len(points)]
             diff = difficulty_pool[i] if i < len(difficulty_pool) else "medium"
-            q = {
-                "question_text": f"{point['name']}相關考題第{i+1}題",
-                "correct_answer": f"正確答案_{i+1}",
-                "difficulty": diff,
-                "exam_point": point["name"],
-            }
+            point_name = point["name"]
+            source = node_texts.get(point_name, "")
+
+            if source:
+                # Generate question from source text
+                snippet = source[:100].strip()
+                q = {
+                    "question_text": f"關於「{point_name}」，以下敘述何者正確？\n\n「{snippet}...」",
+                    "correct_answer": f"根據教材，{snippet[:50]}",
+                    "difficulty": diff,
+                    "exam_point": point_name,
+                }
+            else:
+                q = {
+                    "question_text": f"關於「{point_name}」的核心概念，以下何者正確？",
+                    "correct_answer": f"{point_name}的基本定義與應用",
+                    "difficulty": diff,
+                    "exam_point": point_name,
+                }
             questions.append(q)
 
         return {"questions": questions, "total": len(questions)}
 
     def _stage2_claude(self, points, difficulty_dist, user_context, total_q, rag_context):
-        """Use Claude to generate questions from RAG context."""
-        prompt_ctx = self._build_prompt_contexts(user_context)
-        point_names = [p["name"] for p in points]
+        """Use Claude to generate questions from RAG context.
+
+        Generates in small batches (3 questions per call) to avoid rate limits.
+        """
+        import time
 
         system_prompt = (
-            "你是一位專業的考題出題老師。根據提供的文件內容，出一組高品質的考題。\n"
-            "每題必須基於文件中的實際內容，不得憑空捏造。\n"
-            f"個人化上下文：{prompt_ctx.get('stage_2', '無')}"
+            "你是一位專業的證照考試出題老師。\n"
+            "如果有提供文件段落，請根據文件內容出題。\n"
+            "如果沒有文件段落，請根據考點名稱，用你的專業知識出題。\n"
+            "每題必須包含：題目、4個選項(A/B/C/D)、正確答案字母、解析。\n"
+            "只回傳 JSON，不要有任何其他文字或 markdown 標記。"
         )
 
-        user_prompt = (
-            f"請根據以下考點，出 {total_q} 題選擇題。\n\n"
-            f"考點：{', '.join(point_names)}\n"
-            f"難度分布：簡單 {difficulty_dist.get('easy', 30)}%、中等 {difficulty_dist.get('medium', 50)}%、困難 {difficulty_dist.get('hard', 20)}%\n\n"
-            f"回傳 JSON 格式：\n"
-            f'{{"questions": [{{"question_text": "...", "correct_answer": "...", "difficulty": "easy|medium|hard", "exam_point": "考點名稱"}}]}}'
-        )
+        # Truncate RAG context to keep token usage low
+        truncated_context = rag_context[:2000] if rag_context else ""
 
-        result = self._llm.generate_with_context(system_prompt, user_prompt, rag_context)
-        parsed = json.loads(result) if isinstance(result, str) else result
+        all_questions = []
+        batch_size = 3
+        remaining = total_q
 
-        # Handle markdown-wrapped JSON
-        if isinstance(parsed, str):
-            text = parsed.strip()
-            if text.startswith("```"):
-                lines = text.split("\n")
-                text = "\n".join(lines[1:-1])
-            parsed = json.loads(text)
+        for batch_start in range(0, total_q, batch_size):
+            batch_count = min(batch_size, remaining)
+            if batch_count <= 0:
+                break
 
-        questions = parsed.get("questions", [])
-        return {"questions": questions[:total_q], "total": len(questions[:total_q])}
+            # Pick points for this batch
+            batch_points = [points[(batch_start + j) % len(points)] for j in range(batch_count)]
+            point_names = [p["name"] for p in batch_points]
+
+            user_prompt = (
+                f"出 {batch_count} 題選擇題。\n"
+                f"考點：{', '.join(point_names)}\n"
+                f"JSON: {{\"questions\": [{{\"question_text\": \"題目\", \"options\": {{\"A\": \"\", \"B\": \"\", \"C\": \"\", \"D\": \"\"}}, \"correct_answer\": \"A\", \"explanation\": \"短解析\", \"difficulty\": \"medium\", \"exam_point\": \"考點\"}}]}}"
+            )
+
+            try:
+                if truncated_context:
+                    result = self._llm.generate_with_context(
+                        system_prompt, user_prompt, truncated_context, max_tokens=4000
+                    )
+                else:
+                    result = self._llm.generate(
+                        system_prompt, user_prompt, max_tokens=4000
+                    )
+                parsed = self._parse_json_response(result)
+                batch_questions = parsed.get("questions", [])
+                all_questions.extend(batch_questions)
+                remaining -= len(batch_questions)
+                logger.info("Stage 2 batch %d: generated %d questions", batch_start // batch_size + 1, len(batch_questions))
+            except Exception as e:
+                logger.warning("Stage 2 batch failed: %s", e)
+                # Wait before retrying if rate limited
+                if "rate_limit" in str(e).lower():
+                    time.sleep(5)
+                break
+
+            # Small delay between batches to respect rate limits
+            if remaining > 0:
+                time.sleep(2)
+
+        if not all_questions:
+            raise ValueError("No questions generated from Claude")
+
+        return {"questions": all_questions[:total_q], "total": len(all_questions[:total_q])}
+
+    def _parse_json_response(self, text: str) -> dict:
+        """Parse JSON from LLM response, handling markdown code blocks."""
+        text = text.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            json_lines = []
+            in_block = False
+            for line in lines:
+                if line.strip().startswith("```"):
+                    in_block = not in_block
+                    continue
+                if in_block:
+                    json_lines.append(line)
+            text = "\n".join(json_lines)
+        return json.loads(text)
 
     # ------------------------------------------------------------------ #
     # Stage 3: Distractor Optimization
@@ -301,23 +373,53 @@ class AiGenerationService:
     def _stage3_distractor_optimization(self, stage2, user_context, rag_context=""):
         """Add distractors and explanations to each question.
 
-        When RAG is enabled, uses Claude to create high-quality distractors
-        based on document content. Falls back to mock otherwise.
+        If Stage 2 already produced options (from Claude), reformat them.
+        Otherwise generates distractors via Claude or mock fallback.
         """
         questions = stage2["questions"]
 
-        # Try Claude-powered distractor generation
-        if self._rag_enabled and self._llm and rag_context and questions:
+        # Check if Stage 2 already provided full options (from Claude batch generation)
+        if questions and isinstance(questions[0].get("options"), dict):
+            result = []
+            for q in questions:
+                opts = q["options"]  # {"A": "...", "B": "...", "C": "...", "D": "..."}
+                correct_label = q.get("correct_answer", "A")
+                option_list = [opts.get(k, "") for k in ["A", "B", "C", "D"]]
+                correct_idx = {"A": 0, "B": 1, "C": 2, "D": 3}.get(correct_label, 0)
+                result.append({
+                    "question_text": q["question_text"],
+                    "difficulty": q.get("difficulty", "medium"),
+                    "exam_point": q.get("exam_point", ""),
+                    "options": option_list,
+                    "correct_index": correct_idx,
+                    "explanation": q.get("explanation", ""),
+                    "distractor_reasons": {},
+                })
+            return {"questions": result}
+
+        # Try AI-powered distractor generation
+        if self._rag_enabled and self._llm and questions:
             try:
                 return self._stage3_claude(questions, user_context, rag_context)
             except Exception as e:
                 logger.warning("Stage 3 Claude call failed, falling back to mock: %s", e)
 
-        # Fallback: mock distractors
+        # Fallback: generate distractors from other exam points
+        all_point_names = list({q.get("exam_point", "") for q in questions if q.get("exam_point")})
         result = []
         for i, q in enumerate(questions):
             correct = q["correct_answer"]
-            distractors = [f"干擾項_{chr(65+j)}_{i+1}" for j in range(3)]
+            point_name = q.get("exam_point", "")
+
+            # Use other point names as distractors (more realistic than placeholder)
+            other_points = [p for p in all_point_names if p != point_name]
+            random.shuffle(other_points)
+            distractors = []
+            for j in range(3):
+                if j < len(other_points):
+                    distractors.append(f"與「{other_points[j]}」的概念混淆")
+                else:
+                    distractors.append(f"此為常見誤解，實際上並非如此")
 
             options = distractors.copy()
             correct_idx = random.randint(0, 3)
@@ -328,7 +430,7 @@ class AiGenerationService:
             for opt_idx in range(4):
                 if opt_idx != correct_idx:
                     distractor_reasons[str(opt_idx)] = (
-                        f"此選項錯誤，因為{distractors[d_idx]}是常見誤解"
+                        f"此選項錯誤，{distractors[d_idx]}"
                     )
                     d_idx += 1
 
