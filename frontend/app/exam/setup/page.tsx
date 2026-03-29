@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock } from 'lucide-react';
 import { documentService, examService, subjectService } from '@/lib/api/services';
 import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
@@ -34,8 +34,18 @@ const sourceTypeIcons: Record<string, { icon: typeof FileText; color: string }> 
   IMAGE_MATH: { icon: BrainCircuit, color: 'text-purple-500' },
 };
 
-export default function ExamSetupPage() {
+export default function ExamSetupPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>}>
+      <ExamSetupPage />
+    </Suspense>
+  );
+}
+
+function ExamSetupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedNodeId = searchParams.get('nodeId');
   const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -82,13 +92,41 @@ export default function ExamSetupPage() {
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
     const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
 
-    documentService.list().then(res => {
-      setDocuments(res.documents.filter(d =>
+    documentService.list().then(async res => {
+      const filteredDocs = res.documents.filter(d =>
         d.status === 'COMPLETED' && d.subjectId === targetSubjectId
-      ));
+      );
+      setDocuments(filteredDocs);
       setLoadingDocs(false);
+
+      // Auto-select document if nodeId is provided (from knowledge map)
+      if (preselectedNodeId && filteredDocs.length > 0) {
+        // If only one doc, auto-select it
+        if (filteredDocs.length === 1) {
+          setSelectedDocIds(new Set([filteredDocs[0].id]));
+        } else {
+          // Try to find which doc the node belongs to via API
+          try {
+            const { apiClient } = await import('@/lib/api/client');
+            const nodeDetail = await apiClient.get<Record<string, unknown>>(`/knowledge-map/nodes/${preselectedNodeId}`);
+            const resourceName = (nodeDetail as Record<string, unknown>)?.source_info?.node_name as string;
+            // Find matching doc by checking if any doc title matches
+            const matchingDoc = filteredDocs.find(d =>
+              resourceName && d.title.includes(resourceName.substring(0, 10))
+            );
+            if (matchingDoc) {
+              setSelectedDocIds(new Set([matchingDoc.id]));
+            } else {
+              // Default: select first doc
+              setSelectedDocIds(new Set([filteredDocs[0].id]));
+            }
+          } catch {
+            setSelectedDocIds(new Set([filteredDocs[0].id]));
+          }
+        }
+      }
     }).catch(() => setLoadingDocs(false));
-  }, [activeSubjectId, subjects]);
+  }, [activeSubjectId, subjects, preselectedNodeId]);
 
   const tierLimit = TIER_QUESTION_LIMITS[subscriptionTier];
 

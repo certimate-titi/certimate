@@ -362,7 +362,14 @@ export default function KnowledgeBasePage() {
                          selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分掌握' :
                          selectedNodeDetail.node?.masteryLevel === 'weak' ? '需加強' : '未測驗'}
                       </div>
-                      <button className="text-xs text-emerald-600 font-medium hover:text-emerald-700">
+                      <button
+                        onClick={() => {
+                          const nodeId = (selectedNodeDetail as Record<string, unknown>)?.node_id as string
+                            || selectedNodeDetail?.node?.id || '';
+                          router.push(`/exam/setup?nodeId=${nodeId}`);
+                        }}
+                        className="text-xs text-emerald-600 font-medium hover:text-emerald-700 hover:underline"
+                      >
                         生成此節點測驗
                       </button>
                     </div>
