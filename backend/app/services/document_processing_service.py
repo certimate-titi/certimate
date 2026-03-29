@@ -48,13 +48,10 @@ IMAGE_OCR_PROMPT = """請辨識這張圖片中的所有文字內容，並以結�
 以純文字格式回傳辨識結果。"""
 
 STRUCTURE_ANALYSIS_PROMPT = (
-    "你是文件結構分析專家。根據以下每頁的內容摘要，分析文件的章節結構。\n"
-    "產出一個巢狀的章節目錄，每個項目包含 title（標題）和 page_start（起始頁碼）。\n"
-    "結構應有 1-3 層深度（章 → 節 → 小節）。\n"
-    "只回傳 JSON，不要 markdown 標記。格式：\n"
-    '{"chapters": [{"title": "章標題", "page_start": 1, "page_end": 5, '
-    '"sections": [{"title": "節標題", "page_start": 1, "page_end": 2, '
-    '"subsections": [{"title": "小節", "page_start": 1}]}]}]}'
+    "分析文件結構，產出章節目錄 JSON。1-3 層深度（章→節→小節）。\n"
+    "標題要簡短（15字內）。只回傳 JSON，不要 markdown。\n"
+    '格式：{"chapters":[{"title":"章","page_start":1,"page_end":5,'
+    '"sections":[{"title":"節","page_start":1,"page_end":2}]}]}'
 )
 
 
@@ -370,16 +367,17 @@ class DocumentProcessingService:
         try:
             result = self._llm.generate(
                 STRUCTURE_ANALYSIS_PROMPT,
-                f"文件標題：{doc_title}\n\n" + "\n".join(summaries),
-                max_tokens=4000,
+                f"文件：{doc_title}\n\n" + "\n".join(summaries),
+                max_tokens=8000,
             )
 
             parsed = self._parse_json_response(result)
             chapters = parsed.get("chapters", [])
             if not chapters:
+                logger.warning("AI structure analysis returned no chapters")
                 return None
 
-            # Flatten nested structure into sections with depth
+            logger.info("AI structure analysis: %d chapters", len(chapters))
             return self._flatten_structure(chapters, sections)
 
         except Exception as e:
@@ -390,10 +388,27 @@ class DocumentProcessingService:
         """Convert nested chapter structure to flat section list with depth."""
         # Build page → content map from original sections
         page_content: dict[int, str] = {}
+        max_page = 0
         for s in original_sections:
             pn = s.get("page_start")
             if pn:
                 page_content[pn] = s["content"]
+                max_page = max(max_page, pn)
+
+        # Infer page_end for chapters that don't have it
+        for i, ch in enumerate(chapters):
+            if not ch.get("page_end"):
+                if i + 1 < len(chapters):
+                    ch["page_end"] = chapters[i + 1].get("page_start", ch.get("page_start", 0)) - 1
+                else:
+                    ch["page_end"] = max_page
+            # Same for sections
+            for j, sec in enumerate(ch.get("sections", [])):
+                if not sec.get("page_end"):
+                    if j + 1 < len(ch.get("sections", [])):
+                        sec["page_end"] = ch["sections"][j + 1].get("page_start", sec.get("page_start", 0)) - 1
+                    else:
+                        sec["page_end"] = ch["page_end"]
 
         result = []
         for ch in chapters:
@@ -685,14 +700,25 @@ class DocumentProcessingService:
             text = "\n".join(inner)
 
         text = text.strip()
-        # Fix truncated JSON
-        if not text.endswith("}"):
-            last_comma = text.rfind(",")
-            if last_comma > 0:
-                text = text[:last_comma] + "}}" * text[:last_comma].count("{")
 
         # Replace curly/CJK quotes
         text = text.replace('\u201c', '"').replace('\u201d', '"')
         text = text.replace('\u300c', '"').replace('\u300d', '"')
+
+        # Try parsing as-is first
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        # Fix truncated JSON: find last complete object and close brackets
+        # Strategy: remove incomplete trailing entry, then close all open brackets
+        last_complete = max(text.rfind("},"), text.rfind("}]"))
+        if last_complete > 0:
+            text = text[:last_complete + 1]
+            # Count unclosed brackets
+            opens = text.count("[") - text.count("]")
+            braces = text.count("{") - text.count("}")
+            text += "]" * opens + "}" * braces
 
         return json.loads(text)
