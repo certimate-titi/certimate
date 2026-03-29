@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BrainCircuit } from 'lucide-react';
+import TiTiLogo from '@/components/TiTiLogo';
 
 interface Stage {
   label: string;
@@ -84,7 +84,7 @@ export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: Ex
               transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
               className="mx-auto h-16 w-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-8"
             >
-              <BrainCircuit className="h-8 w-8 text-emerald-400" />
+              <TiTiLogo size={32} />
             </motion.div>
 
             <motion.p

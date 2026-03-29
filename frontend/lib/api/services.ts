@@ -215,7 +215,27 @@ export const reviewService = {
     if (examId) params.set('exam_id', examId);
     if (subjectId) params.set('subject_id', subjectId);
     const qs = params.toString();
-    return apiClient.get<GetReviewQuestionsResponse>(`/wrong-answers${qs ? `?${qs}` : ''}`);
+    const raw = await apiClient.get<Record<string, unknown>>(`/wrong-answers${qs ? `?${qs}` : ''}`);
+
+    // Map backend wrong_answers to frontend wrongQuestions
+    const wrongAnswers = (raw.wrong_answers || raw.wrongQuestions || []) as Array<Record<string, unknown>>;
+    return {
+      examTitle: (raw.exam_title as string) || '錯題複習',
+      wrongQuestions: wrongAnswers.map(wa => ({
+        question: {
+          id: (wa.question_id as string) || '',
+          content: (wa.content as string) || '',
+          correctAnswer: (wa.correct_answer as string) || '',
+          options: (wa.options as Array<{ label: string; text: string }>) || [],
+          explanation: (wa.explanation as string) || '',
+          subjectName: (wa.subject_name as string) || '',
+        },
+        userAnswer: {
+          userChoice: (wa.selected_answer as string) || '',
+          isCorrect: false,
+        },
+      })),
+    } as GetReviewQuestionsResponse;
   },
 
   async getChatHistory(questionId: string): Promise<ChatMessage[]> {

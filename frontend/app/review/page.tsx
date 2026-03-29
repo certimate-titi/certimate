@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BrainCircuit, ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw, BookOpen } from 'lucide-react';
+import { ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw, BookOpen } from 'lucide-react';
+import TiTiLogo from '@/components/TiTiLogo';
 import Link from 'next/link';
 import { reviewService, subjectService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
@@ -142,7 +143,7 @@ function ReviewBookPage() {
         />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <BrainCircuit className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+            <div className="mx-auto mb-4"><TiTiLogo size={64} /></div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">全部答對！</h2>
             <p className="text-slate-500 mb-6">目前該學科沒有錯題，太厲害了！</p>
             <Link href="/dashboard" className="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition-colors">
