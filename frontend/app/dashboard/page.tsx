@@ -589,58 +589,42 @@ export default function DashboardPage() {
                 })}
               </div>
 
-              {/* Today's Tasks */}
+              {/* Today's Tasks — dynamic based on study mode */}
               <div className="mt-4 pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-900 mb-2">今日特訓 (3月19日)</h3>
+                <h3 className="text-xs font-bold text-slate-900 mb-2">
+                  今日特訓 ({new Date().getMonth() + 1}月{new Date().getDate()}日)
+                </h3>
                 <div className="space-y-1.5">
-                  {data.reviewCalendar
-                    .filter(r => r?.date && new Date(r.date).getDate() === new Date().getDate())
-                    .flatMap(r => r.topics || [])
-                    .slice(0, 3)
-                    .map((topic, idx) => {
-                      const colors = ['bg-rose-500', 'bg-amber-500', 'bg-emerald-500'];
-                      const labels = ['錯題', '觀念', '複習'];
-                      const labelColors = ['bg-rose-100 text-rose-600', 'bg-amber-100 text-amber-600', 'bg-emerald-100 text-emerald-600'];
+                  {(data.todayTasks || []).length > 0 ? (
+                    (data.todayTasks as Array<{title: string; type: string}>).slice(0, 3).map((task, idx) => {
+                      const typeConfig: Record<string, {color: string; label: string; labelColor: string}> = {
+                        wrong: { color: 'bg-rose-500', label: '錯題', labelColor: 'bg-rose-100 text-rose-600' },
+                        unseen: { color: 'bg-amber-500', label: '新題', labelColor: 'bg-amber-100 text-amber-600' },
+                        review: { color: 'bg-emerald-500', label: '複習', labelColor: 'bg-emerald-100 text-emerald-600' },
+                      };
+                      const cfg = typeConfig[task.type] || typeConfig.review;
                       return (
                         <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
                           <div className="flex items-center gap-2 truncate pr-2">
-                            <div className={`w-1.5 h-1.5 rounded-full ${colors[idx % 3]} shrink-0`} />
-                            <span className="text-xs font-medium text-slate-700 truncate">{topic}</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${cfg.color} shrink-0`} />
+                            <span className="text-xs font-medium text-slate-700 truncate">{task.title}</span>
                           </div>
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${labelColors[idx % 3]}`}>
-                            {labels[idx % 3]}
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${cfg.labelColor}`}>
+                            {cfg.label}
                           </span>
                         </div>
                       );
-                    })}
-                  {data.reviewCalendar.filter(r => new Date(r.date).getDate() === 19).length === 0 && (
-                    <>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-2 truncate pr-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                          <span className="text-xs font-medium text-slate-700 truncate">AWS IAM Role 與 Policy</span>
-                        </div>
-                        <span className="text-[10px] font-medium text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded shrink-0">錯題</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-2 truncate pr-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                          <span className="text-xs font-medium text-slate-700 truncate">微積分 L&apos;Hôpital&apos;s</span>
-                        </div>
-                        <span className="text-[10px] font-medium text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">觀念</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-2 truncate pr-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                          <span className="text-xs font-medium text-slate-700 truncate">React Hooks 基礎</span>
-                        </div>
-                        <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded shrink-0">複習</span>
-                      </div>
-                    </>
+                    })
+                  ) : (
+                    <div className="text-center py-3 text-xs text-slate-400">
+                      {(data.todo_reminders?.wrong_answers || 0) > 0
+                        ? `有 ${data.todo_reminders.wrong_answers} 題錯題待複習`
+                        : '今日無特訓任務，保持複習節奏！'}
+                    </div>
                   )}
                 </div>
-                <Link href="/exam/setup" className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
-                  <Play className="h-3 w-3" /> 開始特訓
+                <Link href={data.todo_reminders?.wrong_answers > 0 ? '/review' : '/exam/setup'} className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
+                  <Play className="h-3 w-3" /> {data.todo_reminders?.wrong_answers > 0 ? '複習錯題' : '開始特訓'}
                 </Link>
               </div>
             </section>

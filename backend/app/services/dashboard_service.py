@@ -206,6 +206,58 @@ class DashboardService:
                     acc = max(0, min(100, overall_accuracy + variance))
                     domain_strengths.append({"domain": label, "accuracy": acc})
 
+        # --- Study mode & today's tasks (per 動態任務模式與學習權重策略.md) ---
+        # Determine study mode based on days_left
+        if days_left is not None and days_left <= 14:
+            study_mode = "sprint"
+            mode_label = "Sprint 衝刺"
+        elif days_left is not None and days_left <= 90:
+            study_mode = "standard"
+            mode_label = "Standard 正常準備"
+        else:
+            study_mode = "mastery"
+            mode_label = "Mastery 長期學習"
+
+        # Generate today's tasks based on mode + actual data
+        today_tasks = []
+
+        # Wrong answers → 錯題任務
+        if wrong_count > 0:
+            wrong_questions = (
+                self.db.query(Question.content)
+                .join(Answer, Answer.question_id == Question.id)
+                .join(Exam, Exam.id == Question.exam_id)
+                .filter(
+                    Answer.user_id == user_uuid,
+                    Exam.subject_id == active_subject_id,
+                    Answer.is_correct == False,  # noqa: E712
+                )
+                .order_by(Answer.answered_at.desc())
+                .limit(3)
+                .all()
+            )
+            for q in wrong_questions:
+                title = (q[0] or "")[:40]
+                today_tasks.append({"title": title, "type": "wrong"})
+
+        # Fill remaining slots based on mode
+        remaining = 3 - len(today_tasks)
+        if remaining > 0 and resource_ids:
+            # Get unseen knowledge nodes
+            unseen_nodes = (
+                self.db.query(KnowledgeNode.name)
+                .filter(
+                    KnowledgeNode.resource_id.in_(resource_ids),
+                    KnowledgeNode.depth >= 1,
+                )
+                .order_by(KnowledgeNode.sort_order)
+                .limit(remaining)
+                .all()
+            )
+            for n in unseen_nodes:
+                task_type = "unseen" if study_mode in ("sprint", "standard") else "review"
+                today_tasks.append({"title": (n[0] or "")[:40], "type": task_type})
+
         return {
             "subjects": subjects_list,
             "active_subject": active_subject_name,
@@ -213,6 +265,8 @@ class DashboardService:
             "exam_countdown": exam_countdown,
             "stats": stats,
             "domainStrengths": domain_strengths,
+            "studyMode": {"mode": study_mode, "label": mode_label},
+            "todayTasks": today_tasks[:3],
             "quick_upload": {"enabled": True},
             "todo_reminders": {"wrong_answers": wrong_count, "incomplete_exams": incomplete_exams},
         }
