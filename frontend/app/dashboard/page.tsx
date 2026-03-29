@@ -107,7 +107,15 @@ export default function DashboardPage() {
       setUploadProgress(100);
       setUploadStatus('completed');
       const d = await dashboardService.get();
-      setData(d);
+      setData({
+        ...d,
+        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
+        dailyQuests: d.dailyQuests || [],
+        activityItems: d.activityItems || [],
+        reviewCalendar: d.reviewCalendar || [],
+        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+        domainStrengths: d.domainStrengths || [],
+      });
       setTimeout(() => setUploadStatus('idle'), 4000);
     } catch {
       clearInterval(progressInterval);
@@ -141,7 +149,15 @@ export default function DashboardPage() {
       setUploadStatus('completed');
       setYoutubeUrl('');
       const d = await dashboardService.get();
-      setData(d);
+      setData({
+        ...d,
+        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
+        dailyQuests: d.dailyQuests || [],
+        activityItems: d.activityItems || [],
+        reviewCalendar: d.reviewCalendar || [],
+        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+        domainStrengths: d.domainStrengths || [],
+      });
       setTimeout(() => setUploadStatus('idle'), 4000);
     } catch {
       clearInterval(progressInterval);
