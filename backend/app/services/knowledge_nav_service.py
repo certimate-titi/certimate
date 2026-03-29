@@ -49,29 +49,45 @@ class KnowledgeNavService:
         ).all()
         mastery_map = {str(m.node_id): m for m in masteries}
 
-        result_nodes = []
+        # Build flat node list with full info
+        flat_nodes = {}
         for node in nodes:
             m = mastery_map.get(str(node.id))
-            mastery_rate = int(m.mastery_rate) if m else 0
-            total_count = m.total_count if m else 0
-            color = m.color if m else "gray"
-
-            result_nodes.append({
+            flat_nodes[str(node.id)] = {
                 "id": str(node.id),
-                "node_id": str(node.id),
                 "name": node.name,
                 "depth": node.depth,
-                "mastery_rate": mastery_rate,
-                "total_count": total_count,
-                "color": color,
-            })
+                "parent_id": str(node.parent_id) if node.parent_id else None,
+                "resource_id": str(node.resource_id) if node.resource_id else None,
+                "sort_order": node.sort_order or 0,
+                "source_page": node.source_page_number,
+                "mastery_rate": int(m.mastery_rate) if m else 0,
+                "mastery_color": m.color if m else "gray",
+                "children": [],
+            }
+
+        # Build tree by attaching children to parents
+        roots = []
+        for nid, node_data in flat_nodes.items():
+            pid = node_data["parent_id"]
+            if pid and pid in flat_nodes:
+                flat_nodes[pid]["children"].append(node_data)
+            else:
+                roots.append(node_data)
+
+        # Sort children by sort_order
+        def sort_tree(node_list):
+            node_list.sort(key=lambda n: n["sort_order"])
+            for n in node_list:
+                sort_tree(n["children"])
+        sort_tree(roots)
 
         result_resources = [
             {"id": str(r.id), "name": r.name, "type": r.type.value if hasattr(r.type, 'value') else r.type}
             for r in resources
         ]
 
-        return {"error": False, "nodes": result_nodes, "resources": result_resources}
+        return {"error": False, "nodes": roots, "resources": result_resources}
 
     def get_node_detail(self, node_id: str, user_id: str) -> dict:
         """取得節點詳情（含溯源資訊）。"""

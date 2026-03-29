@@ -8,6 +8,7 @@ import { knowledgeService, subjectService, documentService } from '@/lib/api/ser
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 
 interface ChatMessage {
   role: 'user' | 'ai';
@@ -24,6 +25,7 @@ export default function KnowledgeBasePage() {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [nodes, setNodes] = useState<KnowledgeNode[]>([]);
+  const [mindMapNodes, setMindMapNodes] = useState<MindMapNode[]>([]);
   // Subject state (備考科目)
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
@@ -88,6 +90,8 @@ export default function KnowledgeBasePage() {
 
       setDocuments(allDocuments);
       setNodes(allNodes);
+      // Store tree-structured nodes for MindMapTree component
+      setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
       setSelectedDocId(allDocuments[0]?.id ?? null);
 
       // Auto-expand first-level nodes
@@ -536,7 +540,7 @@ export default function KnowledgeBasePage() {
           <div className="w-80 bg-white flex flex-col shrink-0 border-l border-slate-100">
             <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Network className="h-4 w-4 text-emerald-500" /> 知識導航
+                <Network className="h-4 w-4 text-emerald-500" /> 知識心智圖
               </h3>
               <button
                 onClick={() => setMindMapCollapsed(true)}
@@ -546,92 +550,12 @@ export default function KnowledgeBasePage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
-              {/* Tree-style mind map navigator */}
-              {nodes.map(node => {
-                const isExpanded = expandedNodes.has(node.id);
-                const isActive = selectedNodeDetail?.node.id === node.id;
-                const nodeMasteryText =
-                  node.masteryLevel === 'mastered' ? 'text-emerald-600' :
-                  node.masteryLevel === 'partial' ? 'text-amber-600' :
-                  node.masteryLevel === 'weak' ? 'text-rose-600' :
-                  'text-slate-400';
-                const nodeMasteryBorder =
-                  node.masteryLevel === 'mastered' ? 'border-emerald-200 bg-emerald-50/30' :
-                  node.masteryLevel === 'partial' ? 'border-amber-200 bg-amber-50/30' :
-                  node.masteryLevel === 'weak' ? 'border-rose-200 bg-rose-50/30' :
-                  'border-slate-200 bg-slate-50/30';
-                return (
-                  <div key={node.id} className="mb-1">
-                    <button
-                      onClick={() => {
-                        toggleNodeExpand(node.id);
-                        handleNodeClick(node.id);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                        isActive
-                          ? `${nodeMasteryBorder} font-bold border`
-                          : `hover:bg-slate-50`
-                      }`}
-                    >
-                      {node.children && node.children.length > 0 ? (
-                        isExpanded ? <ChevronDown className={`h-3.5 w-3.5 ${nodeMasteryText} shrink-0`} /> : <ChevronRight className={`h-3.5 w-3.5 ${nodeMasteryText} shrink-0`} />
-                      ) : (
-                        <div className="w-3.5 shrink-0" />
-                      )}
-                      <span className={`text-sm truncate ${isActive ? nodeMasteryText : nodeMasteryText}`}>{node.label || node.name}</span>
-                    </button>
-
-                    {/* Children */}
-                    {isExpanded && node.children && node.children.length > 0 && (
-                      <div className="ml-5 border-l border-slate-100 pl-2 mt-0.5">
-                        {node.children.map(child => {
-                          const childActive = selectedNodeDetail?.node.id === child.id;
-                          const masteryDot =
-                            child.masteryLevel === 'mastered' ? 'bg-emerald-400' :
-                            child.masteryLevel === 'partial' ? 'bg-amber-400' :
-                            child.masteryLevel === 'weak' ? 'bg-rose-400' :
-                            'bg-slate-300';
-                          const childMasteryText =
-                            child.masteryLevel === 'mastered' ? 'text-emerald-600' :
-                            child.masteryLevel === 'partial' ? 'text-amber-600' :
-                            child.masteryLevel === 'weak' ? 'text-rose-600' :
-                            'text-slate-400';
-                          const childActiveBg =
-                            child.masteryLevel === 'mastered' ? 'bg-emerald-50' :
-                            child.masteryLevel === 'partial' ? 'bg-amber-50' :
-                            child.masteryLevel === 'weak' ? 'bg-rose-50' :
-                            'bg-slate-50';
-                          return (
-                            <button
-                              key={child.id}
-                              onClick={() => handleNodeClick(child.id)}
-                              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors my-0.5 ${
-                                childActive
-                                  ? `${childActiveBg} ${childMasteryText} font-semibold`
-                                  : `${childMasteryText} hover:bg-slate-50`
-                              }`}
-                            >
-                              <div className={`w-2 h-2 rounded-full shrink-0 ${masteryDot}`} />
-                              <span className="text-xs truncate">{child.label || child.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-3 text-[10px] text-slate-500">
-                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /> 精熟</span>
-                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /> 部分</span>
-                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /> 需加強</span>
-                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-slate-300" /> 未測驗</span>
-              </div>
+            <div className="flex-1 overflow-y-auto">
+              <MindMapTree
+                nodes={mindMapNodes}
+                selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as Record<string, unknown>).node_id as string || null : null}
+                onNodeClick={handleNodeClick}
+              />
             </div>
           </div>
         )}
