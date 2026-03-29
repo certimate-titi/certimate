@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock } from 'lucide-react';
 import { documentService, examService, subjectService } from '@/lib/api/services';
@@ -54,6 +54,7 @@ export default function ExamSetupPage() {
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedExamId, setGeneratedExamId] = useState<string | null>(null);
+  const generatedExamIdRef = useRef<string | null>(null);
 
   // Load subjects + guard
   useEffect(() => {
@@ -139,20 +140,30 @@ export default function ExamSetupPage() {
         },
       });
       const examId = result.exam?.id || result.exam_id || result.examId;
+      generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
-      // Navigate after a short delay for the loading animation to finish
-      setTimeout(() => {
-        router.push(`/exam/workspace?examId=${examId}`);
-      }, 1500);
     } catch (e) {
       console.error('Exam generation failed:', e);
       setIsGenerating(false);
     }
-  }, [selectedDocIds, questionCount, difficulty, questionTypes, router]);
+  }, [selectedDocIds, questionCount, difficulty, questionTypes]);
 
+  // Navigate when loading animation completes (uses ref to avoid stale closure)
   const handleLoadingComplete = useCallback(() => {
+    const examId = generatedExamIdRef.current;
+    if (examId) {
+      router.push(`/exam/workspace?examId=${examId}`);
+    }
+  }, [router]);
+
+  // Backup: navigate when generatedExamId state updates
+  useEffect(() => {
     if (generatedExamId) {
-      router.push(`/exam/workspace?examId=${generatedExamId}`);
+      // Give overlay a moment to show 100%, then navigate
+      const timer = setTimeout(() => {
+        router.push(`/exam/workspace?examId=${generatedExamId}`);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [generatedExamId, router]);
 
