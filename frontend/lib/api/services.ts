@@ -228,11 +228,17 @@ export const reviewService = {
       wrongQuestions: wrongAnswers.map(wa => ({
         question: {
           id: (wa.question_id as string) || '',
+          contentText: (wa.content as string) || '',
           content: (wa.content as string) || '',
           correctAnswer: (wa.correct_answer as string) || '',
           options: (wa.options as Array<{ label: string; text: string }>) || [],
           explanation: (wa.explanation as string) || '',
+          explanationMarkdown: (wa.explanation as string) || '',
           subjectName: (wa.subject_name as string) || '',
+          tags: [(wa.subject_name as string) || ''],
+          citationChunkId: null,
+          citationDocTitle: null,
+          citationPage: null,
         },
         userAnswer: {
           userChoice: (wa.selected_answer as string) || '',

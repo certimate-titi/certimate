@@ -276,7 +276,7 @@ function ReviewBookPage() {
               <div className="mt-8 rounded-xl border border-slate-200 overflow-hidden relative">
                 <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                    <BrainCircuit className="h-4 w-4 text-emerald-500" /> 詳細解析
+                    <Sparkles className="h-4 w-4 text-emerald-500" /> 詳細解析
                   </div>
                   {/* Citation button (visible to PRO_199+) */}
                   {isPro && question.citationChunkId && (
@@ -340,7 +340,7 @@ function ReviewBookPage() {
         {/* Right Panel: AI Tutor */}
         <div className="w-[400px] bg-slate-50 flex flex-col shrink-0 relative">
           <div className="p-4 border-b border-slate-200 bg-white flex items-center gap-2">
-            <BrainCircuit className="h-5 w-5 text-emerald-500" />
+            <Sparkles className="h-5 w-5 text-emerald-500" />
             <h2 className="font-bold text-slate-900">AI 蘇格拉底教練</h2>
           </div>
 
@@ -350,7 +350,7 @@ function ReviewBookPage() {
               msg.role === 'ai' ? (
                 <div key={msg.id} className="flex gap-4">
                   <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <BrainCircuit className="h-5 w-5 text-emerald-600" />
+                    <Sparkles className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
                     {msg.content}
@@ -376,7 +376,7 @@ function ReviewBookPage() {
             {sending && (
               <div className="flex gap-4">
                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                  <BrainCircuit className="h-5 w-5 text-emerald-600" />
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200">
                   <div className="flex gap-1">

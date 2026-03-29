@@ -40,6 +40,13 @@ class WrongAnswerService:
 
         wrong_answers = []
         for q, a, exam, subj in rows:
+            # Build options from question fields
+            options = []
+            for label, attr in [("A", "option_a"), ("B", "option_b"), ("C", "option_c"), ("D", "option_d")]:
+                text = getattr(q, attr, None) or ""
+                if text:
+                    options.append({"label": label, "text": text})
+
             wrong_answers.append({
                 "question_id": str(q.id),
                 "exam_id": str(exam.id),
@@ -47,6 +54,8 @@ class WrongAnswerService:
                 "correct_answer": q.correct_answer,
                 "selected_answer": a.selected_answer,
                 "subject_name": subj.name,
+                "explanation": q.explanation or "",
+                "options": options,
             })
 
         return {"wrong_answers": wrong_answers}
