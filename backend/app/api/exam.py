@@ -75,6 +75,7 @@ def submit_exam_config(
 class SaveAnswerRequest(BaseModel):
     question_id: str
     selected_answer: str | None = None
+    user_choice: str | None = None  # frontend sends this
     marked_for_review: bool | None = None
 
 
@@ -101,7 +102,7 @@ def save_answer(
         exam_id=exam_id,
         user_id=user_id,
         question_id=body.question_id,
-        selected_answer=body.selected_answer,
+        selected_answer=body.selected_answer or body.user_choice,
         marked_for_review=body.marked_for_review,
     )
     return _handle_result(result)

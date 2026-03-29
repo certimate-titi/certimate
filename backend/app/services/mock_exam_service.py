@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.exam import Exam, ExamStatus
 from app.models.answer import Answer
+from app.models.question import Question
 
 
 class MockExamService:
@@ -95,14 +96,51 @@ class MockExamService:
         if exam.user_id != uid:
             return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
 
+        # Grade: compare each answer with correct answer
+        questions = self.db.query(Question).filter_by(exam_id=exam.id).all()
+        q_map = {str(q.id): q for q in questions}
+
+        answers = self.db.query(Answer).filter_by(
+            exam_id=exam.id, user_id=uid
+        ).all()
+
+        correct_count = 0
+        for answer in answers:
+            q = q_map.get(str(answer.question_id))
+            if not q or not answer.selected_answer:
+                answer.is_correct = False
+                continue
+
+            # Compare: correct_answer can be index ("0","1","2","3") or label ("A","B","C","D")
+            correct = q.correct_answer
+            selected = answer.selected_answer
+
+            # Normalize both to index for comparison
+            label_to_idx = {"A": "0", "B": "1", "C": "2", "D": "3"}
+            correct_normalized = label_to_idx.get(correct.upper(), correct) if correct else ""
+            selected_normalized = label_to_idx.get(selected.upper(), selected) if selected else ""
+
+            answer.is_correct = (correct_normalized == selected_normalized)
+            if answer.is_correct:
+                correct_count += 1
+
+        # Calculate score
+        total = len(questions) or 1
+        score = round((correct_count / total) * 100)
+
         exam.status = ExamStatus.SUBMITTED
         exam.submitted_at = datetime.now(timezone.utc)
+        exam.score = score
+        exam.correct_count = correct_count
         self.db.commit()
 
         return {
             "error": False,
             "exam_id": str(exam.id),
             "status": "SUBMITTED",
+            "score": score,
+            "correct_count": correct_count,
+            "total_questions": total,
         }
 
     def resume_exam(self, exam_id: str, user_id: str) -> dict:
