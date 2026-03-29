@@ -75,3 +75,95 @@ def resolve_report(
         note=body.note,
     )
     return _handle_result(result)
+
+
+# ── Frontend-compatible endpoints ────────────────────────────────────────────
+
+@router.get("/queue")
+def get_moderation_queue(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """審核佇列（映射到 reports API）。"""
+    service = AdminModerationService(db)
+    result = service.get_report_queue(actor_id=user_id, status="pending")
+    if result.get("error"):
+        return _handle_result(result)
+    # Transform to frontend expected format
+    items = []
+    for r in result.get("reports", []):
+        items.append({
+            "id": r.get("id", ""),
+            "user": r.get("reporter_email", "unknown"),
+            "type": r.get("content_type", "content"),
+            "content": r.get("reason", "")[:50],
+            "reason": r.get("reason", ""),
+            "status": r.get("status", "pending"),
+            "time": r.get("created_at", ""),
+        })
+    return {"items": items}
+
+
+@router.get("/stats")
+def get_moderation_stats(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """審核統計。"""
+    service = AdminModerationService(db)
+    abuse = service.get_ai_abuse_dashboard(actor_id=user_id)
+    reports = service.get_report_queue(actor_id=user_id)
+    pending = len([r for r in reports.get("reports", []) if r.get("status") == "pending"])
+    cooled = len(abuse.get("cooled_users", []))
+    return {
+        "pending_reports": pending,
+        "auto_flagged_today": 0,
+        "cooled_users": cooled,
+        "false_positive_rate": "0%",
+    }
+
+
+@router.get("/abuse")
+def get_abuse_monitoring(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """濫用監控（映射到 ai-abuse API）。"""
+    service = AdminModerationService(db)
+    result = service.get_ai_abuse_dashboard(actor_id=user_id)
+    if result.get("error"):
+        return _handle_result(result)
+    items = []
+    for u in result.get("cooled_users", []):
+        items.append({
+            "id": u.get("user_id", ""),
+            "user": u.get("email", "unknown"),
+            "metric": "AI 超綱提問",
+            "count": str(u.get("cooldown_count", 0)),
+            "status": "cooled",
+            "time": u.get("cooldown_until", ""),
+        })
+    return {"items": items}
+
+
+@router.get("/content-review")
+def get_content_review_queue(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """內容審核佇列。"""
+    service = AdminModerationService(db)
+    result = service.get_report_queue(actor_id=user_id)
+    if result.get("error"):
+        return _handle_result(result)
+    items = []
+    for i, r in enumerate(result.get("reports", [])):
+        items.append({
+            "id": i + 1,
+            "type": r.get("content_type", "resource"),
+            "content": r.get("reason", ""),
+            "reporter": r.get("reporter_email", ""),
+            "status": r.get("status", "pending"),
+            "date": r.get("created_at", ""),
+        })
+    return {"items": items}

@@ -22,8 +22,8 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
+      <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-3">
           <button
             className="md:hidden text-slate-600 hover:text-emerald-600 transition-colors"
             onClick={() => setIsOpen(!isOpen)}

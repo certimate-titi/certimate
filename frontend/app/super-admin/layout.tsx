@@ -64,16 +64,7 @@ export default function SuperAdminLayout({
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <TiTiLogo size={32} />
-          {isSidebarOpen && (
-            <span className="ml-3 font-bold text-xl tracking-tight truncate">
-              TiTi <span className="text-xs text-slate-400 font-normal">Admin</span>
-            </span>
-          )}
-        </div>
-
-        <nav className="flex-1 py-6 space-y-1 px-3">
+        <nav className="flex-1 py-4 space-y-1 px-3">
           {sidebarItems.map((item) => {
             const isActive = pathname === item.href;
             return (

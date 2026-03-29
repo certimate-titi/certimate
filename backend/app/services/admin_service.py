@@ -3,12 +3,15 @@
 import csv
 import io
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User, UserRole, UserStatus, SubscriptionPlan
 from app.models.audit_log import AdminAuditLog
+from app.models.exam import Exam, ExamStatus
+from app.models.resource import Resource, ResourceStatus
 
 
 def _get_role(user: User) -> str:
@@ -86,14 +89,67 @@ class AdminService:
         )
         conversion_rate = round(paid / total, 4) if total > 0 else 0.0
 
+        # DAU: users who had exam activity today
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        dau = (
+            self.db.query(func.count(func.distinct(Exam.user_id)))
+            .filter(Exam.created_at >= today_start)
+            .scalar() or 0
+        )
+
+        # MAU: users who had exam activity this month
+        month_start = today_start.replace(day=1)
+        mau = (
+            self.db.query(func.count(func.distinct(Exam.user_id)))
+            .filter(Exam.created_at >= month_start)
+            .scalar() or 0
+        )
+
+        # New registrations this week
+        week_start = today_start - timedelta(days=today.weekday())
+        new_registrations = (
+            self.db.query(func.count(User.id))
+            .filter(User.created_at >= week_start)
+            .scalar() or 0
+        )
+
+        # MRR: sum of plan prices for paid users
+        plan_prices = {"PRO_199": 199, "PRO_PLUS_399": 399, "ULTRA_1599": 1599}
+        mrr = 0
+        for plan_val, price in plan_prices.items():
+            try:
+                plan_enum = SubscriptionPlan(plan_val)
+                count = self.db.query(func.count(User.id)).filter(User.subscription_plan == plan_enum).scalar() or 0
+                mrr += count * price
+            except ValueError:
+                pass
+
+        # AI cost today: estimate from exams generated today
+        ai_exams_today = (
+            self.db.query(func.count(Exam.id))
+            .filter(
+                Exam.created_at >= today_start,
+                Exam.status.in_([ExamStatus.READY, ExamStatus.SUBMITTED]),
+            )
+            .scalar() or 0
+        )
+        ai_token_today = round(ai_exams_today * 0.01, 2)  # ~$0.01 per exam
+
+        # Queue depth: resources currently processing
+        queue_depth = (
+            self.db.query(func.count(Resource.id))
+            .filter(Resource.status == ResourceStatus.PROCESSING)
+            .scalar() or 0
+        )
+
         result = {
-            "dau": 0,
-            "mau": 0,
-            "new_registrations": 0,
+            "dau": dau,
+            "mau": mau,
+            "new_registrations": new_registrations,
             "conversion_rate": conversion_rate,
-            "mrr": 0,
-            "ai_token_today": 0,
-            "queue_depth": 0,
+            "mrr": mrr,
+            "ai_token_today": ai_token_today,
+            "queue_depth": queue_depth,
         }
 
         if role == "admin":
