@@ -1,8 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth as firebaseAuth, googleProvider } from '@/firebase';
 import type { User, SubscriptionTier, UserRole } from '@/types';
 import { apiClient, getStoredToken, setStoredToken, clearStoredToken } from '@/lib/api/client';
+import { authService } from '@/lib/api/services';
 
 /** Backend plan → frontend tier mapping */
 const PLAN_TO_TIER: Record<string, SubscriptionTier> = {
@@ -88,6 +91,7 @@ interface AuthContextValue {
   onboardingCompleted: boolean;
   setOnboardingCompleted: (completed: boolean) => void;
   loginWithCredentials: (email: string, password: string) => Promise<{ redirect_to: string }>;
+  loginWithGoogle: () => Promise<{ redirect_to: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -127,9 +131,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { redirect_to: res.redirect_to };
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const result = await signInWithPopup(firebaseAuth, googleProvider);
+    const idToken = await result.user.getIdToken();
+    console.log('[Google SSO] Firebase ID token length:', idToken.length);
+    console.log('[Google SSO] Firebase ID token (first 50):', idToken.substring(0, 50));
+    const res = await authService.googleSSO(idToken);
+    setStoredToken((res as any).access_token);
+    const me = await apiClient.get<BackendMeResponse>('/auth/me');
+    const u = backendMeToUser(me);
+    setUser(u);
+    return { redirect_to: (res as any).redirect_to || '/dashboard' };
+  }, []);
+
   const signOut = useCallback(async () => {
     clearStoredToken();
     setUser(null);
+    window.location.href = '/login';
   }, []);
 
   const setSubscriptionTier = useCallback((tier: SubscriptionTier) => {
@@ -156,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onboardingCompleted,
     setOnboardingCompleted,
     loginWithCredentials,
+    loginWithGoogle,
     signOut,
   };
 

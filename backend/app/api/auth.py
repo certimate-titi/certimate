@@ -6,19 +6,22 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_current_user_id
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
     GoogleSSORequest,
     ForgotPasswordRequest,
     PasswordStrengthRequest,
+    VerifyEmailRequest,
+    ResendVerificationRequest,
 )
 
 router = APIRouter()
 
 
 def _get_auth_service(db: Session = Depends(get_db)) -> AuthService:
-    return AuthService(UserRepository(db))
+    return AuthService(UserRepository(db), email_service=EmailService())
 
 
 @router.post("/auth/register")
@@ -26,6 +29,20 @@ def register(request: RegisterRequest, service: AuthService = Depends(_get_auth_
     result = service.register(request.email, request.password, request.agreed_to_terms)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
+    return result
+
+
+@router.post("/auth/verify-email")
+def verify_email(request: VerifyEmailRequest, service: AuthService = Depends(_get_auth_service)):
+    result = service.verify_email(request.token)
+    if result.get("error"):
+        raise HTTPException(status_code=result["status_code"], detail=result["message"])
+    return result
+
+
+@router.post("/auth/resend-verification")
+def resend_verification(request: ResendVerificationRequest, service: AuthService = Depends(_get_auth_service)):
+    result = service.resend_verification(request.email)
     return result
 
 
@@ -39,7 +56,7 @@ def login(request: LoginRequest, service: AuthService = Depends(_get_auth_servic
 
 @router.post("/auth/google-sso")
 def google_sso(request: GoogleSSORequest, service: AuthService = Depends(_get_auth_service)):
-    result = service.google_sso(request.email, request.google_token)
+    result = service.google_sso(request.google_id_token)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
     return result

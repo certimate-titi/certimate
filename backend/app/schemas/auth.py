@@ -1,7 +1,6 @@
 """Auth Pydantic schemas."""
 
-from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class RegisterRequest(BaseModel):
@@ -16,8 +15,7 @@ class LoginRequest(BaseModel):
 
 
 class GoogleSSORequest(BaseModel):
-    email: str
-    google_token: str
+    google_id_token: str
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -26,3 +24,11 @@ class ForgotPasswordRequest(BaseModel):
 
 class PasswordStrengthRequest(BaseModel):
     password: str
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: str

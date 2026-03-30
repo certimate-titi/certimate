@@ -88,6 +88,45 @@ Feature: 身分驗證
       And 系統應建立新帳號，訂閱方案為 "FREE"，狀態為 "待驗證"
       And 系統應發送帳號驗證信至 "newuser@example.com"
 
+  Rule: 後置（狀態）- Email 驗證流程確認帳號啟用
+
+    Example: 使用者點擊驗證連結後帳號應從待驗證變為已啟用
+      Given 使用者 "pending@example.com" 帳號狀態為 "待驗證"
+      When 使用者以有效驗證 token 確認 Email
+      Then 操作成功
+      And 該帳號狀態應更新為 "已啟用"
+
+    Example: 使用過期或無效的驗證 token 時驗證失敗
+      When 使用者以無效驗證 token 確認 Email
+      Then 操作失敗
+      And 錯誤訊息應為 "驗證連結無效或已過期"
+
+    Example: 已啟用的帳號再次點擊驗證連結不應報錯
+      Given 使用者 "alice@example.com" 帳號狀態為 "已啟用"
+      When 使用者以有效驗證 token 確認 Email
+      Then 操作成功
+      And 該帳號狀態仍為 "已啟用"
+
+  Rule: 後置（狀態）- 待驗證用戶可重新發送驗證信
+
+    Example: 待驗證用戶請求重寄驗證信
+      When 使用者以 Email "pending@example.com" 請求重寄驗證信
+      Then 操作成功
+      And 系統應發送帳號驗證信至 "pending@example.com"
+
+    Example: 以不存在的 Email 請求重寄驗證信仍回傳成功
+      When 使用者以 Email "nobody@example.com" 請求重寄驗證信
+      Then 操作成功
+
+  Rule: 後置（狀態）- Google SSO 登入可自動啟用待驗證帳號
+
+    Example: 待驗證用戶以相同 Email 透過 Google SSO 登入自動啟用帳號
+      Given 使用者 "pending@example.com" 帳號狀態為 "待驗證"
+      When 使用者透過 Google SSO 登入且 Email 為 "pending@example.com"
+      Then 操作成功
+      And 該帳號狀態應更新為 "已啟用"
+      And 回應應包含有效的 JWT 存取憑證
+
   Rule: 後置（回應）- 成功登入後應回傳 JWT 存取憑證與使用者資訊
 
     Example: 以正確帳密成功登入

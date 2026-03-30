@@ -50,12 +50,24 @@ export const authService = {
     return apiClient.post<AuthResponse>('/auth/login', req);
   },
 
-  async signup(req: SignupRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/auth/register', {
+  async signup(req: SignupRequest): Promise<any> {
+    return apiClient.post('/auth/register', {
       email: req.email,
       password: req.password,
       agreed_to_terms: true,
     });
+  },
+
+  async verifyEmail(token: string): Promise<{ error: boolean; message: string }> {
+    return apiClient.post('/auth/verify-email', { token });
+  },
+
+  async resendVerification(email: string): Promise<{ error: boolean; message: string }> {
+    return apiClient.post('/auth/resend-verification', { email });
+  },
+
+  async googleSSO(googleIdToken: string): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>('/auth/google-sso', { google_id_token: googleIdToken });
   },
 
   async getCurrentUser(): Promise<AuthResponse | null> {

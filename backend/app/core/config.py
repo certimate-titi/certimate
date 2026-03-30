@@ -61,6 +61,24 @@ class Settings:
         self.PROJECT_NAME: str = "CertiMate API"
         self.DEBUG: bool = os.environ.get("DEBUG", "true").lower() == "true"
 
+        # CORS — comma-separated origins, empty = allow all
+        self.ALLOWED_ORIGINS: str = os.environ.get("ALLOWED_ORIGINS", "")
+
+        # Frontend URL (for email verification links)
+        self.FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+        # SMTP email settings (Gmail: smtp.gmail.com, port 587, App Password)
+        self.SMTP_HOST: str = os.environ.get("SMTP_HOST", "")
+        self.SMTP_PORT: int = int(os.environ.get("SMTP_PORT", "587"))
+        self.SMTP_USER: str = os.environ.get("SMTP_USER", "")
+        self.SMTP_PASSWORD: str = os.environ.get("SMTP_PASSWORD", "")
+        self.SMTP_FROM_EMAIL: str = os.environ.get("SMTP_FROM_EMAIL", "noreply@certimate.app")
+
+        # Google OAuth (for verifying Google Sign-In ID tokens)
+        self.GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
+        # Firebase project ID (for verifying Firebase ID tokens, aud claim)
+        self.FIREBASE_PROJECT_ID: str = os.environ.get("FIREBASE_PROJECT_ID", "certimate-titi")
+
         # AI / RAG 設定 — API Keys
         self.ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
         self.OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
