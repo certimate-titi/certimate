@@ -101,9 +101,8 @@ export const documentService = {
       fileSizeBytes: ((r.file_size_mb as number) || 0) * 1024 * 1024,
       visionRequired: false,
       createdAt: (r.created_at as string) || new Date().toISOString(),
-      updatedAt: (r.created_at as string) || new Date().toISOString(),
     }));
-    return { documents };
+    return { documents, total: documents.length };
   },
 
   async getById(documentId: string): Promise<GetDocumentsResponse['documents'][0] | null> {
@@ -205,7 +204,7 @@ export const examService = {
       })),
       domainAnalysis: (raw.domain_analysis as GetExamResultsResponse['domainAnalysis']) || [],
       aiSummary: (raw.ai_summary as string) || '',
-    } as GetExamResultsResponse;
+    } as unknown as GetExamResultsResponse;
   },
 };
 
@@ -245,7 +244,7 @@ export const reviewService = {
           isCorrect: false,
         },
       })),
-    } as GetReviewQuestionsResponse;
+    } as unknown as GetReviewQuestionsResponse;
   },
 
   async getChatHistory(questionId: string): Promise<ChatMessage[]> {

@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+tests/
+*.egg-info
+.git
+.env
+docker-compose.yml
+pretty.output
+scripts/
+behave.ini
+pyproject.toml

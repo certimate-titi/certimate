@@ -618,13 +618,13 @@ export default function DashboardPage() {
                   ) : (
                     <div className="text-center py-3 text-xs text-slate-400">
                       {(data.todo_reminders?.wrong_answers || 0) > 0
-                        ? `有 ${data.todo_reminders.wrong_answers} 題錯題待複習`
+                        ? `有 ${data.todo_reminders?.wrong_answers} 題錯題待複習`
                         : '今日無特訓任務，保持複習節奏！'}
                     </div>
                   )}
                 </div>
-                <Link href={data.todo_reminders?.wrong_answers > 0 ? '/review' : '/exam/setup'} className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
-                  <Play className="h-3 w-3" /> {data.todo_reminders?.wrong_answers > 0 ? '複習錯題' : '開始特訓'}
+                <Link href={(data.todo_reminders?.wrong_answers ?? 0) > 0 ? '/review' : '/exam/setup'} className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
+                  <Play className="h-3 w-3" /> {(data.todo_reminders?.wrong_answers ?? 0) > 0 ? '複習錯題' : '開始特訓'}
                 </Link>
               </div>
             </section>

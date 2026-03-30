@@ -76,6 +76,8 @@ export interface CreateExamRequest {
 export interface CreateExamResponse {
   exam: Exam;
   questions: Question[];
+  exam_id?: string;
+  examId?: string;
 }
 
 export interface SubmitExamRequest {
@@ -146,6 +148,10 @@ export interface GetDashboardResponse {
     } | null;
   };
   domainStrengths: DomainAnalysis[];
+  todayTasks?: Array<{ title: string; type: string }>;
+  todo_reminders?: {
+    wrong_answers: number;
+  };
 }
 
 export interface CompleteDailyQuestRequest {

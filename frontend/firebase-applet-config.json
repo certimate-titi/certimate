@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0751430480",
-  "appId": "1:332280728560:web:e88dff816111191efeab35",
-  "apiKey": "",
-  "authDomain": "gen-lang-client-0751430480.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-b01fd246-8d03-44eb-874b-463aece4baa8",
-  "storageBucket": "gen-lang-client-0751430480.firebasestorage.app",
-  "messagingSenderId": "332280728560",
+  "projectId": "certimate-titi",
+  "appId": "1:63018063271:web:637eada559e47ca2195282",
+  "apiKey": "AIzaSyA5LshjGNrYxSOabPqaxB_EQb-AMjd-6ks",
+  "authDomain": "certimate-titi.firebaseapp.com",
+  "firestoreDatabaseId": "",
+  "storageBucket": "certimate-titi.firebasestorage.app",
+  "messagingSenderId": "63018063271",
   "measurementId": ""
 }

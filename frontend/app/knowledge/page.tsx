@@ -80,10 +80,15 @@ export default function KnowledgeBasePage() {
       const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
       const allDocuments: Document[] = rawResources.map(r => ({
         id: r.id,
+        userId: '',
         title: r.name || r.title || '',
-        type: (r.type || r.resource_type || 'pdf') as Document['type'],
+        sourceType: (r.type || r.resource_type || 'pdf') as Document['sourceType'],
         subjectId: targetSubjectId,
-        status: 'completed' as Document['status'],
+        sourceUrl: r.source_url || '',
+        mcpParsedTranscriptUrl: null,
+        status: 'COMPLETED' as Document['status'],
+        fileSizeBytes: 0,
+        visionRequired: false,
         createdAt: r.created_at || new Date().toISOString(),
       }));
       const allNodes = ((mapRes.nodes || []) as KnowledgeNode[]);
@@ -105,7 +110,7 @@ export default function KnowledgeBasePage() {
     setChatMessages([]);
     setFreeQueriesLeft(isPro199 ? 0 : 3);
     try {
-      const raw = await knowledgeService.getNodeDetail(nodeId) as Record<string, unknown>;
+      const raw = await knowledgeService.getNodeDetail(nodeId) as unknown as Record<string, unknown>;
       const srcCitation = (raw.source_citation || {}) as Record<string, unknown>;
       // Normalize: backend returns flat fields, frontend expects nested objects
       const detail = {
@@ -126,7 +131,7 @@ export default function KnowledgeBasePage() {
         sourceText: (raw.source_text as string) || '（無原文摘要）',
         sourceType: (raw.source_type as string) || 'pdf',
         sourceRef: (raw.source_ref as string) || '',
-      } as GetNodeDetailResponse;
+      } as unknown as GetNodeDetailResponse;
       setSelectedNodeDetail(detail);
     } catch {
       // Silently handle errors
@@ -170,7 +175,7 @@ export default function KnowledgeBasePage() {
       await documentService.delete(docId);
     } catch { /* silent */ }
     setDocuments(prev => prev.filter(d => d.id !== docId));
-    setNodes(prev => prev.filter(n => n.resourceId !== docId));
+    setNodes(prev => prev.filter(n => n.documentId !== docId));
     setDeleteConfirmId(null);
     if (selectedDocId === docId) setSelectedDocId(null);
   };
@@ -327,7 +332,7 @@ export default function KnowledgeBasePage() {
             <div className="overflow-x-auto overflow-y-auto max-h-64 p-3">
               <MindMapTree
                 nodes={mindMapNodes}
-                selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as Record<string, unknown>).node_id as string || null : null}
+                selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || null : null}
                 onNodeClick={handleNodeClick}
               />
             </div>
@@ -350,7 +355,7 @@ export default function KnowledgeBasePage() {
                 <div className="max-w-3xl mx-auto px-8 py-6">
                   {/* Node Title & Mastery */}
                   <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedNodeDetail.node?.label || node.name || selectedNodeDetail.node?.name}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedNodeDetail.node?.label}</h2>
                     <div className="flex items-center gap-3">
                       <div className={`inline-flex px-2 py-0.5 rounded text-xs font-bold border ${
                         selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -364,7 +369,7 @@ export default function KnowledgeBasePage() {
                       </div>
                       <button
                         onClick={() => {
-                          const nodeId = (selectedNodeDetail as Record<string, unknown>)?.node_id as string
+                          const nodeId = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string
                             || selectedNodeDetail?.node?.id || '';
                           router.push(`/exam/setup?nodeId=${nodeId}`);
                         }}

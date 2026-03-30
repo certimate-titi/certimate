@@ -109,7 +109,7 @@ function ExamSetupPage() {
           try {
             const { apiClient } = await import('@/lib/api/client');
             const nodeDetail = await apiClient.get<Record<string, unknown>>(`/knowledge-map/nodes/${preselectedNodeId}`);
-            const resourceName = (nodeDetail as Record<string, unknown>)?.source_info?.node_name as string;
+            const resourceName = (nodeDetail as Record<string, Record<string, unknown>>)?.source_info?.node_name as string;
             // Find matching doc by checking if any doc title matches
             const matchingDoc = filteredDocs.find(d =>
               resourceName && d.title.includes(resourceName.substring(0, 10))
@@ -177,7 +177,7 @@ function ExamSetupPage() {
           questionTypes: Array.from(questionTypes),
         },
       });
-      const examId = result.exam?.id || result.exam_id || result.examId;
+      const examId = result.exam?.id || result.exam_id || result.examId || null;
       generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
       // Navigate immediately after API completes
