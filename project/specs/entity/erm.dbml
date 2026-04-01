@@ -69,6 +69,15 @@ Enum difficulty_level {
   hard
 }
 
+Enum bloom_category {
+  remember      // 記憶類別：考核知識點的記憶與回想
+  understand    // 理解類別：考核概念解釋與詮釋能力
+  apply         // 應用類別：考核將知識應用於新情境
+  analyze       // 分析類別：考核拆解資訊與找出關聯
+  evaluate      // 評估類別：考核做出判斷與評論
+  create        // 創造類別：考核整合知識產出新方案
+}
+
 Enum learning_mode {
   sprint      // <14 天，短期衝刺
   standard    // 1-3 個月，正常準備
@@ -357,6 +366,7 @@ Table exams {
   duration_minutes integer
   passing_score integer
   difficulty_distribution jsonb [note: '{"easy":30,"medium":50,"hard":20}']
+  bloom_distribution jsonb [note: '{"remember":20,"understand":25,"apply":25,"analyze":15,"evaluate":10,"create":5} — 依考試趨勢分佈']
   question_types text[]
   score integer
   correct_count integer
@@ -375,6 +385,7 @@ Table questions {
   question_number integer [not null]
   type question_type [default: 'single_choice']
   difficulty difficulty_level [default: 'medium']
+  bloom_category bloom_category [note: 'Bloom 認知層次分類，用於考試趨勢分析與難度分佈']
   content text [not null, note: '支援 Markdown + KaTeX']
   option_a text
   option_b text
@@ -383,6 +394,7 @@ Table questions {
   correct_answer varchar(10) [not null]
   explanation text [note: 'AI 生成的詳解（Markdown）']
   source_citation text [note: '原文溯源引用']
+  historical_source varchar(255) [note: '考古題來源：如 "112年第1次金融業務人員"]
 }
 
 Ref: questions.exam_id > exams.id [delete: cascade]
