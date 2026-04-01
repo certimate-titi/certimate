@@ -302,12 +302,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Ultra: Co-study counter */}
-        {isUltra && (
-          <div className="mb-6 flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-xl px-4 py-2">
-            <span className="text-sm text-purple-700">目前有 <strong>368</strong> 位考生一起奮鬥中</span>
-          </div>
-        )}
+        {/* Ultra: Co-study counter — requires backend /community/online-count API */}
 
         {/* Core Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

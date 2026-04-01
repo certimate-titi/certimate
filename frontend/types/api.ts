@@ -244,6 +244,14 @@ export interface GetStudentListResponse {
   };
 }
 
+export interface ImportStudentsResponse {
+  total_rows: number;
+  created_users: number;
+  added_members: number;
+  skipped_duplicates: number;
+  groups: string[];
+}
+
 // ===========================
 // Task Progress (SSE)
 // ===========================

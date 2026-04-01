@@ -254,6 +254,7 @@ export interface Student {
   lastActiveAt: string | null; // ISO timestamp
   lastActiveLabel: string; // e.g. "今天", "3 天前"
   enrolledSubjectIds: string[]; // e.g. ["subj_pmp", "subj_aws_saa"]
+  group?: string; // B2B group name
 }
 
 export interface Organization {

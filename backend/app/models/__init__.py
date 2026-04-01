@@ -43,6 +43,7 @@ from app.models.maintenance_task import MaintenanceTask  # noqa: F401, E402
 from app.models.maintenance_schedule import MaintenanceSchedule  # noqa: F401, E402
 from app.models.maintenance_notification import MaintenanceNotification  # noqa: F401, E402
 from app.models.resource_chunk import ResourceChunk  # noqa: F401, E402
+from app.models.student_group import StudentGroup, StudentGroupMember  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -82,4 +83,6 @@ __all__ = [
     "MaintenanceSchedule",
     "MaintenanceNotification",
     "ResourceChunk",
+    "StudentGroup",
+    "StudentGroupMember",
 ]

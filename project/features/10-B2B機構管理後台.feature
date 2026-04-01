@@ -39,6 +39,43 @@ Feature: B2B 機構管理後台
       When 使用者 "ultra_student@school.com" 存取機構管理後台
       Then 操作失敗，錯誤為「您沒有機構管理員權限」
 
+  # ========== 空狀態 ==========
+
+  Rule: 前置（狀態）- 機構尚無學員群組時應顯示空狀態引導
+
+    Example: 機構無學員群組時查看學員列表返回空狀態
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                     | 訂閱方案   | 角色      |
+        | 7        | new-admin@school.com      | ULTRA_1599 | org_admin |
+      And 系統中有以下機構：
+        | 機構 ID | 名稱         | 管理員 ID |
+        | 2       | 新建補習班   | 7         |
+      When 使用者 "new-admin@school.com" 查看機構 2 的學員列表
+      Then 操作成功
+      And 回應中學員列表應為空
+      And 回應應包含空狀態提示「尚未匯入任何學員，請先透過 CSV 匯入學生名單」
+
+    Example: 機構有群組但群組內無學員時顯示空狀態
+      When 使用者 "org-admin@school.com" 查看群組 2 的學員列表
+      Then 操作成功
+      And 回應中學員列表應為空
+      And 回應應包含空狀態提示「此群組尚無學員，請透過 CSV 匯入或手動新增」
+
+    Example: 機構管理員首次進入管理後台時顯示初始化引導
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                     | 訂閱方案   | 角色      |
+        | 8        | fresh-admin@school.com    | ULTRA_1599 | org_admin |
+      And 系統中有以下機構：
+        | 機構 ID | 名稱         | 管理員 ID |
+        | 3       | 全新補習班   | 8         |
+      When 使用者 "fresh-admin@school.com" 存取機構管理後台
+      Then 操作成功
+      And 回應應包含初始化引導資訊：
+        | 欄位              | 說明                           |
+        | has_students      | false                          |
+        | has_groups        | false                          |
+        | setup_steps       | 建立群組、匯入學員、派發考卷   |
+
   Rule: 前置（參數）- CSV 匯入必須符合固定欄位格式（姓名、電子郵件、群組）
 
     Example: 上傳缺少欄位的 CSV 匯入失敗

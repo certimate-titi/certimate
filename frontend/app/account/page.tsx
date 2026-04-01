@@ -396,11 +396,11 @@ export default function AccountPage() {
                     <>
                       <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
                         <div className="h-full bg-emerald-500 rounded-full" style={{
-                          width: `${Math.min(100, (usage.usage.documentsUploadedCount / usage.limits.documentsPerMonth) * 100)}%`
+                          width: `${Math.min(100, ((usage.uploads?.used ?? usage.usage?.documentsUploadedCount ?? 0) / (usage.uploads?.limit ?? usage.limits?.documentsPerMonth ?? 1)) * 100)}%`
                         }} />
                       </div>
                       <p className="text-xs text-slate-500 text-right">
-                        本月已使用 {usage.usage.documentsUploadedCount}/{usage.limits.documentsPerMonth} 份文件解析額度
+                        本月已使用 {usage.uploads?.used ?? usage.usage?.documentsUploadedCount ?? 0}/{usage.uploads?.limit ?? usage.limits?.documentsPerMonth ?? 0} 份文件解析額度
                       </p>
                     </>
                   )}
@@ -411,12 +411,12 @@ export default function AccountPage() {
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-xs text-slate-500 mb-1">AI 問答次數 (今日)</p>
-                      <p className="text-lg font-bold text-slate-900">- / {usage.limits.aiQueriesPerDay}</p>
+                      <p className="text-lg font-bold text-slate-900">- / {usage.ai_queries?.limit ?? usage.limits?.aiQueriesPerDay ?? '-'}</p>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-xs text-slate-500 mb-1">Vision OCR</p>
                       <p className={`text-lg font-bold ${isProPlus ? 'text-slate-900' : 'text-slate-400'}`}>
-                        {isProPlus ? `${usage.usage.visionOcrPagesCount} / ${usage.limits.visionOcrPagesPerMonth}` : '🔒 需 Pro Plus'}
+                        {isProPlus ? `${usage.vision_pages?.used ?? usage.usage?.visionOcrPagesCount ?? 0} / ${usage.vision_pages?.limit ?? usage.limits?.visionOcrPagesPerMonth ?? 0}` : '🔒 需 Pro Plus'}
                       </p>
                     </div>
                   </div>

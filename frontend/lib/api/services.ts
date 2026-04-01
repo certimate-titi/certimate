@@ -32,6 +32,7 @@ import type {
   GetAchievementsResponse,
   GetBillingHistoryResponse,
   GetStudentListResponse,
+  ImportStudentsResponse,
   GetSubjectCatalogResponse,
   SubmitOnboardingRequest,
   SubmitOnboardingResponse,
@@ -380,6 +381,12 @@ export const adminService = {
   async getStudentList(subjectId?: string): Promise<GetStudentListResponse> {
     const params = subjectId ? `?subject_id=${subjectId}` : '';
     return apiClient.get<GetStudentListResponse>(`/b2b/dashboard${params}`);
+  },
+
+  async importStudents(file: File): Promise<ImportStudentsResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.upload<ImportStudentsResponse>('/b2b/import-students', formData);
   },
 };
 
