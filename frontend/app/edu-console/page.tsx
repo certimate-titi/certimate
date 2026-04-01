@@ -130,7 +130,8 @@ export default function EduConsolePage() {
             <span className="text-slate-400">已授權人數：</span>
             <span className="text-white">142 / 200</span>
           </div>
-          <button className="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full text-sm font-bold transition-colors">
+          <button className="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full text-sm font-bold transition-colors"
+            onClick={() => alert('此功能即將推出，敬請期待！')}>
             + 匯入學生名單
           </button>
         </div>
@@ -216,7 +217,8 @@ export default function EduConsolePage() {
                       {item.lastActive && <span className="text-slate-400"> · 最後活躍: {item.lastActive}</span>}
                     </p>
                   </div>
-                  <button className="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">
+                  <button className="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    onClick={() => alert('此功能即將推出，敬請期待！')}>
                     {item.action}
                   </button>
                 </div>
@@ -254,7 +256,8 @@ export default function EduConsolePage() {
 
           {/* ── Quick Actions ── */}
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
+              onClick={() => alert('此功能即將推出，敬請期待！')}>
               <div className="h-11 w-11 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
                 <FileSpreadsheet className="h-5 w-5 text-indigo-500" />
               </div>
@@ -264,7 +267,8 @@ export default function EduConsolePage() {
               </div>
               <ChevronRight className="h-4 w-4 text-slate-400 ml-auto" />
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
+              onClick={() => alert('此功能即將推出，敬請期待！')}>
               <div className="h-11 w-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                 <Send className="h-5 w-5 text-emerald-500" />
               </div>
@@ -274,7 +278,8 @@ export default function EduConsolePage() {
               </div>
               <ChevronRight className="h-4 w-4 text-slate-400 ml-auto" />
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
+              onClick={() => alert('此功能即將推出，敬請期待！')}>
               <div className="h-11 w-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
                 <BarChart3 className="h-5 w-5 text-amber-500" />
               </div>
@@ -355,7 +360,7 @@ export default function EduConsolePage() {
                       {/* More */}
                       <button
                         className="text-slate-400 hover:text-slate-600 shrink-0"
-                        onClick={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); alert('此功能即將推出，敬請期待！'); }}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
@@ -375,11 +380,13 @@ export default function EduConsolePage() {
                           {/* Actions */}
                           <div className="shrink-0 flex flex-col gap-2 items-end">
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">操作</p>
-                            <button className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+                            <button className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+                              onClick={() => alert('此功能即將推出，敬請期待！')}>
                               <Sparkles className="h-3.5 w-3.5" />
                               AI 個人化補強建議
                             </button>
-                            <button className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+                            <button className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+                              onClick={() => alert('此功能即將推出，敬請期待！')}>
                               <Send className="h-3.5 w-3.5" />
                               指派補考
                             </button>
@@ -437,7 +444,8 @@ export default function EduConsolePage() {
               </div>
 
               {/* Export */}
-              <button className="w-full bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-3 rounded-xl font-bold transition-colors text-sm relative z-10">
+              <button className="w-full bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-3 rounded-xl font-bold transition-colors text-sm relative z-10"
+                onClick={() => alert('此功能即將推出，敬請期待！')}>
                 匯出詳細報告
               </button>
             </div>

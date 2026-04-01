@@ -1,12 +1,12 @@
 @query
-Feature: 知識心智圖導航與 AI 教練面板聯動
+Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費牆）
 
   Background:
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email                | 訂閱方案      |
       | 1        | free@example.com     | FREE          |
-      | 2        | pro@example.com      | PRO           |
-      | 3        | proplus@example.com  | PRO_PLUS      |
+      | 2        | pro@example.com      | PRO_199       |
+      | 3        | proplus@example.com  | PRO_PLUS_399  |
     And 系統中有以下備考科目：
       | 科目 ID | 名稱     |
       | 1       | AWS SAA  |
@@ -98,7 +98,7 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       Then 操作失敗，錯誤為「AI 教練深度對話為 PRO_PLUS 專屬功能」
       And 回應應包含升級提示：
         | 欄位         | 值                              |
-        | target_plan  | PRO_PLUS                        |
+        | target_plan  | PRO_PLUS_399                    |
         | message      | 解鎖 Claude 3.5 終極教練         |
 
   Rule: 後置（回應）- PRO_PLUS 用戶可使用高階教練並扣除月度額度

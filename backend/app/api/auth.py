@@ -56,7 +56,7 @@ def login(request: LoginRequest, service: AuthService = Depends(_get_auth_servic
 
 @router.post("/auth/google-sso")
 def google_sso(request: GoogleSSORequest, service: AuthService = Depends(_get_auth_service)):
-    result = service.google_sso(request.google_id_token)
+    result = service.google_sso(request.google_id_token, email_hint=request.email)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
     return result

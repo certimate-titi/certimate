@@ -20,6 +20,13 @@ FILE_SIZE_LIMITS_MB = {
     "ULTRA": 500,
 }
 
+PLAN_DISPLAY_NAME = {
+    "FREE": "FREE",
+    "PRO": "PRO_199",
+    "PRO_PLUS": "PRO_PLUS_399",
+    "ULTRA": "ULTRA_1599",
+}
+
 VISION_OCR_MIN_PLAN = ["PRO_PLUS", "ULTRA"]
 
 
@@ -69,9 +76,10 @@ class ResourceService:
         if file_size_mb is not None:
             limit = FILE_SIZE_LIMITS_MB.get(plan, 10)
             if file_size_mb > limit:
+                display_name = PLAN_DISPLAY_NAME.get(plan, plan)
                 return {
                     "error": True, "status_code": 400,
-                    "message": f"檔案大小超過 {plan} 方案限制（{limit}MB）",
+                    "message": f"檔案大小超過 {display_name} 方案限制（{limit}MB）",
                 }
 
         # Determine resource type

@@ -103,3 +103,55 @@ Feature: 平台管理後台 — 財務與訂閱管理
       Then 操作成功
       And 優惠碼 "LAUNCH2026" 的狀態應為 "active"
       And 優惠碼 "LAUNCH2026" 的已使用次數應為 0
+
+  # ========== UI 互動情境 ==========
+
+  @ignore
+  Rule: 後置（回應）- 匯出財務報告應觸發 JSON 檔案下載
+
+    Example: 匯出財務報告下載 JSON
+      When 使用者 "ops@certimate.com" 於財務管理頁面點擊「匯出報告」按鈕
+      Then 操作成功
+      And 瀏覽器應觸發 JSON 檔案下載
+      And 下載檔案應包含交易摘要與營收統計資料
+
+  @ignore
+  Rule: 後置（回應）- 交易搜尋應依交易 ID 即時過濾
+
+    Example: 交易搜尋依交易 ID 過濾
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面的搜尋框輸入 "TXN-001"
+      Then 交易列表應即時過濾，僅顯示交易 ID 包含 "TXN-001" 的紀錄
+      And 列表中應包含交易 "TXN-001"
+      And 列表中不應包含交易 "TXN-002"
+
+  @ignore
+  Rule: 後置（回應）- 交易狀態篩選應透過下拉選單切換
+
+    Example: 交易狀態篩選下拉選單切換
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面的狀態篩選下拉選單選擇 "failed"
+      Then 交易列表應僅顯示狀態為 "failed" 的交易
+      And 列表中應包含交易 "TXN-003"
+      And 列表中不應包含交易 "TXN-001"
+
+  @ignore
+  Rule: 後置（回應）- 交易列表應支援展開顯示詳情
+
+    Example: 交易列展開顯示詳情
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面點擊交易 "TXN-001" 的展開按鈕
+      Then 交易 "TXN-001" 應展開顯示詳細資訊：
+        | 欄位            | 值                  |
+        | transaction_id  | TXN-001             |
+        | user_id         | 10                  |
+        | amount          | 199                 |
+        | plan            | PRO_199             |
+        | status          | success             |
+        | created_at      | 2026-03-01 10:00:00 |
+
+  @ignore
+  Rule: 後置（回應）- MRR 趨勢圖表應顯示正確資料
+
+    Example: MRR 趨勢圖表顯示正確資料
+      When 使用者 "ops@certimate.com" 於財務管理頁面查看 MRR 趨勢圖表
+      Then 操作成功
+      And 圖表應顯示最近 30 天的 MRR 資料點
+      And 每個資料點應包含日期與對應的 MRR 金額

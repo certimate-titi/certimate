@@ -4,8 +4,8 @@ Feature: 測驗設定
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email              | 訂閱方案 |
       | 1        | free@example.com   | FREE     |
-      | 2        | pro@example.com    | PRO      |
-      | 3        | ultra@example.com  | ULTRA    |
+      | 2        | pro@example.com    | PRO_199    |
+      | 3        | ultra@example.com  | ULTRA_1599 |
     And 系統中有以下資源：
       | 資源 ID | 使用者 ID | 名稱              | 狀態      |
       | 1       | 1        | AWS_SAA_講義.pdf  | COMPLETED |
@@ -85,17 +85,7 @@ Feature: 測驗設定
       And 系統應建立測驗任務，初始狀態為 "PENDING"
       And 系統應開始透過 SSE 推送生成進度事件
 
-    Example: SSE 進度事件應對應四階段 AI Prompt 流程
-      Given 使用者 "free@example.com" 已提交合法測驗設定並建立測驗任務 ID 為 100
-      When 後端 AI 生成服務依序完成各階段
-      Then SSE 應依序推送以下進度事件：
-        | 進度百分比 | 階段   | 說明訊息                          |
-        | 10        | 準備   | 正在從向量庫提取知識點...          |
-        | 30        | 階段 1 | AI 正在分析考點與出題比例...       |
-        | 50        | 階段 2 | AI 教練正在出題...                |
-        | 75        | 階段 3 | AI 教練正在設計考題陷阱與詳解...   |
-        | 90        | 階段 4 | 校對格式與排版中...               |
-        | 100       | 完成   | 考卷準備完畢！                    |
+    # SSE 四階段進度事件規格詳見 04a-AI考題生成服務.feature
 
   Rule: 後置（回應）- 生成完成後回傳測驗 ID 供前端導向機考工作區
 
@@ -105,3 +95,48 @@ Feature: 測驗設定
       Then 操作成功
       And 回應應包含有效的測驗 ID
       And 回應應包含生成的題目總數 20
+
+  # ========== UI 元件補充場景 ==========
+
+  Rule: 前置（參數）- 題型切換應支援選擇多種題型
+
+    @ignore
+    Example: 選擇多種題型成功提交測驗設定
+      When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，題型為 "單選" 和 "多選" 和 "填空"
+      Then 操作成功
+      And 系統應建立測驗任務，包含題型 "單選" 和 "多選" 和 "填空"
+
+  Rule: 前置（參數）- 難度滑桿應支援調整至最高難度
+
+    @ignore
+    Example: 難度滑桿調整至最高難度後成功提交
+      When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，難易度分配為 Easy:0% Medium:0% Hard:100%
+      Then 操作成功
+      And 系統應建立測驗任務，難易度分配中 Hard 佔比應為 100%
+
+  Rule: 前置（參數）- PRO_PLUS 方案每次測驗題數上限為 100 題
+
+    @ignore
+    Example: PRO_PLUS 用戶要求 100 題成功
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案  |
+        | 4        | proplus@example.com  | PRO_PLUS_399 |
+      And 系統中有以下資源：
+        | 資源 ID | 使用者 ID | 名稱            | 狀態      |
+        | 4       | 4        | 大型題庫.pdf    | COMPLETED |
+      And 系統中有以下心智圖知識節點：
+        | 節點 ID | 資源 ID | 名稱       | 掌握度顏色 | 可出題數 |
+        | 7       | 4       | 綜合測驗   | 灰色       | 150      |
+      When 使用者 "proplus@example.com" 提交測驗設定，選擇節點 7，題數為 100
+      Then 操作成功
+
+  Rule: 前置（狀態）- 文件未處理完成時無法選擇作為測驗範圍
+
+    @ignore
+    Example: 文件狀態為 PROCESSING 時無法選擇
+      Given 系統中有以下資源：
+        | 資源 ID | 使用者 ID | 名稱              | 狀態       |
+        | 5       | 1        | 處理中文件.pdf    | PROCESSING |
+      When 使用者 "free@example.com" 嘗試在測驗設定中選擇資源 5
+      Then 操作失敗
+      And 錯誤訊息應為 "該文件尚未處理完成，無法用於出題"

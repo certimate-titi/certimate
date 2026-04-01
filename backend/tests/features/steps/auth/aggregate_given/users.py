@@ -12,6 +12,12 @@ STATUS_MAP = {
     "已停用": UserStatus.SUSPENDED,
     "冷卻中": UserStatus.COOLING,
     "已刪除": UserStatus.DELETED,
+    # English values used in feature files
+    "active": UserStatus.ACTIVE,
+    "pending": UserStatus.PENDING,
+    "suspended": UserStatus.SUSPENDED,
+    "cooling": UserStatus.COOLING,
+    "deleted": UserStatus.DELETED,
 }
 
 ROLE_MAP = {
@@ -19,6 +25,11 @@ ROLE_MAP = {
     "ADMIN": UserRole.ADMIN,
     "ORG_ADMIN": UserRole.ORG_ADMIN,
     "SUPER_ADMIN": UserRole.SUPER_ADMIN,
+    # Lowercase values used in feature files
+    "user": UserRole.USER,
+    "admin": UserRole.ADMIN,
+    "org_admin": UserRole.ORG_ADMIN,
+    "super_admin": UserRole.SUPER_ADMIN,
 }
 
 PLAN_MAP = {

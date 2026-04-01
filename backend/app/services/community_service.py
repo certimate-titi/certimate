@@ -27,8 +27,10 @@ class CommunityService:
 
         # Only ULTRA users see the banner
         if plan in ("ULTRA", "ULTRA_1599"):
+            cutoff_date = date.today() - timedelta(days=7)
             active_count = self.db.query(User).filter(
-                User.last_login_at >= datetime.now(timezone.utc) - timedelta(days=7)
+                User.last_login_at.isnot(None),
+                func.date(User.last_login_at) >= cutoff_date,
             ).count()
             return {
                 "banner": {

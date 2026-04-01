@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.ai_cooldown import AiCooldown
 from app.models.audit_log import AdminAuditLog
 from app.models.content_report import ContentReport, ReportStatus
+from app.models.resource import Resource, ResourceStatus
 from app.models.user import User, UserRole, UserStatus
 
 
@@ -132,6 +133,18 @@ class AdminModerationService:
         report.resolution_action = action
         report.resolution_note = note
         report.resolved_by = actor_id
+
+        # Soft-delete the target resource when action is "delete_and_warn"
+        if action == "delete_and_warn" and report.target_type == "resource":
+            try:
+                target_uuid = uuid.UUID(report.target_id)
+                resource = self.db.query(Resource).filter(
+                    Resource.id == target_uuid
+                ).first()
+                if resource:
+                    resource.status = ResourceStatus.DELETED
+            except (ValueError, AttributeError):
+                pass  # target_id is not a valid UUID; skip resource deletion
 
         # Record audit log
         audit_log = AdminAuditLog(

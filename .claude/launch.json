@@ -6,6 +6,9 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "frontend",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "http://localhost:8000/api/v1"
+      },
       "port": 3000,
       "autoPort": true
     }

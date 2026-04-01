@@ -1,10 +1,9 @@
 """Resource API router."""
 
-import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user_id
@@ -145,53 +144,22 @@ def _process_in_background(resource_id: str, db_url: str):
 
 
 @router.post("/resources/upload")
-async def upload_resource(
-    file: UploadFile = File(...),
-    subject_id: str = Form(...),
-    filename: str = Form(None),
+def upload_resource(
+    request: UploadResourceRequest,
     user_id: str = Depends(get_current_user_id),
     service: ResourceService = Depends(_get_resource_service),
-    db: Session = Depends(get_db),
 ):
-    """上傳資源檔案（multipart/form-data）。立即回應，背景處理解析。"""
-    actual_filename = filename or file.filename or "untitled"
-    file_bytes = await file.read()
-    file_size_mb = len(file_bytes) // (1024 * 1024) or 1
-
-    # 1. Create resource record
+    """上傳資源（JSON metadata）。"""
     result = service.upload(
         user_id=user_id,
-        filename=actual_filename,
-        subject_id=subject_id,
-        file_size_mb=file_size_mb,
-        resource_type=None,
+        filename=request.filename,
+        subject_id=request.subject_id,
+        file_size_mb=request.file_size_mb,
+        resource_type=request.type,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
-
-    # 2. Save file to disk
-    resource_id = result["id"]
-    user_dir = UPLOAD_DIR / user_id
-    user_dir.mkdir(exist_ok=True)
-    file_path = user_dir / f"{resource_id}_{actual_filename}"
-    file_path.write_bytes(file_bytes)
-
-    # 3. Update resource with file path
-    from app.models.resource import Resource
-    resource = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
-    if resource:
-        resource.gcs_path = str(file_path)
-        resource.file_size_bytes = len(file_bytes)
-        db.commit()
-
-    # 4. Trigger processing in background thread (non-blocking)
-    from app.core.config import get_settings
-    _process_in_background(resource_id, get_settings().DATABASE_URL)
-
-    return {
-        **result,
-        "status": "PROCESSING",
-    }
+    return result
 
 
 @router.post("/resources/youtube")

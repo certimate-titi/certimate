@@ -76,6 +76,7 @@ export default function FinancePage() {
   const [txnSearch, setTxnSearch] = useState('');
   const [txnStatusFilter, setTxnStatusFilter] = useState('all');
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
+  const [visibleSeries, setVisibleSeries] = useState({ new: true, expansion: true, churn: true });
 
   useEffect(() => {
     superAdminService.getFinanceOverview().then(setOverview).catch(() => {});
@@ -163,9 +164,24 @@ export default function FinancePage() {
               <TrendingUp className="h-5 w-5 text-emerald-500" /> 每月經常性收入趨勢分析
             </h2>
             <div className="flex gap-2">
-              <button className="px-3 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 rounded-lg">新增收入</button>
-              <button className="px-3 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg">擴增收入</button>
-              <button className="px-3 py-1 text-xs font-bold bg-rose-50 text-rose-600 rounded-lg">流失收入</button>
+              <button
+                onClick={() => setVisibleSeries(prev => ({ ...prev, new: !prev.new }))}
+                className={cn("px-3 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 rounded-lg transition-all", !visibleSeries.new && "opacity-40")}
+              >
+                新增收入
+              </button>
+              <button
+                onClick={() => setVisibleSeries(prev => ({ ...prev, expansion: !prev.expansion }))}
+                className={cn("px-3 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg transition-all", !visibleSeries.expansion && "opacity-40")}
+              >
+                擴增收入
+              </button>
+              <button
+                onClick={() => setVisibleSeries(prev => ({ ...prev, churn: !prev.churn }))}
+                className={cn("px-3 py-1 text-xs font-bold bg-rose-50 text-rose-600 rounded-lg transition-all", !visibleSeries.churn && "opacity-40")}
+              >
+                流失收入
+              </button>
             </div>
           </div>
           <div className="h-[300px] w-full">
@@ -177,9 +193,9 @@ export default function FinancePage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}
                 />
-                <Area type="monotone" dataKey="new" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
-                <Area type="monotone" dataKey="expansion" stackId="1" stroke="#6366f1" fill="#6366f1" fillOpacity={0.1} />
-                <Area type="monotone" dataKey="churn" stackId="1" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.1} />
+                {visibleSeries.new && <Area type="monotone" dataKey="new" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />}
+                {visibleSeries.expansion && <Area type="monotone" dataKey="expansion" stackId="1" stroke="#6366f1" fill="#6366f1" fillOpacity={0.1} />}
+                {visibleSeries.churn && <Area type="monotone" dataKey="churn" stackId="1" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.1} />}
               </AreaChart>
             </ResponsiveContainer>
           </div>

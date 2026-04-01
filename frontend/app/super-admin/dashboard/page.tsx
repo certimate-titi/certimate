@@ -77,6 +77,7 @@ export default function OperationsDashboard() {
   const [systemLoad, setSystemLoad] = useState({ cpu_percent: 0, db_connections_percent: 0, cache_hit_rate: 0 });
   const [userGrowthData, setUserGrowthData] = useState<{ name: string; dau: number; mau: number }[]>([]);
   const [aiCostData, setAiCostData] = useState<{ name: string; gemini: number; claude: number; gpt4: number }[]>([]);
+  const [timeRange, setTimeRange] = useState('30d');
 
   useEffect(() => {
     apiClient.get<DashboardData>('/admin/dashboard').then(setDashData).catch(() => {});
@@ -175,10 +176,14 @@ export default function OperationsDashboard() {
               <h2 className="font-bold text-slate-900 flex items-center gap-2">
                 <Activity className="h-5 w-5 text-emerald-500" /> 用戶成長曲線
               </h2>
-              <select className="text-sm border-none bg-slate-50 rounded-lg px-3 py-1 outline-none">
-                <option>過去 7 天</option>
-                <option>過去 30 天</option>
-                <option>過去 90 天</option>
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="text-sm border-none bg-slate-50 rounded-lg px-3 py-1 outline-none"
+              >
+                <option value="7d">過去 7 天</option>
+                <option value="30d">過去 30 天</option>
+                <option value="90d">過去 90 天</option>
               </select>
             </div>
             <div className="h-[300px] w-full">

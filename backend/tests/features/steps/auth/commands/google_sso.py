@@ -7,7 +7,7 @@ def step_impl(context, email):
         "/api/v1/auth/google-sso",
         json={
             "email": email,
-            "google_token": "mock-google-token",
+            "google_id_token": "mock-google-token",
         },
     )
     context.last_response = response

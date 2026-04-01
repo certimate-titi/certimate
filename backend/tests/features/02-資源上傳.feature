@@ -5,10 +5,13 @@ Feature: 資源上傳與隱性版權約定
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email                | 訂閱方案      |
       | 1        | free@example.com     | FREE          |
-      | 2        | pro@example.com      | PRO           |
-      | 3        | proplus@example.com  | PRO_PLUS      |
-      | 4        | ultra@example.com    | ULTRA         |
+      | 2        | pro@example.com      | PRO_199       |
+      | 3        | proplus@example.com  | PRO_PLUS_399  |
+      | 4        | ultra@example.com    | ULTRA_1599    |
     And 使用者 "free@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "pro@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "proplus@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "ultra@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
 
   # ========== 前置條件：檔案格式 ==========
 
@@ -42,7 +45,7 @@ Feature: 資源上傳與隱性版權約定
 
     Example: PRO 方案上傳超過 100MB 的檔案失敗
       When 使用者 "pro@example.com" 上傳大小為 105MB 的 PDF 檔案 "超大教材.pdf"，科目為 1
-      Then 操作失敗，錯誤為「檔案大小超過 PRO 方案限制（100MB）」
+      Then 操作失敗，錯誤為「檔案大小超過 PRO_199 方案限制（100MB）」
 
     Example: ULTRA 方案上傳 300MB 檔案成功
       When 使用者 "ultra@example.com" 上傳大小為 300MB 的 PDF 檔案 "教科書合輯.pdf"，科目為 1

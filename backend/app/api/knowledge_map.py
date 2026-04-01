@@ -97,6 +97,23 @@ def ai_coach_chat(
     return _handle_result(result)
 
 
+class NodeChatRequest(BaseModel):
+    message: str
+
+
+@router.post("/nodes/{node_id}/chat")
+def node_chat(
+    node_id: str,
+    body: NodeChatRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """節點聊天（前端 knowledge page 使用）。"""
+    service = KnowledgeNavService(db)
+    result = service.send_coach_message(node_id, body.message, user_id)
+    return _handle_result(result)
+
+
 @router.post("/nodes/{node_id}/submit-answers")
 def submit_answers(
     node_id: str,

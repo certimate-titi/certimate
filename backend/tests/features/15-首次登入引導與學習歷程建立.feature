@@ -181,3 +181,113 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
       Then 操作成功
       And "TOEIC" 的學習歷程應被封存（非刪除）
       And 儀表板科目切換器不再顯示 "TOEIC"
+
+  # ========== Step 2：自訂科目 ==========
+
+  @ignore
+  Rule: 後置（狀態）- Step 2 支援自訂科目輸入
+
+    Example: 使用者輸入自訂科目名稱新增成功
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      When 使用者在自訂科目輸入欄輸入 "CISSP" 並點擊新增
+      Then 已選科目列表應包含 "CISSP"
+      And 該科目應標記為「自訂科目」
+
+    Example: 自訂科目名稱與既有科目重複時被拒絕
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      And 使用者已選擇 "AWS SAA"
+      When 使用者在自訂科目輸入欄輸入 "AWS SAA" 並點擊新增
+      Then 操作失敗
+      And 錯誤訊息應為 "此科目已存在，請勿重複新增"
+
+  # ========== Step 2：已選科目考試日期 Badge ==========
+
+  @ignore
+  Rule: 後置（回應）- 已選科目卡片應顯示考試日期模式 Badge
+
+    Example: 已選科目卡片設定考試日期後顯示模式 Badge
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      When 使用者選擇以下備考科目並設定：
+        | 科目         | 預計考試日期 | 自評程度   |
+        | AWS SAA      | 2026-06-15  | 有基礎     |
+      Then 已選科目 "AWS SAA" 的卡片應顯示考試日期 Badge "2026-06-15"
+
+  # ========== Step 2：自我評估切換 ==========
+
+  @ignore
+  Rule: 後置（狀態）- 已選科目支援自我評估程度切換
+
+    Example: 使用者切換已選科目的自我評估程度
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      And 使用者已選擇 "AWS SAA" 並設定自評程度為 "初學者"
+      When 使用者將 "AWS SAA" 的自評程度切換為 "有基礎"
+      Then "AWS SAA" 的自評程度應更新為 "有基礎"
+
+    Example: 使用者切換已選科目的自我評估為進階
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      And 使用者已選擇 "AWS SAA" 並設定自評程度為 "有基礎"
+      When 使用者將 "AWS SAA" 的自評程度切換為 "進階"
+      Then "AWS SAA" 的自評程度應更新為 "進階"
+
+  # ========== Step 3：自訂每日學習時間驗證 ==========
+
+  @ignore
+  Rule: 前置（參數）- 自訂每日學習時間必須介於 5 至 480 分鐘
+
+    Example: 自訂每日學習時間低於 5 分鐘被拒絕
+      Given 使用者 "newbie@example.com" 進入 Step 3 學習偏好設定
+      When 使用者選擇「自訂」並輸入每日學習時間為 3 分鐘
+      Then 操作失敗
+      And 錯誤訊息應為 "每日學習時間需介於 5 至 480 分鐘"
+
+    Example: 自訂每日學習時間超過 480 分鐘被拒絕
+      Given 使用者 "newbie@example.com" 進入 Step 3 學習偏好設定
+      When 使用者選擇「自訂」並輸入每日學習時間為 500 分鐘
+      Then 操作失敗
+      And 錯誤訊息應為 "每日學習時間需介於 5 至 480 分鐘"
+
+    Example: 自訂每日學習時間為有效值設定成功
+      Given 使用者 "newbie@example.com" 進入 Step 3 學習偏好設定
+      When 使用者選擇「自訂」並輸入每日學習時間為 120 分鐘
+      Then 每日學習時間應設定為 120 分鐘
+
+  # ========== Step 4：確認頁編輯返回 ==========
+
+  @ignore
+  Rule: 後置（狀態）- Step 4 確認頁可透過編輯按鈕返回各步驟修改
+
+    Example: 確認頁點擊編輯個人資訊返回 Step 1
+      Given 使用者 "newbie@example.com" 在 Step 4 確認頁
+      When 使用者點擊個人資訊區塊的「編輯」按鈕
+      Then 系統應導向至 Step 1 歡迎與基本資訊頁
+      And 先前填寫的資料應保留不變
+
+    Example: 確認頁點擊編輯備考科目返回 Step 2
+      Given 使用者 "newbie@example.com" 在 Step 4 確認頁
+      When 使用者點擊備考科目區塊的「編輯」按鈕
+      Then 系統應導向至 Step 2 選擇備考科目頁
+      And 先前選擇的科目與設定應保留不變
+
+    Example: 確認頁點擊編輯學習偏好返回 Step 3
+      Given 使用者 "newbie@example.com" 在 Step 4 確認頁
+      When 使用者點擊學習偏好區塊的「編輯」按鈕
+      Then 系統應導向至 Step 3 學習偏好設定頁
+      And 先前設定的偏好應保留不變
+
+  # ========== Step 2：類別篩選標籤切換 ==========
+
+  @ignore
+  Rule: 後置（狀態）- Step 2 類別篩選標籤可切換並更新科目清單
+
+    Example: 切換類別篩選標籤顯示對應科目
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      And 目前選擇的分類為 "IT"
+      When 使用者切換分類標籤至 "金融"
+      Then 畫面應顯示該分類下的科目清單，包含 "CFA Level 1"、"FRM"、"證券分析師"
+      And 畫面不應顯示 "IT" 分類的科目
+
+    Example: 點擊全部分類標籤顯示所有科目
+      Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
+      And 目前選擇的分類為 "IT"
+      When 使用者切換分類標籤至 "全部"
+      Then 畫面應顯示所有分類的科目清單

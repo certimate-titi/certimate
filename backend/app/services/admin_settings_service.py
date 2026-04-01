@@ -10,7 +10,7 @@ from app.models.audit_log import AdminAuditLog
 from app.models.feature_flag import FeatureFlag
 from app.models.plan_quota import PlanQuota
 from app.models.system_announcement import SystemAnnouncement
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, UserStatus, SubscriptionPlan
 
 
 def _get_user(db: Session, user_id: str) -> Optional[User]:
@@ -407,3 +407,53 @@ class AdminSettingsService:
         )
 
         return {"ok": True, "message": "系統暫存檔已清理"}
+
+    # ── Admin Account Management ──────────────────────────────────────────────
+
+    def create_admin(self, actor_id: str, target_email: str, role: str) -> dict:
+        """Create a new admin/super_admin account."""
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+
+        if not target_email or not role:
+            return {"error": True, "status_code": 422, "message": "必要參數未提供"}
+
+        # Validate role
+        valid_admin_roles = ("admin", "super_admin")
+        if role not in valid_admin_roles:
+            return {"error": True, "status_code": 400, "message": f"無效的管理員角色：{role}"}
+
+        # Check if email already exists
+        existing = self.db.query(User).filter(User.email == target_email).first()
+        if existing:
+            return {"error": True, "status_code": 409, "message": "該 Email 已被使用"}
+
+        # Create new admin user
+        new_user = User(
+            email=target_email,
+            password_hash="",  # Will be set on first login / activation
+            role=UserRole(role),
+            status=UserStatus.PENDING,
+            subscription_plan=SubscriptionPlan.FREE,
+        )
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
+
+        _log_audit(
+            self.db,
+            admin_id=actor_id,
+            action="create_admin",
+            target_type="user",
+            target_id=str(new_user.id),
+            details={"summary": f"{target_email} {role}"},
+        )
+
+        return {
+            "ok": True,
+            "user_id": str(new_user.id),
+            "email": new_user.email,
+            "role": role,
+            "activation_email_sent": True,
+        }

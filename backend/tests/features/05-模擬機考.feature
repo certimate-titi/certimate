@@ -4,13 +4,14 @@ Feature: 模擬機考
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email              | 訂閱方案 |
       | 1        | alice@example.com  | FREE     |
-      | 2        | bob@example.com    | PRO      |
+      | 2        | bob@example.com    | PRO_199  |
     And 系統中有以下測驗：
       | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
       | 1       | 1        | READY       | 10     | 30              |
       | 2       | 2        | READY       | 50     | 90              |
       | 3       | 1        | IN_PROGRESS | 10     | 30              |
       | 4       | 1        | SUBMITTED   | 10     | 30              |
+      | 5       | 2        | READY       | 5      | 20              |
     And 測驗 1 包含以下題目：
       | 題目 ID | 題號 | 題目內容                         | 選項A     | 選項B    | 選項C   | 選項D     |
       | 101     | 1    | AWS S3 的儲存類型何者最便宜？     | Standard  | IA       | Glacier | Express   |
@@ -22,9 +23,6 @@ Feature: 模擬機考
     And 測驗 3 包含以下已暫存作答：
       | 題目 ID | 選擇答案 | 已標記複查 |
       | 301     | C        | 否         |
-    And 系統中有以下測驗：
-      | 測驗 ID | 使用者 ID | 狀態  | 總題數 | 考試時長（分鐘） |
-      | 5       | 2        | READY | 5      | 20              |
     And 測驗 5 包含以下數學工程題目：
       | 題目 ID | 題號 | 題型   | 題目內容（含 KaTeX）                                       | 選項A                   | 選項B                  | 選項C                        | 選項D |
       | 201     | 1    | 單選   | 電阻 $R = 10\,\Omega$，電壓 $V = 5\,\text{V}$，電流為何？ | $I = 0.5\,\text{A}$     | $I = 2\,\text{A}$      | $I = 50\,\text{A}$           | $I = 0.1\,\text{A}$ |
@@ -142,3 +140,53 @@ Feature: 模擬機考
       Given 使用者 "bob@example.com" 已開始測驗 5
       When 使用者 "bob@example.com" 瀏覽題目 202 但未輸入任何內容
       Then 題目 202 在題號導覽網格的狀態應為 "未作答"
+
+  # ========== UI 元件補充場景 ==========
+
+  Rule: 後置（狀態）- 暫停考試後恢復作答時計時器應繼續倒數
+
+    @ignore
+    Example: 暫停考試後恢復作答計時器繼續倒數
+      Given 使用者 "alice@example.com" 已開始測驗 1，剩餘時間為 20 分鐘
+      When 使用者 "alice@example.com" 暫停測驗 1
+      And 經過 10 秒後使用者 "alice@example.com" 恢復測驗 1
+      Then 測驗 1 的剩餘時間應接近 19 分 50 秒
+      And 計時器應繼續正常倒數
+
+  Rule: 後置（回應）- 總覽格 Modal 應顯示所有題目的作答狀態
+
+    @ignore
+    Example: 開啟總覽格 Modal 顯示所有題目狀態
+      Given 使用者 "alice@example.com" 已開始測驗 1
+      And 使用者 "alice@example.com" 在題目 101 選擇答案 "C"
+      When 使用者 "alice@example.com" 開啟題目總覽格 Modal
+      Then 總覽格 Modal 應顯示以下題目狀態：
+        | 題號 | 狀態   |
+        | 1    | 已作答 |
+        | 2    | 未作答 |
+
+  Rule: 後置（回應）- 題目導航格點擊應跳轉至指定題目
+
+    @ignore
+    Example: 點擊題目導航格中的題號跳轉至該題目
+      Given 使用者 "alice@example.com" 已開始測驗 1
+      And 使用者 "alice@example.com" 目前瀏覽題目 101
+      When 使用者 "alice@example.com" 在題目導航格中點擊題號 2
+      Then 畫面應跳轉至題目 102
+      And 題目顯示區應呈現題目 102 的內容
+
+  Rule: 後置（回應）- 上一題與下一題按鈕在邊界題目時應正確停用
+
+    @ignore
+    Example: 第一題時上一題按鈕應停用
+      Given 使用者 "alice@example.com" 已開始測驗 1
+      When 使用者 "alice@example.com" 瀏覽題目 101
+      Then 上一題按鈕應為停用狀態
+      And 下一題按鈕應為啟用狀態
+
+    @ignore
+    Example: 最後一題時下一題按鈕應停用
+      Given 使用者 "alice@example.com" 已開始測驗 1
+      When 使用者 "alice@example.com" 瀏覽題目 102
+      Then 下一題按鈕應為停用狀態
+      And 上一題按鈕應為啟用狀態

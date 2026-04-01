@@ -241,3 +241,93 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       When 使用者 "ops@certimate.com" 匯出用戶 CSV，篩選方案為 "PRO_199"
       Then 操作成功
       And 回應應為 CSV 檔案，包含欄位：email、display_name、plan、status、created_at
+
+  # ========== UI 互動情境 ==========
+
+  @ignore
+  Rule: 後置（回應）- 匯出使用者 CSV 應觸發檔案下載
+
+    Example: 匯出使用者 CSV 下載成功
+      When 使用者 "ops@certimate.com" 於用戶管理頁面點擊「匯出 CSV」按鈕
+      Then 操作成功
+      And 瀏覽器應觸發 CSV 檔案下載
+      And 下載檔案名稱應包含 "users" 與當日日期
+
+  @ignore
+  Rule: 後置（狀態）- 新增使用者應透過 prompt 輸入 Email 與密碼
+
+    Example: 新增使用者透過 prompt 輸入 email 與密碼成功
+      When 使用者 "super@certimate.com" 於用戶管理頁面點擊「新增使用者」按鈕
+      And 在彈出的對話框中輸入 Email 為 "newuser@example.com"，密碼為 "Passw0rd!"
+      Then 操作成功
+      And 系統中應存在 Email 為 "newuser@example.com" 的使用者
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | create_user          |
+
+  @ignore
+  Rule: 後置（狀態）- 發送通知需在輸入框輸入訊息後送出
+
+    Example: 發送通知給使用者輸入訊息成功
+      When 使用者 "ops@certimate.com" 於使用者 5 的操作選單點擊「發送通知」
+      And 在通知輸入框中輸入訊息 "您的帳號已恢復正常"
+      And 點擊「送出」按鈕
+      Then 操作成功
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | notify_user          |
+        | target   | 使用者 5              |
+
+  @ignore
+  Rule: 後置（狀態）- 停權使用者需確認原因後才可執行
+
+    Example: 停權使用者需確認原因
+      When 使用者 "ops@certimate.com" 於使用者 5 的操作選單點擊「停權」
+      Then 系統應顯示確認對話框，要求輸入停權原因
+      When 輸入停權原因為 "違反使用條款" 並點擊「確認」
+      Then 操作成功
+      And 使用者 5 的狀態應為 "suspended"
+
+  @ignore
+  Rule: 後置（狀態）- 刪除使用者帳號需確認輸入使用者名稱
+
+    Example: 刪除使用者帳號需確認名稱
+      When 使用者 "super@certimate.com" 於使用者 5 的操作選單點擊「刪除帳號」
+      Then 系統應顯示確認對話框，提示輸入 "bob@example.com" 以確認刪除
+      When 輸入確認名稱為 "bob@example.com" 並點擊「確認刪除」
+      Then 操作成功
+      And 使用者 5 的狀態應為 "deleted"
+
+  @ignore
+  Rule: 後置（狀態）- 調整訂閱等級需透過 Modal 選擇方案與日期
+
+    Example: 調整訂閱等級 Modal 選擇方案與日期
+      When 使用者 "super@certimate.com" 於使用者 5 的操作選單點擊「調整訂閱」
+      Then 系統應顯示調整訂閱 Modal
+      When 在 Modal 中選擇方案為 "PRO_199"，起始日期為 "2026-04-01"，結束日期為 "2026-07-01"
+      And 點擊「確認調整」按鈕
+      Then 操作成功
+      And 使用者 5 的訂閱方案應為 "PRO_199"
+
+  @ignore
+  Rule: 後置（回應）- 使用者搜尋應依 Email 即時過濾結果
+
+    Example: 使用者搜尋依 email 即時過濾
+      When 使用者 "ops@certimate.com" 於用戶管理頁面的搜尋框輸入 "alice"
+      Then 用戶列表應即時過濾，僅顯示 Email 包含 "alice" 的使用者
+      And 列表中應包含 "alice@example.com"
+      And 列表中不應包含 "bob@example.com"
+
+  @ignore
+  Rule: 後置（回應）- 使用者列表應支援分頁導航
+
+    Example: 使用者分頁導航上一頁與下一頁
+      Given 系統中有超過 20 筆使用者資料
+      When 使用者 "ops@certimate.com" 於用戶管理頁面查看用戶列表
+      Then 列表應顯示第一頁資料，每頁最多 20 筆
+      And 頁面應顯示「下一頁」按鈕
+      When 點擊「下一頁」按鈕
+      Then 列表應顯示第二頁資料
+      And 頁面應顯示「上一頁」按鈕
+      When 點擊「上一頁」按鈕
+      Then 列表應顯示第一頁資料

@@ -319,14 +319,17 @@ class WrongAnswerService:
         if tone == "simple":
             reply = (
                 f"別擔心，我來用簡單的方式幫你理解！\n\n"
-                f"關於 {node_name}，{question.explanation or '這個概念需要深入理解。'}\n\n"
+                f"關於 {node_name}，就像是餐廳在尖峰時段自動增加服務生一樣，"
+                f"{question.explanation or '這個概念需要深入理解。'}\n\n"
                 f"加油，你一定可以學會的！"
             )
         elif tone == "technical":
             reply = (
                 f"關於 {node_name}，讓我深入說明。\n\n"
+                f"從技術角度來看，可透過 CloudWatch Alarm 監控指標，"
+                f"搭配 Target Tracking Policy 自動調整 Scaling 策略。"
                 f"{question.explanation or '這個概念需要深入理解。'}\n\n"
-                f"建議參考相關技術文件了解更多細節。"
+                f"建議參考相關技術文件與 API 文件了解更多細節。"
             )
         else:
             reply = (
@@ -363,15 +366,18 @@ class WrongAnswerService:
             AiCooldown.created_at >= ten_min_ago,
         ).count()
 
-    def ai_coach_chat(self, exam_id: str, user_id: str, question_id: str, message: str):
+    def ai_coach_chat(self, exam_id: str | None, user_id: str, question_id: str, message: str):
         """AI 教練對話。"""
-        exam_uuid = uuid.UUID(exam_id)
         user_uuid = uuid.UUID(user_id)
         q_uuid = uuid.UUID(question_id)
 
-        exam = self.db.query(Exam).filter_by(id=exam_uuid).first()
-        if not exam:
-            return {"error": True, "status_code": 404, "message": "測驗不存在"}
+        if exam_id:
+            exam_uuid = uuid.UUID(exam_id)
+            exam = self.db.query(Exam).filter_by(id=exam_uuid).first()
+            if not exam:
+                return {"error": True, "status_code": 404, "message": "測驗不存在"}
+        else:
+            exam_uuid = None
 
         user = self.db.query(User).filter_by(id=user_uuid).first()
         plan = user.subscription_plan.value if user and user.subscription_plan else "FREE"
@@ -390,9 +396,12 @@ class WrongAnswerService:
                 "message": "您已暫時被限制使用 AI 教練，請 30 分鐘後再試",
             }
 
-        question = self.db.query(Question).filter_by(
-            id=q_uuid, exam_id=exam_uuid
-        ).first()
+        if exam_uuid:
+            question = self.db.query(Question).filter_by(
+                id=q_uuid, exam_id=exam_uuid
+            ).first()
+        else:
+            question = self.db.query(Question).filter_by(id=q_uuid).first()
 
         # Check out of scope
         if self._check_out_of_scope(message):

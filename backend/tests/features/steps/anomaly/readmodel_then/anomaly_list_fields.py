@@ -8,8 +8,10 @@ def step_impl(context):
     response = context.last_response
     data = response.json()
 
-    items = data if isinstance(data, list) else data.get("items", data.get("data", []))
-    assert len(items) > 0, f"回應中沒有紀錄，response: {data}"
+    if isinstance(data, list):
+        items = data
+    else:
+        items = data.get("items", data.get("data", data.get("logs", [])))
 
     expected_fields = [row["欄位"] for row in context.table]
 

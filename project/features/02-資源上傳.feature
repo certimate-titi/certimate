@@ -1,4 +1,4 @@
-@ignore @command
+@command
 Feature: 資源上傳與隱性版權約定
 
   Background:
@@ -9,6 +9,9 @@ Feature: 資源上傳與隱性版權約定
       | 3        | proplus@example.com  | PRO_PLUS_399  |
       | 4        | ultra@example.com    | ULTRA_1599    |
     And 使用者 "free@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "pro@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "proplus@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
+    And 使用者 "ultra@example.com" 備考科目為 "AWS SAA"（科目 ID: 1）
 
   # ========== 前置條件：檔案格式 ==========
 

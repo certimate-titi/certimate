@@ -4,8 +4,8 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email              | 訂閱方案 |
       | 1        | alice@example.com  | FREE     |
-      | 2        | pro@example.com    | PRO      |
-      | 3        | proplus@example.com| PRO_PLUS |
+      | 2        | pro@example.com     | PRO_199      |
+      | 3        | proplus@example.com | PRO_PLUS_399 |
     And 系統中有包含歷史錯題、PDF 與 YouTube 的心智圖節點資料
     And 系統中預設存在 "PMP" 與 "AWS SAA" 兩個學科庫
 
@@ -61,3 +61,102 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       When 使用者在模擬考中連續答對該節點衍伸出的 3 道難題
       Then 返回此頁面時，該節點的顏色應即時更新渲染為「綠色（熟練）」
       And 對應的 AI 教練可能發送灑花的恭喜獎章動畫
+
+  # ========== 搜尋與篩選 ==========
+
+  Rule: 後置（互動）- 搜尋知識點可即時篩選心智圖導覽區的節點
+
+    @ignore
+    Example: 搜尋知識點篩選心智圖節點
+      When 使用者 "pro@example.com" 在心智圖導覽區的搜尋框輸入 "S3"
+      Then 右側心智圖導覽區應僅顯示包含 "S3" 關鍵字的知識節點
+      And 不符合搜尋條件的節點應被隱藏或灰化
+
+  # ========== 資源面板摺疊 ==========
+
+  Rule: 後置（UI）- 資源面板支援摺疊與展開切換
+
+    @ignore
+    Example: 摺疊與展開資源面板
+      Given 使用者 "pro@example.com" 已進入知識心智圖頁面
+      When 使用者點擊資源面板的摺疊按鈕
+      Then 資源面板應收合隱藏，心智圖導覽區佔據完整右側空間
+      When 使用者再次點擊展開按鈕
+      Then 資源面板應恢復原始寬度顯示
+
+  # ========== 刪除文件確認 Modal ==========
+
+  Rule: 後置（互動）- 刪除文件需經過確認 Modal，可取消或確認
+
+    @ignore
+    Example: 刪除文件確認 Modal 取消操作
+      Given 使用者 "pro@example.com" 在資源面板選中一份文件
+      When 使用者點擊刪除按鈕
+      Then 系統應彈出確認刪除 Modal 視窗
+      When 使用者在 Modal 中點擊「取消」
+      Then Modal 應關閉，文件仍保留在資源列表中
+
+    @ignore
+    Example: 刪除文件確認 Modal 確認刪除成功
+      Given 使用者 "pro@example.com" 在資源面板選中一份文件
+      When 使用者點擊刪除按鈕
+      Then 系統應彈出確認刪除 Modal 視窗
+      When 使用者在 Modal 中點擊「確認刪除」
+      Then 操作成功
+      And 該文件應從資源列表中移除
+      And 心智圖導覽區應同步移除該文件關聯的知識節點
+
+  # ========== YouTube 嵌入播放器 ==========
+
+  Rule: 後置（互動）- YouTube 嵌入播放器可跳轉至引用時間點播放
+
+    @ignore
+    Example: YouTube 嵌入播放器播放引用時間點
+      Given 使用者 "pro@example.com" 點擊了一個來源為 YouTube 的知識節點
+      And 該節點的影片時間戳為 "00:08:32"
+      When 左側面板載入 YouTube 嵌入播放器
+      Then 播放器應自動定位至 00:08:32 時間點
+      And 使用者可直接從該時間點開始播放影片
+
+  # ========== AI 聊天快速提問 ==========
+
+  Rule: 後置（互動）- AI 聊天區提供快速提問 Chips 方便使用者一鍵填入
+
+    @ignore
+    Example: AI 聊天快速提問 Chips 填入輸入框
+      Given 使用者 "proplus@example.com" 已點擊一個知識節點進入 AI 教練面板
+      When 使用者點擊快速提問 Chip「用簡單的話解釋這個概念」
+      Then AI 教練對話輸入框應自動填入「用簡單的話解釋這個概念」
+      And 使用者可直接按下傳送按鈕發出提問
+
+  # ========== 傳送聊天訊息 ==========
+
+  Rule: 後置（回應）- 傳送聊天訊息後應取得 AI 教練的即時回應
+
+    @ignore
+    Example: 傳送聊天訊息並取得回應
+      When 使用者 "proplus@example.com" 在 AI 教練對話框輸入「什麼是 VPC？」並按下傳送
+      Then 操作成功
+      And AI 教練應以串流方式回覆與 VPC 相關的解說內容
+      And 回覆訊息應以氣泡對話框形式顯示在聊天區域
+
+  # ========== FREE 使用者查詢次數限制 ==========
+
+  Rule: 後置（UI）- FREE 使用者應看到剩餘免費查詢次數的計數器
+
+    @ignore
+    Example: FREE 使用者查看免費查詢次數計數器
+      When 使用者 "alice@example.com" 進入知識心智圖頁面
+      Then 操作成功
+      And AI 教練面板應顯示「本月剩餘免費查詢次數」計數器
+      And 計數器應顯示目前可用次數與每月上限（例如：3/5）
+
+  # ========== PRO_199 付費牆升級提示 ==========
+
+  Rule: 後置（商業漏斗）- PRO_199 使用者嘗試使用進階功能時看到升級提示
+
+    @ignore
+    Example: PRO_199 使用者看到付費牆升級提示
+      When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
+      Then 該對話框應立即呈現毛玻璃效果被鎖住
+      And 面板應顯示升級提示，引導使用者升級至 PRO_PLUS 方案以解鎖完整 AI 教練功能

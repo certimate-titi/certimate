@@ -36,6 +36,7 @@ export default function ModerationPage() {
   const [moderationQueue, setModerationQueue] = useState<{ id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[]>([]);
   const [abuseMonitoring, setAbuseMonitoring] = useState<{ id: string; user: string; metric: string; count: string; status: string; time: string }[]>([]);
   const [contentReviewQueue, setContentReviewQueue] = useState<{ id: number; type: string; content: string; reporter: string; status: 'pending' | 'resolved'; date: string }[]>([]);
+  const [detailModal, setDetailModal] = useState<{ type: string; content: string; user?: string; reason?: string; date?: string; reporter?: string; id?: string | number; source: 'content' | 'queue' } | null>(null);
   const [reportStats, setReportStats] = useState([
     { label: '待處理檢舉', value: '--', color: 'rose' },
     { label: '今日自動標記', value: '--', color: 'amber' },
@@ -149,7 +150,7 @@ export default function ModerationPage() {
                     <XCircle className="h-3.5 w-3.5" /> 移除
                   </button>
                   <button
-                    onClick={() => alert(`檢舉詳情：\n類型：${item.type}\n內容：${item.content}\n回報者：${item.reporter}\n日期：${item.date}`)}
+                    onClick={() => setDetailModal({ type: item.type, content: item.content, reporter: item.reporter, date: item.date, id: item.id, source: 'content' })}
                     className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-1.5"
                   >
                     <Search className="h-3.5 w-3.5" /> 查看詳情
@@ -243,7 +244,7 @@ export default function ModerationPage() {
                     <XCircle className="h-4 w-4" /> 刪除並警告
                   </button>
                   <button
-                    onClick={() => alert(`審核項目詳情：\n用戶：${item.user}\n類型：${item.type}\n內容：${item.content}\n原因：${item.reason}\n時間：${item.time}`)}
+                    onClick={() => setDetailModal({ type: item.type, content: item.content, user: item.user, reason: item.reason, date: item.time, id: item.id, source: 'queue' })}
                     className="p-2 bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-900 rounded-xl transition-all"
                   >
                     <MoreVertical className="h-4 w-4" />
@@ -347,6 +348,99 @@ export default function ModerationPage() {
           </section>
         </div>
       </div>
+      {/* Detail Modal */}
+      {detailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDetailModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">
+              {detailModal.source === 'content' ? '檢舉詳情' : '審核項目詳情'}
+            </h3>
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">類型</span>
+                <span className={cn(
+                  "text-xs font-bold px-2 py-1 rounded-lg",
+                  detailModal.type === '使用者上傳' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+                )}>
+                  {detailModal.type}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-slate-500 block mb-1">內容</span>
+                <p className="font-medium text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{detailModal.content}</p>
+              </div>
+              {detailModal.user && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">用戶</span>
+                  <span className="font-bold text-slate-900">{detailModal.user}</span>
+                </div>
+              )}
+              {detailModal.reason && (
+                <div className="text-sm">
+                  <span className="text-slate-500 block mb-1">原因</span>
+                  <p className="font-medium text-slate-900 bg-amber-50 p-3 rounded-xl border border-amber-100 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                    {detailModal.reason}
+                  </p>
+                </div>
+              )}
+              {detailModal.reporter && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">回報者</span>
+                  <span className="font-bold text-slate-900">{detailModal.reporter}</span>
+                </div>
+              )}
+              {detailModal.date && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">{detailModal.source === 'content' ? '日期' : '時間'}</span>
+                  <span className="text-slate-900">{detailModal.date}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await superAdminService.approveContent(String(detailModal.id));
+                    if (detailModal.source === 'content') {
+                      setContentReviewQueue(prev => prev.filter(i => String(i.id) !== String(detailModal.id)));
+                    } else {
+                      setModerationQueue(prev => prev.filter(i => i.id !== String(detailModal.id)));
+                    }
+                    setDetailModal(null);
+                  } catch { alert('操作失敗'); }
+                }}
+                className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" /> 通過
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('確定要移除此內容嗎？')) return;
+                  try {
+                    await superAdminService.rejectContent(String(detailModal.id));
+                    if (detailModal.source === 'content') {
+                      setContentReviewQueue(prev => prev.filter(i => String(i.id) !== String(detailModal.id)));
+                    } else {
+                      setModerationQueue(prev => prev.filter(i => i.id !== String(detailModal.id)));
+                    }
+                    setDetailModal(null);
+                  } catch { alert('操作失敗'); }
+                }}
+                className="flex-1 py-2.5 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+              >
+                <XCircle className="h-4 w-4" /> 移除
+              </button>
+              <button
+                onClick={() => setDetailModal(null)}
+                className="py-2.5 px-4 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

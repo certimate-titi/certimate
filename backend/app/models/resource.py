@@ -35,6 +35,7 @@ class ResourceStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
     COMPLETED_NO_MAP = "COMPLETED_NO_MAP"
     FAILED = "FAILED"
+    DELETED = "DELETED"
 
 
 class ResourceScope(str, enum.Enum):

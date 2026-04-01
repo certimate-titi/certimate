@@ -1,7 +1,7 @@
 """平台管理後台 — 財務管理 Service。"""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,14 @@ from app.models.audit_log import AdminAuditLog
 
 def _get_role(user: User) -> str:
     return user.role.value if hasattr(user.role, "value") else str(user.role)
+
+
+_PLAN_DISPLAY = {
+    SubscriptionPlan.FREE: "FREE",
+    SubscriptionPlan.PRO: "PRO_199",
+    SubscriptionPlan.PRO_PLUS: "PRO_PLUS_399",
+    SubscriptionPlan.ULTRA: "ULTRA_1599",
+}
 
 
 def _get_plan(user: User) -> str:
@@ -77,10 +85,29 @@ class AdminFinanceService:
                 .filter(User.subscription_plan == plan)
                 .count()
             )
-            distribution[plan.value] = count
+            display_key = _PLAN_DISPLAY.get(plan, plan.value)
+            distribution[display_key] = count
+
+        # Build 30-day MRR trend using Transaction data
+        now = datetime.now(timezone.utc)
+        mrr_trend = []
+        for offset in range(29, -1, -1):
+            day = now - timedelta(days=offset)
+            day_str = day.strftime("%Y-%m-%d")
+            # Sum successful transactions for the day
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            from sqlalchemy import func as sqlfunc
+            mrr = self.db.query(sqlfunc.coalesce(sqlfunc.sum(Transaction.amount), 0)).filter(
+                Transaction.status == "success",
+                Transaction.created_at >= day_start,
+                Transaction.created_at < day_end,
+            ).scalar() or 0
+            mrr_trend.append({"date": day_str, "mrr": float(mrr)})
 
         return {
             "distribution": distribution,
+            "mrr_trend": mrr_trend,
         }
 
     # ── Transactions ──────────────────────────────────────────────────────────
@@ -133,7 +160,7 @@ class AdminFinanceService:
             action="approve_refund",
             target_type="refund",
             target_id=str(refund.id),
-            details={"refund_id": refund_id, "amount": float(refund.amount), "summary": f"退款 {float(refund.amount)} TWD"},
+            details={"refund_id": refund_id, "amount": float(refund.amount), "summary": f"退款 {int(refund.amount)} TWD"},
         )
 
         return {"success": True, "refund_id": refund_id, "status": "approved"}

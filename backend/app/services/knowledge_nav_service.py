@@ -62,7 +62,7 @@ class KnowledgeNavService:
                 "sort_order": node.sort_order or 0,
                 "source_page": node.source_page_number,
                 "mastery_rate": int(m.mastery_rate) if m else 0,
-                "mastery_color": m.color if m else "gray",
+                "color": m.color if m else "gray",
                 "children": [],
             }
 
@@ -191,7 +191,7 @@ class KnowledgeNavService:
                 "upgrade_prompt": "🌟 解鎖 Claude 3.5 終極教練專為您梳理盲區漏洞，立刻升級 PRO_PLUS 取得解答",
                 "message": "AI 教練深度對話為 PRO_PLUS 專屬功能",
                 "upgrade": {
-                    "target_plan": "PRO_PLUS",
+                    "target_plan": "PRO_PLUS_399",
                     "message": "解鎖 Claude 3.5 終極教練",
                 },
             }

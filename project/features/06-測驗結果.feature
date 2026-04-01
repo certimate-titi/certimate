@@ -4,7 +4,7 @@ Feature: 測驗結果
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email              | 訂閱方案 |
       | 1        | alice@example.com  | FREE     |
-      | 2        | bob@example.com    | PRO      |
+      | 2        | bob@example.com    | PRO_199  |
     And 系統中有以下歷史測驗記錄：
       | 測驗 ID | 使用者 ID | 狀態      | 答對數 | 總題數 | 得分 | 合格分數 | 提交時間            |
       | 1       | 1        | SUBMITTED | 60     | 100    | 60   | 72       | 2024-01-10 10:00:00 |
@@ -38,7 +38,7 @@ Feature: 測驗結果
 
   # ========== 後置條件 ==========
 
-  Rule: 後置（回應）- 結果頁應回傳得分、合格與否判斷及與上次測驗的比較
+  Rule: 後置（回應）- 結果頁應回傳得分、合格與否判斷、合格門檻及與上次測驗的比較
 
     Example: 查看通過合格分數的測驗結果
       When 使用者 "alice@example.com" 查看測驗 2 的結果
@@ -50,9 +50,7 @@ Feature: 測驗結果
         | 合格分數   | 72         |
         | 與上次比較 | +20 分進步 |
 
-  Rule: 後置（回應）- 結果頁應回傳得分、合格與否判斷及與上次測驗的比較且使用鼓勵性文案
-
-    Example: 查看未達合格分數的測驗結果
+    Example: 查看未達合格分數的測驗結果（鼓勵性文案）
       When 使用者 "alice@example.com" 查看測驗 1 的結果
       Then 操作成功
       And 結果應包含：
@@ -115,3 +113,44 @@ Feature: 測驗結果
     Example: 確保使用者了解成績不保證真實考試通過率
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       Then 畫面底部應顯示提示文字 "本模擬考試結果僅反映當前熟悉度，並不保證實測通過率及 AI 解析結果的絕對正確性"
+
+  # ========== UI 元件補充場景 ==========
+
+  Rule: 後置（回應）- 分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態
+
+    @ignore
+    Example: 點擊分享到 LinkedIn 按鈕顯示即將推出提示
+      When 使用者 "alice@example.com" 查看測驗 2 的結果
+      And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
+      Then 畫面應顯示提示訊息 "LinkedIn 分享功能即將推出，敬請期待"
+
+  Rule: 後置（回應）- 下載成績卡片按鈕應顯示為 placeholder 未實作狀態
+
+    @ignore
+    Example: 點擊下載成績卡片按鈕顯示即將推出提示
+      When 使用者 "alice@example.com" 查看測驗 2 的結果
+      And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
+      Then 畫面應顯示提示訊息 "成績卡片下載功能即將推出，敬請期待"
+
+  Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
+
+    @ignore
+    Example: 點擊 AI 教練介入卡片導航至錯題複習
+      Given 使用者 "bob@example.com" 查看測驗 3 的結果
+      And 測驗 3 的知識點分析中存在答對率低於 60% 的節點
+      When 使用者 "bob@example.com" 點擊 AI 教練介入卡片上的「前往錯題複習」按鈕
+      Then 頁面應導航至錯題複習頁面
+      And 錯題複習頁面應自動帶入測驗 3 的錯題範圍
+
+  Rule: 後置（回應）- 領域分析進度條應顯示各知識節點的正確百分比
+
+    @ignore
+    Example: 領域分析區塊顯示各節點進度條與正確百分比
+      When 使用者 "alice@example.com" 查看測驗 2 的知識點分析
+      Then 操作成功
+      And 領域分析區塊應以進度條呈現以下節點正確百分比：
+        | 節點名稱 | 進度條百分比 | 顏色標示 |
+        | EC2 運算 | 80%          | 綠色     |
+        | IAM 身分 | 40%          | 紅色     |
+        | S3 儲存  | 80%          | 綠色     |
+        | VPC 網路 | 50%          | 紅色     |

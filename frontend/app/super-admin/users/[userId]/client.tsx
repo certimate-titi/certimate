@@ -76,6 +76,7 @@ export default function UserDetailsPage() {
   const [planEndDate, setPlanEndDate] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [showUsageModal, setShowUsageModal] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -345,9 +346,7 @@ export default function UserDetailsPage() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  alert(`用量日誌摘要：\n今日 Token：${userData.tokens.today}\n本月 Token：${userData.tokens.month}\n上傳文件：${userData.usage.uploads}\n生成考試：${userData.usage.exams}\nAI 問答：${userData.usage.qna}\nVision OCR：${userData.usage.ocr}`);
-                }}
+                onClick={() => setShowUsageModal(true)}
                 className="mt-8 w-full py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
               >
                 查看詳細用量日誌
@@ -402,6 +401,50 @@ export default function UserDetailsPage() {
           </div>
         </div>
       </div>
+      {/* 用量日誌 Modal */}
+      {showUsageModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowUsageModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">用量日誌摘要</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <p className="text-xs text-emerald-600 uppercase tracking-wider font-medium mb-1">今日 Token</p>
+                  <p className="text-xl font-bold text-emerald-700">{userData.tokens.today}</p>
+                </div>
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <p className="text-xs text-indigo-600 uppercase tracking-wider font-medium mb-1">本月 Token</p>
+                  <p className="text-xl font-bold text-indigo-700">{userData.tokens.month}</p>
+                </div>
+              </div>
+              <div className="space-y-3 px-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">上傳文件</span>
+                  <span className="font-bold text-slate-900">{userData.usage.uploads}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">生成考試</span>
+                  <span className="font-bold text-slate-900">{userData.usage.exams}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">AI 問答</span>
+                  <span className="font-bold text-slate-900">{userData.usage.qna}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Vision OCR</span>
+                  <span className="font-bold text-slate-900">{userData.usage.ocr}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowUsageModal(false)}
+              className="w-full mt-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
       {/* 調整訂閱等級 Modal */}
       {showPlanModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPlanModal(false)}>

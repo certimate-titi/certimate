@@ -1,18 +1,34 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 const TOKEN_KEY = 'certimate_jwt_token';
+const REMEMBER_KEY = 'certimate_remember';
+
+export function setRememberMe(val: boolean): void {
+  localStorage.setItem(REMEMBER_KEY, String(val));
+}
+
+export function getRememberMe(): boolean {
+  if (typeof window === 'undefined') return true;
+  const v = localStorage.getItem(REMEMBER_KEY);
+  return v === null ? true : v === 'true';
+}
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 }
 
 export function setStoredToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  if (getRememberMe()) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    sessionStorage.setItem(TOKEN_KEY, token);
+  }
 }
 
 export function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
 }
 
 function getAuthHeaders(): Record<string, string> {

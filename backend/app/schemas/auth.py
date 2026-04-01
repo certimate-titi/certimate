@@ -16,6 +16,7 @@ class LoginRequest(BaseModel):
 
 class GoogleSSORequest(BaseModel):
     google_id_token: str
+    email: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):

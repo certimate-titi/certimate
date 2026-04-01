@@ -27,6 +27,10 @@ export default function DashboardPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Calendar state
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+
   // Subject state
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
@@ -543,9 +547,9 @@ export default function DashboardPage() {
                   <CalendarIcon className="h-5 w-5 text-blue-500" /> 複習日曆
                 </h2>
                 <div className="flex items-center gap-1">
-                  <button className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronLeft className="h-4 w-4 text-slate-600" /></button>
-                  <span className="text-sm font-medium text-slate-700">3月</span>
-                  <button className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronRight className="h-4 w-4 text-slate-600" /></button>
+                  <button onClick={() => { if (calendarMonth === 1) { setCalendarMonth(12); setCalendarYear(calendarYear - 1); } else { setCalendarMonth(calendarMonth - 1); } }} className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronLeft className="h-4 w-4 text-slate-600" /></button>
+                  <span className="text-sm font-medium text-slate-700">{calendarYear !== new Date().getFullYear() ? `${calendarYear}年${calendarMonth}月` : `${calendarMonth}月`}</span>
+                  <button onClick={() => { if (calendarMonth === 12) { setCalendarMonth(1); setCalendarYear(calendarYear + 1); } else { setCalendarMonth(calendarMonth + 1); } }} className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronRight className="h-4 w-4 text-slate-600" /></button>
                 </div>
               </div>
 
@@ -556,9 +560,10 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 31 }).map((_, i) => {
+                {Array.from({ length: new Date(calendarYear, calendarMonth, 0).getDate() }).map((_, i) => {
                   const day = i + 1;
-                  const isToday = day === 19;
+                  const now = new Date();
+                  const isToday = day === now.getDate() && calendarMonth === now.getMonth() + 1 && calendarYear === now.getFullYear();
                   const hasReview = reviewDates.has(day);
                   const calendarDay = data.reviewCalendar.find(r => new Date(r.date).getDate() === day);
                   const reviewCount = calendarDay?.reviewCount ?? 0;

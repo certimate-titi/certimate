@@ -7,8 +7,8 @@ Feature: 知識心智圖生成
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email              | 訂閱方案 |
       | 1        | free@example.com   | FREE     |
-      | 2        | pro@example.com    | PRO      |
-      | 3        | proplus@example.com| PRO_PLUS |
+      | 2        | pro@example.com     | PRO_199      |
+      | 3        | proplus@example.com | PRO_PLUS_399 |
     And 系統中預設存在 "PMP" 與 "AWS SAA" 兩個學科庫
 
   # ========== 自動生成流程 ==========

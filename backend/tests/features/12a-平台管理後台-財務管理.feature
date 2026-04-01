@@ -1,28 +1,35 @@
+@query
 Feature: 平台管理後台 — 財務與訂閱管理
 
   Background:
     Given 系統中有以下使用者帳號：
-      | 使用者 ID | Email                   | 訂閱方案  | 角色         |
-      | 1        | super@certimate.com     | ULTRA     | SUPER_ADMIN  |
-      | 2        | ops@certimate.com       | ULTRA     | ADMIN        |
+      | 使用者 ID | Email                   | 訂閱方案      | 角色         |
+      | 1        | super@certimate.com     | ULTRA_1599    | super_admin  |
+      | 2        | ops@certimate.com       | ULTRA_1599    | admin        |
     And 系統中有以下交易紀錄：
-      | 交易 ID | 使用者 ID | 金額 | 方案      | 狀態    | 交易時間            |
-      | TXN-001 | 1        | 199  | PRO       | success | 2026-03-01 10:00:00 |
-      | TXN-002 | 2        | 399  | PRO_PLUS  | success | 2026-03-02 14:30:00 |
-      | TXN-003 | 1        | 1599 | ULTRA     | failed  | 2026-03-03 09:00:00 |
+      | 交易 ID | 使用者 ID | 金額 | 方案         | 狀態   | 交易時間            |
+      | TXN-001 | 10       | 199  | PRO_199      | success| 2026-03-01 10:00:00 |
+      | TXN-002 | 11       | 399  | PRO_PLUS_399 | success| 2026-03-02 14:30:00 |
+      | TXN-003 | 12       | 1599 | ULTRA_1599   | failed | 2026-03-03 09:00:00 |
     And 系統中有以下退款申請：
       | 退款 ID | 使用者 ID | 交易 ID | 金額 | 狀態    |
-      | REF-001 | 1        | TXN-001 | 199  | pending |
-      | REF-002 | 2        | TXN-002 | 399  | pending |
+      | REF-001 | 10       | TXN-001 | 199  | pending |
+      | REF-002 | 11       | TXN-002 | 399  | pending |
 
-  # ========== 訂閱分布統計 ==========
+  # ========== 訂閱分布與營收 ==========
 
-  Rule: 後置（回應）- 訂閱分布應回傳各方案用戶數
+  Rule: 後置（回應）- 訂閱分布應回傳各方案用戶數與 MRR 趨勢
 
-    Example: 查看訂閱分布取得各方案統計
+    Example: 查看訂閱分布取得圓餅圖與 MRR 資料
       When 使用者 "ops@certimate.com" 查看訂閱分布統計
       Then 操作成功
-      And 回應應包含訂閱分布資料
+      And 回應應包含各方案用戶數：
+        | 方案          | 用戶數 |
+        | FREE          | 1200   |
+        | PRO_199       | 350    |
+        | PRO_PLUS_399  | 120    |
+        | ULTRA_1599    | 30     |
+      And 回應應包含最近 30 天的 MRR 趨勢資料點
 
   # ========== 交易紀錄 ==========
 
@@ -31,7 +38,14 @@ Feature: 平台管理後台 — 財務與訂閱管理
     Example: 查看交易紀錄取得明細列表
       When 使用者 "ops@certimate.com" 查看交易紀錄
       Then 操作成功
-      And 回應中應包含交易紀錄列表
+      And 回應中每筆交易應包含：
+        | 欄位            | 範例值              |
+        | transaction_id  | TXN-001             |
+        | user_id         | 10                  |
+        | amount          | 199                 |
+        | plan            | PRO_199             |
+        | status          | success             |
+        | created_at      | 2026-03-01 10:00:00 |
 
     Example: 依狀態篩選交易紀錄
       When 使用者 "ops@certimate.com" 查看交易紀錄，篩選狀態為 "failed"
@@ -40,22 +54,26 @@ Feature: 平台管理後台 — 財務與訂閱管理
 
   # ========== 退款管理 ==========
 
-  Rule: 後置（狀態）- 核准退款應更新狀態並記錄審計日誌
+  Rule: 後置（狀態）- 核准退款應觸發 Stripe Refund 並自動降級至 FREE
 
     Example: super_admin 核准退款成功
-      When 使用者 "super@certimate.com" 核准退款 "REF-001"
+      When 使用者 "super@certimate.com" 核准退款 "REF-001"，OTP 為 "123456"
       Then 操作成功
       And 退款 "REF-001" 的狀態應為 "approved"
+      And 使用者 10 的訂閱方案應自動降級為 "FREE"
       And 系統應記錄審計日誌：
         | 欄位     | 值                |
         | action   | approve_refund    |
+        | target   | REF-001           |
+        | details  | 退款 199 TWD      |
 
-  Rule: 後置（狀態）- 駁回退款應記錄理由
+  Rule: 後置（狀態）- 駁回退款應記錄理由並通知用戶
 
     Example: 駁回退款申請成功
       When 使用者 "ops@certimate.com" 駁回退款 "REF-002"，理由為 "超過退款期限"
       Then 操作成功
       And 退款 "REF-002" 的狀態應為 "rejected"
+      And 系統應發送駁回通知 Email 至使用者 11，內容包含理由 "超過退款期限"
 
   # ========== 優惠碼 ==========
 
@@ -75,13 +93,65 @@ Feature: 平台管理後台 — 財務與訂閱管理
 
     Example: 建立百分比折扣優惠碼成功
       When 使用者 "super@certimate.com" 建立優惠碼：
-        | 欄位              | 值           |
-        | code              | LAUNCH2026   |
-        | discount_type     | percentage   |
-        | discount_value    | 30           |
-        | applicable_plans  | PRO          |
-        | max_uses          | 500          |
-        | max_uses_per_user | 1            |
+        | 欄位           | 值           |
+        | code           | LAUNCH2026   |
+        | discount_type  | percentage   |
+        | discount_value | 30           |
+        | applicable_plans | PRO_199    |
+        | max_uses       | 500          |
+        | max_uses_per_user | 1         |
       Then 操作成功
       And 優惠碼 "LAUNCH2026" 的狀態應為 "active"
       And 優惠碼 "LAUNCH2026" 的已使用次數應為 0
+
+  # ========== UI 互動情境 ==========
+
+  @ignore
+  Rule: 後置（回應）- 匯出財務報告應觸發 JSON 檔案下載
+
+    Example: 匯出財務報告下載 JSON
+      When 使用者 "ops@certimate.com" 於財務管理頁面點擊「匯出報告」按鈕
+      Then 操作成功
+      And 瀏覽器應觸發 JSON 檔案下載
+      And 下載檔案應包含交易摘要與營收統計資料
+
+  @ignore
+  Rule: 後置（回應）- 交易搜尋應依交易 ID 即時過濾
+
+    Example: 交易搜尋依交易 ID 過濾
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面的搜尋框輸入 "TXN-001"
+      Then 交易列表應即時過濾，僅顯示交易 ID 包含 "TXN-001" 的紀錄
+      And 列表中應包含交易 "TXN-001"
+      And 列表中不應包含交易 "TXN-002"
+
+  @ignore
+  Rule: 後置（回應）- 交易狀態篩選應透過下拉選單切換
+
+    Example: 交易狀態篩選下拉選單切換
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面的狀態篩選下拉選單選擇 "failed"
+      Then 交易列表應僅顯示狀態為 "failed" 的交易
+      And 列表中應包含交易 "TXN-003"
+      And 列表中不應包含交易 "TXN-001"
+
+  @ignore
+  Rule: 後置（回應）- 交易列表應支援展開顯示詳情
+
+    Example: 交易列展開顯示詳情
+      When 使用者 "ops@certimate.com" 於交易紀錄頁面點擊交易 "TXN-001" 的展開按鈕
+      Then 交易 "TXN-001" 應展開顯示詳細資訊：
+        | 欄位            | 值                  |
+        | transaction_id  | TXN-001             |
+        | user_id         | 10                  |
+        | amount          | 199                 |
+        | plan            | PRO_199             |
+        | status          | success             |
+        | created_at      | 2026-03-01 10:00:00 |
+
+  @ignore
+  Rule: 後置（回應）- MRR 趨勢圖表應顯示正確資料
+
+    Example: MRR 趨勢圖表顯示正確資料
+      When 使用者 "ops@certimate.com" 於財務管理頁面查看 MRR 趨勢圖表
+      Then 操作成功
+      And 圖表應顯示最近 30 天的 MRR 資料點
+      And 每個資料點應包含日期與對應的 MRR 金額

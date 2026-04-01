@@ -155,6 +155,7 @@ class DashboardService:
 
         # Domain strengths: knowledge areas with per-exam accuracy
         domain_strengths = []
+        resource_ids = []
 
         # Get submitted exams for this subject
         submitted_exams = (
@@ -242,6 +243,9 @@ class DashboardService:
 
         # Fill remaining slots based on mode
         remaining = 3 - len(today_tasks)
+        if not submitted_exams:
+            resources = self.db.query(Resource).filter_by(subject_id=active_subject_id).all()
+            resource_ids = [r.id for r in resources]
         if remaining > 0 and resource_ids:
             # Get unseen knowledge nodes
             unseen_nodes = (
@@ -265,11 +269,33 @@ class DashboardService:
             "exam_countdown": exam_countdown,
             "stats": stats,
             "domainStrengths": domain_strengths,
+            "radar_chart": {
+                "subject": active_subject_name,
+                "domains": domain_strengths,
+            },
             "studyMode": {"mode": study_mode, "label": mode_label},
             "todayTasks": today_tasks[:3],
             "quick_upload": {"enabled": True},
             "todo_reminders": {"wrong_answers": wrong_count, "incomplete_exams": incomplete_exams},
         }
+
+    def get_profile(self, user_id: str) -> dict:
+        """取得個人資料。"""
+        user_uuid = uuid.UUID(user_id)
+        user = self.db.query(User).filter_by(id=user_uuid).first()
+        if not user:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+
+        fields = [
+            {"label": "姓名", "type": "文字輸入", "value": user.display_name or ""},
+            {"label": "年齡", "type": "下拉選單", "value": user.age or 0},
+            {"label": "最高學歷", "type": "下拉選單", "value": user.education or ""},
+            {"label": "職業 / 領域", "type": "文字輸入", "value": user.career or ""},
+            {"label": "每日學習時間", "type": "按鈕選擇", "value": user.daily_study_minutes or 0},
+            {"label": "偏好學習方式", "type": "卡片選擇", "value": user.learning_preference or ""},
+        ]
+
+        return {"error": False, "fields": fields}
 
     def update_profile(self, user_id: str, data: dict) -> dict:
         """更新個人資料。"""
@@ -279,12 +305,17 @@ class DashboardService:
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
 
+        learning_style_map = {
+            "大量刷題": "drill",
+            "觀念優先": "concept",
+            "混合模式": "mixed",
+        }
         allowed_fields = {"display_name", "age", "education", "career", "daily_study_minutes"}
         for field, value in data.items():
             if field in allowed_fields and value is not None:
                 setattr(user, field, value)
             elif field == "learning_style" and value is not None:
-                user.learning_preference = value
+                user.learning_preference = learning_style_map.get(value, value)
 
         self.db.commit()
-        return {"message": "個人資料已更新"}
+        return {"message": "已儲存"}

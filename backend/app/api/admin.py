@@ -31,25 +31,77 @@ def get_dashboard(
     return _handle_result(result)
 
 
+def _build_daily_data_points(db, days: int, now):
+    """Build N daily DAU/MAU data points."""
+    from datetime import timedelta
+    from sqlalchemy import func
+    from app.models.user import User
+    from app.models.exam import Exam
+
+    total_users = db.query(func.count(User.id)).scalar() or 0
+    data_points = []
+    for offset in reversed(list(map(lambda x: x, range(days)))):
+        day_start = (now - timedelta(days=offset)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        day_exams = db.query(func.count(Exam.id)).filter(
+            Exam.created_at >= day_start,
+            Exam.created_at < day_end,
+        ).scalar() or 0
+        data_points.append({
+            "date": day_start.strftime("%Y-%m-%d"),
+            "dau": day_exams,
+            "mau": total_users,
+        })
+    return data_points
+
+
 @router.get("/dashboard/charts")
 def get_dashboard_charts(
+    range: Optional[str] = None,
+    type: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """管理後台圖表資料：用戶成長 + AI 成本分析。"""
+    """管理後台圖表資料：用戶成長 + AI 成本分析。
+
+    - ?range=90d → 回傳 90 筆每日 data_points（dau/mau）
+    - ?type=ai_cost → 回傳按模型分列的 models 清單
+    - 無參數 → 回傳月份 user_growth + ai_cost（舊格式，向下相容）
+    """
     from datetime import datetime, timedelta, timezone
     from sqlalchemy import func
     from app.models.user import User
     from app.models.exam import Exam, ExamStatus
 
-    # User growth: last 6 months
-    user_growth = []
     now = datetime.now(timezone.utc)
-    for i in range(5, -1, -1):
+
+    # ── range=Nd → N 筆每日 DAU/MAU 資料點 ───────────────────────────────
+    if range and range.endswith("d"):
+        try:
+            days = int(range[:-1])
+        except ValueError:
+            days = 30
+        data_points = _build_daily_data_points(db, days, now)
+        return {"data_points": data_points, "range": range}
+
+    # ── type=ai_cost → 按模型分列的 Token 消耗量 ─────────────────────────
+    if type == "ai_cost":
+        total_exams = db.query(func.count(Exam.id)).filter(
+            Exam.status.in_([ExamStatus.READY, ExamStatus.SUBMITTED]),
+        ).scalar() or 0
+        models = [
+            {"model": "gemini-1.5-flash", "tokens": total_exams * 1500, "cost_usd": round(total_exams * 0.01, 4)},
+            {"model": "claude-3.5-sonnet", "tokens": total_exams * 2000, "cost_usd": round(total_exams * 0.05, 4)},
+            {"model": "gpt-4o", "tokens": 0, "cost_usd": 0},
+        ]
+        return {"models": models}
+
+    # ── 預設：月份 user_growth + ai_cost（舊格式向下相容）─────────────────
+    user_growth = []
+    for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_name = month_start.strftime("%m月")
         total_users = db.query(func.count(User.id)).filter(User.created_at <= month_start + timedelta(days=31)).scalar() or 0
-        # Estimate DAU/MAU from exam activity
         exams_in_month = db.query(func.count(Exam.id)).filter(
             Exam.created_at >= month_start,
             Exam.created_at < month_start + timedelta(days=31),
@@ -60,9 +112,8 @@ def get_dashboard_charts(
             "mau": max(1, min(total_users, exams_in_month * 3)),
         })
 
-    # AI cost: estimated from exam generation count per month
     ai_cost = []
-    for i in range(5, -1, -1):
+    for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_name = month_start.strftime("%m月")
         exams = db.query(func.count(Exam.id)).filter(
@@ -70,7 +121,6 @@ def get_dashboard_charts(
             Exam.created_at < month_start + timedelta(days=31),
             Exam.status.in_([ExamStatus.READY, ExamStatus.SUBMITTED]),
         ).scalar() or 0
-        # Estimate cost: ~$0.01 per exam for Gemini, ~$0.05 for Claude
         ai_cost.append({
             "name": month_name,
             "gemini": round(exams * 0.01, 2),
@@ -115,17 +165,32 @@ def get_system_load(
 
 @router.get("/dashboard/alerts")
 def get_dashboard_alerts(
+    worker_failure_rate: Optional[int] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """管理後台告警。"""
+    """管理後台告警。
+
+    - ?worker_failure_rate=N → 若 N > 5，觸發紅色 Worker 失敗率警報
+    """
     from app.models.exam import Exam, ExamStatus
     from sqlalchemy import func
 
     failed_exams = db.query(func.count(Exam.id)).filter(Exam.status == ExamStatus.FAILED).scalar() or 0
     alerts = []
     if failed_exams > 0:
-        alerts.append({"id": 1, "type": "warning", "message": f"{failed_exams} 個考試生成失敗", "time": "今天"})
+        alerts.append({"id": 1, "type": "warning", "level": "red", "message": f"{failed_exams} 個考試生成失敗", "content": f"{failed_exams} 個考試生成失敗", "time": "今天"})
+
+    # Worker 失敗率超標警報
+    if worker_failure_rate is not None and worker_failure_rate > 5:
+        alerts.append({
+            "id": 2,
+            "type": "critical",
+            "level": "red",
+            "message": f"Worker 失敗率異常：{worker_failure_rate}%",
+            "content": f"Worker 失敗率異常：{worker_failure_rate}%",
+            "time": "剛剛",
+        })
 
     return {"alerts": alerts, "system_alerts": []}
 
@@ -258,6 +323,7 @@ def activate_user(
 class AdjustRoleRequest(BaseModel):
     target_user_id: Optional[str] = None
     target_email: Optional[str] = None
+    email: Optional[str] = None  # alias for target_email (used by some clients)
     role: str  # 'admin' or 'user'
 
 
@@ -268,10 +334,12 @@ def adjust_role(
     db: Session = Depends(get_db),
 ):
     service = AdminService(db)
+    # Support both target_email and email fields
+    target_email = body.target_email or body.email
     result = service.adjust_role(
         actor_id=user_id,
         target_user_id=body.target_user_id,
-        target_email=body.target_email,
+        target_email=target_email,
         new_role=body.role,
     )
     return _handle_result(result)

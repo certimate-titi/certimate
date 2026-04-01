@@ -5,6 +5,25 @@ import uuid
 from behave import given
 
 from app.models.refund import Refund
+from app.models.user import User, SubscriptionPlan, UserRole, UserStatus
+
+
+def _ensure_user(db, user_id_key: str, context) -> uuid.UUID:
+    """Return UUID for user_id_key; auto-create a placeholder if not yet in context.ids."""
+    if user_id_key in context.ids:
+        return uuid.UUID(context.ids[user_id_key])
+
+    placeholder = User(
+        email=f"placeholder_{user_id_key}@test.internal",
+        password_hash="placeholder",
+        subscription_plan=SubscriptionPlan.FREE,
+        role=UserRole.USER,
+        status=UserStatus.ACTIVE,
+    )
+    db.add(placeholder)
+    db.flush()
+    context.ids[user_id_key] = str(placeholder.id)
+    return placeholder.id
 
 
 @given('系統中有以下退款申請：')
@@ -18,7 +37,7 @@ def step_impl(context):
         amount = float(row["金額"])
         status = row["狀態"]
 
-        user_uuid = uuid.UUID(context.ids[user_id_key])
+        user_uuid = _ensure_user(db, user_id_key, context)
 
         refund = Refund(
             refund_id=refund_id,

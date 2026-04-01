@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import TiTiLogo from '@/components/TiTiLogo';
 import { useAuth } from '@/lib/auth-context';
+import { setRememberMe as setRememberMePref } from '@/lib/api/client';
 
 const SUPER_ADMIN_ACCOUNT = {
   label: 'Super Admin',
@@ -23,10 +24,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const doLogin = async (loginEmail: string, loginPassword: string) => {
     setIsLoading(true);
     setError(null);
+    setRememberMePref(rememberMe);
     try {
       const { redirect_to } = await loginWithCredentials(loginEmail, loginPassword);
       router.push(redirect_to || '/dashboard');
@@ -113,7 +116,7 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded" />
+              <input id="remember-me" name="remember-me" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 rounded" />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
                 記住我
               </label>

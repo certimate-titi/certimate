@@ -662,15 +662,16 @@ Ref: admin_audit_logs.admin_id > users.id
 
 Table system_announcements {
   id uuid [pk, default: `gen_random_uuid()`]
-  title varchar(200) [not null]
+  title varchar(255) [not null]
   content text [not null]
-  type announcement_type
-  display_mode display_mode
-  is_active boolean [default: true]
+  type varchar(50) [default: 'info', note: 'info | warning | maintenance']
+  display_mode varchar(50) [default: 'banner', note: 'banner | modal | toast']
+  status varchar(20) [default: 'active', note: 'active | inactive']
   starts_at timestamptz
   ends_at timestamptz
   created_by uuid
   created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
 }
 
 Ref: system_announcements.created_by > users.id
@@ -678,17 +679,12 @@ Ref: system_announcements.created_by > users.id
 Table feature_flags {
   id uuid [pk, default: `gen_random_uuid()`]
   flag_key varchar(100) [unique, not null]
-  description text
-  is_enabled boolean [default: false]
+  enabled boolean [default: false]
   rollout_percentage integer [default: 0, note: '0-100']
-  target_plans text[] [default: '{}']
-  target_user_ids uuid[] [default: '{}']
-  updated_by uuid
+  target_plans varchar(255) [note: 'comma-separated plan keys']
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]
 }
-
-Ref: feature_flags.updated_by > users.id
 
 Table promo_codes {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -727,16 +723,19 @@ Ref: refund_requests.reviewed_by > users.id
 
 Table content_reports {
   id uuid [pk, default: `gen_random_uuid()`]
+  report_ref varchar(50) [unique, not null, note: 'Business identifier e.g. RPT-001']
   reporter_id uuid [not null]
-  report_type report_type [not null]
-  target_type varchar(30) [not null]
-  target_id uuid [not null]
+  report_type varchar(50) [not null, note: 'copyright | inappropriate | spam | other']
+  target_type varchar(50) [not null]
+  target_id varchar(100) [not null, note: 'Stored as string to support varied target types']
   description text
-  status report_status [default: 'pending']
-  resolved_by uuid
+  status varchar(20) [default: 'pending', note: 'pending | resolved | dismissed']
+  resolution_action varchar(50) [note: 'delete_and_warn | dismiss | warn_only']
+  resolved_by varchar(50)
   resolution_note text
   resolved_at timestamptz
   created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
 }
 
 Ref: content_reports.reporter_id > users.id

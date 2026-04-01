@@ -64,6 +64,35 @@ export default function AccountPage() {
     accountService.getBillingHistory().then(setBilling).catch(() => {});
   }, []);
 
+  // Load notification preferences from localStorage
+  useEffect(() => {
+    const daily = localStorage.getItem('certimate_notif_daily');
+    const preExam = localStorage.getItem('certimate_notif_preexam');
+    const weekly = localStorage.getItem('certimate_notif_weekly');
+    if (daily !== null) setNotifDaily(daily === 'true');
+    if (preExam !== null) setNotifPreExam(preExam === 'true');
+    if (weekly !== null) setNotifWeekly(weekly === 'true');
+  }, []);
+
+  // Save notification preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('certimate_notif_daily', String(notifDaily));
+    localStorage.setItem('certimate_notif_preexam', String(notifPreExam));
+    localStorage.setItem('certimate_notif_weekly', String(notifWeekly));
+  }, [notifDaily, notifPreExam, notifWeekly]);
+
+  // Load dark mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('certimate_dark_mode');
+    if (saved === 'true') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  // Language change message state
+  const [langMessage, setLangMessage] = useState('');
+
   const handleSaveProfile = async () => {
     setSaving(true);
     setProfileSaved(false);
@@ -82,7 +111,7 @@ export default function AccountPage() {
     setSaving(false);
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     setPasswordMessage(null);
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordMessage({ type: 'error', text: '請填寫所有欄位' });
@@ -96,13 +125,18 @@ export default function AccountPage() {
       setPasswordMessage({ type: 'error', text: '新密碼長度需至少 8 個字元' });
       return;
     }
-    setPasswordMessage({ type: 'success', text: '密碼已成功更新' });
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
+    try {
+      await apiClient.patch('/dashboard/profile', { current_password: currentPassword, new_password: newPassword });
+      setPasswordMessage({ type: 'success', text: '密碼已成功更新' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    } catch {
+      setPasswordMessage({ type: 'error', text: '密碼更新失敗，請確認目前密碼是否正確' });
+    }
   };
 
   const handleEditSubject = (name: string) => {
@@ -527,9 +561,8 @@ export default function AccountPage() {
                           </td>
                           <td className="py-3 px-4 text-center">
                             <button
-                              disabled
-                              className="inline-flex items-center gap-1 text-xs text-slate-400 cursor-not-allowed"
-                              title="功能開發中"
+                              onClick={() => alert('此功能即將推出，敬請期待！')}
+                              className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer"
                             >
                               <Download className="h-3.5 w-3.5" /> 下載收據
                             </button>
@@ -712,7 +745,12 @@ export default function AccountPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setDarkMode(!darkMode)}
+                      onClick={() => {
+                        const next = !darkMode;
+                        setDarkMode(next);
+                        localStorage.setItem('certimate_dark_mode', String(next));
+                        if (next) { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); }
+                      }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${darkMode ? 'bg-indigo-500' : 'bg-slate-300'}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -722,10 +760,20 @@ export default function AccountPage() {
 
                 <div>
                   <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">語言</h3>
-                  <select className="w-full max-w-xs bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
+                  <select
+                    onChange={(e) => {
+                      localStorage.setItem('certimate_lang', e.target.value);
+                      setLangMessage('語言切換功能即將推出');
+                      setTimeout(() => setLangMessage(''), 3000);
+                    }}
+                    className="w-full max-w-xs bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all"
+                  >
                     <option>繁體中文</option>
                     <option>English</option>
                   </select>
+                  {langMessage && (
+                    <p className="mt-2 text-sm text-amber-600 font-medium">{langMessage}</p>
+                  )}
                 </div>
               </div>
             </section>

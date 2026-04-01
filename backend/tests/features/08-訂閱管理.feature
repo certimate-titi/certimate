@@ -7,7 +7,7 @@ Feature: 訂閱管理與多階層控制
       | 2        | pro@example.com        | PRO        | active      | 2026-04-01     | 199  |
       | 3        | proplus@example.com    | PRO_PLUS   | active      | 2026-04-01     | 399  |
       | 4        | ultra@example.com      | ULTRA      | active      | 2026-04-01     | 1599 |
-      | 5        | cancelled@example.com  | PRO        | cancelled   | 2026-03-31     | 199  |
+      | 5        | cancelled@example.com  | PRO        | cancelled   | 2026-04-30     | 199  |
     And 系統中有以下帳單記錄：
       | 帳單 ID  | 使用者 ID | 金額 | 狀態     | 建立時間            |
       | INV-001  | 2        | 199  | success  | 2026-03-01 00:00:00 |

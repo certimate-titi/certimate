@@ -208,3 +208,20 @@ def get_audit_logs(
     service = AdminSettingsService(db)
     result = service.get_audit_logs(actor_id=user_id)
     return _handle_result(result)
+
+
+# ── Admin Account Management ──────────────────────────────────────────────────
+
+@router.post("/admins")
+def create_admin(
+    body: dict,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.create_admin(
+        actor_id=user_id,
+        target_email=body.get("target_email", ""),
+        role=body.get("role", ""),
+    )
+    return _handle_result(result)

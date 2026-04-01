@@ -146,6 +146,40 @@ def get_abuse_monitoring(
     return {"items": items}
 
 
+@router.post("/{item_id}/approve")
+def approve_item(
+    item_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """通過審核項目。"""
+    service = AdminModerationService(db)
+    result = service.resolve_report(
+        actor_id=user_id,
+        report_ref=item_id,
+        action="approve",
+        note="approved via moderation panel",
+    )
+    return _handle_result(result)
+
+
+@router.post("/{item_id}/reject")
+def reject_item(
+    item_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """拒絕/移除審核項目。"""
+    service = AdminModerationService(db)
+    result = service.resolve_report(
+        actor_id=user_id,
+        report_ref=item_id,
+        action="reject",
+        note="rejected via moderation panel",
+    )
+    return _handle_result(result)
+
+
 @router.get("/content-review")
 def get_content_review_queue(
     user_id: str = Depends(get_current_user_id),

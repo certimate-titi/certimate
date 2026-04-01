@@ -1,7 +1,5 @@
 """EmbeddingService — Voyage AI embedding wrapper."""
 
-import voyageai
-
 from app.core.config import get_settings
 
 
@@ -13,6 +11,7 @@ class EmbeddingService:
     """
 
     def __init__(self):
+        import voyageai
         settings = get_settings()
         self.client = voyageai.Client(api_key=settings.VOYAGE_API_KEY)
         self.model = settings.VOYAGE_EMBED_MODEL

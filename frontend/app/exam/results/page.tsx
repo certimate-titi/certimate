@@ -283,10 +283,16 @@ function ExamResultsPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+            <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+              onClick={() => {
+                const shareUrl = encodeURIComponent(window.location.href);
+                const title = encodeURIComponent(`我在 CertiMate 模擬考取得了 ${score} 分！`);
+                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}&title=${title}`, '_blank', 'width=600,height=400');
+              }}>
               <Share2 className="h-4 w-4" /> 分享至 LinkedIn
             </button>
-            <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 border border-white/10">
+            <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 border border-white/10"
+              onClick={() => alert('成績卡片下載功能即將推出，敬請期待！')}>
               <Download className="h-4 w-4" /> 下載圖卡
             </button>
           </div>

@@ -18,8 +18,36 @@ def _get_role(user: User) -> str:
     return user.role.value if hasattr(user.role, "value") else str(user.role)
 
 
+# ── Plan display name mapping ─────────────────────────────────────────────────
+# DB stores: FREE / PRO / PRO_PLUS / ULTRA
+# Display:   FREE / PRO_199 / PRO_PLUS_399 / ULTRA_1599
+
+_PLAN_DISPLAY_NAMES = {
+    SubscriptionPlan.FREE: "FREE",
+    SubscriptionPlan.PRO: "PRO_199",
+    SubscriptionPlan.PRO_PLUS: "PRO_PLUS_399",
+    SubscriptionPlan.ULTRA: "ULTRA_1599",
+}
+
+_PLAN_INPUT_MAP = {
+    "FREE": SubscriptionPlan.FREE,
+    "PRO": SubscriptionPlan.PRO,
+    "PRO_199": SubscriptionPlan.PRO,
+    "PRO_PLUS": SubscriptionPlan.PRO_PLUS,
+    "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS,
+    "ULTRA": SubscriptionPlan.ULTRA,
+    "ULTRA_1599": SubscriptionPlan.ULTRA,
+}
+
+
 def _get_plan(user: User) -> str:
-    return user.subscription_plan.value if hasattr(user.subscription_plan, "value") else str(user.subscription_plan)
+    plan_enum = user.subscription_plan
+    return _PLAN_DISPLAY_NAMES.get(plan_enum, str(plan_enum))
+
+
+def _parse_plan(plan_str: str) -> SubscriptionPlan | None:
+    """Parse plan string (accepts both DB value and display name)."""
+    return _PLAN_INPUT_MAP.get(plan_str)
 
 
 def _get_status(user: User) -> str:
@@ -174,11 +202,10 @@ class AdminService:
         if keyword:
             query = query.filter(User.email.ilike(f"%{keyword}%"))
         if plan:
-            try:
-                plan_enum = SubscriptionPlan(plan)
-                query = query.filter(User.subscription_plan == plan_enum)
-            except ValueError:
+            plan_enum = _parse_plan(plan)
+            if plan_enum is None:
                 return {"error": True, "status_code": 400, "message": f"無效的方案：{plan}"}
+            query = query.filter(User.subscription_plan == plan_enum)
         if role == "admin":
             # 只顯示管理員（admin + super_admin）
             query = query.filter(User.role.in_([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
@@ -269,9 +296,8 @@ class AdminService:
             return {"error": True, "status_code": 404, "message": "目標使用者不存在"}
 
         old_plan = _get_plan(target)
-        try:
-            plan_enum = SubscriptionPlan(new_plan)
-        except ValueError:
+        plan_enum = _parse_plan(new_plan)
+        if plan_enum is None:
             return {"error": True, "status_code": 400, "message": f"無效的方案：{new_plan}"}
 
         target.subscription_plan = plan_enum
@@ -385,11 +411,13 @@ class AdminService:
         target.role = role_enum
         self.db.commit()
 
+        # Use target.id as target_id for audit log (handles email-based lookup)
+        resolved_target_id = target_user_id or str(target.id)
         self._write_audit_log(
             admin_id=actor_id,
             action="adjust_role",
             target_type="user",
-            target_id=target_user_id,
+            target_id=resolved_target_id,
             details={"from": old_role, "to": new_role, "summary": f"{old_role} → {new_role}"},
         )
 
@@ -459,11 +487,10 @@ class AdminService:
 
         query = self.db.query(User)
         if plan:
-            try:
-                plan_enum = SubscriptionPlan(plan)
-                query = query.filter(User.subscription_plan == plan_enum)
-            except ValueError:
+            plan_enum = _parse_plan(plan)
+            if plan_enum is None:
                 return {"error": True, "status_code": 400, "message": f"無效的方案：{plan}"}
+            query = query.filter(User.subscription_plan == plan_enum)
 
         users = query.all()
 

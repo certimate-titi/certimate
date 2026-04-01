@@ -218,3 +218,128 @@ Feature: 身分驗證
       And 系統應同步清除 Redis 中所有與該使用者 ID 關聯的快取資料
       And 使用者上傳至雲端存儲 (GCS) 的實體檔案應被標記刪除或移除
       And 該使用者的所有 JWT 存取憑證應立即失效 (Revoked)
+
+  # ========== UI 互動行為 ==========
+
+  @ignore
+  Rule: 前置（UI）- 登入頁「記住我」勾選框應保留登入狀態
+
+    Example: 勾選「記住我」後成功登入，關閉瀏覽器後重新開啟仍保持登入狀態
+      When 使用者在登入頁面勾選「記住我」
+      And 使用者以 Email "alice@example.com" 和密碼 "Password1!" 進行登入
+      Then 操作成功
+      And 系統應將登入狀態持久化至本地儲存
+      And 使用者關閉瀏覽器後重新開啟應仍為登入狀態
+
+  @ignore
+  Rule: 前置（UI）- 登入頁密碼欄位可切換顯示/隱藏
+
+    Example: 點擊密碼可見性切換按鈕後密碼以明文顯示
+      Given 使用者在登入頁面的密碼欄位輸入 "Password1!"
+      When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
+      Then 密碼欄位應從遮蔽模式切換為明文顯示模式
+
+    Example: 再次點擊密碼可見性切換按鈕後密碼恢復遮蔽
+      Given 使用者在登入頁面的密碼欄位輸入 "Password1!"
+      And 密碼欄位目前為明文顯示模式
+      When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
+      Then 密碼欄位應從明文顯示模式切換為遮蔽模式
+
+  @ignore
+  Rule: 前置（UI）- 註冊頁密碼欄位可切換顯示/隱藏
+
+    Example: 註冊頁點擊密碼可見性切換按鈕後密碼以明文顯示
+      Given 使用者在註冊頁面的密碼欄位輸入 "CertiMate#2024"
+      When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
+      Then 密碼欄位應從遮蔽模式切換為明文顯示模式
+
+  @ignore
+  Rule: 前置（UI）- 註冊頁密碼強度指示條依密碼強度顯示對應等級
+
+    Scenario Outline: 密碼強度指示條依輸入的密碼顯示對應等級
+      When 使用者在註冊頁面輸入密碼 "<密碼>"
+      Then 密碼強度指示條應顯示 "<等級>"
+
+      Examples:
+        | 密碼           | 等級 |
+        | abc            | 弱   |
+        | password1      | 中   |
+        | CertiMate#2024 | 強   |
+
+  @ignore
+  Rule: 前置（UI）- 註冊頁服務條款彈窗可開啟與關閉
+
+    Example: 點擊「服務條款」連結開啟服務條款彈窗
+      When 使用者在註冊頁面點擊「服務條款」連結
+      Then 系統應顯示服務條款彈窗
+      And 彈窗內容應包含服務條款全文
+
+    Example: 關閉服務條款彈窗後回到註冊頁面
+      Given 使用者已開啟服務條款彈窗
+      When 使用者點擊彈窗的關閉按鈕
+      Then 服務條款彈窗應關閉
+      And 使用者應回到註冊頁面
+
+  @ignore
+  Rule: 前置（UI）- 註冊頁隱私權政策彈窗可開啟與關閉
+
+    Example: 點擊「隱私權政策」連結開啟隱私權政策彈窗
+      When 使用者在註冊頁面點擊「隱私權政策」連結
+      Then 系統應顯示隱私權政策彈窗
+      And 彈窗內容應包含隱私權政策全文
+
+    Example: 關閉隱私權政策彈窗後回到註冊頁面
+      Given 使用者已開啟隱私權政策彈窗
+      When 使用者點擊彈窗的關閉按鈕
+      Then 隱私權政策彈窗應關閉
+      And 使用者應回到註冊頁面
+
+  @ignore
+  Rule: 前置（參數）- 忘記密碼頁面 Email 為空時不可送出
+
+    Example: 忘記密碼頁面未輸入 Email 時送出按鈕應為停用狀態
+      When 使用者在忘記密碼頁面未輸入任何 Email
+      Then 送出按鈕應為停用狀態，無法點擊
+
+    Example: 忘記密碼頁面清空已輸入的 Email 後送出按鈕恢復停用
+      Given 使用者在忘記密碼頁面已輸入 "alice@example.com"
+      When 使用者清空 Email 欄位
+      Then 送出按鈕應為停用狀態，無法點擊
+
+  @ignore
+  Rule: 後置（UI）- 忘記密碼成功送出後顯示確認資訊
+
+    Example: 忘記密碼成功送出後頁面顯示寄送確認訊息與輸入的 Email
+      When 使用者以 Email "alice@example.com" 申請密碼重設
+      Then 操作成功
+      And 頁面應顯示密碼重設信已寄出的確認訊息
+      And 確認訊息中應包含使用者輸入的 Email "alice@example.com"
+      And 頁面應提供返回登入頁面的連結
+
+  @ignore
+  Rule: 後置（UI）- 驗證信寄出頁面重寄按鈕有 60 秒冷卻倒數
+
+    Example: 驗證信寄出後重寄按鈕進入 60 秒冷卻倒數
+      Given 使用者已完成註冊並進入驗證信寄出頁面
+      When 使用者點擊「重新寄送驗證信」按鈕
+      Then 操作成功
+      And 重寄按鈕應進入 60 秒冷卻倒數狀態
+      And 倒數期間按鈕應顯示剩餘秒數且無法點擊
+
+    Example: 冷卻倒數結束後重寄按鈕恢復可點擊
+      Given 使用者已點擊「重新寄送驗證信」且冷卻倒數已結束
+      Then 重寄按鈕應恢復為可點擊狀態
+
+  @ignore
+  Rule: 後置（狀態）- 登入頁支援 Google SSO 一鍵登入流程
+
+    Example: 使用者點擊 Google 登入按鈕後導向 Google OAuth 授權頁面
+      When 使用者在登入頁面點擊「以 Google 帳號登入」按鈕
+      Then 系統應導向 Google OAuth 授權頁面
+
+    Example: Google OAuth 授權成功後系統自動完成登入並導向儀表板
+      Given 使用者 "carol@example.com" 已有 Google SSO 帳號且狀態為 "已啟用"
+      When 使用者完成 Google OAuth 授權且 Email 為 "carol@example.com"
+      Then 操作成功
+      And 回應應包含有效的 JWT 存取憑證
+      And 系統應導向至 "個人儀表板首頁"

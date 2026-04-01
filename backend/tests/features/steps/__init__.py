@@ -20,6 +20,8 @@ from .auth.aggregate_given import user_role  # noqa: F401
 from .auth.aggregate_given import user_subscription_and_role  # noqa: F401
 from .auth.aggregate_given import user_subscription  # noqa: F401
 from .auth.aggregate_given import user_verified  # noqa: F401
+from .auth.aggregate_given import user_status  # noqa: F401
+from .auth.aggregate_given import user_google_sso  # noqa: F401
 
 # Auth — commands
 from .auth.commands import check_password_strength  # noqa: F401
@@ -30,6 +32,9 @@ from .auth.commands import login_by_email  # noqa: F401
 from .auth.commands import register  # noqa: F401
 from .auth.commands import register_no_terms  # noqa: F401
 from .auth.commands import user_action  # noqa: F401
+from .auth.commands import verify_email  # noqa: F401
+from .auth.commands import verify_email_invalid  # noqa: F401
+from .auth.commands import resend_verification  # noqa: F401
 
 # Auth — aggregate_then
 from .auth.aggregate_then import auth_provider_linked  # noqa: F401
@@ -43,6 +48,8 @@ from .auth.aggregate_then import reset_email_sent  # noqa: F401
 from .auth.aggregate_then import reset_link_expires  # noqa: F401
 from .auth.aggregate_then import user_data_removed  # noqa: F401
 from .auth.aggregate_then import verification_email_sent  # noqa: F401
+from .auth.aggregate_then import account_status_updated  # noqa: F401
+from .auth.aggregate_then import account_status_unchanged  # noqa: F401
 
 # Auth — readmodel_then
 from .auth.readmodel_then import jwt_token  # noqa: F401
@@ -325,6 +332,7 @@ from .onboarding.aggregate_given import completed_steps  # noqa: F401
 from .onboarding.aggregate_given import at_step4  # noqa: F401
 from .onboarding.aggregate_given import onboarding_with_subjects  # noqa: F401
 from .onboarding.aggregate_given import current_subject  # noqa: F401
+from .onboarding.aggregate_given import at_profile_page  # noqa: F401
 
 # Onboarding — commands
 from .onboarding.commands import view_status  # noqa: F401
@@ -344,6 +352,8 @@ from .onboarding.commands import add_subject_dashboard  # noqa: F401
 from .onboarding.commands import add_subject_post_onboarding  # noqa: F401
 from .onboarding.commands import remove_subject_account  # noqa: F401
 from .onboarding.commands import confirm_remove  # noqa: F401
+from .onboarding.commands import view_profile  # noqa: F401
+from .onboarding.commands import update_profile  # noqa: F401
 
 # Onboarding — aggregate_then
 from .onboarding.aggregate_then import journeys_created  # noqa: F401
@@ -353,6 +363,7 @@ from .onboarding.aggregate_then import switcher_added  # noqa: F401
 from .onboarding.aggregate_then import journey_unaffected  # noqa: F401
 from .onboarding.aggregate_then import journey_archived  # noqa: F401
 from .onboarding.aggregate_then import switcher_removed  # noqa: F401
+from .onboarding.aggregate_then import profile_updated  # noqa: F401
 
 # Onboarding — readmodel_then
 from .onboarding.readmodel_then import onboarding_status  # noqa: F401
@@ -375,21 +386,36 @@ from .onboarding.readmodel_then import start_button  # noqa: F401
 from .onboarding.readmodel_then import confirm_prompt  # noqa: F401
 from .onboarding.readmodel_then import subject_selector_open  # noqa: F401
 from .onboarding.readmodel_then import can_set_subject  # noqa: F401
+from .onboarding.readmodel_then import editable_fields  # noqa: F401
+from .onboarding.readmodel_then import fields_prefilled  # noqa: F401
+from .onboarding.readmodel_then import saved_hint  # noqa: F401
 
 # Admin — aggregate_given
 from .admin.aggregate_given import admin_roles_doc  # noqa: F401
+from .admin.aggregate_given import user_status_suspended  # noqa: F401
+from .admin.aggregate_given import worker_failure_rate  # noqa: F401
 
 # Admin — commands
 from .admin.commands import access_admin  # noqa: F401
 from .admin.commands import access_settings  # noqa: F401
 from .admin.commands import view_dashboard  # noqa: F401
 from .admin.commands import search_users  # noqa: F401
+from .admin.commands import search_users_empty  # noqa: F401
 from .admin.commands import filter_users  # noqa: F401
 from .admin.commands import view_user_detail  # noqa: F401
 from .admin.commands import adjust_subscription  # noqa: F401
 from .admin.commands import suspend_user  # noqa: F401
 from .admin.commands import suspend_user_raw  # noqa: F401
 from .admin.commands import export_csv  # noqa: F401
+from .admin.commands import activate_user  # noqa: F401
+from .admin.commands import notify_user  # noqa: F401
+from .admin.commands import notify_user_empty  # noqa: F401
+from .admin.commands import delete_user  # noqa: F401
+from .admin.commands import adjust_role  # noqa: F401
+from .admin.commands import adjust_role_by_email  # noqa: F401
+from .admin.commands import view_ai_cost  # noqa: F401
+from .admin.commands import view_trend_charts  # noqa: F401
+from .admin.commands import detect_alerts  # noqa: F401
 
 # Admin — readmodel_then
 from .admin.readmodel_then import show_dashboard  # noqa: F401
@@ -399,12 +425,18 @@ from .admin.readmodel_then import user_summary  # noqa: F401
 from .admin.readmodel_then import all_users_plan  # noqa: F401
 from .admin.readmodel_then import user_detail_blocks  # noqa: F401
 from .admin.readmodel_then import csv_response  # noqa: F401
+from .admin.readmodel_then import no_admin_users  # noqa: F401
+from .admin.readmodel_then import trend_data_points  # noqa: F401
+from .admin.readmodel_then import ai_model_tokens  # noqa: F401
+from .admin.readmodel_then import alert_card  # noqa: F401
 
 # Admin — aggregate_then
 from .admin.aggregate_then import user_plan  # noqa: F401
 from .admin.aggregate_then import user_status  # noqa: F401
 from .admin.aggregate_then import audit_log  # noqa: F401
 from .admin.aggregate_then import user_cannot_login  # noqa: F401
+from .admin.aggregate_then import user_role  # noqa: F401
+from .admin.aggregate_then import email_notify_admins  # noqa: F401
 
 # Admin Finance — aggregate_given
 from .admin_finance.aggregate_given import transactions  # noqa: F401
@@ -420,10 +452,15 @@ from .admin_finance.commands import create_coupon  # noqa: F401
 # Admin Finance — aggregate_then
 from .admin_finance.aggregate_then import refund_status  # noqa: F401
 from .admin_finance.aggregate_then import coupon_status  # noqa: F401
+from .admin_finance.aggregate_then import subscription_downgraded  # noqa: F401
+from .admin_finance.aggregate_then import rejection_email_sent  # noqa: F401
 
 # Admin Finance — readmodel_then
 from .admin_finance.readmodel_then import subscription_distribution  # noqa: F401
 from .admin_finance.readmodel_then import transaction_list  # noqa: F401
+from .admin_finance.readmodel_then import transaction_fields  # noqa: F401
+from .admin_finance.readmodel_then import mrr_trend  # noqa: F401
+from .admin_finance.readmodel_then import plan_distribution  # noqa: F401
 
 # Admin Moderation — aggregate_given
 from .admin_moderation.aggregate_given import ai_cooldowns  # noqa: F401
@@ -438,6 +475,9 @@ from .admin_moderation.commands import resolve_report  # noqa: F401
 # Admin Moderation — aggregate_then
 from .admin_moderation.aggregate_then import cooldown_unlocked  # noqa: F401
 from .admin_moderation.aggregate_then import report_status  # noqa: F401
+from .admin_moderation.aggregate_then import resource_deleted  # noqa: F401
+from .admin_moderation.aggregate_then import resource_not_deleted  # noqa: F401
+from .admin_moderation.aggregate_then import warn_notification_sent  # noqa: F401
 
 # Admin Moderation — readmodel_then
 from .admin_moderation.readmodel_then import cooldown_users  # noqa: F401
@@ -447,6 +487,10 @@ from .admin_moderation.readmodel_then import report_count  # noqa: F401
 from .admin_settings.aggregate_given import ai_model_routings  # noqa: F401
 from .admin_settings.aggregate_given import plan_quotas  # noqa: F401
 from .admin_settings.aggregate_given import feature_flags  # noqa: F401
+from .admin_settings.aggregate_given import announcement_active_with_id  # noqa: F401
+from .admin_settings.aggregate_given import announcement_active_display  # noqa: F401
+from .admin_settings.aggregate_given import announcement_inactive  # noqa: F401
+from .admin_settings.aggregate_given import announcement_with_id  # noqa: F401
 
 # Admin Settings — commands
 from .admin_settings.commands import update_model_routing  # noqa: F401
@@ -454,15 +498,26 @@ from .admin_settings.commands import update_plan_quota  # noqa: F401
 from .admin_settings.commands import create_announcement  # noqa: F401
 from .admin_settings.commands import update_feature_flag  # noqa: F401
 from .admin_settings.commands import view_audit_logs  # noqa: F401
+from .admin_settings.commands import query_public_announcements  # noqa: F401
+from .admin_settings.commands import deactivate_announcement  # noqa: F401
+from .admin_settings.commands import delete_announcement  # noqa: F401
+from .admin_settings.commands import create_admin_user  # noqa: F401
+from .admin_settings.commands import clear_cache  # noqa: F401
+from .admin_settings.commands import reset_ai_limits  # noqa: F401
 
 # Admin Settings — aggregate_then
 from .admin_settings.aggregate_then import model_routing_updated  # noqa: F401
 from .admin_settings.aggregate_then import plan_quota_updated  # noqa: F401
 from .admin_settings.aggregate_then import announcement_status  # noqa: F401
 from .admin_settings.aggregate_then import feature_flag_updated  # noqa: F401
+from .admin_settings.aggregate_then import announcement_status_by_id  # noqa: F401
+from .admin_settings.aggregate_then import announcement_not_exists  # noqa: F401
+from .admin_settings.aggregate_then import activation_email_sent  # noqa: F401
 
 # Admin Settings — readmodel_then
 from .admin_settings.readmodel_then import audit_log_fields  # noqa: F401
+from .admin_settings.readmodel_then import response_contains_announcement  # noqa: F401
+from .admin_settings.readmodel_then import response_not_contains_announcement  # noqa: F401
 
 # Dashboard — aggregate_given
 from .dashboard.aggregate_given import user_subjects  # noqa: F401

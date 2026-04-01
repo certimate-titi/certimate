@@ -23,10 +23,10 @@ class ContentReport(Base):
         primary_key=True, default=uuid.uuid4
     )
     report_ref: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    reporter_id: Mapped[int] = mapped_column(nullable=False)  # external user id key
+    reporter_id: Mapped[str] = mapped_column(String(100), nullable=False)
     report_type: Mapped[str] = mapped_column(String(50), nullable=False)
     target_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    target_id: Mapped[int] = mapped_column(nullable=False)
+    target_id: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default=ReportStatus.PENDING, nullable=False
     )
