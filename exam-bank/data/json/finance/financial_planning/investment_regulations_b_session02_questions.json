@@ -29,6 +29,7 @@
             "C": 14
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-50",
           "missing_numbers": 0
         }

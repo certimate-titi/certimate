@@ -15,7 +15,9 @@
         "layer": "L1_structure",
         "passed": true,
         "errors": [],
-        "warnings": [],
+        "warnings": [
+          "答案分佈異常：D = 52%（預期 ~25%）"
+        ],
         "stats": {
           "question_count": 25,
           "expected_count": 0,
@@ -23,12 +25,13 @@
           "no_answer": 0,
           "short_stem": 0,
           "answer_distribution": {
-            "D": 11,
-            "A": 4,
-            "C": 7,
-            "B": 3
+            "D": 13,
+            "A": 6,
+            "C": 4,
+            "B": 2
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
         }
@@ -46,7 +49,7 @@
           "answer_coverage": "100.0%",
           "llm_vs_answer_pdf": {
             "compared": 25,
-            "match_rate": "84.0%",
+            "match_rate": "100.0%",
             "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
           }
         }
@@ -93,7 +96,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 2,
@@ -106,7 +109,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 3,
@@ -119,7 +122,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 4,
@@ -132,7 +135,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 5,
@@ -145,7 +148,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 6,
@@ -158,7 +161,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 7,
@@ -171,7 +174,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 8,
@@ -181,10 +184,10 @@
       "option_b": "最大建坪 60坪,5層樓高",
       "option_c": "最大建坪 100坪,2層樓高",
       "option_d": "最大建坪 100坪,3層樓高",
-      "correct_answer": "B",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 9,
@@ -197,7 +200,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 10,
@@ -210,7 +213,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -223,7 +226,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 12,
@@ -233,10 +236,10 @@
       "option_b": "四年內完成細部計畫,細部計畫發布後三年內完成公共設施建設",
       "option_c": "三年內完成細部計畫,細部計畫發布後四年內完成公共設施建設",
       "option_d": "二年內完成細部計畫,細部計畫發布後五年內完成公共設施建設",
-      "correct_answer": "C",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 13,
@@ -246,10 +249,10 @@
       "option_b": "共有人二分之一及其應有部分合計過三分之一之同意",
       "option_c": "共有人合計逾三分之二之同意",
       "option_d": "應有部分合計逾三分之二之同意",
-      "correct_answer": "C",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 14,
@@ -262,7 +265,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 15,
@@ -275,7 +278,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 16,
@@ -288,7 +291,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 17,
@@ -301,7 +304,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 18,
@@ -314,7 +317,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 19,
@@ -327,7 +330,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 20,
@@ -340,7 +343,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 21,
@@ -353,7 +356,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 22,
@@ -363,10 +366,10 @@
       "option_b": "申報人逾訂定契約之日起三十日始申報者,以訂約日當期之公告土地現值為準",
       "option_c": "依法院判決移轉登記者,以法院終局判決日當期之公告土地現值為準",
       "option_d": "經法院拍賣之土地,以拍定日當期之公告土地現值為準",
-      "correct_answer": "C",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 23,
@@ -379,7 +382,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 24,
@@ -392,7 +395,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 25,
@@ -405,7 +408,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     }
   ]
 }

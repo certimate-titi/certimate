@@ -3,15 +3,10 @@
     "source_pdf": "111_broker_regulations_q.pdf",
     "content_type": "exam",
     "total_questions_parsed": 25,
-    "valid_questions": 25,
-    "excluded_no_answer": 0,
-    "bloom_distribution": {
-      "analyze": 6,
-      "remember": 13,
-      "apply": 4,
-      "understand": 2
-    },
-    "quality_flag": "ok",
+    "valid_questions": 0,
+    "excluded_no_answer": 25,
+    "bloom_distribution": {},
+    "quality_flag": "review",
     "validations": [
       {
         "layer": "L1_structure",
@@ -22,394 +17,49 @@
           "question_count": 25,
           "expected_count": 0,
           "incomplete_options": 0,
-          "no_answer": 0,
+          "no_answer": 25,
           "short_stem": 0,
-          "answer_distribution": {
-            "A": 4,
-            "B": 8,
-            "D": 8,
-            "C": 5
-          },
-          "answer_rate": 1.0,
+          "answer_distribution": {},
+          "answer_rate": 0.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
         }
       },
       {
         "layer": "L2_answer_cross",
-        "passed": true,
-        "errors": [],
-        "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
+        "passed": false,
+        "errors": [
+          "答案卷提取失敗：0 題有答案"
         ],
+        "warnings": [],
         "stats": {
           "total_questions": 25,
-          "answer_pdf_extracted": 25,
-          "questions_with_answer": 25,
-          "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 25,
-            "match_rate": "0.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_pdf_extracted": 0,
+          "questions_with_answer": 0,
+          "questions_without_answer": 25
         }
       },
       {
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [],
-        "stats": {
-          "sampled": 3,
-          "matched": 3,
-          "issues": 0
-        }
+        "warnings": [
+          "無題目可抽樣"
+        ],
+        "stats": {}
       },
       {
         "layer": "L4_statistics",
         "passed": true,
         "errors": [],
-        "warnings": [],
-        "stats": {
-          "avg_stem_length": 71.2,
-          "avg_option_length": 10.3,
-          "bloom_distribution": {
-            "analyze": 6,
-            "remember": 13,
-            "apply": 4,
-            "understand": 2
-          }
-        }
+        "warnings": [
+          "無題目"
+        ],
+        "stats": {}
       }
     ],
     "model": "gemini-2.5-flash"
   },
-  "questions": [
-    {
-      "question_number": 1,
-      "content": "平均地權條例近日研議抑制炒房之修法動向,其對不動產市場之影響,是屬於不動產估價影響因素中之下列何種因素?",
-      "type": "single_choice",
-      "option_a": "市場因素",
-      "option_b": "一般因素",
-      "option_c": "區域因素",
-      "option_d": "個別因素",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 2,
-      "content": "不動產估價應敘明價格種類,當不動產估價師受託辦理龜山島估價,您認為應屬於何種價格種類?",
-      "type": "single_choice",
-      "option_a": "正常價格",
-      "option_b": "限定價格",
-      "option_c": "特定價格",
-      "option_d": "特殊價格",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 3,
-      "content": "收益資本化率或折現率應綜合評估最適宜之方法決定,如採用債務保障比率方式決定,其計算式債務保障比率除了乘以貸款資金占不動產價格比率外,應再乘以下列何者?",
-      "type": "single_choice",
-      "option_a": "債務保障常數",
-      "option_b": "市場常數",
-      "option_c": "存款常數",
-      "option_d": "貸款常數",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 4,
-      "content": "依據不動產估價技術規則之規定,在一宗土地內有不同法定用途時,應如何估價?",
-      "type": "single_choice",
-      "option_a": "應考量不同用途之合併或分割前後之價格變動情形,予酌量增減",
-      "option_b": "應以合併用途後估價,並以合併用途前各筆土地價值比例分算其土地價格",
-      "option_c": "應考慮不同用途之建築物對宗地價格造成之影響,予以酌量增減",
-      "option_d": "應考量其最有效使用及各種用途之相關性及分割之難易度後,決定分別估價或依主要用途估價",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 5,
-      "content": "不動產估價原則是估價之根基,不動產估價技術規則對「最有效使用」原則有所定義,請問下列敘述何者錯誤?",
-      "type": "single_choice",
-      "option_a": "得以獲致最高利益之使用",
-      "option_b": "基於合法、實質可能前提",
-      "option_c": "正當合理、財務可行前提下者",
-      "option_d": "具有超凡意識及使用能力者",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 6,
-      "content": "利用計量模型分析法進行估價,應蒐集相當數量具代表性之比較標的,在計量模型的影響不動產價格之因素中,現有6項區域因素,5項個別因素,因此至少要蒐集多少數量以上之比較標的才符合不動產估價技術規則之規定?",
-      "type": "single_choice",
-      "option_a": "55 筆以上",
-      "option_b": "40 筆以上",
-      "option_c": "30 筆以上",
-      "option_d": "25 筆以上",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 7,
-      "content": "不動產估價成本法對勘估標的之營造或施工費,其中「指以類似勘估標的之比較標的或標準建物之單位面積(或體積)營造或施工費單價為基礎,經比較並調整價格後,乘以勘估標的之面積(或體積)總數,以求取勘估標的營造或施工費。」方法,係指何方法?",
-      "type": "single_choice",
-      "option_a": "單位工程法",
-      "option_b": "淨計法",
-      "option_c": "單位面積(或體積)比較法",
-      "option_d": "工程造價比較法",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 8,
-      "content": "不動產估價作業程序依不動產估價技術規則規定,總共有八項作業程序,其中第七個步驟為何?",
-      "type": "single_choice",
-      "option_a": "製作估價報告書",
-      "option_b": "整理、比較、分析資料",
-      "option_c": "運用估價方法推算勘估標的價格",
-      "option_d": "決定勘估標的價格",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 9,
-      "content": "目前內政部積極推動試辦電腦估價,所應用計量模型分析法係指「蒐集相當數量具代表性之比較標的,透過計量模型分析,求出各主要影響價格因素與比較標的價格二者之關係式,以推算各主要影響價格因素之調整率及調整額之方法。」請問應用時應符合條件中,截距項以外其他各主要影響價格因素之係數估計值同時為零之顯著機率不得大於多少?",
-      "type": "single_choice",
-      "option_a": "百分之五",
-      "option_b": "百分之六",
-      "option_c": "百分之七",
-      "option_d": "百分之八",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 10,
-      "content": "不動產估價應就不同估價方法估價所獲得之價格進行綜合比較,視不同價格所蒐集資料可信度及估價種類目的條件差異,考量價格形成因素之相近程度,決定勘估標的價格。若以契約約定租金作為不動產證券化受益證券信託利益分配基礎者,何種方法應視前項情形賦予相對較大之權重?",
-      "type": "single_choice",
-      "option_a": "比較法",
-      "option_b": "直接資本化法之收益價格",
-      "option_c": "折現現金流量分析法之收益價格",
-      "option_d": "成本法",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "understand",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 11,
-      "content": "不動產估價比較法經比較調整後求得之勘估標的試算價格,應就價格偏高或偏低者重新檢討,經檢討確認適當合理者,始得作為決定比較價格之基礎。檢討後試算價格之間差距仍達多少以上者,應排除該試算價格之適用?",
-      "type": "single_choice",
-      "option_a": "百分之五",
-      "option_b": "百分之十",
-      "option_c": "百分之十五",
-      "option_d": "百分之二十",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 12,
-      "content": "不動產估價之限定價格指具有市場性之不動產,在下列限定條件之一所形成之價值,並以貨幣金額表示者。請問下列何者非屬限定條件?",
-      "type": "single_choice",
-      "option_a": "以不動產所有權以外其他權利與所有權合併為目的",
-      "option_b": "以不動產合併為目的",
-      "option_c": "以違反經濟合理性之不動產分割為前提",
-      "option_d": "經適當市場行銷及正常交易條件形成",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 13,
-      "content": "不動產估價,應註明其價格種類;以何種價格估價時應敘明其估價條件,並同時估計其正常價格?",
-      "type": "single_choice",
-      "option_a": "限定價格",
-      "option_b": "特殊價格",
-      "option_c": "特定價格",
-      "option_d": "特別價格",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 14,
-      "content": "不動產估價比較法於市場成交資訊充足時廣為運用,有關比較法之敘述,下列何者錯誤?",
-      "type": "single_choice",
-      "option_a": "通常採用三件以上比較標的",
-      "option_b": "試算價格之調整運算過程中,任一單獨項目之價格調整率大於百分之十五,應排除該比較標的之適用",
-      "option_c": "試算價格之調整運算過程中,總調整率大於百分之三十時,應排除該比較標的之適用",
-      "option_d": "其調整以差額法為原則",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 15,
-      "content": "某建物於五年前取得使用執照,目前重建成本1,000 萬元,殘餘價格率5%,經濟耐用年數50年,請問以定額法估算之建物成本價格為何?",
-      "type": "single_choice",
-      "option_a": "850 萬元",
-      "option_b": "865 萬元",
-      "option_c": "895 萬元",
-      "option_d": "905 萬元",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 16,
-      "content": "某開發商擬於新開發區開發建築,預計興建樓板面積 2,000坪。若推定銷售單價平均60萬元/坪,利潤率20%、資本利息綜合利率5%、直接成本2億元、間接成本4千萬元,請問土地開發分析價格多少萬元?",
-      "type": "single_choice",
-      "option_a": "71,238",
-      "option_b": "69,526",
-      "option_c": "64,878",
-      "option_d": "62,106",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 17,
-      "content": "某公寓為談危老改建,經委託不動產估價師就1至4樓之單價分別查估為80、60、55、50萬元/坪,若全棟建物成本價格占全棟房地總價格比率為30%,請問1至4樓之樓層別效用比分別為?",
-      "type": "single_choice",
-      "option_a": "170%、130%、120%、100%",
-      "option_b": "160%、120%、110%、100%",
-      "option_c": "150%、110%、105%、100%",
-      "option_d": "140%、120%、110%、100%",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 18,
-      "content": "不動產估價人員應針對不動產勘估標的之價格日期當時的價值進行估價,而所謂價格日期是指:",
-      "type": "single_choice",
-      "option_a": "估價人員撰寫估價報告書之日期",
-      "option_b": "勘估標的價格之基準日期",
-      "option_c": "至勘估標的現場從事調查的日期",
-      "option_d": "勘估標的交易之日期",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 19,
-      "content": "以收益法估價時,對於客觀淨收益的計算應以何種情形為計算基準?",
-      "type": "single_choice",
-      "option_a": "以比較標的作最有效使用為計算基準",
-      "option_b": "以勘估標的作最大效益使用為計算基準",
-      "option_c": "以比較標的作最大效益使用為計算基準",
-      "option_d": "以勘估標的作最有效使用為計算基準",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 20,
-      "content": "某高鐵站周圍地區的新建住宅大樓平均成交價格,由三年前每坪 35 萬元上漲到現今每坪接近 50 萬元,此現象可以不動產估價中那一原則加以解釋?",
-      "type": "single_choice",
-      "option_a": "變動原則",
-      "option_b": "預期原則",
-      "option_c": "貢獻原則",
-      "option_d": "日期原則",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "understand",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 21,
-      "content": "依據不動產估價技術規則,在進行不動產估價作業程序時,下列何者屬於估價要確定的基本事項?",
-      "type": "single_choice",
-      "option_a": "作業所需時間",
-      "option_b": "估價目的",
-      "option_c": "勘估標的之狀態",
-      "option_d": "勘估標的相關交易、收益及成本資料",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 22,
-      "content": "科學園區附近的農業用地,未來可能變更為建地,土地所有權人要求估價人員針對其農地未來可能變更為建地情況進行估價,請問該筆土地的價格屬於何種類?",
-      "type": "single_choice",
-      "option_a": "正常價格",
-      "option_b": "特定價格",
-      "option_c": "限定價格",
-      "option_d": "特殊價格",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 23,
-      "content": "某甲有一棟5層透天住宅,其中第一層到第四層為合法建築物,頂樓層為違章建築物,某甲委託估價人員進行房地估價,並要求估價人員對所有樓層進行估價,估價人員應如何估價較為恰當?",
-      "type": "single_choice",
-      "option_a": "僅針對合法建築物進行估價",
-      "option_b": "拒絕對建築物估價",
-      "option_c": "就合法建築物與違章建築物分別標示各該部分之價格",
-      "option_d": "合法建築物以成本法估價,違章建築物則以加速折舊方式估價",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 24,
-      "content": "有一比較標的於 110年10月以 800 萬元成交,當時的價格指數為103.6%,不動產勘估標的之價格日期為111年3月,當時的價格指數為100.3%。假設其他條件相同,請問該勘估標的經價格日期調整後的價格為多少?",
-      "type": "single_choice",
-      "option_a": "834.7 萬元",
-      "option_b": "826.3 萬元",
-      "option_c": "789.6萬元",
-      "option_d": "774.5 萬元",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 25,
-      "content": "在土地開發分析法之估價程序中,應進行現況勘查與環境發展程度調查與分析,下列何者不屬於要勘查與調查分析的事項:",
-      "type": "single_choice",
-      "option_a": "影響總銷售金額、成本及費用等因素",
-      "option_b": "勘估標的之工程進度、施工及環境狀況",
-      "option_c": "比較標的之工程進度、施工及環境狀況",
-      "option_d": "週遭環境土地建物及公共設施開發程度",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    }
-  ]
+  "questions": []
 }

@@ -10,17 +10,19 @@
       "remember": 48,
       "create": 1
     },
-    "quality_flag": "ok",
+    "quality_flag": "review",
     "validations": [
       {
         "layer": "L1_structure",
-        "passed": true,
-        "errors": [],
+        "passed": false,
+        "errors": [
+          "題 20：選項不完整"
+        ],
         "warnings": [],
         "stats": {
           "question_count": 50,
           "expected_count": 0,
-          "incomplete_options": 0,
+          "incomplete_options": 1,
           "no_answer": 0,
           "short_stem": 0,
           "answer_distribution": {
@@ -30,6 +32,7 @@
             "C": 14
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-50",
           "missing_numbers": 0
         }
@@ -44,12 +47,7 @@
           "answer_pdf_extracted": 50,
           "questions_with_answer": 50,
           "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 50,
-            "match_rate": "64.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_coverage": "100.0%"
         }
       },
       {
@@ -72,7 +70,7 @@
         ],
         "stats": {
           "avg_stem_length": 53.0,
-          "avg_option_length": 19.4,
+          "avg_option_length": 19.5,
           "bloom_distribution": {
             "analyze": 1,
             "remember": 48,
@@ -336,8 +334,8 @@
       "content": "依「期貨信託基金管理辦法」之規定,期貨信託事業對不特定人募集期貨信託基金,不得委任下列何者擔任期貨信託基金之銷售機構?",
       "type": "single_choice",
       "option_a": "期貨經紀商",
-      "option_b": "證券投資顧問事業",
-      "option_c": "人身保險業",
+      "option_b": "證券投資顧問事業(C)人身保險業",
+      "option_c": "",
       "option_d": "產險業",
       "correct_answer": "D",
       "explanation": "",

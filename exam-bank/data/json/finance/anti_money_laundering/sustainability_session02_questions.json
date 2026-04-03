@@ -33,6 +33,7 @@
             "D": 17
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-80",
           "missing_numbers": 0
         }
@@ -47,23 +48,20 @@
           "answer_pdf_extracted": 80,
           "questions_with_answer": 80,
           "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 80,
-            "match_rate": "80.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_coverage": "100.0%"
         }
       },
       {
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [],
+        "warnings": [
+          "題 19: 選項B和C的文字重複，且與PDF原文不符。PDF原文為：(B)受NFRD 約束的企業需依據 ESRS 進行報告 (C)受 CSRD 約束的企業無需依據 ESRS 進行報告。提取結果為：(B) 受NFRD 約束的企業需依據 約束的企業需依據ESRS進行報告 (C) 受 CSRD 約束的企業無需依據 ESRS 進行報告。"
+        ],
         "stats": {
           "sampled": 3,
-          "matched": 3,
-          "issues": 0
+          "matched": 2,
+          "issues": 1
         }
       },
       {
@@ -103,7 +101,7 @@
     },
     {
       "question_number": 2,
-      "content": "政府間氣候變遷專門委員會(IPCC)的評估報告指出,如果全球工業化國家聯合致力於在 2050 年初期達成以下哪個目標,如此地球將有50%的機會可將升溫控制在 $1.5℃$ 內?",
+      "content": "政府間氣候變遷專門委員會(IPCC)的評估報告指出,如果全球工業化國家聯合致力於在 2050 年初期達成以下哪個目標,如此地球將有50%的機會可將升溫控制在 1.5℃內?",
       "type": "single_choice",
       "option_a": "淨零排放(Net zero)",
       "option_b": "碳中和(Carbon Neutrality)",

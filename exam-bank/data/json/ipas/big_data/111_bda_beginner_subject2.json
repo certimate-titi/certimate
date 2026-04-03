@@ -3,10 +3,10 @@
     "source_pdf": "111_bda_beginner_subject2.pdf",
     "content_type": "exam",
     "total_questions_parsed": 50,
-    "valid_questions": 50,
-    "excluded_no_answer": 0,
+    "valid_questions": 49,
+    "excluded_no_answer": 1,
     "bloom_distribution": {
-      "remember": 38,
+      "remember": 37,
       "apply": 4,
       "create": 1,
       "analyze": 4,
@@ -19,20 +19,29 @@
         "layer": "L1_structure",
         "passed": true,
         "errors": [],
-        "warnings": [],
+        "warnings": [
+          "題 16：引用「圖片」但內容缺失",
+          "題 18：引用「圖片」但內容缺失",
+          "題 20：引用「圖片」但內容缺失",
+          "題 21：引用「圖片」但內容缺失",
+          "題 26：引用「圖片」但內容缺失",
+          "...另有 3 題引用缺失",
+          "引用完整性偏低：8/50 題（16%）引用外部內容缺失"
+        ],
         "stats": {
           "question_count": 50,
           "expected_count": 0,
           "incomplete_options": 0,
-          "no_answer": 0,
+          "no_answer": 1,
           "short_stem": 0,
           "answer_distribution": {
             "D": 18,
-            "B": 15,
+            "B": 14,
             "C": 8,
             "A": 9
           },
-          "answer_rate": 1.0,
+          "answer_rate": 0.98,
+          "ref_missing": 8,
           "number_range": "1-50",
           "missing_numbers": 0
         }
@@ -44,13 +53,13 @@
         "warnings": [],
         "stats": {
           "total_questions": 50,
-          "answer_pdf_extracted": 50,
-          "questions_with_answer": 50,
-          "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
+          "answer_pdf_extracted": 49,
+          "questions_with_answer": 49,
+          "questions_without_answer": 1,
+          "answer_coverage": "98.0%",
           "llm_vs_answer_pdf": {
-            "compared": 50,
-            "match_rate": "98.0%",
+            "compared": 49,
+            "match_rate": "100.0%",
             "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
           }
         }
@@ -72,10 +81,10 @@
         "errors": [],
         "warnings": [],
         "stats": {
-          "avg_stem_length": 70.2,
-          "avg_option_length": 21.5,
+          "avg_stem_length": 69.9,
+          "avg_option_length": 21.6,
           "bloom_distribution": {
-            "remember": 38,
+            "remember": 37,
             "apply": 4,
             "create": 1,
             "analyze": 4,
@@ -99,7 +108,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 2,
@@ -112,7 +121,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 3,
@@ -125,7 +134,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 4,
@@ -138,7 +147,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 5,
@@ -151,7 +160,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 6,
@@ -164,7 +173,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 7,
@@ -177,7 +186,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 8,
@@ -190,7 +199,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 9,
@@ -203,7 +212,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 10,
@@ -216,7 +225,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -229,7 +238,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 12,
@@ -242,7 +251,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 13,
@@ -255,7 +264,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 14,
@@ -268,7 +277,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 15,
@@ -281,7 +290,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 16,
@@ -294,7 +303,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 17,
@@ -307,7 +316,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 18,
@@ -320,7 +329,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 19,
@@ -333,7 +342,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 20,
@@ -346,7 +355,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 21,
@@ -359,7 +368,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 22,
@@ -372,20 +381,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 23,
-      "content": "某品牌燈泡平均壽命為1200 小時,標準差為36小時。現購買此燈泡 36 隻,若Z為標準常態分配,請問此 36 支燈泡壽命至少為1180 小時的機率,下列哪一項正確?",
-      "type": "single_choice",
-      "option_a": "$Pr(Z > -2.2)$",
-      "option_b": "$Pr(Z > -2.4)$",
-      "option_c": "$Pr(Z > -2.6)$",
-      "option_d": "$Pr(Z > -2.8)$",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 24,
@@ -398,7 +394,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 25,
@@ -411,7 +407,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 26,
@@ -424,7 +420,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 27,
@@ -437,7 +433,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 28,
@@ -450,7 +446,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 29,
@@ -463,7 +459,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 30,
@@ -476,7 +472,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 31,
@@ -489,7 +485,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 32,
@@ -502,7 +498,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 33,
@@ -515,7 +511,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 34,
@@ -528,7 +524,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 35,
@@ -541,7 +537,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 36,
@@ -554,7 +550,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 37,
@@ -567,7 +563,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 38,
@@ -580,7 +576,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 39,
@@ -593,7 +589,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 40,
@@ -606,7 +602,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 41,
@@ -619,7 +615,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 42,
@@ -632,7 +628,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 43,
@@ -645,7 +641,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 44,
@@ -658,7 +654,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 45,
@@ -671,7 +667,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 46,
@@ -684,7 +680,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 47,
@@ -697,7 +693,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 48,
@@ -710,7 +706,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 49,
@@ -723,7 +719,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 50,
@@ -736,7 +732,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     }
   ]
 }

@@ -20,7 +20,9 @@
           "題 26：選項不完整",
           "題 32：選項不完整"
         ],
-        "warnings": [],
+        "warnings": [
+          "題 17：引用「表格」但內容缺失"
+        ],
         "stats": {
           "question_count": 50,
           "expected_count": 0,
@@ -28,12 +30,13 @@
           "no_answer": 0,
           "short_stem": 0,
           "answer_distribution": {
-            "C": 16,
+            "C": 17,
             "B": 14,
             "A": 10,
-            "D": 10
+            "D": 9
           },
           "answer_rate": 1.0,
+          "ref_missing": 1,
           "number_range": "1-50",
           "missing_numbers": 0
         }
@@ -51,7 +54,7 @@
           "answer_coverage": "100.0%",
           "llm_vs_answer_pdf": {
             "compared": 50,
-            "match_rate": "98.0%",
+            "match_rate": "100.0%",
             "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
           }
         }
@@ -98,7 +101,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 2,
@@ -111,7 +114,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 3,
@@ -124,7 +127,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 4,
@@ -137,7 +140,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 5,
@@ -150,7 +153,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 6,
@@ -163,7 +166,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 7,
@@ -176,7 +179,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 8,
@@ -189,7 +192,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 9,
@@ -202,7 +205,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 10,
@@ -215,7 +218,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -228,7 +231,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 12,
@@ -241,7 +244,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 13,
@@ -254,7 +257,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 14,
@@ -267,7 +270,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 15,
@@ -280,7 +283,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 16,
@@ -293,7 +296,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 17,
@@ -306,7 +309,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 18,
@@ -319,7 +322,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 19,
@@ -329,10 +332,10 @@
       "option_b": "`SELECT * FROM 學生資料表 WHERE 姓名 is '%凱%'`",
       "option_c": "`SELECT * FROM 學生資料表 WHERE 姓名 Like '%凱'`",
       "option_d": "`SELECT * FROM 學生資料表 WHERE 姓名 Like '%凱%'`",
-      "correct_answer": "D",
+      "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 20,
@@ -345,7 +348,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 21,
@@ -358,7 +361,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 22,
@@ -371,7 +374,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 23,
@@ -384,7 +387,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 24,
@@ -397,7 +400,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 25,
@@ -410,7 +413,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 26,
@@ -423,7 +426,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 27,
@@ -436,7 +439,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 28,
@@ -449,7 +452,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 29,
@@ -462,7 +465,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 30,
@@ -475,7 +478,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 31,
@@ -488,7 +491,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 32,
@@ -501,7 +504,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 33,
@@ -514,7 +517,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 34,
@@ -527,7 +530,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 35,
@@ -540,7 +543,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 36,
@@ -553,7 +556,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 37,
@@ -566,7 +569,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 38,
@@ -579,7 +582,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 39,
@@ -592,7 +595,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 40,
@@ -605,7 +608,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 41,
@@ -618,7 +621,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 42,
@@ -631,7 +634,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 43,
@@ -644,7 +647,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 44,
@@ -657,7 +660,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 45,
@@ -670,7 +673,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 46,
@@ -683,7 +686,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 47,
@@ -696,7 +699,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 48,
@@ -709,7 +712,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 49,
@@ -722,7 +725,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 50,
@@ -735,7 +738,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     }
   ]
 }

@@ -1,8 +1,10 @@
 {
   "import_meta": {
     "source_pdf": "112_civil_law_q.pdf",
-    "total_questions": 25,
-    "with_answers": 25,
+    "content_type": "exam",
+    "total_questions_parsed": 25,
+    "valid_questions": 25,
+    "excluded_no_answer": 0,
     "bloom_distribution": {
       "remember": 25
     },
@@ -15,31 +17,49 @@
         "warnings": [],
         "stats": {
           "question_count": 25,
+          "expected_count": 0,
           "incomplete_options": 0,
           "no_answer": 0,
           "short_stem": 0,
           "answer_distribution": {
-            "A": 10,
-            "C": 6,
+            "A": 8,
+            "C": 9,
             "D": 5,
-            "B": 4
+            "B": 3
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
+        }
+      },
+      {
+        "layer": "L2_answer_cross",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "total_questions": 25,
+          "answer_pdf_extracted": 25,
+          "questions_with_answer": 25,
+          "questions_without_answer": 0,
+          "answer_coverage": "100.0%",
+          "llm_vs_answer_pdf": {
+            "compared": 25,
+            "match_rate": "100.0%",
+            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
+          }
         }
       },
       {
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [
-          "題 22: 選項 (A) 的內容與 PDF 原文不符，PDF 原文為「甲在婚前取得之受贈物A屋，若贈與人甲父以書面聲明甲日後結婚時，該A屋為特有財產，則該A屋亦屬特有財產」，提取結果為「甲在婚前取得之受贈物A屋，若贈與人甲父以書面聲明甲日後結婚時，該A屋為特有財產，則該A屋亦屬特有財產」。"
-        ],
+        "warnings": [],
         "stats": {
           "sampled": 3,
-          "matched": 2,
-          "issues": 1
+          "matched": 3,
+          "issues": 0
         }
       },
       {
@@ -58,7 +78,6 @@
         }
       }
     ],
-    "elapsed_seconds": 26.3,
     "model": "gemini-2.5-flash"
   },
   "questions": [
@@ -72,7 +91,8 @@
       "option_d": "植物人仍享有權利能力",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 2,
@@ -84,7 +104,8 @@
       "option_d": "主物之處分效力及於從物,所以購買汽車之契約效力及於備胎",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 3,
@@ -96,7 +117,8 @@
       "option_d": "法定代理人可以概括允許限制行為能力人為法律行為",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 4,
@@ -108,7 +130,8 @@
       "option_d": "因暴利行為所為之法律行為",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 5,
@@ -118,9 +141,10 @@
       "option_b": "承諾",
       "option_c": "要約",
       "option_d": "意思實現",
-      "correct_answer": "A",
+      "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 6,
@@ -130,9 +154,10 @@
       "option_b": "該買賣標的權利自始不存在,屬於標的不能而無效",
       "option_c": "該買賣標的權利雖然不存在,但契約仍有效,甲可對乙主張權利瑕疵擔保",
       "option_d": "甲可依締約上過失向乙請求損害賠償",
-      "correct_answer": "B",
+      "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 7,
@@ -144,7 +169,8 @@
       "option_d": "25",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 8,
@@ -156,7 +182,8 @@
       "option_d": "合會契約",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 9,
@@ -168,7 +195,8 @@
       "option_d": "租賃物應納之一切稅捐,由出租人負擔",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 10,
@@ -180,7 +208,8 @@
       "option_d": "指示交付",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -192,7 +221,8 @@
       "option_d": "由國家及果樹所有權人所共有",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 12,
@@ -204,7 +234,8 @@
       "option_d": "倘受領權人為低收入戶時,依法可以拒絕拾得人之報酬請求",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 13,
@@ -216,7 +247,8 @@
       "option_d": "抵押權人將土地與房屋併付拍賣後,對於土地及房屋賣得之價金,抵押權人均有優先受償之權利",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 14,
@@ -228,7 +260,8 @@
       "option_d": "死亡宣告會剝奪失蹤人之權利能力",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 15,
@@ -240,7 +273,8 @@
       "option_d": "判決確定後,時效重新起算5年",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 16,
@@ -252,7 +286,8 @@
       "option_d": "婚姻居間契約不得約定報酬",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 17,
@@ -264,7 +299,8 @@
       "option_d": "鄰地所有人不得請求移去或變更越界建築之房屋,但得請求所受損害之償金",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 18,
@@ -276,7 +312,8 @@
       "option_d": "共有部分除法律另有規定外,得經規約之約定供區分所有建築物之特定所有人使用",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 19,
@@ -288,7 +325,8 @@
       "option_d": "甲將B屋讓與乙,乙僅取得對B屋之事實上處分權",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 20,
@@ -300,7 +338,8 @@
       "option_d": "善意占有人,因改良占有物所支出之有益費用,於其占有物現存之增加價值限度內,得向回復請求人,請求償還",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 21,
@@ -310,13 +349,14 @@
       "option_b": "不能證明為夫或妻所有之財產,視為夫妻共有",
       "option_c": "夫或妻之財產分為婚前財產與婚後財產,由夫妻各自所有",
       "option_d": "夫妻各自對其債務負清償之責",
-      "correct_answer": "A",
+      "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 22,
-      "content": "關於民法第1031條之1夫妻財產制中之特有財產之敘述,下列何者錯誤?",
+      "content": "關於民法第1031 條之1夫妻財產制中之特有財產之敘述,下列何者錯誤?",
       "type": "single_choice",
       "option_a": "甲在婚前取得之受贈物A屋,若贈與人甲父以書面聲明甲日後結婚時,該A屋為特有財產,則該A屋亦屬特有財產",
       "option_b": "夫或妻在家中共同使用的茶杯、桌椅等動產,非特有財產",
@@ -324,7 +364,8 @@
       "option_d": "夫或妻雖以受贈之特有財產之金錢購買不動產一筆,惟該受贈物狀態已變更,則該不動產非特有財產",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 23,
@@ -336,7 +377,8 @@
       "option_d": "特留分之規定,係為保障法定繼承人之權利免受侵害",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 24,
@@ -348,7 +390,8 @@
       "option_d": "以詐欺或脅迫妨害被繼承人為關於繼承之遺囑,或妨害其撤回或變更者,喪失繼承權,得因被繼承人原諒繼承人之行為而回復其繼承權",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 25,
@@ -360,7 +403,8 @@
       "option_d": "繼承之拋棄,溯及於繼承開始時發生效力",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "answer_source": "question_pdf_printed"
     }
   ]
 }

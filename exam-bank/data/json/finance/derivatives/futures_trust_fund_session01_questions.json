@@ -29,6 +29,7 @@
             "B": 11
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-50",
           "missing_numbers": 0
         }
@@ -37,20 +38,13 @@
         "layer": "L2_answer_cross",
         "passed": true,
         "errors": [],
-        "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
-        ],
+        "warnings": [],
         "stats": {
           "total_questions": 50,
           "answer_pdf_extracted": 50,
           "questions_with_answer": 50,
           "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 50,
-            "match_rate": "0.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_coverage": "100.0%"
         }
       },
       {

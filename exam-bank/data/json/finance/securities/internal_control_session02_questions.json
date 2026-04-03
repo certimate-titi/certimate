@@ -37,6 +37,7 @@
             "B": 16
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-80",
           "missing_numbers": 0
         }
@@ -63,11 +64,11 @@
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [
-          "抽樣覆核執行失敗，跳過"
-        ],
+        "warnings": [],
         "stats": {
-          "sampled": 0
+          "sampled": 3,
+          "matched": 3,
+          "issues": 0
         }
       },
       {

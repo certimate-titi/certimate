@@ -20,6 +20,7 @@
         "passed": true,
         "errors": [],
         "warnings": [
+          "題 46：引用「圖片」但內容缺失",
           "缺少題號：[12]"
         ],
         "stats": {
@@ -30,11 +31,12 @@
           "short_stem": 0,
           "answer_distribution": {
             "B": 14,
-            "C": 16,
-            "A": 8,
-            "D": 12
+            "C": 17,
+            "A": 9,
+            "D": 10
           },
           "answer_rate": 1.0,
+          "ref_missing": 1,
           "number_range": "1-50",
           "missing_numbers": 1
         }
@@ -46,13 +48,13 @@
         "warnings": [],
         "stats": {
           "total_questions": 50,
-          "answer_pdf_extracted": 50,
+          "answer_pdf_extracted": 49,
           "questions_with_answer": 50,
           "questions_without_answer": 0,
           "answer_coverage": "100.0%",
           "llm_vs_answer_pdf": {
-            "compared": 50,
-            "match_rate": "92.0%",
+            "compared": 49,
+            "match_rate": "100.0%",
             "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
           }
         }
@@ -61,11 +63,13 @@
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [],
+        "warnings": [
+          "題 17: 答案標記錯誤，PDF中答案為B，但正確答案應為A"
+        ],
         "stats": {
           "sampled": 3,
-          "matched": 3,
-          "issues": 0
+          "matched": 2,
+          "issues": 1
         }
       },
       {
@@ -101,7 +105,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 2,
@@ -114,7 +118,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 3,
@@ -127,7 +131,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 4,
@@ -140,7 +144,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 5,
@@ -153,7 +157,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 6,
@@ -166,7 +170,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 7,
@@ -179,7 +183,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 8,
@@ -192,7 +196,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 9,
@@ -205,7 +209,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 10,
@@ -218,7 +222,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -228,10 +232,10 @@
       "option_b": "可使用更大的訓練集;",
       "option_c": "避免模型過擬合;",
       "option_d": "能更有效率搜尋高維參數空間",
-      "correct_answer": "D",
+      "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 11,
@@ -241,10 +245,10 @@
       "option_b": "損失函數(Loss Function)在訓練過程中的梯度變化值(Gradient);",
       "option_c": "學習率(Learning Rate)，控制模型權重更新的速度;",
       "option_d": "模型在訓練後產生的權重值",
-      "correct_answer": "D",
+      "correct_answer": "C",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 13,
@@ -257,7 +261,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 14,
@@ -270,7 +274,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 15,
@@ -283,7 +287,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 16,
@@ -296,7 +300,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 17,
@@ -309,7 +313,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 18,
@@ -322,7 +326,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 19,
@@ -335,7 +339,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 20,
@@ -348,7 +352,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 21,
@@ -361,7 +365,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 22,
@@ -374,7 +378,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 23,
@@ -387,7 +391,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 24,
@@ -400,7 +404,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 25,
@@ -413,7 +417,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 26,
@@ -426,7 +430,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 27,
@@ -439,7 +443,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 28,
@@ -452,7 +456,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 29,
@@ -465,7 +469,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 30,
@@ -478,7 +482,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 31,
@@ -491,7 +495,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 32,
@@ -504,7 +508,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 33,
@@ -517,7 +521,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 34,
@@ -530,7 +534,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "analyze",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 35,
@@ -540,10 +544,10 @@
       "option_b": "第一主成分解釋 $60\\%$ 的變異量，表示資料結構呈現明顯線性關係，僅保留一維即可避免過擬合;",
       "option_c": "雖然前兩個主成分可解釋超過 $80\\%$ 變異量，但第二主成分貢獻仍高達 $30\\%$，不宜捨棄第三主成分;",
       "option_d": "三個特徵值相差不大，顯示各主成分變異均衡，降維可能導致資訊損失",
-      "correct_answer": "D",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 36,
@@ -556,7 +560,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "evaluate",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 37,
@@ -569,7 +573,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 38,
@@ -582,7 +586,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 39,
@@ -595,7 +599,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 40,
@@ -608,7 +612,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 41,
@@ -621,7 +625,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 42,
@@ -634,7 +638,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 43,
@@ -647,7 +651,7 @@
       "correct_answer": "A",
       "explanation": "",
       "bloom_category": "create",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 44,
@@ -660,7 +664,7 @@
       "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 45,
@@ -673,7 +677,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 46,
@@ -686,7 +690,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "apply",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 47,
@@ -699,7 +703,7 @@
       "correct_answer": "B",
       "explanation": "",
       "bloom_category": "understand",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 48,
@@ -712,7 +716,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 49,
@@ -725,7 +729,7 @@
       "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     },
     {
       "question_number": 50,
@@ -735,10 +739,10 @@
       "option_b": "空格2須填入\"b--\"",
       "option_c": "空格1須填入\"r-\"",
       "option_d": "空格2須填入\"r--\"\n- (E)驗證損失明顯較訓練損失減少更明顯",
-      "correct_answer": "C",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
-      "answer_source": "answer_pdf"
+      "answer_source": "question_pdf_printed"
     }
   ]
 }

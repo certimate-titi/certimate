@@ -37,6 +37,7 @@
             "B": 36
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-50",
           "missing_numbers": 0
         }
@@ -46,7 +47,7 @@
         "passed": true,
         "errors": [],
         "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 9%（確認答案已改用答案卷來源）"
+          "LLM 幻覺答案與答案卷一致率僅 28%（確認答案已改用答案卷來源）"
         ],
         "stats": {
           "total_questions": 150,
@@ -55,8 +56,8 @@
           "questions_without_answer": 0,
           "answer_coverage": "100.0%",
           "llm_vs_answer_pdf": {
-            "compared": 150,
-            "match_rate": "9.3%",
+            "compared": 50,
+            "match_rate": "28.0%",
             "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
           }
         }

@@ -26,11 +26,12 @@
           "short_stem": 0,
           "answer_distribution": {
             "D": 7,
-            "B": 8,
-            "C": 6,
-            "A": 4
+            "C": 5,
+            "A": 5,
+            "B": 8
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
         }
@@ -39,20 +40,13 @@
         "layer": "L2_answer_cross",
         "passed": true,
         "errors": [],
-        "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
-        ],
+        "warnings": [],
         "stats": {
           "total_questions": 25,
           "answer_pdf_extracted": 25,
           "questions_with_answer": 25,
           "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 25,
-            "match_rate": "0.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_coverage": "100.0%"
         }
       },
       {
@@ -107,7 +101,7 @@
       "option_b": "瀑布地",
       "option_c": "國家公園土地",
       "option_d": "名勝古蹟",
-      "correct_answer": "B",
+      "correct_answer": "C",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -120,7 +114,7 @@
       "option_b": "土地權利塗銷登記",
       "option_c": "土地標示變更登記",
       "option_d": "因土地重劃之變更登記",
-      "correct_answer": "D",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "apply",
       "answer_source": "answer_pdf"
@@ -159,7 +153,7 @@
       "option_b": "12年",
       "option_c": "15年",
       "option_d": "20年",
-      "correct_answer": "C",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -172,7 +166,7 @@
       "option_b": "徵收",
       "option_c": "強制執行",
       "option_d": "法院判決",
-      "correct_answer": "B",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -211,7 +205,7 @@
       "option_b": "應通知土地所有權人於三年內建築使用",
       "option_c": "逾期未出售或未建築使用者,得予強制拍賣",
       "option_d": "逾期未出售或未建築使用者,得予照價收買",
-      "correct_answer": "B",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -224,7 +218,7 @@
       "option_b": "按重劃計畫書公告當期公告土地現值之三分之一",
       "option_c": "相當六個月租金",
       "option_d": "相當一年租金",
-      "correct_answer": "A",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "understand",
       "answer_source": "answer_pdf"
@@ -276,7 +270,7 @@
       "option_b": "接到直轄市或縣(市)主管機關核定發給抵價地通知時",
       "option_c": "直轄市或縣(市)主管機關將抵價地登記為申請人所有時",
       "option_d": "直轄市或縣(市)主管機關將抵價地點交申請人接管時",
-      "correct_answer": "A",
+      "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -328,7 +322,7 @@
       "option_b": "承墾土地,為耕作權人",
       "option_c": "權屬不明土地,為主管稅捐稽徵機關指定之土地使用人",
       "option_d": "設有典權土地,為典權人",
-      "correct_answer": "D",
+      "correct_answer": "C",
       "explanation": "",
       "bloom_category": "analyze",
       "answer_source": "answer_pdf"
@@ -354,7 +348,7 @@
       "option_b": "申報移轉現值",
       "option_c": "現值數額",
       "option_d": "漲價總數額",
-      "correct_answer": "C",
+      "correct_answer": "D",
       "explanation": "",
       "bloom_category": "apply",
       "answer_source": "answer_pdf"
@@ -367,7 +361,7 @@
       "option_b": "須為無出租或供營業使用之住宅用地",
       "option_c": "土地面積,都市土地未超過三公畝部分,非都市土地未超過七公畝部分",
       "option_d": "土地上之建築改良物屬土地所有權人或其配偶、直系親屬所有者為限",
-      "correct_answer": "C",
+      "correct_answer": "A",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -380,7 +374,7 @@
       "option_b": "以當地不動產評價委員會評定之標準價格為準",
       "option_c": "以當地地價及標準地價評議委員會評定之標準價格為準",
       "option_d": "以當地建築主管機關公告之房屋造價為準",
-      "correct_answer": "A",
+      "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"
@@ -406,7 +400,7 @@
       "option_b": "個人或其配偶、直系親屬辦竣戶籍登記、持有並居住於該房屋連續滿六年",
       "option_c": "交易前六年內,無出租、供營業或執行業務使用",
       "option_d": "個人與其配偶及未成年子女於交易前六年內未曾適用該法第4條之5第1項第1款規定",
-      "correct_answer": "D",
+      "correct_answer": "B",
       "explanation": "",
       "bloom_category": "remember",
       "answer_source": "answer_pdf"

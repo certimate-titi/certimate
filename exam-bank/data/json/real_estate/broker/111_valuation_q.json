@@ -3,14 +3,10 @@
     "source_pdf": "111_valuation_q.pdf",
     "content_type": "exam",
     "total_questions_parsed": 25,
-    "valid_questions": 25,
-    "excluded_no_answer": 0,
-    "bloom_distribution": {
-      "remember": 23,
-      "apply": 1,
-      "understand": 1
-    },
-    "quality_flag": "ok",
+    "valid_questions": 0,
+    "excluded_no_answer": 25,
+    "bloom_distribution": {},
+    "quality_flag": "review",
     "validations": [
       {
         "layer": "L1_structure",
@@ -21,393 +17,49 @@
           "question_count": 25,
           "expected_count": 0,
           "incomplete_options": 0,
-          "no_answer": 0,
+          "no_answer": 25,
           "short_stem": 0,
-          "answer_distribution": {
-            "D": 10,
-            "B": 7,
-            "A": 2,
-            "C": 6
-          },
-          "answer_rate": 1.0,
+          "answer_distribution": {},
+          "answer_rate": 0.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
         }
       },
       {
         "layer": "L2_answer_cross",
-        "passed": true,
-        "errors": [],
-        "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
+        "passed": false,
+        "errors": [
+          "答案卷提取失敗：0 題有答案"
         ],
+        "warnings": [],
         "stats": {
           "total_questions": 25,
-          "answer_pdf_extracted": 25,
-          "questions_with_answer": 25,
-          "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 25,
-            "match_rate": "0.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_pdf_extracted": 0,
+          "questions_with_answer": 0,
+          "questions_without_answer": 25
         }
       },
       {
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [],
-        "stats": {
-          "sampled": 3,
-          "matched": 3,
-          "issues": 0
-        }
+        "warnings": [
+          "無題目可抽樣"
+        ],
+        "stats": {}
       },
       {
         "layer": "L4_statistics",
         "passed": true,
         "errors": [],
-        "warnings": [],
-        "stats": {
-          "avg_stem_length": 53.0,
-          "avg_option_length": 20.3,
-          "bloom_distribution": {
-            "remember": 23,
-            "apply": 1,
-            "understand": 1
-          }
-        }
+        "warnings": [
+          "無題目"
+        ],
+        "stats": {}
       }
     ],
     "model": "gemini-2.5-flash"
   },
-  "questions": [
-    {
-      "question_number": 1,
-      "content": "依不動產經紀業管理條例規定,不動產經紀業得請求退還原繳存之營業保證金之情形,不包含那一項?",
-      "type": "single_choice",
-      "option_a": "公司組織申請解散者",
-      "option_b": "商號組織申請歇業者",
-      "option_c": "營業項目經變更登記後,該公司或商號已無不動產仲介經紀業及不動產代銷經紀業而組織仍存續者",
-      "option_d": "退出所在地或鄰近直轄市或縣(市)仲介經紀業同業公會",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 2,
-      "content": "不動產經紀業管理條例對不動產經紀人員之規定,下列敘述何者正確?",
-      "type": "single_choice",
-      "option_a": "經不動產經紀人考試及格者,應具備半年以上經紀營業員經驗,始得向直轄市或縣(市)政府請領經紀人證書",
-      "option_b": "經紀人證書有效期限為三年",
-      "option_c": "經紀營業員訓練不得少於三十個小時",
-      "option_d": "未具備經紀人員資格者,於簽訂專任約後,經紀業得僱用其從事仲介或代銷業務",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 3,
-      "content": "依不動產經紀業管理條例之規定,經營仲介業務者應揭示於營業處所明顯之處的文件,不包含那一項?",
-      "type": "single_choice",
-      "option_a": "不動產經紀人員之經歷與獲獎資料",
-      "option_b": "不動產經紀人證書",
-      "option_c": "報酬標準及收取方式",
-      "option_d": "仲介相關證照及許可文件",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 4,
-      "content": "依不動產經紀業管理條例之規定,雙方當事人簽訂租賃或買賣契約書時,經紀人應將不動產說明書交付與委託人交易之相對人,並由何人在不動產說明書上簽章?",
-      "type": "single_choice",
-      "option_a": "不動產經紀人",
-      "option_b": "相對人",
-      "option_c": "地政士",
-      "option_d": "公司代表人",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 5,
-      "content": "依不動產經紀業管理條例關於獎懲之規定,下列敘述何者錯誤?",
-      "type": "single_choice",
-      "option_a": "非經紀業而經營仲介或代銷業務者,主管機關應禁止其營業,並處公司負責人、商號負責人或行為人罰鍰",
-      "option_b": "經紀業開始營業後自行停止營業連續六個月以上者,直轄市或縣(市)主管機關得廢止其許可",
-      "option_c": "中央主管機關對於經紀人員獎懲事項,應設置獎懲委員會處理之",
-      "option_d": "依本條例所處罰鍰,經通知繳納而逾期不繳納者,移送法院強制執行",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 6,
-      "content": "依公平交易法之規定,下列定義何者錯誤?",
-      "type": "single_choice",
-      "option_a": "競爭指一以上事業在市場上以較有利之價格、數量、品質、服務或其他條件,爭取交易機會之行為",
-      "option_b": "相關市場指事業就一定之商品或服務,從事競爭之區域或範圍",
-      "option_c": "交易相對人指與事業進行或成立交易之供給者或需求者",
-      "option_d": "事業所組成之同業公會視為本法所稱事業",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 7,
-      "content": "公平交易法關於結合之規定,下列敘述何者錯誤?",
-      "type": "single_choice",
-      "option_a": "直接或間接控制他事業之業務經營或人事任免屬於結合之一種",
-      "option_b": "事業因結合而使其市場占有率達四分之一應先向主管機關提出申報",
-      "option_c": "對於事業結合之申報,如其結合,對整體經濟利益大於限制競爭之不利益者,主管機關不得禁止其結合",
-      "option_d": "主管機關就事業結合之申報,得徵詢外界意見,必要時得委請學術研究機構提供產業經濟分析意見",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 8,
-      "content": "甲建商為廣告主,委託乙廣告代理業製作廣告,請來丙明星擔任廣告薦證者,在丁廣告媒體業之電子媒體刊登引人錯誤之廣告,下列敘述何者錯誤?",
-      "type": "single_choice",
-      "option_a": "乙廣告代理業在明知或可得而知情形下,仍製作或設計有引人錯誤之廣告,與甲建商負連帶損害賠償責任",
-      "option_b": "甲建商不得在商品或廣告上,或以其他使公眾得知之方法,對於與商品相關而足以影響交易決定之事項,為虛偽不實或引人錯誤之表示或表徵",
-      "option_c": "丙明星明知或可得而知其所從事之薦證有引人錯誤之虞,而仍為薦證者,與乙廣告代理業負連帶損害賠償責任",
-      "option_d": "丁廣告媒體業在明知或可得而知其所傳播或刊載之廣告有引人錯誤之虞,仍予傳播或刊載,與甲建商負連帶損害賠償責任",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 9,
-      "content": "主管機關收到對於涉有違反公平交易法規定之檢舉,而發動調查得進行之程序敘述,何者錯誤?",
-      "type": "single_choice",
-      "option_a": "通知當事人及關係人到場陳述意見",
-      "option_b": "通知當事人及關係人提出帳冊、文件及其他必要之資料或證物",
-      "option_c": "派員前往當事人及關係人之事務所、營業所或其他場所為必要之調查",
-      "option_d": "因被害人之請求,如為事業之故意行為,得依侵害情節,酌定損害額以上之賠償",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 10,
-      "content": "當事人對主管機關依公平交易法所為之處分或決定不服者,應如何處理?",
-      "type": "single_choice",
-      "option_a": "直接適用行政訴訟程序",
-      "option_b": "依訴願法提起訴願",
-      "option_c": "對主管機關提出民事訴訟",
-      "option_d": "直接適用國家賠償程序",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 11,
-      "content": "企業經營者未經邀約而與消費者在其住居所、工作場所、公共場所或其他場所所訂立之契約,依消費者保護法之規定,屬於下列何者之定義?",
-      "type": "single_choice",
-      "option_a": "通訊交易",
-      "option_b": "定型化契約",
-      "option_c": "訪問交易",
-      "option_d": "個別磋商契約",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 12,
-      "content": "甲建商與乙消費者訂立預售屋定型化契約前,並沒有給合理期間供乙審閱全部條款內容,依消費者保護法之規定,乙可以如何主張權利?",
-      "type": "single_choice",
-      "option_a": "要求甲建商回收該批商品或停止其服務",
-      "option_b": "主張甲建商應負損害賠償責任",
-      "option_c": "主張除去其危害",
-      "option_d": "主張其條款不構成契約之內容。但乙得主張該條款仍構成契約之內容",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 13,
-      "content": "中央主管機關得擬訂特定行業定型化契約應記載或不得記載事項。下列應記載或不得記載事項之敘述何者錯誤?",
-      "type": "single_choice",
-      "option_a": "中央主管機關公告應記載之事項,雖未記載於定型化契約,仍構成契約之內容",
-      "option_b": "違反中央主管機關公告之定型化契約應記載或不得記載事項之定型化契約,其定型化契約條款無效",
-      "option_c": "企業經營者使用定型化契約者,主管機關得隨時派員查核",
-      "option_d": "不得記載事項得包括預付型交易之履約擔保",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 14,
-      "content": "企業經營者與消費者簽訂定型化之分期付款買賣契約,依消費者保護法規定,該契約書應載明之事項不包含下列那一項?",
-      "type": "single_choice",
-      "option_a": "頭期款",
-      "option_b": "企業經營者保留契約內容或期限之變更權或解釋權",
-      "option_c": "各期價款與其他附加費用合計之總價款與現金交易價格之差額",
-      "option_d": "利率",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 15,
-      "content": "企業經營者對於消費者之申訴,依消費者保護法規定,應於申訴之日起,至多幾日內妥適處理之?",
-      "type": "single_choice",
-      "option_a": "七日",
-      "option_b": "十日",
-      "option_c": "十五日",
-      "option_d": "三十日",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 16,
-      "content": "企業經營者在提供契約條款供他人參考時,下列那一種表示內容不會屬於定型化契約條款之一部分?",
-      "type": "single_choice",
-      "option_a": "以書面傳真提供給單一個別客戶之優惠條款內容",
-      "option_b": "以電視字幕放映提供之廣告字幕",
-      "option_c": "以書面產品型錄提供之內容",
-      "option_d": "以網際網路提供之廣告資訊",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 17,
-      "content": "依公寓大廈管理條例之規定,下列之定義何者正確?",
-      "type": "single_choice",
-      "option_a": "約定專用部分:指公寓大廈專有部分經約定供共同使用者",
-      "option_b": "管理負責人:指由區分所有權人會議決議執行建築物管理維護事務之公寓大廈管理服務人員或管理維護公司",
-      "option_c": "專有部分:指數人區分一建築物而各有其專有部分,並就其共用部分按其應有部分有所有權",
-      "option_d": "公寓大廈:指構造上或使用上或在建築執照設計圖樣標有明確界線,得區分為數部分之建築物及其基地",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 18,
-      "content": "公寓大廈共用部分不得獨立使用供做專有部分。依公寓大廈管理條例之規定,其為特定情形者,並不得為約定專用部分。下列情形非屬前述之特定情形?",
-      "type": "single_choice",
-      "option_a": "公寓大廈本身所占之地面",
-      "option_b": "公寓大廈基礎、主要樑柱、承重牆壁、樓地板及屋頂之構造",
-      "option_c": "其他有固定使用方法,並屬區分所有權人生活利用上不可或缺之專用部分",
-      "option_d": "連通數個專有部分之走廊或樓梯,及其通往室外之通路或門廳;社區內各巷道、防火巷弄",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 19,
-      "content": "依公寓大廈管理條例之規定,區分所有權人或住戶積欠應繳納之公共基金或應分擔或其他應負擔之費用,至少逾多少期或達相當金額,經定相當期間催告仍不給付者,管理負責人或管理委員會得訴請法院命其給付應繳之金額及遲延利息?",
-      "type": "single_choice",
-      "option_a": "一期",
-      "option_b": "二期",
-      "option_c": "三期",
-      "option_d": "六期",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 20,
-      "content": "規約除應載明專有部分及共用部分範圍外,有特定之情形,非經載明於規約者,不生效力。下列敘述何者非屬之?",
-      "type": "single_choice",
-      "option_a": "違反義務之處理方式",
-      "option_b": "禁止住戶飼養動物之特別約定",
-      "option_c": "財務運作之監督規定",
-      "option_d": "他住戶因維護、修繕專有部分,必須進入或使用其專有部分或約定專用部分時,不得拒絕",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 21,
-      "content": "下列有關定型化契約條款敘述中那幾項是正確的?①企業經營者在定型化契約中所用之定型化契約條款如有疑義時,條款內容應本公平之解釋,不應偏向企業經營者或消費者 ②企業經營者在與消費者訂立定型化契約前,須至少提供三十日以內之合理審閱期間,供消費者審閱全部條款內容③企業經營者以定型化契約條款訂定之使消費者拋棄合理審閱期間之條款為有效條款④定型化契約中之主要權利或義務條款,因受條款之限制,致契約之目的難以達成者顯失公平,故為無效。",
-      "type": "single_choice",
-      "option_a": "23",
-      "option_b": "13",
-      "option_c": "24",
-      "option_d": "124",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "understand",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 22,
-      "content": "依消費者保護法第17條之規定,定型化契約應記載事項,依契約之性質及目的,其內容不包括下列那一項?",
-      "type": "single_choice",
-      "option_a": "預付型交易之履約擔保",
-      "option_b": "企業經營者之義務或責任之免除",
-      "option_c": "契約之終止權",
-      "option_d": "違反契約之法律效果",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 23,
-      "content": "如果有一交易違反公平交易法,下列有關於行使損害賠償之敘述何者正確?",
-      "type": "single_choice",
-      "option_a": "自此一交易日起二年不行使請求權,請求權時效消滅",
-      "option_b": "被害人不論何時得知損害,自得知之日起逾二年不行使請求權,請求權時效消滅",
-      "option_c": "自此一交易日起逾十年,請求權時效消滅",
-      "option_d": "被害人自此一交易日起,其請求權之行使沒有時效限制",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 24,
-      "content": "對經紀人違反不動產經紀業管理條例規定之懲戒,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "經紀人員違反規定收取差價或其他報酬,應予申誡",
-      "option_b": "經紀人員在執行業務過程中,未以不動產說明書向與委託人交易之相對人解說,應予申誡",
-      "option_c": "經紀人員無故洩漏對於因業務知悉或持有之他人秘密,應予六個月以上三年以下之停止執行業務處分",
-      "option_d": "經紀人員受申誡處分三次者,應廢止其經紀人員證書或證明",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 25,
-      "content": "經紀業尚未與委託人簽訂委託契約書便刊登廣告及銷售時,依規定由直轄市、縣(市)主管機關處多少罰鍰?",
-      "type": "single_choice",
-      "option_a": "新臺幣六千元以上三萬元以下罰鍰",
-      "option_b": "新臺幣一萬元以上五萬元以下罰鍰",
-      "option_c": "新臺幣三萬元以上十五萬元以下罰鍰",
-      "option_d": "新臺幣六萬元以上三十萬元以下罰鍰",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    }
-  ]
+  "questions": []
 }

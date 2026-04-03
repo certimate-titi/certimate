@@ -33,6 +33,7 @@
             "B": 22
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-80",
           "missing_numbers": 0
         }
@@ -47,12 +48,7 @@
           "answer_pdf_extracted": 80,
           "questions_with_answer": 80,
           "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 80,
-            "match_rate": "76.2%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_coverage": "100.0%"
         }
       },
       {
@@ -74,7 +70,7 @@
           "發現 1 題可能重複（前 50 字相同）"
         ],
         "stats": {
-          "avg_stem_length": 43.7,
+          "avg_stem_length": 43.6,
           "avg_option_length": 10.7,
           "bloom_distribution": {
             "analyze": 10,
@@ -344,7 +340,7 @@
       "type": "single_choice",
       "option_a": "此指引之經濟活動分為二類:一般經濟活動及支持型經濟活動",
       "option_b": "此指引目前已涵蓋國內所有產業及經濟活動",
-      "option_c": "此指引係以對任一環境目的具有實質貢獻,且未對六項環境目的及社會保障造成重大危害之條件,作為永續經濟活動之認定方法",
+      "option_c": "此指引係以對任一環境目的具有實質貢獻,且未對六項環境目的及社會保障造成重大危害之條「件,作為永續經濟活動之認定方法",
       "option_d": "此指引目前就一項或多項環境目的訂有具實質貢獻之技術篩選標準作為判斷基準",
       "correct_answer": "B",
       "explanation": "",
@@ -860,7 +856,7 @@
     },
     {
       "question_number": 60,
-      "content": "在未來推估的最劣的RCP8.5 情境下,21世紀末的全球地表溫度可能增加攝氏多少度?\n甲.$+1.6℃$;乙.$+2.6℃$;丙.$+5.4℃$;丁.$+3.7℃$",
+      "content": "在未來推估的最劣的RCP8.5 情境下,21世紀末的全球地表溫度可能增加攝氏多少度?\n甲.+1.6℃;乙.+2.6℃;丙.+5.4℃;丁.+3.7°C",
       "type": "single_choice",
       "option_a": "甲、乙、丙",
       "option_b": "甲、乙、丁",

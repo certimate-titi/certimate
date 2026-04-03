@@ -33,6 +33,7 @@
             "B": 20
           },
           "answer_rate": 1.0,
+          "ref_missing": 0,
           "number_range": "1-80",
           "missing_numbers": 0
         }
@@ -59,13 +60,11 @@
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [
-          "題 58: 答案標記錯誤，PDF中沒有標記答案，但根據題目內容，正確答案應為(D)堅持貨到付現，而非(A)進行是否接單之討論。"
-        ],
+        "warnings": [],
         "stats": {
           "sampled": 3,
-          "matched": 2,
-          "issues": 1
+          "matched": 3,
+          "issues": 0
         }
       },
       {

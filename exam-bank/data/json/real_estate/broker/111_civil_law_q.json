@@ -3,13 +3,10 @@
     "source_pdf": "111_civil_law_q.pdf",
     "content_type": "exam",
     "total_questions_parsed": 25,
-    "valid_questions": 25,
-    "excluded_no_answer": 0,
-    "bloom_distribution": {
-      "remember": 24,
-      "apply": 1
-    },
-    "quality_flag": "ok",
+    "valid_questions": 0,
+    "excluded_no_answer": 25,
+    "bloom_distribution": {},
+    "quality_flag": "review",
     "validations": [
       {
         "layer": "L1_structure",
@@ -20,394 +17,49 @@
           "question_count": 25,
           "expected_count": 0,
           "incomplete_options": 0,
-          "no_answer": 0,
+          "no_answer": 25,
           "short_stem": 0,
-          "answer_distribution": {
-            "A": 3,
-            "D": 8,
-            "B": 7,
-            "C": 7
-          },
-          "answer_rate": 1.0,
+          "answer_distribution": {},
+          "answer_rate": 0.0,
+          "ref_missing": 0,
           "number_range": "1-25",
           "missing_numbers": 0
         }
       },
       {
         "layer": "L2_answer_cross",
-        "passed": true,
-        "errors": [],
-        "warnings": [
-          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
+        "passed": false,
+        "errors": [
+          "答案卷提取失敗：0 題有答案"
         ],
+        "warnings": [],
         "stats": {
           "total_questions": 25,
-          "answer_pdf_extracted": 25,
-          "questions_with_answer": 25,
-          "questions_without_answer": 0,
-          "answer_coverage": "100.0%",
-          "llm_vs_answer_pdf": {
-            "compared": 25,
-            "match_rate": "0.0%",
-            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
-          }
+          "answer_pdf_extracted": 0,
+          "questions_with_answer": 0,
+          "questions_without_answer": 25
         }
       },
       {
         "layer": "L3_sampling",
         "passed": true,
         "errors": [],
-        "warnings": [],
-        "stats": {
-          "sampled": 3,
-          "matched": 3,
-          "issues": 0
-        }
+        "warnings": [
+          "無題目可抽樣"
+        ],
+        "stats": {}
       },
       {
         "layer": "L4_statistics",
         "passed": true,
         "errors": [],
         "warnings": [
-          "Bloom remember 佔 96%，分佈過於集中"
+          "無題目"
         ],
-        "stats": {
-          "avg_stem_length": 34.5,
-          "avg_option_length": 20.9,
-          "bloom_distribution": {
-            "remember": 24,
-            "apply": 1
-          }
-        }
+        "stats": {}
       }
     ],
     "model": "gemini-2.5-flash"
   },
-  "questions": [
-    {
-      "question_number": 1,
-      "content": "依我國民法第1173 條有關歸扣之規定,下列何種被繼承人生前將財產贈與某特定繼承人,無須將該贈與價額,於遺產分割時,由該繼承人之應繼分中扣除?",
-      "type": "single_choice",
-      "option_a": "因該特定繼承人結婚時之贈與",
-      "option_b": "因該特定繼承人重大災難生還時之贈與",
-      "option_c": "因該特定繼承人從家裡決定分居時之贈與",
-      "option_d": "因該特定繼承人決定經營事業時之贈與",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 2,
-      "content": "下列何種情況是非屬於近親禁止結婚之規範範圍?",
-      "type": "single_choice",
-      "option_a": "與離婚後無依無靠之前小姨子結婚",
-      "option_b": "與終止收養後之前養女結婚",
-      "option_c": "與自己兒子離婚後之前媳婦結婚",
-      "option_d": "與叔叔死亡後孤苦守寡之叔母結婚",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 3,
-      "content": "下列何者得為被繼承人親屬中之法定繼承人?",
-      "type": "single_choice",
-      "option_a": "被繼承人兄弟之配偶",
-      "option_b": "被繼承人父親之兄弟",
-      "option_c": "被繼承人母親之兄弟之配偶",
-      "option_d": "被繼承人所認領之非婚生子女",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 4,
-      "content": "下列敘述,何者錯誤?",
-      "type": "single_choice",
-      "option_a": "使用借貸契約必須是無償的契約",
-      "option_b": "借用人得主張買賣不破使用借貸之抗辯",
-      "option_c": "借用物為動物時,飼養費原則上應由借用人承擔",
-      "option_d": "借用人對於借用物原則上並無轉租收益之權限",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 5,
-      "content": "依現行民法之規定,下列何者非為不動產登記前,即能取得不動產之所有權?",
-      "type": "single_choice",
-      "option_a": "不動產所有權因繼承而取得",
-      "option_b": "不動產所有權之時效取得",
-      "option_c": "不動產所有權因徵收而取得",
-      "option_d": "不動產所有權因強制執行而取得",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 6,
-      "content": "下列何種情形,債務人之原有債務不會發生消滅之效果?",
-      "type": "single_choice",
-      "option_a": "債權人受領債務人以代物清償方式清償原有之債務",
-      "option_b": "債務人對債權人已屆清償期之債權行使抵銷權,彼此間在抵銷數額之債權債務",
-      "option_c": "債權與其債務發生混同之情形",
-      "option_d": "債務人以間接給付之方式清償原有之債務",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 7,
-      "content": "在無因管理之規定中,若管理人管理事務時,利於本人,且不違反本人明示或可得推知之意思者,管理人不得向本人主張下列那種請求權?",
-      "type": "single_choice",
-      "option_a": "管理人管理本人事務之有益費用支出償還請求權",
-      "option_b": "清償管理人因管理事務所負債務之請求權",
-      "option_c": "管理人因管理事務所受損害之賠償請求權",
-      "option_d": "管理人管理事務之報酬請求權",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 8,
-      "content": "有關現行民法代理制度之介紹,下列何者錯誤?",
-      "type": "single_choice",
-      "option_a": "未經本人事前同意之自己代理,對於本人而言,係無效之代理行為",
-      "option_b": "民法第169 條表見代理效力之發生,須無本人之授予代理權為其要件",
-      "option_c": "間接代理人之代理行為不會對本人直接發生效力",
-      "option_d": "代理人為代理行為時,被相對人詐欺,本人得自行撤銷該代理行為",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 9,
-      "content": "對於民法上有關法人規定之說明,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "財團法人具有自律法人之性質",
-      "option_b": "社員資格須經社團之董事會特別決議同意,且有正當理由時,方能開除之",
-      "option_c": "財團法人之設立,得以遺囑為之",
-      "option_d": "社團法人以社團董事會為其最高意思機關",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 10,
-      "content": "依現行民法有關住所之規定,下列何者錯誤?",
-      "type": "single_choice",
-      "option_a": "夫妻於雙方共同協議前,推定以共同戶籍地為其法定之住所",
-      "option_b": "意定住所之設定須具備久住之意思及居住之事實",
-      "option_c": "因特定行為選定居所,關於其行為,不得視為住所",
-      "option_d": "16 歲之年輕人,僅能以其父母之住所為法定住所",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 11,
-      "content": "關於民法第74條暴利行為之規定,下列敘述何者正確?",
-      "type": "single_choice",
-      "option_a": "當事人無論於財產給付前或給付後,均得聲請撤銷該暴利行為",
-      "option_b": "撤銷權自該法律行為成立時起一年內不行使,罹於消滅時效而消滅",
-      "option_c": "行使暴利行為之撤銷權時,應以意思表示向相對人為之",
-      "option_d": "暴利行為自始當然無效",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 12,
-      "content": "下列何者非法律明文規定屬於連帶債務之性質?",
-      "type": "single_choice",
-      "option_a": "合夥財產不足清償合夥債務時,各合夥人對於該不足額之債務",
-      "option_b": "數人共同不法侵害他人權利所生之損害賠償債務",
-      "option_c": "共同繼承人對於被繼承人,於繼承所得遺產限度內之遺產債務",
-      "option_d": "共有人對於他共有人因分割而得之物,所負之擔保責任債務",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 13,
-      "content": "下列何者非屬贈與人或其繼承人,得主張撤銷贈與契約之原因?",
-      "type": "single_choice",
-      "option_a": "附有負擔之贈與,贈與人已為給付而受贈人因過失不履行其負擔者",
-      "option_b": "受贈人對於贈與人有扶養義務而不履行義務者",
-      "option_c": "受贈人因故意不法行為致贈與人死亡者",
-      "option_d": "定期給付之贈與,而受贈人已死亡者",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 14,
-      "content": "關於共有不動產分管契約之敘述,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "分管契約應以共有人半數以上及其應有部分合計過半數,或應有部分合計逾三分之二之同意訂定之",
-      "option_b": "分管契約訂定後,若因情事變更難以繼續時,法院得因任何共有人之聲請,以裁定變更之",
-      "option_c": "共有人對於分管契約無法達成協議時,得訴請法院裁判定分管方式",
-      "option_d": "分管契約訂定後,對於應有部分之受讓人於受讓時知悉其情事者,亦具有效力",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 15,
-      "content": "甲與乙結婚,生有三個女兒丙、丁、戊。丙因未婚生有二子庚及辛,曾與其母乙發生重大爭吵及言語侮辱情事,而遭甲表示剝奪其繼承權。丁則於甲生前即已向甲表示,當甲百年後將拋棄繼承權。設甲死亡時留有遺產現金 600 萬元,並未立有遺囑。問:甲之遺產依法應如何分配?",
-      "type": "single_choice",
-      "option_a": "乙、丙、丁、戊各150萬元",
-      "option_b": "乙、戊各200萬元,庚、辛各100 萬元",
-      "option_c": "乙、丁、戊各150萬元,庚、辛各75 萬元",
-      "option_d": "乙、戊各300萬元",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "apply",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 16,
-      "content": "關於限定繼承之敘述,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "限定繼承係指繼承人自繼承開始時,僅承受被繼承人財產上之權利,而不繼承其債務",
-      "option_b": "繼承人縱未依法開具遺產清冊陳報法院,並不當然喪失限定繼承之利益",
-      "option_c": "繼承人隱匿被繼承人之遺產而情節重大者,仍可主張限定繼承之利益",
-      "option_d": "繼承人應先對受遺贈人交付遺贈,其次償還優先權之債務,再清償普通債務",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 17,
-      "content": "關於夫妻法定財產制之規定,下列敘述何者正確?",
-      "type": "single_choice",
-      "option_a": "夫或妻之財產分為婚前財產與婚後財產,婚前財產由夫妻各自所有,婚後財產則由夫妻共有",
-      "option_b": "夫或妻於婚姻關係存續中就其婚後財產所為之無償行為,應將該財產追加計算,視為現存之婚後財產",
-      "option_c": "夫或妻各自管理、使用、收益及處分其婚前及婚後財產,並各自對其債務負清償之責",
-      "option_d": "剩餘財產差額分配請求權屬一身專屬性之權利,請求權人自法定財產制關係消滅時起,二年間不行使而消滅",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 18,
-      "content": "甲將其A地設定地上權予乙,乙於A土地上興建B屋一棟。其後甲為貸款擔保而將其A地設定抵押權予丙,乙亦因其貸款擔保而將B屋設定抵押權予丁。下列敘述何者正確?",
-      "type": "single_choice",
-      "option_a": "若丁實行抵押權拍賣B屋時,A地所有權應併付拍賣之",
-      "option_b": "若丁實行抵押權拍賣B屋時,地上權應併付拍賣之",
-      "option_c": "若丙實行抵押權拍賣A地所有權時,B屋應併付拍賣之",
-      "option_d": "若丙實行抵押權拍賣A地所有權時,地上權應併付拍賣之",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 19,
-      "content": "甲無權占有乙之土地種植果樹,其果實歸屬於何人?",
-      "type": "single_choice",
-      "option_a": "果實在與果樹分離前或分離後,均屬於甲所有",
-      "option_b": "果實在與果樹分離前或分離後,均屬於乙所有",
-      "option_c": "果實在與果樹分離前屬於甲所有,分離後屬於乙所有",
-      "option_d": "果實在與果樹分離前屬於乙所有,分離後屬於甲所有",
-      "correct_answer": "B",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 20,
-      "content": "特定物買賣,若因物有瑕疵而出賣人依法應負物之瑕疵擔保責任時,下列何者非買受人依法所得主張之權利?",
-      "type": "single_choice",
-      "option_a": "解除買賣契約",
-      "option_b": "請求減少買賣價金",
-      "option_c": "請求另行交付無瑕疵之物",
-      "option_d": "故意不告知瑕疵時,請求損害賠償",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 21,
-      "content": "關於租賃法律關係之敘述,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "期限逾一年之不動產租賃契約,應以字據訂立之,否則契約無效",
-      "option_b": "定有期限之不動產租賃,因其價值之昇降,當事人得聲請法院增減其租金",
-      "option_c": "不動產之出租人就租金債權,對於承租人之物置於該不動產者,有法定質權",
-      "option_d": "租用基地建築房屋者,承租人於契約成立後,得請求出租人為地上權之登記",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 22,
-      "content": "二人互負債務而其給付種類相同,並均屆清償期者,得以其債務與他方之債務互為下列何項主張,以消滅其債務?",
-      "type": "single_choice",
-      "option_a": "抵銷",
-      "option_b": "抵充",
-      "option_c": "免除",
-      "option_d": "混同",
-      "correct_answer": "A",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 23,
-      "content": "滿17歲且未受監護或輔助宣告之甲男,其所為之下列何種行為,依法須得法定代理人之同意始為有效?",
-      "type": "single_choice",
-      "option_a": "訂立遺囑為遺贈之行為",
-      "option_b": "純獲法律上利益之行為",
-      "option_c": "就他人之物所為之無權處分行為",
-      "option_d": "授予他人代理權之行為",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 24,
-      "content": "關於財團法人之敘述,下列何者正確?",
-      "type": "single_choice",
-      "option_a": "財團法人得為公益或營利之目的而設立",
-      "option_b": "財團法人於設立登記前,應得主管機關之許可",
-      "option_c": "財團法人之最高意思機關為總會,且為必設之機關",
-      "option_d": "財團法人若以營利為目的設立,其取得法人資格,依特別法之規定",
-      "correct_answer": "D",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    },
-    {
-      "question_number": 25,
-      "content": "下列何者屬於當然無效之法律行為?",
-      "type": "single_choice",
-      "option_a": "單獨虛偽意思表示而該情形為相對人所明知者",
-      "option_b": "詐欺之意思表示係由第三人所為,而相對人明知其事實或可得而知者",
-      "option_c": "無權利人就權利標的物為處分後,取得其權利者",
-      "option_d": "限制行為能力人用詐術使人信其為有行為能力人,所為之法律行為",
-      "correct_answer": "C",
-      "explanation": "",
-      "bloom_category": "remember",
-      "answer_source": "answer_pdf"
-    }
-  ]
+  "questions": []
 }
