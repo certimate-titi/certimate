@@ -1,0 +1,368 @@
+{
+  "import_meta": {
+    "source_pdf": "112_broker_regulations_q.pdf",
+    "total_questions": 25,
+    "with_answers": 25,
+    "bloom_distribution": {
+      "analyze": 5,
+      "evaluate": 2,
+      "remember": 16,
+      "apply": 2
+    },
+    "quality_flag": "ok",
+    "validations": [
+      {
+        "layer": "L1_structure",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "question_count": 25,
+          "incomplete_options": 0,
+          "no_answer": 0,
+          "short_stem": 0,
+          "answer_distribution": {
+            "C": 8,
+            "A": 4,
+            "B": 8,
+            "D": 5
+          },
+          "answer_rate": 1.0,
+          "number_range": "1-25",
+          "missing_numbers": 0
+        }
+      },
+      {
+        "layer": "L3_sampling",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "sampled": 3,
+          "matched": 3,
+          "issues": 0
+        }
+      },
+      {
+        "layer": "L4_statistics",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "avg_stem_length": 47.4,
+          "avg_option_length": 10.5,
+          "bloom_distribution": {
+            "analyze": 5,
+            "evaluate": 2,
+            "remember": 16,
+            "apply": 2
+          }
+        }
+      }
+    ],
+    "elapsed_seconds": 25.8,
+    "model": "gemini-2.5-flash"
+  },
+  "questions": [
+    {
+      "question_number": 1,
+      "content": "不動產售屋廣告中「面對公園第一排」,對不動產之影響,是屬於不動產估價影響因素中之何種因素?",
+      "type": "single_choice",
+      "option_a": "一般因素",
+      "option_b": "市場因素",
+      "option_c": "區域因素",
+      "option_d": "個別因素",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 2,
+      "content": "不動產估價師受託評估總統府價值,此屬於何種價格種類?",
+      "type": "single_choice",
+      "option_a": "申報價格",
+      "option_b": "特殊價格",
+      "option_c": "特定價格",
+      "option_d": "限定價格",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "evaluate"
+    },
+    {
+      "question_number": 3,
+      "content": "各直轄市、縣(市)國土計畫於110年4月30日公告實施,此為影響不動產價格之何種因素?",
+      "type": "single_choice",
+      "option_a": "一般因素",
+      "option_b": "市場因素",
+      "option_c": "區域因素",
+      "option_d": "個別因素",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 4,
+      "content": "收益性不動產價值是由現在至將來所能帶給權利人之利潤總計,估價師求取將來的收益據以評估不動產價值,應重視何種不動產估價原則?",
+      "type": "single_choice",
+      "option_a": "期日原則",
+      "option_b": "外部性原則",
+      "option_c": "預測原則",
+      "option_d": "內部性原則",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "evaluate"
+    },
+    {
+      "question_number": 5,
+      "content": "老舊公寓因加裝電梯設備,價格也因此提升,此為何種不動產原則?",
+      "type": "single_choice",
+      "option_a": "收益分配原則",
+      "option_b": "貢獻原則",
+      "option_c": "均衡原則",
+      "option_d": "供需原則",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 6,
+      "content": "依不動產估價技術規則規定,比較標的為父親賣給兒子之交易,應進行何種調整?",
+      "type": "single_choice",
+      "option_a": "情況調整",
+      "option_b": "價格日期調整",
+      "option_c": "區域因素調整",
+      "option_d": "個人因素調整",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 7,
+      "content": "下列之建物殘餘價格率,何者符合不動產估價技術規則之規定?",
+      "type": "single_choice",
+      "option_a": "20%",
+      "option_b": "18%",
+      "option_c": "12%",
+      "option_d": "8%",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 8,
+      "content": "有一不動產平均每年每坪之淨收益為3,000元,若收益資本化率為5%,該不動產每坪之收益價格為:",
+      "type": "single_choice",
+      "option_a": "8 萬元",
+      "option_b": "7萬元",
+      "option_c": "6萬元",
+      "option_d": "5萬元",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 9,
+      "content": "下列何者不是收益法推算勘估標的總費用之項目?",
+      "type": "single_choice",
+      "option_a": "地價稅",
+      "option_b": "房屋稅",
+      "option_c": "土地增值稅",
+      "option_d": "維修費",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 10,
+      "content": "有一幢公寓每坪平均售價為60萬元,1樓每坪售價為75萬元,4樓每坪售價為50萬元,建物價格占不動產價格之40%,若4樓之樓層別效用比為100%,則1樓之樓層別效用比為何?",
+      "type": "single_choice",
+      "option_a": "175%",
+      "option_b": "150%",
+      "option_c": "120%",
+      "option_d": "102%",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "apply"
+    },
+    {
+      "question_number": 11,
+      "content": "目前銀行之一年期定存利率為1.57%,活存利率為0.58%,短期放款利率為7.11%,下列之敘述何者正確?",
+      "type": "single_choice",
+      "option_a": "資金中自有資金之計息利率為7.11%",
+      "option_b": "資金中預售收入之計息利率為0.58%",
+      "option_c": "資金中自有資金之計息利率為1.52%",
+      "option_d": "資金中借款之計息利率為1.57%",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 12,
+      "content": "就勘估標的所需要各種建築材料及人工之數量,逐一乘以價格日期當時該建築材料之單價及人工工資,並加計管理費、稅捐、資本利息及利潤,以求取勘估標的營造施工費之方法為何?",
+      "type": "single_choice",
+      "option_a": "間接法",
+      "option_b": "淨計法",
+      "option_c": "工程造價比較法",
+      "option_d": "單位面積比較法",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 13,
+      "content": "不動產租金估計,以估計勘估標的之何種租金為原則?",
+      "type": "single_choice",
+      "option_a": "市場租金",
+      "option_b": "差額租金",
+      "option_c": "實質租金",
+      "option_d": "經濟租金",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 14,
+      "content": "決定收益資本化率之方法中,選擇數個與勘估標的相同或相似之比較標的,以其淨收益除以價格後,以所得之商數加以比較決定之方法為何?",
+      "type": "single_choice",
+      "option_a": "風險溢酬法",
+      "option_b": "市場萃取法",
+      "option_c": "債務保障比率法",
+      "option_d": "折現現金流量分析法",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 15,
+      "content": "依不動產估價技術規則之規定,有關特殊宗地估價之敘述,下列何者正確?",
+      "type": "single_choice",
+      "option_a": "高爾夫球場之估價,以比較法估價為原則",
+      "option_b": "溫泉地之估價,以比較法估價為原則",
+      "option_c": "鹽田之估價,以比較法估價為原則",
+      "option_d": "林地之估價,以比較法估價為原則",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 16,
+      "content": "有關計量模型分析法之敘述,下列何者錯誤?",
+      "type": "single_choice",
+      "option_a": "計量模型分析法截距項以外其他各主要影響價格因素之係數估計值同時為零之顯著機率不得大於百分之五",
+      "option_b": "計量模型分析法只能用以推算各主要影響價格因素之調整率",
+      "option_c": "計量模型分析法可求出各主要影響價格因素與比較標的價格二者之關係式",
+      "option_d": "計量模型分析採迴歸分析者,其調整後判定係數不得低於零點七",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 17,
+      "content": "有關不動產租金估計之敘述,下列何者正確?",
+      "type": "single_choice",
+      "option_a": "不動產租金估計,以估計勘估標的之承租人每期支付予出租人之租金,加計押金或保證金、權利金及其他相關運用收益之總數為原則",
+      "option_b": "新訂租約之租金估計得以勘估標的預估契約租金之淨收益,估計租金未來變動趨勢調整後,再加計必要費用",
+      "option_c": "續訂租約之租金估計得以勘估標的價格乘以租金收益率,以估計淨收益,再加計必要費用",
+      "option_d": "不動產之租金估計不應考慮使用目的",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 18,
+      "content": "當債務保障比率要求為1.5倍,貸款常數為0.1,不動產價格為新臺幣60億元,自有資金為新臺幣15億元,不足資金則跟銀行貸款。請問在前述情況下收益資本化率(折現率)為何?",
+      "type": "single_choice",
+      "option_a": "15%",
+      "option_b": "11.25%",
+      "option_c": "5%",
+      "option_d": "3.75%",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 19,
+      "content": "在宗地估價中,公共設施用地及公共設施保留地之估價,以下列那一種方法估價為原則?",
+      "type": "single_choice",
+      "option_a": "比較法",
+      "option_b": "收益法",
+      "option_c": "成本法",
+      "option_d": "土地開發分析法",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 20,
+      "content": "下列何者不屬於土地建築開發之間接成本項目?",
+      "type": "single_choice",
+      "option_a": "建築開發之施工人員施工費用",
+      "option_b": "建築開發之規劃設計費",
+      "option_c": "建築開發之管理費",
+      "option_d": "建築開發之銷售費",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 21,
+      "content": "有關房地成本價格之計算公式,下列何者正確?",
+      "type": "single_choice",
+      "option_a": "房地成本價格=土地總成本+建物成本價格",
+      "option_b": "房地成本價格=土地總成本+建物總成本",
+      "option_c": "房地成本價格=土地價格+建物成本價格-建物累積折舊額",
+      "option_d": "房地成本價格=土地價格+建物成本價格+建物累積折舊額",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 22,
+      "content": "下列那一種方法不屬於計算收益資本化率或折現率之方法?",
+      "type": "single_choice",
+      "option_a": "加權平均資金成本法",
+      "option_b": "有效總收入乘數法",
+      "option_c": "折現現金流量分析法",
+      "option_d": "風險溢酬法",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "apply"
+    },
+    {
+      "question_number": 23,
+      "content": "比較法估價試算價格之調整運算過程中,區域因素調整、個別因素調整或區域因素及個別因素內之任一單獨項目之價格調整率大於(甲),或情況、價格日期、區域因素及個別因素調整總調整率大於(乙)時,判定該比較標的與勘估標的差異過大,應排除該比較標的之適用。請問(甲)與(乙)各為多少?",
+      "type": "single_choice",
+      "option_a": "(甲)為百分之十五,(乙)為百分之十五",
+      "option_b": "(甲)為百分之十五,(乙)為百分之三十",
+      "option_c": "(甲)為百分之三十,(乙)為百分之十五",
+      "option_d": "(甲)為百分之三十,(乙)為百分之三十",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 24,
+      "content": "如果一開發案開發後預期總銷售金額為新臺幣10億元,適當之利潤率為10%,開發所需之直接成本為新臺幣6億元,開發所需之間接成本為新臺幣2億元,開發所需總成本之資本利息綜合利率為5%。請問下列何者最接近此一開發案之土地開發分析價格?",
+      "type": "single_choice",
+      "option_a": "新臺幣2億元",
+      "option_b": "新臺幣1.5 億元",
+      "option_c": "新臺幣 1.091 億元",
+      "option_d": "新臺幣 0.658 億元",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 25,
+      "content": "有關一宗土地內有數種不同法定用途時之估價敘述,下列何者錯誤?",
+      "type": "single_choice",
+      "option_a": "估價前應先考量其最有效使用再決定估價方式",
+      "option_b": "在考量宗地狀況後可以視不同法定用途採分別估價",
+      "option_c": "估價前應先考量各種用途之相關性及分割之難易度再決定估價方式",
+      "option_d": "估價時無須考量是否有數種不同法定用途,只需依其主要用途估價",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember"
+    }
+  ]
+}

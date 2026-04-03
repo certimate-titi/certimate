@@ -1,0 +1,41 @@
+{
+  "import_meta": {
+    "source_pdf": "108_bda_mid_practical.pdf",
+    "total_questions": 0,
+    "with_answers": 0,
+    "bloom_distribution": {},
+    "quality_flag": "review",
+    "validations": [
+      {
+        "layer": "L1_structure",
+        "passed": false,
+        "errors": [
+          "無任何題目"
+        ],
+        "warnings": [],
+        "stats": {}
+      },
+      {
+        "layer": "L3_sampling",
+        "passed": true,
+        "errors": [],
+        "warnings": [
+          "無題目可抽樣"
+        ],
+        "stats": {}
+      },
+      {
+        "layer": "L4_statistics",
+        "passed": true,
+        "errors": [],
+        "warnings": [
+          "無題目"
+        ],
+        "stats": {}
+      }
+    ],
+    "elapsed_seconds": 255.3,
+    "model": "gemini-2.5-flash"
+  },
+  "questions": []
+}

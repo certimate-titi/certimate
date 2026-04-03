@@ -1,0 +1,415 @@
+{
+  "import_meta": {
+    "source_pdf": "107_broker_regulations_q.pdf",
+    "content_type": "exam",
+    "total_questions_parsed": 25,
+    "valid_questions": 25,
+    "excluded_no_answer": 0,
+    "bloom_distribution": {
+      "remember": 19,
+      "apply": 3,
+      "understand": 1,
+      "analyze": 2
+    },
+    "quality_flag": "ok",
+    "validations": [
+      {
+        "layer": "L1_structure",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "question_count": 25,
+          "expected_count": 0,
+          "incomplete_options": 0,
+          "no_answer": 0,
+          "short_stem": 0,
+          "answer_distribution": {
+            "D": 7,
+            "B": 8,
+            "C": 6,
+            "A": 4
+          },
+          "answer_rate": 1.0,
+          "number_range": "1-25",
+          "missing_numbers": 0
+        }
+      },
+      {
+        "layer": "L2_answer_cross",
+        "passed": true,
+        "errors": [],
+        "warnings": [
+          "LLM 幻覺答案與答案卷一致率僅 0%（確認答案已改用答案卷來源）"
+        ],
+        "stats": {
+          "total_questions": 25,
+          "answer_pdf_extracted": 25,
+          "questions_with_answer": 25,
+          "questions_without_answer": 0,
+          "answer_coverage": "100.0%",
+          "llm_vs_answer_pdf": {
+            "compared": 25,
+            "match_rate": "0.0%",
+            "note": "參考值：LLM 幻覺答案 vs 答案卷一致性（不影響 PASS/FAIL）"
+          }
+        }
+      },
+      {
+        "layer": "L3_sampling",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "sampled": 3,
+          "matched": 3,
+          "issues": 0
+        }
+      },
+      {
+        "layer": "L4_statistics",
+        "passed": true,
+        "errors": [],
+        "warnings": [],
+        "stats": {
+          "avg_stem_length": 40.6,
+          "avg_option_length": 15.9,
+          "bloom_distribution": {
+            "remember": 19,
+            "apply": 3,
+            "understand": 1,
+            "analyze": 2
+          }
+        }
+      }
+    ],
+    "model": "gemini-2.5-flash"
+  },
+  "questions": [
+    {
+      "question_number": 1,
+      "content": "關於土地權利變更登記,下列何者正確?",
+      "type": "single_choice",
+      "option_a": "其係繼承登記者,應由全體繼承人聲請之",
+      "option_b": "其係繼承登記者,依法應自繼承開始之日起二個月內為之",
+      "option_c": "聲請逾期者,每逾一個月得處應納登記費額二倍之罰鍰",
+      "option_d": "罰鍰最高不得超過應納登記費額二十倍",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 2,
+      "content": "下列土地,何者非屬土地法規定不得為私有之土地?",
+      "type": "single_choice",
+      "option_a": "礦泉地",
+      "option_b": "瀑布地",
+      "option_c": "國家公園土地",
+      "option_d": "名勝古蹟",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 3,
+      "content": "下列何種登記,應繳納登記費?",
+      "type": "single_choice",
+      "option_a": "土地權利信託登記",
+      "option_b": "土地權利塗銷登記",
+      "option_c": "土地標示變更登記",
+      "option_d": "因土地重劃之變更登記",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "apply",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 4,
+      "content": "土地法第34條之1第1項有關以多數決處分共有土地之規定,下列處分方式,何者不適用該規定?",
+      "type": "single_choice",
+      "option_a": "設定農育權",
+      "option_b": "設定不動產役權",
+      "option_c": "設定典權",
+      "option_d": "辦理共有物分割",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 5,
+      "content": "重新實施地籍測量,遇有土地所有權人因設立界標或到場指界發生界址爭議時,地政機關應如何處理?",
+      "type": "single_choice",
+      "option_a": "逕行參照舊地籍圖施測",
+      "option_b": "請當事人逕行向法院提起確認界址之訴,俟判決確定後再行辦理",
+      "option_c": "逕行依地方習慣施測",
+      "option_d": "準用土地法第59條第2項規定之調處程序處理之",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "apply",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 6,
+      "content": "逾期未辦繼承登記之土地,經依土地法第73條之1規定程序列冊管理期滿,移請國有財產署標售五次不成,而登記為國有者,自登記完畢之日起多少年內,原權利人得檢附證明文件按其法定應繼分請求國有財產署發給價金?",
+      "type": "single_choice",
+      "option_a": "10年",
+      "option_b": "12年",
+      "option_c": "15年",
+      "option_d": "20年",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 7,
+      "content": "預告登記,對於因下列何種事由而為之新登記,具有排除之效力?",
+      "type": "single_choice",
+      "option_a": "土地交換",
+      "option_b": "徵收",
+      "option_c": "強制執行",
+      "option_d": "法院判決",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 8,
+      "content": "為保護基地承租人,依土地法規定,租用基地建築房屋,應由出租人與承租人會同聲請該管直轄市或縣(市)地政機關為何種權利之登記?",
+      "type": "single_choice",
+      "option_a": "租賃權",
+      "option_b": "地上權",
+      "option_c": "典權",
+      "option_d": "不動產役權",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 9,
+      "content": "依土地法規定,關於租用建築房屋之基地,下列何者,非屬出租人得收回之情形?",
+      "type": "single_choice",
+      "option_a": "出租人收回自行建築時",
+      "option_b": "契約年限屆滿時",
+      "option_c": "承租人以基地供違反法令之使用時",
+      "option_d": "承租人轉租基地於他人時",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 10,
+      "content": "依平均地權條例規定,直轄市或縣(市)政府對於尚未建築之超額私有建築用地之處理,下列敘述,何者正確?",
+      "type": "single_choice",
+      "option_a": "應通知土地所有權人於三年內出售",
+      "option_b": "應通知土地所有權人於三年內建築使用",
+      "option_c": "逾期未出售或未建築使用者,得予強制拍賣",
+      "option_d": "逾期未出售或未建築使用者,得予照價收買",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 11,
+      "content": "耕地以外之出租土地,因市地重劃而不能達到原租賃之目的者,承租人得終止租約,並得向出租人請求如何之補償?",
+      "type": "single_choice",
+      "option_a": "按重劃計畫書公告當期公告土地現值扣除預計土地增值稅後餘額之三分之一",
+      "option_b": "按重劃計畫書公告當期公告土地現值之三分之一",
+      "option_c": "相當六個月租金",
+      "option_d": "相當一年租金",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "understand",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 12,
+      "content": "依土地徵收條例規定,關於特定農業區農牧用地之徵收,下列何者錯誤?",
+      "type": "single_choice",
+      "option_a": "除零星夾雜難以避免者外,不得徵收。但國防所必須或經行政院核定之重大建設所需者,不在此限",
+      "option_b": "除零星夾雜難以避免者外,不得徵收。但交通所必須或經行政院核定之重大建設所需者,不在此限",
+      "option_c": "特定農業區經行政院核定為重大建設須辦理徵收者,若有爭議,應依行政程序法舉行聽證",
+      "option_d": "特定農業區經行政院核定為重大建設須辦理徵收者,若有爭議,應依行政程序法舉行公聽會",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 13,
+      "content": "依土地徵收條例有關徵用之規定,下列敘述,何者正確?",
+      "type": "single_choice",
+      "option_a": "國家因興辦繼續性之公共建設工程,得徵用私有土地或土地改良物",
+      "option_b": "徵用期間逾六年,或二次以上徵用,期間合計逾六年者,需用土地人應於申請徵用前,以書面通知",
+      "option_c": "土地或土地改良物所有權人於收到徵用通知書之日起三十日內,得請求需用土地人徵收所有權",
+      "option_d": "因徵用而請求徵收土地或土地改良物所有權者,必要時所有權人得申請收回其土地或土地改良物",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 14,
+      "content": "依土地徵收條例規定,徵收土地之殘餘部分面積過小或形勢不整,致不能為相當之使用者,所有權人得向何機關申請一併徵收?",
+      "type": "single_choice",
+      "option_a": "需用土地人",
+      "option_b": "該管直轄市或縣(市)主管機關",
+      "option_c": "內政部",
+      "option_d": "行政院",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 15,
+      "content": "實施區段徵收時,申請發給抵價地者,對其被徵收土地之權利義務,於何時終止?",
+      "type": "single_choice",
+      "option_a": "向直轄市或縣(市)主管機關申請發給抵價地時",
+      "option_b": "接到直轄市或縣(市)主管機關核定發給抵價地通知時",
+      "option_c": "直轄市或縣(市)主管機關將抵價地登記為申請人所有時",
+      "option_d": "直轄市或縣(市)主管機關將抵價地點交申請人接管時",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 16,
+      "content": "區域計畫法有關非都市土地許可開發之規定,下列敘述,何者錯誤?",
+      "type": "single_choice",
+      "option_a": "開發許可前,應先將申請開發案提報各該區域計畫委員會審議之",
+      "option_b": "申請開發許可,申請人應先取得開發地區內全部土地及建築物之所有權",
+      "option_c": "開發許可後,辦理分區或用地變更前,應將開發區內公共設施用地完成分割移轉登記為各該直轄市、縣(市)有或鄉、鎮(市)有,並繳交開發影響費",
+      "option_d": "直轄市、縣(市)政府受理開發申請案後,除情形特殊者外,應於六十日內報請各該區域計畫擬定機關審議",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 17,
+      "content": "依非都市土地使用管制規則規定,山坡地範圍內之土地,在未編定使用地類別前,適用林業用地之管制,下列何者不包含在內?",
+      "type": "single_choice",
+      "option_a": "森林區",
+      "option_b": "風景區",
+      "option_c": "國家公園區",
+      "option_d": "山坡地保育區",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 18,
+      "content": "下列土地他項權利,何者為土地法所創設?",
+      "type": "single_choice",
+      "option_a": "地上權",
+      "option_b": "農育權",
+      "option_c": "耕作權",
+      "option_d": "不動產役權",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 19,
+      "content": "下列土地關係人,何者非屬土地稅法第3條所定之地價稅納稅義務人?",
+      "type": "single_choice",
+      "option_a": "承領土地,為承領人",
+      "option_b": "承墾土地,為耕作權人",
+      "option_c": "權屬不明土地,為主管稅捐稽徵機關指定之土地使用人",
+      "option_d": "設有典權土地,為典權人",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "analyze",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 20,
+      "content": "土地為信託財產者,於信託關係存續中,以何人為地價稅或田賦之納稅義務人?",
+      "type": "single_choice",
+      "option_a": "委託人",
+      "option_b": "受託人",
+      "option_c": "受益人",
+      "option_d": "信託監察人",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "analyze",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 21,
+      "content": "配偶相互贈與之土地,得申請不課徵土地增值稅。但於再移轉第三人時,以該土地第一次贈與前之原規定地價或前次移轉現值為原地價,計算下列何種數值或數額,課徵土地增值稅?",
+      "type": "single_choice",
+      "option_a": "公告現值",
+      "option_b": "申報移轉現值",
+      "option_c": "現值數額",
+      "option_d": "漲價總數額",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "apply",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 22,
+      "content": "自用住宅用地得適用優惠稅率課徵地價稅,下列有關自用住宅用地要件之敘述,何者錯誤?",
+      "type": "single_choice",
+      "option_a": "須土地所有權人或其配偶、直系親屬於該地有居住事實並辦竣戶籍登記",
+      "option_b": "須為無出租或供營業使用之住宅用地",
+      "option_c": "土地面積,都市土地未超過三公畝部分,非都市土地未超過七公畝部分",
+      "option_d": "土地上之建築改良物屬土地所有權人或其配偶、直系親屬所有者為限",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 23,
+      "content": "買賣契稅之稅率,為其契價百分之六。所稱契價,以何者為準?",
+      "type": "single_choice",
+      "option_a": "以實際買賣價格為準",
+      "option_b": "以當地不動產評價委員會評定之標準價格為準",
+      "option_c": "以當地地價及標準地價評議委員會評定之標準價格為準",
+      "option_d": "以當地建築主管機關公告之房屋造價為準",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 24,
+      "content": "依房屋稅條例規定,私有房屋受重大災害時,有關房屋稅之減免,下列敘述何者正確?",
+      "type": "single_choice",
+      "option_a": "毀損面積佔整棟面積三成以上,不及五成之房屋,免徵房屋稅",
+      "option_b": "毀損面積佔整棟面積五成以上,必須修復始能使用之房屋,免徵房屋稅",
+      "option_c": "毀損面積佔整棟面積五成以上,其房屋稅減半徵收",
+      "option_d": "毀損面積佔整棟面積五成以上,必須修復始能使用之房屋,其房屋稅減半徵收",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    },
+    {
+      "question_number": 25,
+      "content": "依所得稅法規定,有關出售自住房屋,其房地交易所得稅之優惠,下列敘述,何者錯誤?",
+      "type": "single_choice",
+      "option_a": "免稅所得額,以按該法第14條之4第3項規定計算之餘額不超過四百萬元為限",
+      "option_b": "個人或其配偶、直系親屬辦竣戶籍登記、持有並居住於該房屋連續滿六年",
+      "option_c": "交易前六年內,無出租、供營業或執行業務使用",
+      "option_d": "個人與其配偶及未成年子女於交易前六年內未曾適用該法第4條之5第1項第1款規定",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": "remember",
+      "answer_source": "answer_pdf"
+    }
+  ]
+}
