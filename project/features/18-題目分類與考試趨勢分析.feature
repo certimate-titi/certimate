@@ -43,10 +43,10 @@ Feature: 題目分類與考試趨勢分析
 
   # ========== 智慧出題：依 Bloom 分佈出題 ==========
 
-  Rule: 後置（出題）- AI 生成考題時依照歷年 Bloom 分佈自動配比
+  Rule: 後置（出題）- 有考古題時自動套用其 Bloom 分佈；無考古題時使用預設配比
 
-    Example: 啟用「符合考試趨勢」模式時依 Bloom 分佈出 10 題
-      Given 學科 "信託業業務人員" 的歷年 Bloom 建議分佈為：
+    Example: 科目有考古題時，自動依考古題 Bloom 分佈出 10 題（無需手動啟用）
+      Given 學科 "信託業業務人員" 的歷年考古題 Bloom 統計為：
         | bloom_category | suggested_percentage |
         | remember       | 40                   |
         | understand     | 30                   |
@@ -54,13 +54,37 @@ Feature: 題目分類與考試趨勢分析
         | analyze        | 7                    |
         | evaluate       | 2                    |
         | create         | 1                    |
-      When 使用者 "pro@example.com" 提交測驗設定，啟用「考試趨勢模式」，題數為 10
-      Then 生成的 10 題中，各 Bloom 分類數量應符合建議分佈（誤差 ±1 題）
+      When 使用者 "pro@example.com" 提交測驗設定，選擇學科 "信託業業務人員"，題數為 10
+      Then 系統應自動偵測該科目有考古題 Bloom 統計
+      And 生成的 10 題中，各 Bloom 分類數量應符合考古題分佈（誤差 ±1 題）
       And exam 的 bloom_distribution 欄位應記錄實際分佈 JSON
+      And exam 的 bloom_source 應為 "historical"
 
-    Example: 未啟用趨勢模式時維持原有難易度分佈邏輯，不限 Bloom 類別
-      When 使用者 "pro@example.com" 提交測驗設定，未啟用考試趨勢模式，題數為 10
-      Then 生成的題目不受 Bloom 分佈限制
+    Example: 科目無考古題時，使用系統預設 Bloom 配比
+      Given 學科 "自創課程A" 無任何考古題資料
+      When 使用者 "pro@example.com" 提交測驗設定，選擇學科 "自創課程A"，題數為 10
+      Then 系統應套用預設 Bloom 配比：
+        | bloom_category | default_percentage |
+        | remember       | 20                 |
+        | understand     | 25                 |
+        | apply          | 25                 |
+        | analyze        | 15                 |
+        | evaluate       | 10                 |
+        | create         | 5                  |
+      And exam 的 bloom_source 應為 "default"
+
+    Example: 使用者可手動覆寫自動套用的 Bloom 配比
+      Given 學科 "信託業業務人員" 有考古題 Bloom 統計
+      When 使用者 "ultra@example.com" 提交測驗設定，選擇學科 "信託業業務人員"，題數為 10，並手動指定 Bloom 配比為：
+        | bloom_category | custom_percentage |
+        | remember       | 10                |
+        | understand     | 20                |
+        | apply          | 30                |
+        | analyze        | 20                |
+        | evaluate       | 15                |
+        | create         | 5                 |
+      Then 生成的 10 題應依手動指定的配比出題（誤差 ±1 題）
+      And exam 的 bloom_source 應為 "custom"
 
   # ========== 考試結果：Bloom 分析報告 ==========
 

@@ -120,6 +120,7 @@ Feature: 身分驗證
 
   Rule: 後置（狀態）- Google SSO 登入可自動啟用待驗證帳號
 
+    @manual
     Example: 待驗證用戶以相同 Email 透過 Google SSO 登入自動啟用帳號
       Given 使用者 "pending@example.com" 帳號狀態為 "待驗證"
       When 使用者透過 Google SSO 登入且 Email 為 "pending@example.com"
@@ -153,6 +154,7 @@ Feature: 身分驗證
 
   Rule: 後置（狀態）- 支援第三方 OAuth 登入 (Google SSO)
 
+    @manual
     Example: 首次以 Google 帳號登入時系統應自動建立新帳號
       When 使用者透過 Google SSO 登入且 Email 為 "new-google@example.com"
       Then 操作成功
@@ -160,6 +162,7 @@ Feature: 身分驗證
       And 使用者註冊方式應註記為 "Google SSO"
       And 回應應包含有效的 JWT 存取憑證
 
+    @manual
     Example: 已註冊過 Email 密碼的使用者，若與 Google SSO 綁定同一 Email，應成功登入並關聯身分
       Given 使用者 "alice@example.com" 原本為 Email/密碼註冊方式
       When 使用者透過 Google SSO 登入且 Email 為 "alice@example.com"

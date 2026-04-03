@@ -73,6 +73,74 @@ Feature: 測驗設定
       When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 100
       Then 操作成功
 
+  # ========== Bloom 配比自動偵測 ==========
+
+  Rule: 後置（配比）- 提交測驗設定時系統自動偵測科目是否有考古題，決定 Bloom 配比來源
+
+    Example: 科目有考古題時自動套用考古題 Bloom 配比
+      Given 學科 "信託業業務人員" 有以下考古題 Bloom 統計：
+        | bloom_category | percentage |
+        | remember       | 36         |
+        | understand     | 28         |
+        | apply          | 20         |
+        | analyze        | 10         |
+        | evaluate       | 4          |
+        | create         | 2          |
+      When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，難易度分配為 Easy:30% Medium:50% Hard:20%
+      Then 操作成功
+      And 系統應自動套用考古題 Bloom 配比作為出題依據
+      And 測驗任務的 bloom_source 應為 "historical"
+
+    Example: 科目無考古題時使用系統預設 Bloom 配比
+      When 使用者 "free@example.com" 提交測驗設定，選擇節點 1 和節點 2，題數為 10，難易度分配為 Easy:50% Medium:50% Hard:0%
+      Then 操作成功
+      And 系統應套用預設 Bloom 配比（remember:20/understand:25/apply:25/analyze:15/evaluate:10/create:5）
+      And 測驗任務的 bloom_source 應為 "default"
+
+  # ========== 考古題模擬考模式 ==========
+
+  Rule: 前置（模式）- 使用者可選擇「考古題模擬考」模式，100% 從考古題題庫出題
+
+    Example: 選擇考古題模擬考模式時 100% 從題庫抽取
+      Given 使用者 "pro@example.com" 有學習歷程於考科 "AI 應用規劃師"
+      And 考科 "AI 應用規劃師" 有 213 題考古題
+      When 使用者 "pro@example.com" 提交測驗設定：
+        | 欄位            | 值                                          |
+        | node_ids        | [人工智慧基礎概論, 生成式AI應用與規劃]          |
+        | question_count  | 20                                           |
+        | exam_mode       | historical_only                              |
+      Then 操作成功
+      And 測驗應包含 20 題
+      And 所有題目應來自考古題題庫（reliability 全部為 green）
+      And 不應呼叫 AI 生成服務
+
+    Example: 考古題模擬考模式下題庫不足時自動調整題數
+      Given 使用者 "pro@example.com" 有學習歷程於考科 "AI 應用規劃師"
+      And 考科 "AI 應用規劃師" 知識節點 "機器學習技術與應用" 僅有 5 題考古題
+      When 使用者 "pro@example.com" 提交測驗設定：
+        | 欄位            | 值                     |
+        | node_ids        | [機器學習技術與應用]     |
+        | question_count  | 50                     |
+        | exam_mode       | historical_only         |
+      Then 操作成功
+      And 回應應包含提示 "此範圍考古題僅 5 題，已自動調整"
+      And 測驗應包含 5 題
+
+  # ========== 考古題題庫作為測驗範圍 ==========
+
+  Rule: 前置（範圍）- 使用者無個人文件時，系統考古題題庫的知識節點應作為可選測驗範圍
+
+    Example: 使用者無上傳文件但科目有考古題時，可選擇考古題知識節點出題
+      Given 使用者 "pro@example.com" 有學習歷程於考科 "AI 應用規劃師"
+      And 使用者 "pro@example.com" 未上傳任何資源
+      And 考科 "AI 應用規劃師" 有系統考古題資源，包含以下知識節點：
+        | 節點名稱           | 可出題數 |
+        | 人工智慧基礎概論    | 44      |
+        | 生成式AI應用與規劃  | 94      |
+      When 使用者 "pro@example.com" 提交測驗設定，選擇知識節點 "人工智慧基礎概論"，題數為 20
+      Then 操作成功
+      And 測驗應包含 20 題考古題
+
   # ========== 後置條件 ==========
 
   # 詳細的多階段 AI Prompt 流程請參見 04a-AI考題生成服務.feature

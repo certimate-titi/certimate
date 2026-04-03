@@ -87,15 +87,38 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 1：考點分析 ==========
 
-  Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱
+  Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱，並注入考古題 Bloom 配比
 
-    Example: 考點分析階段產出包含比例的考綱
+    Example: 科目有考古題時，階段 1 Prompt 應注入考古題 Bloom 統計作為出題配比約束
+      Given 測驗任務的 bloom_source 為 "historical"，bloom_distribution 為：
+        | bloom_category | percentage |
+        | remember       | 36         |
+        | understand     | 28         |
+        | apply          | 20         |
+        | analyze        | 10         |
+        | evaluate       | 4          |
+        | create         | 2          |
       When 階段 1 Prompt 以節點 1 (EC2) 和節點 2 (S3) 的向量化內容為輸入
-      Then 階段 1 輸出應包含：
-        | 欄位            | 說明                     |
-        | exam_points     | 5-10 個核心考點列表       |
-        | point_ratio     | 各考點建議出題比例 (%)    |
-        | difficulty_map  | 各考點建議難度分布        |
+      Then 階段 1 Prompt 應包含指示：「請依照以下 Bloom 認知層次配比分配考點：remember:36%, understand:28%, apply:20%, analyze:10%, evaluate:4%, create:2%」
+      And 階段 1 輸出應包含：
+        | 欄位              | 說明                          |
+        | exam_points       | 5-10 個核心考點列表            |
+        | point_ratio       | 各考點建議出題比例 (%)         |
+        | difficulty_map    | 各考點建議難度分布             |
+        | bloom_allocation  | 各考點對應的 Bloom 分類與題數   |
+      And 所有 point_ratio 加總應等於 100%
+      And bloom_allocation 的各 Bloom 類別題數加總應符合 bloom_distribution（誤差 ±1 題）
+
+    Example: 科目無考古題時，階段 1 使用預設 Bloom 配比
+      Given 測驗任務的 bloom_source 為 "default"
+      When 階段 1 Prompt 以節點 1 (EC2) 和節點 2 (S3) 的向量化內容為輸入
+      Then 階段 1 Prompt 應包含預設配比指示：「Bloom 配比：remember:20%, understand:25%, apply:25%, analyze:15%, evaluate:10%, create:5%」
+      And 階段 1 輸出應包含：
+        | 欄位              | 說明                          |
+        | exam_points       | 5-10 個核心考點列表            |
+        | point_ratio       | 各考點建議出題比例 (%)         |
+        | difficulty_map    | 各考點建議難度分布             |
+        | bloom_allocation  | 各考點對應的 Bloom 分類與題數   |
       And 所有 point_ratio 加總應等於 100%
 
   # ========== 階段 2：考題生成 ==========
