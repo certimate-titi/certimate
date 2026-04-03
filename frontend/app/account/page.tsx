@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles } from 'lucide-react';
 import type { LearningStyle } from '@/types';
 import { useAuth } from '@/lib/auth-context';
-import { accountService, subscriptionService } from '@/lib/api/services';
+import { accountService, subscriptionService, subjectService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
 import type { GetUserUsageResponse, GetAchievementsResponse, GetBillingHistoryResponse } from '@/types';
 import AchievementGrid from '@/components/AchievementGrid';
@@ -32,7 +32,7 @@ export default function AccountPage() {
   const [notifPreExam, setNotifPreExam] = useState(true);
   const [notifWeekly, setNotifWeekly] = useState(true);
 
-  const [subjects, setSubjects] = useState<{ name: string; date: string; level: string; mode: string }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string; date: string; level: string; mode: string }[]>([]);
 
   // Profile form fields (synced from user on mount)
   const [profileName, setProfileName] = useState('');
@@ -62,6 +62,15 @@ export default function AccountPage() {
     accountService.getUsage().then(setUsage).catch(() => {});
     accountService.getAchievements().then(setAchievements).catch(() => {});
     accountService.getBillingHistory().then(setBilling).catch(() => {});
+    subjectService.getUserSubjects().then(res => {
+      setSubjects((res.subjects || []).map(s => ({
+        id: s.subjectId || s.id,
+        name: s.subjectName,
+        date: s.examDate || '',
+        level: s.selfAssessment || 'beginner',
+        mode: 'standard',
+      })));
+    }).catch(() => {});
   }, []);
 
   // Load notification preferences from localStorage
@@ -148,7 +157,10 @@ export default function AccountPage() {
     try {
       const subject = subjects.find(s => s.name === name);
       if (subject) {
-        await apiClient.delete(`/subjects/${encodeURIComponent(name)}`);
+        // Step 1: Request removal (returns confirmation message)
+        await apiClient.delete(`/subjects/${subject.id}`);
+        // Step 2: Confirm removal
+        await apiClient.post(`/subjects/${subject.id}/confirm-remove`, { confirmed: true });
       }
       setSubjects(prev => prev.filter(s => s.name !== name));
     } catch { alert('移除失敗，請稍後再試'); }
@@ -193,6 +205,7 @@ export default function AccountPage() {
         <div className="md:col-span-2 space-y-8">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
+            <>
             <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
               <h2 className="text-xl font-bold text-slate-900 mb-6">個人資料</h2>
 
@@ -353,6 +366,46 @@ export default function AccountPage() {
                 </div>
               </div>
             </section>
+
+            {/* Backup Subject Management */}
+            <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <BookOpen className="h-6 w-6 text-indigo-500" /> 備考科目管理
+              </h2>
+              <div className="space-y-3">
+                {subjects.map(subject => (
+                  <div key={subject.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                      <p className="font-medium text-slate-900">{subject.name}</p>
+                      <p className="text-xs text-slate-500">
+                        考試日期：{subject.date || '未設定'} · 自評程度：{subject.level} · 模式：{subject.mode}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditSubject(subject.name)}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-3 py-1 rounded-lg hover:bg-emerald-50 transition-colors inline-flex items-center gap-1"
+                      >
+                        <Pencil className="h-3 w-3" /> 編輯
+                      </button>
+                      <button
+                        onClick={() => handleRemoveSubject(subject.name)}
+                        className="text-xs text-rose-500 hover:text-rose-600 font-medium px-3 py-1 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
+                      >
+                        <Trash2 className="h-3 w-3" /> 移除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={handleAddSubject}
+                  className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-medium text-slate-500 hover:border-emerald-300 hover:text-emerald-600 transition-colors"
+                >
+                  + 新增備考科目
+                </button>
+              </div>
+            </section>
+            </>
           )}
 
           {/* Billing Tab */}
@@ -803,45 +856,6 @@ export default function AccountPage() {
                     <span className="block text-3xl font-extrabold text-slate-900">2</span>
                     <span className="text-xs text-slate-500 font-medium">凍結額度餘額</span>
                   </div>
-                </div>
-              </section>
-
-              {/* Backup Subject Management */}
-              <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                  <BookOpen className="h-6 w-6 text-indigo-500" /> 備考科目管理
-                </h2>
-                <div className="space-y-3">
-                  {subjects.map(subject => (
-                    <div key={subject.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <div>
-                        <p className="font-medium text-slate-900">{subject.name}</p>
-                        <p className="text-xs text-slate-500">
-                          考試日期：{subject.date} · 自評程度：{subject.level} · 模式：{subject.mode}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEditSubject(subject.name)}
-                          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-3 py-1 rounded-lg hover:bg-emerald-50 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Pencil className="h-3 w-3" /> 編輯
-                        </button>
-                        <button
-                          onClick={() => handleRemoveSubject(subject.name)}
-                          className="text-xs text-rose-500 hover:text-rose-600 font-medium px-3 py-1 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Trash2 className="h-3 w-3" /> 移除
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    onClick={handleAddSubject}
-                    className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-medium text-slate-500 hover:border-emerald-300 hover:text-emerald-600 transition-colors"
-                  >
-                    + 新增備考科目
-                  </button>
                 </div>
               </section>
 

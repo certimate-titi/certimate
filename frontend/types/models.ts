@@ -124,9 +124,11 @@ export interface KnowledgeNode {
 
 export interface ExamSetupConfig {
   selectedDocumentIds: string[];
+  selectedNodeIds?: string[];
   questionCount: 10 | 20 | 50 | 100;
   difficulty: 1 | 2 | 3; // 1=基礎, 2=綜合, 3=魔王
   questionTypes: QuestionType[];
+  examMode?: 'hybrid' | 'historical_only'; // hybrid=混合式(預設), historical_only=考古題模擬考
 }
 
 export interface DailyQuest {

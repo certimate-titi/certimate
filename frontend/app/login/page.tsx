@@ -38,9 +38,9 @@ export default function LoginPage() {
       // Try to extract detail from backend error
       try {
         const parsed = JSON.parse(message.replace(/^API Error \d+: /, ''));
-        setError(parsed.detail || '帳號或密碼錯誤，請重新輸入。');
+        setError(parsed.detail || '帳號或密碼錯誤');
       } catch {
-        setError('帳號或密碼錯誤，請重新輸入。');
+        setError('帳號或密碼錯誤');
       }
     } finally {
       setIsLoading(false);

@@ -184,7 +184,7 @@ export default function SignupPage() {
 
   const validateEmail = (value: string) => {
     if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      setEmailError('電子郵件格式不正確');
+      setEmailError('電子郵件格式無效');
     } else {
       setEmailError('');
     }
@@ -194,6 +194,10 @@ export default function SignupPage() {
     e.preventDefault();
     if (!termsChecked) {
       setTermsError('請閱讀並同意服務條款與隱私權政策');
+      return;
+    }
+    if (passwordStrength.level === 'weak' && password.length > 0) {
+      setError('密碼強度不足');
       return;
     }
     setTermsError('');

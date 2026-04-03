@@ -3,8 +3,15 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock } from 'lucide-react';
-import { documentService, examService, subjectService } from '@/lib/api/services';
+import { documentService, examService, subjectService, knowledgeService } from '@/lib/api/services';
+import { apiClient } from '@/lib/api/client';
 import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
+
+interface SystemNode {
+  id: string;
+  name: string;
+  availableQuestions: number;
+}
 import ExamLoadingOverlay from '@/components/ExamLoadingOverlay';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import { useAuth } from '@/lib/auth-context';
@@ -55,10 +62,15 @@ function ExamSetupPage() {
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
 
+  // System knowledge nodes (from historical exam bank)
+  const [systemNodes, setSystemNodes] = useState<SystemNode[]>([]);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+
   // Setup state
   const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState<typeof QUESTION_COUNTS[number]>(20);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
+  const [examMode, setExamMode] = useState<'hybrid' | 'historical_only'>('hybrid');
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(
     new Set(['MULTIPLE_CHOICE'])
   );
@@ -97,27 +109,54 @@ function ExamSetupPage() {
         d.status === 'COMPLETED' && d.subjectId === targetSubjectId
       );
       setDocuments(filteredDocs);
+
+      // If no user documents, load system knowledge nodes (historical exam bank)
+      if (filteredDocs.length === 0) {
+        try {
+          interface KnNode { id: string; name: string; depth: number; children?: KnNode[]; available_questions?: number }
+          const mapRes = await apiClient.get<{ nodes?: KnNode[] }>(
+            `/knowledge-map/subjects/${targetSubjectId}/nodes`
+          );
+          // API returns nested structure: root nodes with children[]
+          // Flatten to get depth=1 child nodes
+          const childNodes: SystemNode[] = [];
+          for (const root of (mapRes.nodes || [])) {
+            for (const child of (root.children || [])) {
+              childNodes.push({
+                id: child.id,
+                name: child.name,
+                availableQuestions: child.available_questions || 0,
+              });
+            }
+          }
+          setSystemNodes(childNodes);
+          if (childNodes.length > 0) {
+            setSelectedNodeIds(new Set(childNodes.map(n => n.id)));
+          }
+        } catch {
+          setSystemNodes([]);
+        }
+      } else {
+        setSystemNodes([]);
+        setSelectedNodeIds(new Set());
+      }
+
       setLoadingDocs(false);
 
       // Auto-select document if nodeId is provided (from knowledge map)
       if (preselectedNodeId && filteredDocs.length > 0) {
-        // If only one doc, auto-select it
         if (filteredDocs.length === 1) {
           setSelectedDocIds(new Set([filteredDocs[0].id]));
         } else {
-          // Try to find which doc the node belongs to via API
           try {
-            const { apiClient } = await import('@/lib/api/client');
             const nodeDetail = await apiClient.get<Record<string, unknown>>(`/knowledge-map/nodes/${preselectedNodeId}`);
             const resourceName = (nodeDetail as Record<string, Record<string, unknown>>)?.source_info?.node_name as string;
-            // Find matching doc by checking if any doc title matches
             const matchingDoc = filteredDocs.find(d =>
               resourceName && d.title.includes(resourceName.substring(0, 10))
             );
             if (matchingDoc) {
               setSelectedDocIds(new Set([matchingDoc.id]));
             } else {
-              // Default: select first doc
               setSelectedDocIds(new Set([filteredDocs[0].id]));
             }
           } catch {
@@ -148,6 +187,16 @@ function ExamSetupPage() {
     });
   };
 
+  const toggleNode = (nodeId: string) => {
+    setValidationError(null);
+    setSelectedNodeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId);
+      else next.add(nodeId);
+      return next;
+    });
+  };
+
   const toggleQuestionType = (qt: QuestionType) => {
     setQuestionTypes(prev => {
       const next = new Set(prev);
@@ -161,7 +210,8 @@ function ExamSetupPage() {
   };
 
   const handleGenerate = useCallback(async () => {
-    if (selectedDocIds.size === 0) {
+    const hasSelection = selectedDocIds.size > 0 || selectedNodeIds.size > 0;
+    if (!hasSelection) {
       setValidationError('請至少選擇一個知識範圍');
       return;
     }
@@ -172,9 +222,11 @@ function ExamSetupPage() {
       const result = await examService.create({
         config: {
           selectedDocumentIds: Array.from(selectedDocIds),
+          selectedNodeIds: Array.from(selectedNodeIds),
           questionCount,
           difficulty,
           questionTypes: Array.from(questionTypes),
+          examMode,
         },
       });
       const examId = result.exam?.id || result.exam_id || result.examId || null;
@@ -249,7 +301,7 @@ function ExamSetupPage() {
                   <div key={i} className="h-20 bg-slate-200 rounded-2xl animate-pulse" />
                 ))}
               </div>
-            ) : (
+            ) : documents.length > 0 ? (
               <div className="space-y-4">
                 {documents.map(doc => {
                   const isSelected = selectedDocIds.has(doc.id);
@@ -286,6 +338,47 @@ function ExamSetupPage() {
                   );
                 })}
               </div>
+            ) : systemNodes.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-500 mb-2">考古題題庫（系統內建）</p>
+                {systemNodes.map(node => {
+                  const isSelected = selectedNodeIds.has(node.id);
+                  return (
+                    <label
+                      key={node.id}
+                      className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-colors relative ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50'
+                          : 'border-slate-200 bg-white hover:border-emerald-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleNode(node.id)}
+                        className="mt-1 h-4 w-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1">
+                        <span className={`font-semibold block mb-1 ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`}>
+                          {node.name}
+                        </span>
+                        <span className={`text-xs flex items-center gap-1 ${isSelected ? 'text-emerald-700/80' : 'text-slate-500'}`}>
+                          <FileText className="h-3 w-3 text-emerald-500" />
+                          {node.availableQuestions} 題可用
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 absolute top-4 right-4" />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center text-slate-400 py-8">
+                <p className="text-sm">尚無可用的測驗範圍</p>
+                <p className="text-xs mt-1">上傳文件後即可生成考題</p>
+              </div>
             )}
           </div>
 
@@ -299,6 +392,33 @@ function ExamSetupPage() {
             <div className="space-y-8">
               {/* Question Count */}
               <div>
+                {/* 出題模式切換 */}
+                <label className="block text-sm font-medium text-slate-700 mb-3">出題模式</label>
+                <div className="grid grid-cols-2 gap-2 mb-6">
+                  <button
+                    onClick={() => setExamMode('hybrid')}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors border-2 ${
+                      examMode === 'hybrid'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 text-slate-600 hover:border-emerald-300'
+                    }`}
+                  >
+                    <span className="block font-bold">AI 混合模式</span>
+                    <span className="text-xs opacity-75">20% 考古 + 80% AI</span>
+                  </button>
+                  <button
+                    onClick={() => setExamMode('historical_only')}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors border-2 ${
+                      examMode === 'historical_only'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700'
+                        : 'border-slate-200 text-slate-600 hover:border-amber-300'
+                    }`}
+                  >
+                    <span className="block font-bold">考古題模擬考</span>
+                    <span className="text-xs opacity-75">100% 歷年真題</span>
+                  </button>
+                </div>
+
                 <label className="block text-sm font-medium text-slate-700 mb-3">題數選擇</label>
                 <div className="grid grid-cols-4 gap-2">
                   {QUESTION_COUNTS.map(count => {

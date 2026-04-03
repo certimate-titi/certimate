@@ -7,3 +7,8 @@ coverage/
 !.env.example
 out/
 *.tsbuildinfo
+
+# Playwright
+.features-gen/
+playwright-report/
+test-results/

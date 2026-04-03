@@ -72,7 +72,7 @@ function VerifyEmailContent() {
               <XCircle className="h-8 w-8 text-rose-500" />
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-2">驗證失敗</h2>
-            <p className="text-sm text-slate-600 mb-8">{message}</p>
+            <p className="text-sm text-red-500 mb-8">{message}</p>
             <Link
               href="/signup"
               className="inline-flex items-center justify-center w-full py-3 px-4 border border-slate-300 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"

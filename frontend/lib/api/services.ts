@@ -140,9 +140,11 @@ export const examService = {
     // Step 1: Create exam config
     const configRes = await apiClient.post<{ exam_id: string }>('/exams/config', {
       document_ids: req.config?.selectedDocumentIds || [],
+      node_ids: req.config?.selectedNodeIds || [],
       question_count: req.config?.questionCount || 10,
       difficulty: req.config?.difficulty || 2,
       question_types: req.config?.questionTypes,
+      exam_mode: req.config?.examMode || 'hybrid',
     });
     // Step 2: Generate questions
     const genRes = await apiClient.post<Record<string, unknown>>(`/exams/${configRes.exam_id}/generate`);
