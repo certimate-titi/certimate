@@ -115,6 +115,9 @@ class OnboardingService:
 
     def browse_subjects(self, user_id: str, category: str | None = None):
         """瀏覽科目分類。"""
+        # Build a category name lookup
+        all_cats = {c.id: c.name for c in self.db.query(SubjectCategory).all()}
+
         query = self.db.query(Subject)
         if category:
             cat = self.db.query(SubjectCategory).filter_by(name=category).first()
@@ -126,19 +129,32 @@ class OnboardingService:
         subjects = query.all()
         return {
             "subjects": [
-                {"id": str(s.id), "name": s.name, "category_id": str(s.category_id)}
+                {
+                    "id": str(s.id),
+                    "name": s.name,
+                    "category": all_cats.get(s.category_id, "其他"),
+                    "description": s.description or "",
+                    "isPopular": s.is_popular or False,
+                }
                 for s in subjects
             ]
         }
 
     def search_subjects(self, user_id: str, query: str):
         """搜尋科目。"""
+        all_cats = {c.id: c.name for c in self.db.query(SubjectCategory).all()}
         subjects = self.db.query(Subject).filter(
             Subject.name.ilike(f"%{query}%")
         ).all()
         return {
             "subjects": [
-                {"id": str(s.id), "name": s.name}
+                {
+                    "id": str(s.id),
+                    "name": s.name,
+                    "category": all_cats.get(s.category_id, "其他"),
+                    "description": s.description or "",
+                    "isPopular": s.is_popular or False,
+                }
                 for s in subjects
             ]
         }

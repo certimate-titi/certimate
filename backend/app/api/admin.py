@@ -387,3 +387,55 @@ def notify_user(
         message=body.message,
     )
     return _handle_result(result)
+
+
+# ── Seed Subjects (for E2E test setup) ─────────────────────────────────────
+
+class SeedSubjectsRequest(BaseModel):
+    categories: list[dict]  # [{"name": "IT", "subjects": ["AWS SAA", "Azure AZ-900"]}]
+
+
+# 預設考科清單（來自考古題爬蟲 catalog）
+DEFAULT_EXAM_SUBJECTS = [
+    {"name": "金融證照", "subjects": [
+        "信託業業務人員", "證券商業務員", "人身保險業務員",
+        "期貨商業務員", "防制洗錢與打擊資恐專業人員", "理財規劃人員",
+    ]},
+    {"name": "不動產證照", "subjects": [
+        "不動產經紀人", "地政士", "不動產估價師",
+    ]},
+    {"name": "iPAS 產業人才鑑定", "subjects": [
+        "AI 應用規劃師", "巨量資料分析師", "物聯網應用工程師",
+        "區塊鏈智能合約開發者", "資訊安全工程師",
+    ]},
+    {"name": "IT", "subjects": ["AWS SAA", "Azure AZ-900", "CCNA"]},
+    {"name": "語言", "subjects": ["TOEIC", "JLPT N1", "IELTS"]},
+    {"name": "醫療", "subjects": ["護理師", "藥師", "醫檢師"]},
+]
+
+
+@router.post("/seed-subjects")
+def seed_subjects(
+    body: Optional[SeedSubjectsRequest] = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    from app.models.subject import SubjectCategory, Subject
+
+    categories_data = body.categories if body else DEFAULT_EXAM_SUBJECTS
+
+    for cat_data in categories_data:
+        cat_name = cat_data["name"]
+        cat = db.query(SubjectCategory).filter_by(name=cat_name).first()
+        if not cat:
+            cat = SubjectCategory(name=cat_name)
+            db.add(cat)
+            db.flush()
+
+        for subj_name in cat_data.get("subjects", []):
+            existing = db.query(Subject).filter_by(name=subj_name, category_id=cat.id).first()
+            if not existing:
+                db.add(Subject(name=subj_name, category_id=cat.id))
+
+    db.commit()
+    return {"message": "Subjects seeded"}

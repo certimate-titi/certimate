@@ -29,6 +29,15 @@ class DifficultyLevel(str, enum.Enum):
     HARD = "hard"
 
 
+class BloomCategory(str, enum.Enum):
+    REMEMBER = "remember"
+    UNDERSTAND = "understand"
+    APPLY = "apply"
+    ANALYZE = "analyze"
+    EVALUATE = "evaluate"
+    CREATE = "create"
+
+
 class Question(Base):
     __tablename__ = "questions"
 
@@ -58,5 +67,13 @@ class Question(Base):
     option_c: Mapped[str | None] = mapped_column(Text)
     option_d: Mapped[str | None] = mapped_column(Text)
     correct_answer: Mapped[str] = mapped_column(String(10), nullable=False)
+    bloom_category: Mapped[str | None] = mapped_column(
+        Enum(BloomCategory, name="bloom_category", create_type=False,
+             values_callable=lambda e: [m.value for m in e]),
+    )
     explanation: Mapped[str | None] = mapped_column(Text)
     source_citation: Mapped[str | None] = mapped_column(Text)
+    historical_source: Mapped[str | None] = mapped_column(String(255))
+    quality_flag: Mapped[str | None] = mapped_column(String(20), default="ok")
+    flag_reason: Mapped[str | None] = mapped_column(Text)
+    validation_model: Mapped[str | None] = mapped_column(String(50))

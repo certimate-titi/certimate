@@ -231,14 +231,15 @@ class WrongAnswerService:
         return True
 
     def _generate_coach_reply(self, question: Question, message: str, tone: str,
-                              history_context: str | None = None) -> str | dict:
-        """生成 AI 教練回覆。
+                              history_context: str | None = None,
+                              conversation_history: list | None = None,
+                              confidence_quadrant: str | None = None) -> str | dict:
+        """生成蘇格拉底式 AI 教練回覆。
 
-        Flow:
-        1. 先判斷問題是否與題目/概念相關 → 不相關則拒絕回答
-        2. 有 RAG context → generate_with_context
-        3. 有 LLM 但無 RAG → 純 LLM 回答
-        4. 無 LLM → mock 回答
+        設計原則（白皮書 #8）：
+        - 不直接給答案，用提問引導學生自行發現知識
+        - 根據信心度四象限調整教練策略
+        - 多輪對話保持上下文連貫
         """
         import logging
         logger = logging.getLogger(__name__)
@@ -255,7 +256,7 @@ class WrongAnswerService:
                 "message": "此問題與目前的題目或學習主題無關，請聚焦在考試相關的問題上。",
             }
 
-        # Step 2: Try LLM (with or without RAG)
+        # Step 2: Try LLM
         from app.core.config import get_settings
         settings = get_settings()
         has_llm = bool(
@@ -264,85 +265,94 @@ class WrongAnswerService:
             or settings.GEMINI_API_KEY
         )
 
-        if has_llm:
-            try:
-                from app.services.llm_service import LLMService
-                from app.services.retrieval_service import RetrievalService
+        if not has_llm:
+            return {"error": True, "status_code": 503, "message": "AI 教練暫時無法使用，請稍後再試"}
 
-                llm = LLMService(db=self.db)
+        try:
+            from app.services.llm_service import LLMService
+            from app.services.retrieval_service import RetrievalService
 
-                tone_instruction = {
-                    "simple": "請使用淺顯易懂的語言和生活化比喻來解釋",
-                    "technical": "可以使用專業術語和技術細節來解釋",
-                }.get(tone, "請使用適中的語言來解釋")
+            llm = LLMService(db=self.db)
 
-                system_prompt = (
-                    f"你是一位耐心的 AI 教練，正在幫助學生複習錯題。\n"
-                    f"{tone_instruction}。\n"
-                    f"鼓勵學生，但不要過度使用 emoji。"
+            tone_instruction = {
+                "simple": "請使用淺顯易懂的語言、生活化比喻和類比來引導",
+                "technical": "可以使用專業術語，但仍以提問引導為主",
+            }.get(tone, "請使用適中的語言來引導")
+
+            # 信心度策略
+            confidence_strategy = ""
+            if confidence_quadrant == "dangerous_blindspot":
+                confidence_strategy = (
+                    "\n【重要】這位學生在此題「非常確定但答錯」，屬於危險盲點。"
+                    "你必須特別溫和地先肯定他的努力，再用反問方式讓他意識到思維中的陷阱。"
+                    "例如：「你提到很確定 X 是對的，那如果我們從 Y 角度來看呢？」"
+                )
+            elif confidence_quadrant == "lucky_guess":
+                confidence_strategy = (
+                    "\n這位學生在此題「猜對了」，但其實並不確定。"
+                    "請引導他建立真正的理解，而非停留在「答對就好」。"
+                    "例如：「你答對了，但你能解釋為什麼不是其他選項嗎？」"
                 )
 
-                user_prompt = (
-                    f"學生在以下題目答錯了：\n"
-                    f"題目：{question.content}\n"
-                    f"正確答案：{question.correct_answer}\n"
-                    f"詳解：{question.explanation or '無'}\n\n"
-                    f"學生的問題：{message}"
+            system_prompt = (
+                "你是 Certi，TiTi 平台的 AI 蘇格拉底教練。\n\n"
+                "【核心原則 — 蘇格拉底式教學】\n"
+                "1. 絕對不要直接告訴學生答案或直接解釋為什麼某個選項正確\n"
+                "2. 用提問引導學生自己思考和發現：「你覺得 A 和 B 的差別在哪？」\n"
+                "3. 當學生接近正確理解時，給予肯定並追問更深一層\n"
+                "4. 當學生偏離時，溫和地用反問導回：「那如果從 X 角度來看呢？」\n"
+                "5. 每次回覆最多問 1-2 個引導問題，不要一次問太多\n\n"
+                f"【語氣】{tone_instruction}\n"
+                f"{confidence_strategy}\n"
+                "【格式】回覆控制在 150 字以內。鼓勵但不過度使用 emoji。"
+            )
+
+            # 組合對話歷史
+            history_str = ""
+            if conversation_history:
+                recent = conversation_history[-6:]  # 最近 3 輪
+                for msg in recent:
+                    role_label = "學生" if msg.get("role") == "user" else "Certi"
+                    history_str += f"{role_label}：{msg.get('content', '')}\n"
+
+            user_prompt = (
+                f"【題目資訊】\n"
+                f"題目：{question.content}\n"
+                f"選項：(A){question.option_a} (B){question.option_b} "
+                f"(C){question.option_c} (D){question.option_d}\n"
+                f"正確答案：{question.correct_answer}\n"
+                f"詳解（僅供你參考，不要直接告訴學生）：{question.explanation or '無'}\n"
+            )
+
+            if history_context:
+                user_prompt += f"\n【弱點記錄】學生在「{history_context}」已答錯多次。\n"
+
+            if history_str:
+                user_prompt += f"\n【對話歷史】\n{history_str}\n"
+
+            user_prompt += f"【學生最新提問】{message}"
+
+            # Try RAG if resource exists
+            if node and node.resource_id and settings.VOYAGE_API_KEY:
+                retrieval = RetrievalService(self.db)
+                chunks = retrieval.retrieve(
+                    f"{node_name}: {message}",
+                    [node.resource_id],
+                    top_k=5,
                 )
+                context = retrieval.build_context_string(chunks, max_tokens=2000)
 
-                if history_context:
-                    user_prompt += f"\n\n補充：學生之前在 {history_context} 也曾答錯。"
-
-                # Try RAG if resource exists
-                if node and node.resource_id and settings.VOYAGE_API_KEY:
-                    retrieval = RetrievalService(self.db)
-                    chunks = retrieval.retrieve(
-                        f"{node_name}: {message}",
-                        [node.resource_id],
-                        top_k=5,
+                if context.strip():
+                    system_prompt += "\n如果需要引用教材，可以提到「根據你的教材...」但仍以提問引導為主。"
+                    return llm.generate_with_context(
+                        system_prompt, user_prompt, context, max_tokens=1024
                     )
-                    context = retrieval.build_context_string(chunks, max_tokens=2000)
 
-                    if context.strip():
-                        system_prompt += "\n回答要基於文件內容，並引用相關頁碼。"
-                        return llm.generate_with_context(
-                            system_prompt, user_prompt, context, max_tokens=1024
-                        )
+            return llm.generate(system_prompt, user_prompt, max_tokens=1024)
 
-                # No RAG context available → pure LLM
-                return llm.generate(system_prompt, user_prompt, max_tokens=1024)
-
-            except Exception as e:
-                logger.warning("AI Coach LLM call failed, falling back to mock: %s", e)
-
-        # Step 3: Fallback — mock replies (no LLM available)
-        if tone == "simple":
-            reply = (
-                f"別擔心，我來用簡單的方式幫你理解！\n\n"
-                f"關於 {node_name}，就像是餐廳在尖峰時段自動增加服務生一樣，"
-                f"{question.explanation or '這個概念需要深入理解。'}\n\n"
-                f"加油，你一定可以學會的！"
-            )
-        elif tone == "technical":
-            reply = (
-                f"關於 {node_name}，讓我深入說明。\n\n"
-                f"從技術角度來看，可透過 CloudWatch Alarm 監控指標，"
-                f"搭配 Target Tracking Policy 自動調整 Scaling 策略。"
-                f"{question.explanation or '這個概念需要深入理解。'}\n\n"
-                f"建議參考相關技術文件與 API 文件了解更多細節。"
-            )
-        else:
-            reply = (
-                f"加油！讓我來幫你理解 {node_name} 的概念。\n\n"
-                f"簡單來說，{question.explanation or '這個概念需要深入理解。'}\n\n"
-                f"繼續努力，你做得很好！"
-            )
-
-        if history_context:
-            reply += f"\n\n根據你之前的學習記錄，你在 {history_context} 相關的題目曾經答錯過，"
-            reply += "建議你特別注意這個部分的概念。"
-
-        return reply
+        except Exception as e:
+            logger.warning("AI Coach LLM call failed: %s", e)
+            return {"error": True, "status_code": 503, "message": "AI 教練暫時無法回應，請稍後再試"}
 
     def _check_out_of_scope(self, message: str) -> bool:
         """檢查問題是否超出題庫範圍。"""
@@ -457,9 +467,38 @@ class WrongAnswerService:
                 if wrong_count > 1:
                     history_context = node.name
 
+        # Get confidence quadrant for this question
+        confidence_quadrant = None
+        if question:
+            user_answer = self.db.query(Answer).filter_by(
+                user_id=user_uuid, question_id=q_uuid
+            ).first()
+            if user_answer:
+                if user_answer.confidence == "high" and not user_answer.is_correct:
+                    confidence_quadrant = "dangerous_blindspot"
+                elif user_answer.confidence == "low" and user_answer.is_correct:
+                    confidence_quadrant = "lucky_guess"
+
+        # Load conversation history from DB
+        conversation_history = []
+        existing_session = self.db.query(AiChatSession).filter_by(
+            user_id=user_uuid, context_type="error_review", context_id=q_uuid
+        ).first()
+        if existing_session:
+            past_msgs = self.db.query(AiChatMessage).filter_by(
+                session_id=existing_session.id
+            ).order_by(AiChatMessage.created_at).all()
+            conversation_history = [
+                {"role": m.role, "content": m.content} for m in past_msgs
+            ]
+
         # Generate reply
         if question:
-            result = self._generate_coach_reply(question, message, tone, history_context)
+            result = self._generate_coach_reply(
+                question, message, tone, history_context,
+                conversation_history=conversation_history,
+                confidence_quadrant=confidence_quadrant,
+            )
             # _generate_coach_reply may return a dict with "rejected" flag
             if isinstance(result, dict) and result.get("rejected"):
                 return {

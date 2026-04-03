@@ -36,5 +36,6 @@ class Answer(Base):
     )
     selected_answer: Mapped[str | None] = mapped_column(String(10))
     is_correct: Mapped[bool | None] = mapped_column(Boolean)
+    confidence: Mapped[str | None] = mapped_column(String(10))  # high/medium/low
     marked_for_review: Mapped[bool] = mapped_column(Boolean, default=False)
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

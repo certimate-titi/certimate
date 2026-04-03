@@ -61,6 +61,7 @@ class KnowledgeNavService:
                 "resource_id": str(node.resource_id) if node.resource_id else None,
                 "sort_order": node.sort_order or 0,
                 "source_page": node.source_page_number,
+                "available_questions": node.available_questions or 0,
                 "mastery_rate": int(m.mastery_rate) if m else 0,
                 "color": m.color if m else "gray",
                 "children": [],

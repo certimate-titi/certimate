@@ -36,6 +36,39 @@ class ExamResultService:
         # Find previous exam for comparison
         comparison = self._get_comparison(exam, uid)
 
+        # Build user_answers from answers + questions
+        questions = self.db.query(Question).filter_by(exam_id=exam.id).order_by(
+            Question.question_number
+        ).all()
+        answers = self.db.query(Answer).filter_by(
+            exam_id=exam.id, user_id=uid
+        ).all()
+        answer_map = {str(a.question_id): a for a in answers}
+
+        user_answers = []
+        for q in questions:
+            a = answer_map.get(str(q.id))
+            user_answers.append({
+                "questionId": str(q.id),
+                "questionNumber": q.question_number,
+                "userChoice": a.selected_answer if a else None,
+                "isCorrect": a.is_correct if a else False,
+                "correctAnswer": q.correct_answer,
+                "content": q.content,
+                "optionA": q.option_a,
+                "optionB": q.option_b,
+                "optionC": q.option_c,
+                "optionD": q.option_d,
+                "explanation": q.explanation or "",
+                "difficulty": getattr(q, 'difficulty', None),
+                "bloomCategory": getattr(q, 'bloom_category', None),
+                "reliability": "green" if getattr(q, 'historical_source', None) else "yellow",
+            })
+
+        time_spent = 0
+        if exam.started_at and exam.submitted_at:
+            time_spent = int((exam.submitted_at - exam.started_at).total_seconds())
+
         result = {
             "error": False,
             "exam_id": str(exam.id),
@@ -44,6 +77,22 @@ class ExamResultService:
             "passing_score": str(passing_score),
             "correct_count": exam.correct_count,
             "total_questions": exam.total_questions,
+            "time_spent_seconds": time_spent,
+            "user_answers": user_answers,
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "questionNumber": q.question_number,
+                    "content": q.content,
+                    "optionA": q.option_a,
+                    "optionB": q.option_b,
+                    "optionC": q.option_c,
+                    "optionD": q.option_d,
+                    "correctAnswer": q.correct_answer,
+                    "explanation": q.explanation or "",
+                }
+                for q in questions
+            ],
         }
 
         if comparison:

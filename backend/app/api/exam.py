@@ -21,6 +21,7 @@ class ExamConfigRequest(BaseModel):
     difficulty: int | None = None
     difficulty_distribution: dict | None = None
     question_types: list[str] | None = None
+    exam_mode: str | None = None  # "hybrid" (default) | "historical_only"
 
 
 def _handle_result(result: dict):
@@ -61,6 +62,12 @@ def submit_exam_config(
             3: {"easy": 10, "medium": 30, "hard": 60},
         }
         diff_dist = diff_map.get(body.difficulty, {"easy": 30, "medium": 50, "hard": 20})
+
+    # Store exam_mode in config
+    if diff_dist is None:
+        diff_dist = {}
+    if body.exam_mode:
+        diff_dist["exam_mode"] = body.exam_mode
 
     service = ExamService(db)
     result = service.submit_config(

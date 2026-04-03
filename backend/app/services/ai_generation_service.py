@@ -55,7 +55,13 @@ class AiGenerationService:
     # ------------------------------------------------------------------ #
 
     def generate(self, exam_id: str, user_id: str) -> dict:
-        """Run the full 4-stage pipeline and return progress events + result."""
+        """Run the hybrid 4-layer pipeline (spec v2.0).
+
+        Layer -1: Mode selection (sprint/standard/mastery)
+        Layer  0: Weakness + memory + confidence analysis
+        Layer  1: Quota allocation (mode x weakness x difficulty x Bloom)
+        Layer  2: Hybrid generation (20% historical + 80% AI) + interleaving
+        """
         uid = uuid.UUID(user_id)
         eid = uuid.UUID(exam_id)
 
@@ -76,6 +82,12 @@ class AiGenerationService:
         difficulty_dist = exam.difficulty_distribution or {"easy": 30, "medium": 50, "hard": 20}
         total_q = exam.total_questions
 
+        # ── Hybrid Pipeline (spec v2.0) ──
+        hybrid_result = self._hybrid_generate(exam, user, nodes, node_ids, total_q, difficulty_dist)
+        if hybrid_result:
+            return hybrid_result
+
+        # ── Fallback: original 4-stage AI pipeline ──
         # Build user context
         user_context = self._build_user_context(user)
 
@@ -728,12 +740,843 @@ class AiGenerationService:
             "stage_3": stage3_ctx,
         }
 
+    def _historical_only_generate(self, exam, nodes, node_ids, total_q):
+        """100% 考古題模擬考 — 直接從題庫隨機抽取，不呼叫 AI。
+
+        讓使用者直接體驗真實考試題目。
+        若題庫不足，自動調整為實際可用數量。
+        """
+        from app.services.exam_bank.question_planner import post_process_questions
+        from sqlalchemy.sql.expression import func as sqlfunc
+
+        # 計算可用考古題總量（僅 quality_flag='ok' 的高品質題目）
+        available = self.db.query(Question).filter(
+            Question.node_id.in_(node_ids),
+            Question.historical_source.isnot(None),
+            Question.quality_flag == "ok",
+        ).count()
+
+        actual_count = min(total_q, available)
+        auto_adjusted = actual_count < total_q
+        adjustment_msg = None
+        if auto_adjusted:
+            adjustment_msg = f"此範圍考古題僅 {available} 題，已自動調整"
+            logger.info("Historical-only: requested %d, available %d, adjusted to %d",
+                        total_q, available, actual_count)
+
+        if actual_count == 0:
+            return {
+                "error": True, "status_code": 400,
+                "message": "此範圍沒有考古題，請選擇其他科目或使用混合模式",
+            }
+
+        # 隨機抽取（僅高品質題目）
+        picked = self.db.query(Question).filter(
+            Question.node_id.in_(node_ids),
+            Question.historical_source.isnot(None),
+            Question.quality_flag == "ok",
+        ).order_by(sqlfunc.random()).limit(actual_count).all()
+
+        # 建立題目 dict
+        all_questions = []
+        for src in picked:
+            all_questions.append({
+                "node_id": str(src.node_id) if src.node_id else None,
+                "content": src.content,
+                "type": src.type or "single_choice",
+                "difficulty": src.difficulty or "medium",
+                "bloom_category": src.bloom_category or "remember",
+                "option_a": src.option_a or "",
+                "option_b": src.option_b or "",
+                "option_c": src.option_c or "",
+                "option_d": src.option_d or "",
+                "correct_answer": src.correct_answer or "A",
+                "explanation": src.explanation or "",
+                "historical_source": src.historical_source,
+                "reliability": "green",
+                "quality_flag": "ok",
+            })
+
+        # 後處理：交錯排列 + 難度平滑 + 開局保護
+        all_questions = post_process_questions(all_questions)
+
+        # 寫入 DB
+        for q in all_questions:
+            new_q = Question(
+                exam_id=exam.id,
+                node_id=uuid.UUID(q["node_id"]) if q.get("node_id") else None,
+                question_number=q["question_number"],
+                type=q.get("type", "single_choice"),
+                difficulty=q.get("difficulty", "medium"),
+                bloom_category=q.get("bloom_category"),
+                content=q["content"],
+                option_a=q.get("option_a", ""),
+                option_b=q.get("option_b", ""),
+                option_c=q.get("option_c", ""),
+                option_d=q.get("option_d", ""),
+                correct_answer=q.get("correct_answer", "A"),
+                explanation=q.get("explanation", ""),
+                historical_source=q.get("historical_source"),
+                quality_flag="ok",
+            )
+            self.db.add(new_q)
+
+        # 更新 exam
+        exam.total_questions = actual_count
+        exam.status = ExamStatus.READY
+        self.db.commit()
+
+        final_qs = self.db.query(Question).filter_by(exam_id=exam.id).order_by(
+            Question.question_number
+        ).all()
+
+        result = {
+            "error": False,
+            "exam_id": str(exam.id),
+            "exam": {"id": str(exam.id), "status": "READY", "total_questions": len(final_qs)},
+            "composition": {
+                "mode": "historical_only",
+                "mode_reason": "考古題模擬考 — 100% 歷年真題",
+                "historical_count": len(final_qs),
+                "ai_count": 0,
+                "wrong_review_count": 0,
+                "interleaving": True,
+            },
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "question_number": q.question_number,
+                    "content": q.content,
+                    "type": q.type or "single_choice",
+                    "difficulty": q.difficulty or "medium",
+                    "bloom_category": q.bloom_category,
+                    "option_a": q.option_a,
+                    "option_b": q.option_b,
+                    "option_c": q.option_c,
+                    "option_d": q.option_d,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation or "",
+                    "historical_source": q.historical_source,
+                    "reliability": "green",
+                }
+                for q in final_qs
+            ],
+            "progress_events": [
+                {"percentage": 30, "stage": "抽題", "message": f"從考古題庫隨機抽取 {len(final_qs)} 題"},
+                {"percentage": 80, "stage": "排列", "message": "交錯排列 + 難度平滑"},
+                {"percentage": 100, "stage": "完成", "message": "考古題模擬考準備完畢！"},
+            ],
+        }
+
+        if adjustment_msg:
+            result["adjustment_message"] = adjustment_msg
+
+        return result
+
+    def _hybrid_generate(self, exam, user, nodes, node_ids, total_q, difficulty_dist):
+        """Hybrid pipeline: 20% historical + 80% AI, driven by QuestionPlanner.
+
+        Implements spec v2.0 Layers -1 through 2:
+        - P14: SM-2 ease_factor read
+        - P15: Ebbinghaus review date detection
+        - P16: Confidence four-quadrant (dangerous blindspot weighting)
+        - P17: Sprint mode wrong-answer interleaving
+        """
+        from app.services.exam_bank.question_planner import (
+            QuestionPlanner, NodeProfile, post_process_questions,
+        )
+        from app.models.node_mastery import NodeMastery
+        from app.models.question_stat import QuestionStat
+        from app.models.learning_journey import LearningJourney
+        from app.models.answer import Answer
+        from sqlalchemy.sql.expression import func as sqlfunc
+        from sqlalchemy import and_
+
+        if not node_ids:
+            return None
+
+        # ── 考古題模擬考模式：100% 考古題，不走 AI ──
+        exam_mode = (difficulty_dist or {}).get("exam_mode", "hybrid")
+        if exam_mode == "historical_only":
+            return self._historical_only_generate(exam, nodes, node_ids, total_q)
+
+        # ── Build NodeProfile for each node (P14 + P15 + P16) ──
+        profiles = []
+        for node in nodes:
+            nid = node.id
+
+            # P14/P15: SM-2 ease_factor + next_review_date
+            mastery = self.db.query(NodeMastery).filter_by(
+                user_id=user.id, node_id=nid
+            ).first()
+            stats = self.db.query(QuestionStat).filter_by(
+                user_id=user.id, node_id=nid
+            ).first()
+
+            # P16: Confidence four-quadrant — count dangerous blindspots
+            # Dangerous blindspot = confidence='high' AND is_correct=false
+            blindspot_count = self.db.query(sqlfunc.count(Answer.id)).join(
+                Question, Answer.question_id == Question.id
+            ).filter(
+                Answer.user_id == user.id,
+                Question.node_id == nid,
+                Answer.confidence == 'high',
+                Answer.is_correct == False,
+            ).scalar() or 0
+
+            # Lucky guess count = confidence='low' AND is_correct=true
+            lucky_count = self.db.query(sqlfunc.count(Answer.id)).join(
+                Question, Answer.question_id == Question.id
+            ).filter(
+                Answer.user_id == user.id,
+                Question.node_id == nid,
+                Answer.confidence == 'low',
+                Answer.is_correct == True,
+            ).scalar() or 0
+
+            hist_count = self.db.query(Question).filter(
+                Question.node_id == nid,
+                Question.historical_source.isnot(None),
+            ).count()
+
+            profiles.append(NodeProfile(
+                node_id=str(nid),
+                name=node.name,
+                mastery_rate=float(mastery.mastery_rate) if mastery else None,
+                mastery_color=mastery.color if mastery else "gray",
+                ease_factor=float(stats.ease_factor) if stats else 2.5,
+                next_review_date=stats.next_review_date if stats else None,
+                success_count=stats.success_count if stats else 0,
+                fail_count=stats.fail_count if stats else 0,
+                dangerous_blindspot_count=blindspot_count,
+                lucky_guess_count=lucky_count,
+                historical_count=hist_count,
+            ))
+
+        # Get exam_date from learning journey
+        journey = self.db.query(LearningJourney).filter_by(
+            user_id=user.id, subject_id=exam.subject_id,
+        ).first()
+        exam_date = journey.exam_date if journey else None
+
+        # P17: Count wrong answers for sprint mode interleaving
+        wrong_count = self.db.query(sqlfunc.count(Answer.id)).filter(
+            Answer.user_id == user.id,
+            Answer.is_correct == False,
+        ).join(Question, Answer.question_id == Question.id).join(
+            Exam, Question.exam_id == Exam.id
+        ).filter(
+            Exam.subject_id == exam.subject_id,
+        ).scalar() or 0
+
+        # Map difficulty level
+        user_diff = 2
+        if difficulty_dist:
+            if difficulty_dist.get("easy", 0) >= 50:
+                user_diff = 1
+            elif difficulty_dist.get("hard", 0) >= 50:
+                user_diff = 3
+
+        # ── Run QuestionPlanner ──
+        planner = QuestionPlanner()
+        plan = planner.plan(
+            nodes=profiles,
+            total_q=total_q,
+            user_difficulty=user_diff,
+            exam_date=exam_date,
+            wrong_answer_count=wrong_count,
+        )
+
+        logger.info("Hybrid plan: mode=%s, nodes=%d, wrong_review=%d",
+                     plan.mode, len(plan.node_plans), plan.wrong_review_count)
+
+        # ── Execute plan: pick historical + generate AI ──
+        all_questions = []
+        used_question_ids = set()  # 追蹤已使用的題目 ID，避免重複
+
+        for np in plan.node_plans:
+            node_uuid = uuid.UUID(np.node_id)
+
+            # 1. Pick historical questions (20%)
+            if np.historical_count > 0:
+                hist_qs = self.db.query(Question).filter(
+                    Question.node_id == node_uuid,
+                    Question.historical_source.isnot(None),
+                ).order_by(sqlfunc.random()).limit(np.historical_count).all()
+
+                for src in hist_qs:
+                    used_question_ids.add(str(src.id))
+                    all_questions.append({
+                        "node_id": str(node_uuid),
+                        "content": src.content,
+                        "type": src.type or "single_choice",
+                        "difficulty": src.difficulty or "medium",
+                        "bloom_category": src.bloom_category or "remember",
+                        "option_a": src.option_a or "",
+                        "option_b": src.option_b or "",
+                        "option_c": src.option_c or "",
+                        "option_d": src.option_d or "",
+                        "correct_answer": src.correct_answer or "A",
+                        "explanation": src.explanation or "",
+                        "historical_source": src.historical_source,
+                        "reliability": "green",
+                    })
+
+            # 2. AI generate remainder (80%) — 多級補題策略
+            if np.ai_count > 0:
+                ai_qs = self._generate_ai_for_node(
+                    node_uuid, np, all_questions[-np.historical_count:] if np.historical_count else []
+                )
+                all_questions.extend(ai_qs)
+
+                # 檢查是否短缺
+                shortfall = np.ai_count - len(ai_qs)
+                if shortfall > 0:
+                    logger.warning("AI generation shortfall: need %d more for node %s", shortfall, np.name)
+                    补_qs = self._fill_shortfall(node_uuid, shortfall, used_question_ids)
+                    all_questions.extend(补_qs)
+
+        # ── P17: Sprint/Standard wrong-answer interleaving ──
+        if plan.wrong_review_count > 0:
+            wrong_qs = self.db.query(Answer).filter(
+                Answer.user_id == user.id,
+                Answer.is_correct == False,
+            ).join(Question, Answer.question_id == Question.id).join(
+                Exam, Question.exam_id == Exam.id
+            ).filter(
+                Exam.subject_id == exam.subject_id,
+            ).order_by(sqlfunc.random()).limit(plan.wrong_review_count).all()
+
+            for wa in wrong_qs:
+                src_q = self.db.query(Question).filter_by(id=wa.question_id).first()
+                if src_q:
+                    all_questions.append({
+                        "node_id": str(src_q.node_id) if src_q.node_id else None,
+                        "content": src_q.content,
+                        "type": src_q.type or "single_choice",
+                        "difficulty": src_q.difficulty or "medium",
+                        "bloom_category": src_q.bloom_category or "remember",
+                        "option_a": src_q.option_a or "",
+                        "option_b": src_q.option_b or "",
+                        "option_c": src_q.option_c or "",
+                        "option_d": src_q.option_d or "",
+                        "correct_answer": src_q.correct_answer or "A",
+                        "explanation": src_q.explanation or "",
+                        "historical_source": src_q.historical_source,
+                        "reliability": "green" if src_q.historical_source else "yellow",
+                    })
+
+        if not all_questions:
+            return None
+
+        # ── Quality Assurance: Cross-LLM validation for AI questions ──
+        from app.services.exam_bank.question_validator import (
+            validate_with_cross_llm, handle_validation_result,
+        )
+
+        if self._llm:
+            used_ids = set()
+            validated_questions = []
+            # Build replacement pool from historical questions of same nodes
+            replacement_pool = []
+            for np in plan.node_plans:
+                pool_qs = self.db.query(Question).filter(
+                    Question.node_id == uuid.UUID(np.node_id),
+                    Question.historical_source.isnot(None),
+                ).order_by(sqlfunc.random()).limit(5).all()
+                for pq in pool_qs:
+                    replacement_pool.append({
+                        "id": str(pq.id),
+                        "node_id": str(pq.node_id),
+                        "content": pq.content,
+                        "type": pq.type or "single_choice",
+                        "difficulty": pq.difficulty or "medium",
+                        "bloom_category": pq.bloom_category or "remember",
+                        "option_a": pq.option_a or "",
+                        "option_b": pq.option_b or "",
+                        "option_c": pq.option_c or "",
+                        "option_d": pq.option_d or "",
+                        "correct_answer": pq.correct_answer or "A",
+                        "explanation": pq.explanation or "",
+                        "historical_source": pq.historical_source,
+                        "reliability": "green",
+                    })
+
+            for q in all_questions:
+                if q.get("reliability") == "yellow":  # Only validate AI-generated
+                    vr = validate_with_cross_llm(
+                        question=q,
+                        generated_answer=q.get("correct_answer", "A"),
+                        llm_service=self._llm,
+                        generation_model="claude",
+                    )
+                    q = handle_validation_result(q, vr, replacement_pool, used_ids)
+                validated_questions.append(q)
+            all_questions = validated_questions
+
+        # ── Post-process: interleave + smooth + opening ──
+        all_questions = post_process_questions(all_questions)
+
+        # ── Persist to DB ──
+        for q in all_questions:
+            new_q = Question(
+                exam_id=exam.id,
+                node_id=uuid.UUID(q["node_id"]) if q.get("node_id") else None,
+                question_number=q["question_number"],
+                type=q.get("type", "single_choice"),
+                difficulty=q.get("difficulty", "medium"),
+                bloom_category=q.get("bloom_category"),
+                content=q["content"],
+                option_a=q.get("option_a", ""),
+                option_b=q.get("option_b", ""),
+                option_c=q.get("option_c", ""),
+                option_d=q.get("option_d", ""),
+                correct_answer=q.get("correct_answer", "A"),
+                explanation=q.get("explanation", ""),
+                historical_source=q.get("historical_source"),
+                quality_flag=q.get("quality_flag", "ok"),
+                validation_model=q.get("validation_model"),
+            )
+            self.db.add(new_q)
+
+        exam.status = ExamStatus.READY
+        self.db.commit()
+
+        # Re-query for IDs
+        final_qs = self.db.query(Question).filter_by(exam_id=exam.id).order_by(
+            Question.question_number
+        ).all()
+
+        hist_total = sum(1 for q in final_qs if q.historical_source)
+        ai_total = len(final_qs) - hist_total
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "exam": {"id": str(exam.id), "status": "READY", "total_questions": len(final_qs)},
+            "composition": {
+                "mode": plan.mode,
+                "mode_reason": plan.mode_reason,
+                "historical_count": hist_total,
+                "ai_count": ai_total,
+                "wrong_review_count": plan.wrong_review_count,
+                "bloom_actual": plan.bloom_summary,
+                "interleaving": True,
+            },
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "question_number": q.question_number,
+                    "content": q.content,
+                    "type": q.type or "single_choice",
+                    "difficulty": q.difficulty or "medium",
+                    "bloom_category": q.bloom_category,
+                    "option_a": q.option_a,
+                    "option_b": q.option_b,
+                    "option_c": q.option_c,
+                    "option_d": q.option_d,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation or "",
+                    "historical_source": q.historical_source,
+                    "reliability": "green" if q.historical_source else "yellow",
+                }
+                for q in final_qs
+            ],
+            "progress_events": [
+                {"percentage": 10, "stage": "分析", "message": f"模式：{plan.mode_reason}"},
+                {"percentage": 30, "stage": "規劃", "message": f"弱點分析完成，{len(plan.node_plans)} 個考點"},
+                {"percentage": 60, "stage": "出題", "message": f"考古題 {hist_total} + AI {ai_total} 題"},
+                {"percentage": 90, "stage": "排列", "message": "交錯排列 + 難度平滑 + 開局保護"},
+                {"percentage": 100, "stage": "完成", "message": "考卷準備完畢！"},
+            ],
+        }
+
+    def _fill_shortfall(self, node_uuid, shortfall: int, used_ids: set) -> list:
+        """多級補題策略 — 確保不會因 AI 生成失敗而短缺題目。
+
+        Level 1: 同節點考古題擴大抽取（排除已使用）
+        Level 2: 同科目跨節點考古題借題
+        Level 3: 同科目所有歷史題（最後手段）
+        """
+        from sqlalchemy.sql.expression import func as sqlfunc
+        filled = []
+
+        def _pick(query, limit):
+            """從 query 中排除已用 ID 後隨機抽取"""
+            candidates = query.filter(
+                ~Question.id.in_([uuid.UUID(uid) for uid in used_ids] if used_ids else [uuid.UUID("00000000-0000-0000-0000-000000000000")])
+            ).order_by(sqlfunc.random()).limit(limit).all()
+            result = []
+            for src in candidates:
+                if str(src.id) in used_ids:
+                    continue
+                used_ids.add(str(src.id))
+                result.append({
+                    "node_id": str(src.node_id) if src.node_id else str(node_uuid),
+                    "content": src.content,
+                    "type": src.type or "single_choice",
+                    "difficulty": src.difficulty or "medium",
+                    "bloom_category": src.bloom_category or "remember",
+                    "option_a": src.option_a or "",
+                    "option_b": src.option_b or "",
+                    "option_c": src.option_c or "",
+                    "option_d": src.option_d or "",
+                    "correct_answer": src.correct_answer or "A",
+                    "explanation": src.explanation or "",
+                    "historical_source": src.historical_source,
+                    "reliability": "green" if src.historical_source else "yellow",
+                })
+            return result
+
+        remaining = shortfall
+
+        # Level 1: 同節點考古題
+        if remaining > 0:
+            base_q = self.db.query(Question).filter(
+                Question.node_id == node_uuid,
+                Question.historical_source.isnot(None),
+            )
+            level1 = _pick(base_q, remaining)
+            filled.extend(level1)
+            remaining -= len(level1)
+            if level1:
+                logger.info("Shortfall L1: filled %d from same node", len(level1))
+
+        # Level 2: 同科目跨節點
+        if remaining > 0:
+            # 找同科目的其他節點
+            from app.models.resource import Resource
+            resource = self.db.query(Resource).join(
+                KnowledgeNode, KnowledgeNode.resource_id == Resource.id
+            ).filter(KnowledgeNode.id == node_uuid).first()
+
+            if resource:
+                sibling_nodes = self.db.query(KnowledgeNode.id).filter(
+                    KnowledgeNode.resource_id == resource.id,
+                    KnowledgeNode.id != node_uuid,
+                    KnowledgeNode.depth == 1,
+                ).all()
+                sibling_ids = [n.id for n in sibling_nodes]
+
+                if sibling_ids:
+                    cross_q = self.db.query(Question).filter(
+                        Question.node_id.in_(sibling_ids),
+                        Question.historical_source.isnot(None),
+                    )
+                    level2 = _pick(cross_q, remaining)
+                    filled.extend(level2)
+                    remaining -= len(level2)
+                    if level2:
+                        logger.info("Shortfall L2: filled %d from sibling nodes", len(level2))
+
+        # Level 3: 同科目所有歷史題
+        if remaining > 0:
+            if resource:
+                all_nodes = self.db.query(KnowledgeNode.id).filter(
+                    KnowledgeNode.resource_id == resource.id,
+                ).all()
+                all_node_ids = [n.id for n in all_nodes]
+
+                all_q = self.db.query(Question).filter(
+                    Question.node_id.in_(all_node_ids),
+                    Question.historical_source.isnot(None),
+                )
+                level3 = _pick(all_q, remaining)
+                filled.extend(level3)
+                remaining -= len(level3)
+                if level3:
+                    logger.info("Shortfall L3: filled %d from all subject nodes", len(level3))
+
+        if remaining > 0:
+            logger.warning("Could not fill %d questions — subject has insufficient question bank", remaining)
+
+        return filled
+
+    def _generate_ai_for_node(self, node_uuid, node_plan, few_shot_examples):
+        """Generate AI questions for a single node.
+
+        Strategy (spec v2.0 Layer 2):
+        1. LLM available + historical examples → few-shot prompt with exam style
+        2. LLM available + no examples → generate from node name/context
+        3. No LLM + historical → cycle through historical pool (marked as AI)
+        4. No LLM + no historical → return empty (caller handles)
+        """
+        ai_questions = []
+        count = node_plan.ai_count
+        if count <= 0:
+            return ai_questions
+
+        # Gather few-shot examples from historical pool
+        hist_pool = self.db.query(Question).filter(
+            Question.node_id == node_uuid,
+            Question.historical_source.isnot(None),
+        ).order_by(Question.id).limit(10).all()
+
+        # ── Path 1: LLM available → real AI generation ──
+        if self._llm:
+            try:
+                ai_questions = self._llm_generate_for_node(
+                    node_name=node_plan.name,
+                    count=count,
+                    difficulty_dist=node_plan.difficulty_dist,
+                    bloom_target=node_plan.bloom_target,
+                    few_shot=hist_pool[:5],
+                    node_uuid=node_uuid,
+                )
+                if ai_questions:
+                    return ai_questions
+            except Exception as e:
+                logger.warning("LLM generation failed for node %s, falling back: %s",
+                               node_plan.name, e)
+
+        # ── Path 2: Fallback — cycle historical pool ──
+        for i in range(count):
+            if hist_pool:
+                src = hist_pool[i % len(hist_pool)]
+                ai_questions.append({
+                    "node_id": str(node_uuid),
+                    "content": src.content,
+                    "type": src.type or "single_choice",
+                    "difficulty": src.difficulty or "medium",
+                    "bloom_category": src.bloom_category or "remember",
+                    "option_a": src.option_a or "",
+                    "option_b": src.option_b or "",
+                    "option_c": src.option_c or "",
+                    "option_d": src.option_d or "",
+                    "correct_answer": src.correct_answer or "A",
+                    "explanation": src.explanation or "",
+                    "historical_source": None,
+                    "reliability": "yellow",
+                })
+            else:
+                break
+
+        return ai_questions
+
+    def _llm_generate_for_node(self, node_name, count, difficulty_dist,
+                                bloom_target, few_shot, node_uuid):
+        """Use LLM to generate questions with few-shot historical examples.
+
+        P10: Few-shot prompt design per exam-generation-spec v2.0.
+        """
+        # Build few-shot examples string
+        examples_str = ""
+        if few_shot:
+            examples_str = "以下是該考點的考古題範例（供參考出題風格和概念範圍）：\n---\n"
+            for i, q in enumerate(few_shot, 1):
+                examples_str += (
+                    f"題目 {i}: {q.content}\n"
+                    f"(A) {q.option_a or ''}\n"
+                    f"(B) {q.option_b or ''}\n"
+                    f"(C) {q.option_c or ''}\n"
+                    f"(D) {q.option_d or ''}\n"
+                    f"正確答案: {q.correct_answer}\n\n"
+                )
+            examples_str += "---\n\n"
+
+        # Build difficulty instruction
+        diff_str = "、".join(
+            f"{k} {v} 題" for k, v in difficulty_dist.items() if v > 0
+        )
+
+        # Build Bloom instruction
+        bloom_str = "、".join(
+            f"{k} {v} 題" for k, v in bloom_target.items() if v > 0
+        )
+
+        system_prompt = (
+            "你是專業的證照考試出題老師。請根據提供的考點和考古題範例，"
+            "生成高品質的選擇題。題目必須與考古題相關但不重複。"
+            "每題必須有題幹、4 個選項（A/B/C/D）、正確答案字母、和 50 字以內的解析。"
+            "回傳純 JSON 格式，不要 markdown code block。"
+        )
+
+        user_prompt = (
+            f"{examples_str}"
+            f"考點：{node_name}\n"
+            f"請生成 {count} 題選擇題。\n"
+            f"難度分佈：{diff_str}\n"
+            f"Bloom 認知層次分佈：{bloom_str}\n\n"
+            f"回傳格式（JSON array）：\n"
+            f'[{{"content": "題幹", "option_a": "選項A", "option_b": "選項B", '
+            f'"option_c": "選項C", "option_d": "選項D", "correct_answer": "A", '
+            f'"difficulty": "medium", "bloom_category": "remember", '
+            f'"explanation": "解析"}}]'
+        )
+
+        try:
+            result = self._llm.generate_json(system_prompt, user_prompt)
+        except Exception as e:
+            logger.warning("LLM generate_json failed: %s, trying generate()", e)
+            raw = self._llm.generate(system_prompt, user_prompt)
+            result = self._parse_json_from_text(raw)
+
+        if not result:
+            return []
+
+        # Normalize to list
+        questions_data = result if isinstance(result, list) else result.get("questions", [result])
+
+        ai_questions = []
+        for q in questions_data[:count]:
+            if not isinstance(q, dict) or "content" not in q:
+                continue
+            answer = q.get("correct_answer", "A")
+            if answer not in ("A", "B", "C", "D"):
+                answer = "A"
+            ai_questions.append({
+                "node_id": str(node_uuid),
+                "content": q["content"],
+                "type": "single_choice",
+                "difficulty": q.get("difficulty", "medium"),
+                "bloom_category": q.get("bloom_category", "remember"),
+                "option_a": q.get("option_a", ""),
+                "option_b": q.get("option_b", ""),
+                "option_c": q.get("option_c", ""),
+                "option_d": q.get("option_d", ""),
+                "correct_answer": answer,
+                "explanation": q.get("explanation", ""),
+                "historical_source": None,
+                "reliability": "yellow",
+            })
+
+        return ai_questions
+
+    @staticmethod
+    def _parse_json_from_text(text):
+        """Try to extract JSON from LLM text response."""
+        if not text:
+            return None
+        # Strip markdown code blocks
+        import re
+        text = re.sub(r'```json\s*', '', text)
+        text = re.sub(r'```\s*', '', text)
+        text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            # Try to find JSON array in text
+            match = re.search(r'\[.*\]', text, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group())
+                except json.JSONDecodeError:
+                    pass
+        return None
+
     def _get_exam_node_ids(self, exam: Exam) -> list:
         """Extract node IDs from exam config."""
         # If difficulty_distribution has node_ids, use them
         if exam.difficulty_distribution and "node_ids" in exam.difficulty_distribution:
             return [uuid.UUID(nid) for nid in exam.difficulty_distribution["node_ids"]]
         return []
+
+    def _try_historical_questions(self, exam: Exam, node_ids: list, total_q: int):
+        """If selected nodes have historical exam questions, randomly pick from DB.
+
+        Returns a complete result dict if successful, None if no historical questions.
+        """
+        from sqlalchemy.sql.expression import func as sqlfunc
+
+        if not node_ids:
+            return None
+
+        # Count available historical questions for these nodes
+        available = self.db.query(Question).filter(
+            Question.node_id.in_(node_ids),
+            Question.historical_source.isnot(None),
+        ).count()
+
+        if available == 0:
+            return None
+
+        logger.info("Historical question bank: %d available, need %d", available, total_q)
+
+        # Randomly select questions from the bank
+        picked = self.db.query(Question).filter(
+            Question.node_id.in_(node_ids),
+            Question.historical_source.isnot(None),
+        ).order_by(sqlfunc.random()).limit(total_q).all()
+
+        if not picked:
+            return None
+
+        # Create new Question records linked to this exam
+        result_questions = []
+        for i, src in enumerate(picked):
+            new_q = Question(
+                exam_id=exam.id,
+                node_id=src.node_id,
+                question_number=i + 1,
+                type=src.type or "single_choice",
+                difficulty=src.difficulty or "medium",
+                bloom_category=src.bloom_category,
+                content=src.content,
+                option_a=src.option_a,
+                option_b=src.option_b,
+                option_c=src.option_c,
+                option_d=src.option_d,
+                correct_answer=src.correct_answer,
+                explanation=src.explanation or "",
+                source_citation=src.source_citation,
+                historical_source=src.historical_source,
+            )
+            self.db.add(new_q)
+            result_questions.append({
+                "id": None,  # will be set after flush
+                "question_number": i + 1,
+                "text": src.content,
+                "options": [src.option_a or "", src.option_b or "", src.option_c or "", src.option_d or ""],
+                "answer": src.correct_answer,
+                "difficulty": src.difficulty or "medium",
+                "explanation": src.explanation or "",
+                "bloom_category": src.bloom_category,
+                "historical_source": src.historical_source,
+            })
+
+        # Update exam status
+        exam.status = ExamStatus.READY
+        self.db.commit()
+
+        # Re-query to get IDs
+        final_questions = self.db.query(Question).filter_by(exam_id=exam.id).order_by(
+            Question.question_number
+        ).all()
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "exam": {
+                "id": str(exam.id),
+                "status": "READY",
+                "total_questions": len(final_questions),
+            },
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "question_number": q.question_number,
+                    "text": q.content,
+                    "content": q.content,
+                    "type": q.type or "single_choice",
+                    "difficulty": q.difficulty or "medium",
+                    "bloom_category": q.bloom_category,
+                    "options": [q.option_a or "", q.option_b or "", q.option_c or "", q.option_d or ""],
+                    "option_a": q.option_a,
+                    "option_b": q.option_b,
+                    "option_c": q.option_c,
+                    "option_d": q.option_d,
+                    "correct_answer": q.correct_answer,
+                    "explanation": q.explanation or "",
+                    "historical_source": q.historical_source,
+                }
+                for q in final_questions
+            ],
+            "progress_events": [
+                {"percentage": 20, "stage": "準備", "message": "從考古題題庫抽取題目..."},
+                {"percentage": 80, "stage": "組卷", "message": f"已從 {available} 題中隨機抽取 {len(final_questions)} 題"},
+                {"percentage": 100, "stage": "完成", "message": "考卷準備完畢！"},
+            ],
+        }
 
     def _persist_questions(self, exam: Exam, stage4_result: dict):
         """Save generated questions to the database."""

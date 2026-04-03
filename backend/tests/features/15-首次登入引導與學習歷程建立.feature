@@ -291,3 +291,33 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
       And 目前選擇的分類為 "IT"
       When 使用者切換分類標籤至 "全部"
       Then 畫面應顯示所有分類的科目清單
+
+  # ========== 備考科目 CRUD（引導後管理）==========
+
+  Rule: 命令（新增）- 已完成引導的使用者可新增備考科目
+
+    Example: 新增備考科目到學習歷程
+      When 使用者 "alice@example.com" 新增備考科目：
+        | 欄位                | 值              |
+        | subject_name        | JLPT N1         |
+        | exam_date           | 2026-07-01      |
+        | self_assessed_level | beginner        |
+      Then 操作應成功
+      And 使用者 "alice@example.com" 的學習歷程應包含 "JLPT N1"
+
+  Rule: 命令（移除）- 使用者可移除備考科目（封存而非刪除）
+
+    Example: 移除備考科目後學習歷程被封存
+      Given 使用者 "alice@example.com" 有學習歷程於科目 "AWS SAA"
+      When 使用者 "alice@example.com" 移除備考科目 "AWS SAA" 並確認
+      Then 操作應成功
+      And 科目 "AWS SAA" 的學習歷程 is_archived 應為 true
+      And 使用者 "alice@example.com" 的活躍學習歷程不應包含 "AWS SAA"
+
+  Rule: 查詢 - 使用者可查詢自己的備考科目清單
+
+    Example: 查詢備考科目清單
+      Given 使用者 "alice@example.com" 有學習歷程於科目 "AWS SAA"
+      When 使用者 "alice@example.com" 查詢備考科目清單
+      Then 操作應成功
+      And API 回應應包含科目 "AWS SAA" 及其考試日期和自評程度
