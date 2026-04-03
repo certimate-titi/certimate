@@ -238,7 +238,7 @@ function ExamSetupPage() {
       console.error('Exam generation failed:', e);
       setIsGenerating(false);
     }
-  }, [selectedDocIds, questionCount, difficulty, questionTypes, router]);
+  }, [selectedDocIds, selectedNodeIds, questionCount, difficulty, questionTypes, examMode, router]);
 
   // Backup: navigate when loading animation completes
   const handleLoadingComplete = useCallback(() => {
@@ -498,8 +498,10 @@ function ExamSetupPage() {
           <div className="text-slate-300 text-sm">
             {validationError ? (
               <span className="text-red-400">{validationError}</span>
-            ) : selectedDocIds.size === 0 ? (
+            ) : selectedDocIds.size === 0 && selectedNodeIds.size === 0 ? (
               <span className="text-amber-400">請先選擇至少一份學習資源</span>
+            ) : selectedNodeIds.size > 0 && selectedDocIds.size === 0 ? (
+              <>已選 <span className="text-white font-medium">{selectedNodeIds.size}</span> 個知識範圍 • 預計生成時間：<span className="text-white font-medium">約 15 秒</span></>
             ) : (
               <>已選 <span className="text-white font-medium">{selectedDocIds.size}</span> 份資源 • 預計生成時間：<span className="text-white font-medium">約 15 秒</span></>
             )}

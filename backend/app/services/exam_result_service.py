@@ -1,8 +1,9 @@
 """Exam Result Service — 測驗結果業務邏輯。"""
 
 import uuid
+from collections import Counter
 
-from sqlalchemy import func
+from sqlalchemy import func, Integer as SAInteger
 from sqlalchemy.orm import Session
 
 from app.models.exam import Exam, ExamStatus
@@ -69,6 +70,12 @@ class ExamResultService:
         if exam.started_at and exam.submitted_at:
             time_spent = int((exam.submitted_at - exam.started_at).total_seconds())
 
+        # Generate AI summary (cached in DB)
+        ai_summary = self._get_or_generate_ai_summary(exam, questions, answer_map)
+
+        # Generate domain analysis from knowledge nodes
+        domain_analysis = self._build_domain_analysis(exam.id, answers)
+
         result = {
             "error": False,
             "exam_id": str(exam.id),
@@ -79,6 +86,8 @@ class ExamResultService:
             "total_questions": exam.total_questions,
             "time_spent_seconds": time_spent,
             "user_answers": user_answers,
+            "ai_summary": ai_summary,
+            "domain_analysis": domain_analysis,
             "questions": [
                 {
                     "id": str(q.id),
@@ -99,6 +108,124 @@ class ExamResultService:
             result["comparison"] = comparison
 
         return result
+
+    def _get_or_generate_ai_summary(self, exam, questions, answer_map) -> str:
+        """Generate and cache AI analysis summary based on exam performance."""
+        if exam.ai_summary:
+            return exam.ai_summary
+
+        total = len(questions)
+        if total == 0:
+            return ""
+
+        correct = sum(
+            1 for q in questions
+            if answer_map.get(str(q.id)) and answer_map[str(q.id)].is_correct
+        )
+        rate = round(correct / total * 100)
+
+        # Analyze by difficulty
+        diff_stats: dict[str, list[int]] = {}
+        bloom_stats: dict[str, list[int]] = {}
+        for q in questions:
+            d = getattr(q, 'difficulty', 'medium') or 'medium'
+            b = getattr(q, 'bloom_category', 'remember') or 'remember'
+            a = answer_map.get(str(q.id))
+            is_correct = 1 if (a and a.is_correct) else 0
+
+            diff_stats.setdefault(d, [0, 0])
+            diff_stats[d][0] += is_correct
+            diff_stats[d][1] += 1
+
+            bloom_stats.setdefault(b, [0, 0])
+            bloom_stats[b][0] += is_correct
+            bloom_stats[b][1] += 1
+
+        diff_labels = {"easy": "基礎題", "medium": "中等題", "hard": "進階題"}
+        bloom_labels = {
+            "remember": "記憶", "understand": "理解", "apply": "應用",
+            "analyze": "分析", "evaluate": "評鑑", "create": "創造",
+        }
+
+        # Build summary parts
+        parts = []
+
+        # Overall performance
+        if rate >= 90:
+            parts.append(f"整體表現優異，答對率 {rate}%，展現了紮實的知識掌握度。")
+        elif rate >= 70:
+            parts.append(f"整體表現不錯，答對率 {rate}%，大部分知識點已掌握。")
+        elif rate >= 50:
+            parts.append(f"答對率 {rate}%，部分知識點需要加強，建議針對錯題進行複習。")
+        else:
+            parts.append(f"答對率 {rate}%，建議重新複習核心概念，並透過錯題本進行針對性練習。")
+
+        # Difficulty analysis
+        weak_diffs = []
+        strong_diffs = []
+        for d, (c, t) in diff_stats.items():
+            r = round(c / t * 100) if t > 0 else 0
+            label = diff_labels.get(d, d)
+            if r < 50 and t >= 2:
+                weak_diffs.append(f"{label}（{r}%）")
+            elif r >= 80 and t >= 2:
+                strong_diffs.append(f"{label}（{r}%）")
+
+        if weak_diffs:
+            parts.append(f"在{', '.join(weak_diffs)}的表現較弱，建議加強練習。")
+        if strong_diffs:
+            parts.append(f"在{', '.join(strong_diffs)}表現出色，繼續保持！")
+
+        # Bloom taxonomy analysis
+        weak_blooms = []
+        for b, (c, t) in bloom_stats.items():
+            r = round(c / t * 100) if t > 0 else 0
+            label = bloom_labels.get(b, b)
+            if r < 50 and t >= 2:
+                weak_blooms.append(label)
+
+        if weak_blooms:
+            parts.append(f"在「{', '.join(weak_blooms)}」層次的題目需要多加練習，建議搭配錯題本深入理解。")
+
+        summary = " ".join(parts)
+
+        # Cache to DB
+        exam.ai_summary = summary
+        self.db.commit()
+
+        return summary
+
+    def _build_domain_analysis(self, exam_id, answers) -> list:
+        """Build domain (knowledge node) analysis for the exam."""
+        if not answers:
+            return []
+
+        results = (
+            self.db.query(
+                KnowledgeNode.name,
+                func.sum(func.cast(Answer.is_correct, SAInteger)).label("correct"),
+                func.count(Answer.id).label("total"),
+            )
+            .join(Question, Question.id == Answer.question_id)
+            .join(KnowledgeNode, KnowledgeNode.id == Question.node_id)
+            .filter(Answer.exam_id == exam_id)
+            .group_by(KnowledgeNode.name)
+            .all()
+        )
+
+        domain_list = []
+        for name, correct, total in results:
+            pct = round(correct / total * 100) if total > 0 else 0
+            domain_list.append({
+                "domain": name,
+                "correct": correct,
+                "total": total,
+                "percentage": pct,
+            })
+
+        # Sort: weakest first
+        domain_list.sort(key=lambda x: x["percentage"])
+        return domain_list
 
     def _get_comparison(self, current_exam: Exam, user_id: uuid.UUID) -> str | None:
         # Find previous submitted exam (before current one)
@@ -134,7 +261,7 @@ class ExamResultService:
         results = (
             self.db.query(
                 KnowledgeNode.name,
-                func.sum(func.cast(Answer.is_correct, sqlalchemy_int())).label("correct"),
+                func.sum(func.cast(Answer.is_correct, SAInteger)).label("correct"),
                 func.count(Answer.id).label("total"),
             )
             .join(Question, Question.id == Answer.question_id)
@@ -157,8 +284,3 @@ class ExamResultService:
             })
 
         return {"error": False, "nodes": nodes}
-
-
-def sqlalchemy_int():
-    from sqlalchemy import Integer
-    return Integer
