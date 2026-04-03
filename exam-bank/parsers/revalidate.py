@@ -42,7 +42,10 @@ def find_answer_pdf(question_pdf_path):
     qname = os.path.basename(question_pdf_path)
     for pattern in ["questions", "_q."]:
         replacement = "answers" if pattern == "questions" else "_a."
-        apath = os.path.join(d, qname.replace(pattern, replacement))
+        aname = qname.replace(pattern, replacement)
+        if aname == qname:  # 替換無效（filename 不含 pattern）→ 跳過
+            continue
+        apath = os.path.join(d, aname)
         if os.path.exists(apath):
             return apath
     return None
@@ -98,20 +101,35 @@ def revalidate_all():
             print(f"  ⚠️  無題目")
             continue
 
-        # ── Step A: 記錄 LLM 幻覺答案（僅供參考）──
-        llm_answers = {
+        # ── Step A: 記錄 MD 解析答案 + 判斷是否為原文印刷 ──
+        md_extracted_answers = {
             str(q["question_number"]): q.get("correct_answer", "")
-            for q in questions if q.get("correct_answer") in "ABCD"
+            for q in questions if q.get("correct_answer") in ("A", "B", "C", "D")
         }
-        print(f"  LLM 幻覺答案: {len(llm_answers)} 題（將丟棄）")
+        md_answer_count = len(md_extracted_answers)
+
+        # 判斷：>80% 題目有答案 + MD 含 **答案：X** 格式 → PDF 原文印刷答案
+        answers_are_printed = (
+            total_parsed > 0
+            and md_answer_count / total_parsed >= 0.8
+            and bool(re.search(r'\*\*答案[：:]\s*[A-D]\*\*', md_text))
+        )
+        llm_answers = md_extracted_answers  # L2 驗證用
+
+        if answers_are_printed:
+            print(f"  PDF 原文印有答案: {md_answer_count}/{total_parsed} 題")
+        else:
+            print(f"  LLM 提取答案: {md_answer_count} 題（待驗證）")
 
         # ── Step B: 清除所有答案 ──
         for q in questions:
             q["correct_answer"] = ""
             q["answer_source"] = ""
 
-        # ── Step C: 從答案卷 PDF 提取答案（唯一來源）──
+        # ── Step C: 從可信來源填入答案 ──
         answer_ref = {}
+
+        # C-1: 優先使用獨立答案卷 PDF
         if answer_pdf and os.path.exists(answer_pdf):
             print(f"  答案卷: {os.path.basename(answer_pdf)}")
             try:
@@ -122,7 +140,7 @@ def revalidate_all():
                     answer_ref = json.loads(json_match.group()).get("answers", {})
                     for q in questions:
                         num_str = str(q["question_number"])
-                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in "ABCD":
+                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in ("A", "B", "C", "D"):
                             q["correct_answer"] = answer_ref[num_str]
                             q["answer_source"] = "answer_pdf"
             except Exception as e:
@@ -139,22 +157,34 @@ def revalidate_all():
                                     answer_ref[str(num)] = ans
                     for q in questions:
                         num_str = str(q["question_number"])
-                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in "ABCD":
+                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in ("A", "B", "C", "D"):
                             q["correct_answer"] = answer_ref[num_str]
                             q["answer_source"] = "answer_pdf_pdfplumber"
                 except Exception as e2:
                     print(f"  ⚠️  pdfplumber 也失敗: {str(e2)[:80]}")
             time.sleep(REQUEST_DELAY_SEC)
+
+        # C-2: 無答案卷，但 PDF 原文有印刷答案
+        elif answers_are_printed:
+            print(f"  使用 PDF 原文印刷答案")
+            for q in questions:
+                num_str = str(q["question_number"])
+                if num_str in md_extracted_answers:
+                    q["correct_answer"] = md_extracted_answers[num_str]
+                    q["answer_source"] = "question_pdf_printed"
+            answer_ref = md_extracted_answers
+
+        # C-3: 都沒有
         else:
-            print(f"  ⚠️  無答案卷")
+            print(f"  ⚠️  無答案來源")
 
         # 統計
-        answered = sum(1 for q in questions if q["correct_answer"] in "ABCD")
+        answered = sum(1 for q in questions if q["correct_answer"] in ("A", "B", "C", "D"))
         excluded = total_parsed - answered
         print(f"  答案覆蓋: {answered}/{total_parsed} 題有答案，{excluded} 題排除")
 
         # ── 過濾無答案題目 ──
-        valid_questions = [q for q in questions if q.get("correct_answer") in "ABCD"]
+        valid_questions = [q for q in questions if q.get("correct_answer") in ("A", "B", "C", "D")]
 
         # ── 4 層驗證 ──
         # L1: 結構

@@ -462,7 +462,7 @@ def validate_structure(questions: list, expected_count: int = 0) -> ValidationRe
                 errors.append(f"題 {q['question_number']}：選項不完整")
 
         # 答案
-        if q.get("correct_answer", "") not in "ABCD":
+        if q.get("correct_answer", "") not in ("A", "B", "C", "D"):
             no_answer += 1
 
         # 題幹長度
@@ -477,7 +477,7 @@ def validate_structure(questions: list, expected_count: int = 0) -> ValidationRe
 
     # 答案分佈
     if questions:
-        dist = Counter(q.get("correct_answer", "") for q in questions if q.get("correct_answer") in "ABCD")
+        dist = Counter(q.get("correct_answer", "") for q in questions if q.get("correct_answer") in ("A", "B", "C", "D"))
         answered = sum(dist.values())
         stats["answer_distribution"] = dict(dist)
         stats["answer_rate"] = answered / len(questions) if questions else 0
@@ -487,6 +487,53 @@ def validate_structure(questions: list, expected_count: int = 0) -> ValidationRe
                 ratio = dist.get(letter, 0) / answered
                 if ratio > 0.45:
                     warnings.append(f"答案分佈異常：{letter} = {ratio:.0%}（預期 ~25%）")
+
+    # 題幹引用完整性檢查 — 偵測引用外部內容但實際缺失的情況
+    _REF_PATTERNS = [
+        (re.compile(r'如(?:上|下)?圖|見圖|參考圖|圖\s*\d+|如附圖'), "圖片"),
+        (re.compile(r'如下程式碼|下列程式碼|以下程式|下列程式|以下的程式|參考程式碼|如下所示的程式'), "程式碼"),
+        (re.compile(r'如下表|下表|見表|參考表|表\s*\d+'), "表格"),
+        (re.compile(r'如下圖表|以下圖表'), "圖表"),
+    ]
+    # 判斷實際內容是否包含程式碼或表格的特徵
+    _CODE_INDICATORS = re.compile(r'```|def |class |import |print\(|for .* in |if .*:|function |var |const |let |SELECT |FROM ')
+    _TABLE_INDICATORS = re.compile(r'\|.*\|.*\||┌|├|└|─{3,}')
+
+    ref_missing = 0
+    ref_details = []
+    for q in questions:
+        content = q.get("content", "")
+        opts_text = " ".join(q.get(f"option_{x}", "") for x in "abcd")
+        full_text = content + " " + opts_text
+
+        for pattern, ref_type in _REF_PATTERNS:
+            if pattern.search(content):
+                # 檢查內容中是否真的有對應的內嵌資源
+                has_resource = False
+                if ref_type == "程式碼":
+                    has_resource = bool(_CODE_INDICATORS.search(full_text))
+                elif ref_type in ("表格", "圖表"):
+                    has_resource = bool(_TABLE_INDICATORS.search(full_text))
+                # 圖片在純文字轉換中幾乎都會缺失
+                # ref_type == "圖片" → has_resource = False
+
+                if not has_resource:
+                    ref_missing += 1
+                    if len(ref_details) < 5:
+                        ref_details.append(f"題 {q['question_number']}：引用「{ref_type}」但內容缺失")
+                    break  # 每題只報一次
+
+    stats["ref_missing"] = ref_missing
+    if ref_missing > 0:
+        ref_pct = ref_missing / len(questions)
+        for detail in ref_details:
+            warnings.append(detail)
+        if ref_missing > len(ref_details):
+            warnings.append(f"...另有 {ref_missing - len(ref_details)} 題引用缺失")
+        if ref_pct > 0.3:
+            errors.append(f"引用完整性嚴重不足：{ref_missing}/{len(questions)} 題（{ref_pct:.0%}）引用外部內容但實際缺失")
+        elif ref_pct > 0.1:
+            warnings.append(f"引用完整性偏低：{ref_missing}/{len(questions)} 題（{ref_pct:.0%}）引用外部內容缺失")
 
     # 連號檢查
     numbers = sorted(q["question_number"] for q in questions)
@@ -538,8 +585,8 @@ def validate_answers_cross_check_v2(
 
     # ── 主要指標：答案卷覆蓋率 ──
     answer_pdf_count = len({k for k, v in answer_pdf_answers.items()
-                           if isinstance(v, str) and v in "ABCD"}) if answer_pdf_answers else 0
-    answered_in_questions = sum(1 for q in questions if q.get("correct_answer") in "ABCD")
+                           if isinstance(v, str) and v in ("A", "B", "C", "D")}) if answer_pdf_answers else 0
+    answered_in_questions = sum(1 for q in questions if q.get("correct_answer") in ("A", "B", "C", "D"))
 
     stats["total_questions"] = total_questions
     stats["answer_pdf_extracted"] = answer_pdf_count
@@ -563,7 +610,7 @@ def validate_answers_cross_check_v2(
         cross_stats = {"compared": 0, "matched": 0, "mismatched": 0}
         for num_str, ref in answer_pdf_answers.items():
             llm_ans = llm_answers.get(num_str, "")
-            if isinstance(llm_ans, str) and llm_ans in "ABCD" and isinstance(ref, str) and ref in "ABCD":
+            if isinstance(llm_ans, str) and llm_ans in ("A", "B", "C", "D") and isinstance(ref, str) and ref in ("A", "B", "C", "D"):
                 cross_stats["compared"] += 1
                 if llm_ans == ref:
                     cross_stats["matched"] += 1
@@ -760,25 +807,41 @@ def convert_single_pdf(
         questions = parse_md_to_questions(full_md)
         logger.info("  解析出 %d 題", len(questions))
 
-        # ── 答案處理策略（董事會 2026-04-03 批准）──
-        # 答案卷 PDF 是唯一真實來源，LLM 從題目 PDF 幻覺出的答案全部丟棄
+        # ── 答案處理策略（董事會 2026-04-03 批准，v4 修正）──
+        # 優先順序：① 獨立答案卷 PDF → ② 題目 PDF 原文印刷答案 → ③ 排除
+        # 「LLM 幻覺」= LLM 推理出的答案（PDF 原文沒有印）
+        # 「原文印刷」= PDF 本身就有答案欄（如 iPAS 格式：答案印在表格左側）
 
-        # Step A: 記錄 LLM 從題目 PDF 提取的答案（僅供 L2 參考比對）
-        llm_extracted_answers = {
+        # Step A: 記錄 MD 解析出的答案 + 判斷是否為「原文印刷」
+        md_extracted_answers = {
             str(q["question_number"]): q.get("correct_answer", "")
-            for q in questions if q.get("correct_answer") in "ABCD"
+            for q in questions if q.get("correct_answer") in ("A", "B", "C", "D")
         }
-        llm_answer_count = len(llm_extracted_answers)
-        logger.info("  LLM 從題目 PDF 提取到 %d 題答案（待驗證）", llm_answer_count)
+        md_answer_count = len(md_extracted_answers)
+        total_q = len(questions)
 
-        # Step B: 清除所有 LLM 幻覺答案 — 答案只能來自答案卷
+        # 判斷：若 MD 中 >80% 的題目都有答案，且答案來自 **答案：X** 格式
+        # → 極大概率是 PDF 原文就印有答案（如 iPAS），不是 LLM 幻覺
+        answers_are_printed = (
+            total_q > 0
+            and md_answer_count / total_q >= 0.8
+            and bool(re.search(r'\*\*答案[：:]\s*[A-D]\*\*', full_md))
+        )
+
+        if answers_are_printed:
+            logger.info("  PDF 原文印有答案: %d/%d 題（答案欄格式）", md_answer_count, total_q)
+        else:
+            logger.info("  LLM 從題目 PDF 提取到 %d 題答案（待驗證，可能為幻覺）", md_answer_count)
+
+        # Step B: 清除答案 — 後續由可信來源重新填入
         for q in questions:
             q["correct_answer"] = ""
             q["answer_source"] = ""
 
-        # Step C: 從答案卷 PDF 提取答案（唯一真實來源）
+        # Step C: 從可信來源填入答案
+        # C-1: 優先使用獨立答案卷 PDF（最可信）
         if answer_pdf_path and os.path.exists(answer_pdf_path):
-            logger.info("  匹配答案卷（唯一來源）: %s", os.path.basename(answer_pdf_path))
+            logger.info("  匹配答案卷（最高優先）: %s", os.path.basename(answer_pdf_path))
 
             try:
                 ans_text = _call_gemini_with_pdf(client, answer_pdf_path,
@@ -788,7 +851,7 @@ def convert_single_pdf(
                     answer_ref = json.loads(json_match.group()).get("answers", {})
                     for q in questions:
                         num_str = str(q["question_number"])
-                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in "ABCD":
+                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in ("A", "B", "C", "D"):
                             q["correct_answer"] = answer_ref[num_str]
                             q["answer_source"] = "answer_pdf"
             except Exception as e:
@@ -805,18 +868,30 @@ def convert_single_pdf(
                                     answer_ref[str(num)] = ans
                     for q in questions:
                         num_str = str(q["question_number"])
-                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in "ABCD":
+                        if num_str in answer_ref and isinstance(answer_ref[num_str], str) and answer_ref[num_str] in ("A", "B", "C", "D"):
                             q["correct_answer"] = answer_ref[num_str]
                             q["answer_source"] = "answer_pdf_pdfplumber"
                 except Exception as e2:
                     logger.warning("  pdfplumber 也失敗: %s", str(e2)[:80])
 
             time.sleep(REQUEST_DELAY_SEC)
+
+        # C-2: 若無獨立答案卷，但 PDF 原文有印刷答案 → 使用原文答案
+        elif answers_are_printed:
+            logger.info("  使用 PDF 原文印刷答案（答案欄格式）")
+            for q in questions:
+                num_str = str(q["question_number"])
+                if num_str in md_extracted_answers:
+                    q["correct_answer"] = md_extracted_answers[num_str]
+                    q["answer_source"] = "question_pdf_printed"
+            answer_ref = md_extracted_answers
+
+        # C-3: 都沒有 → 無法取得答案
         else:
-            logger.warning("  ⚠️ 無答案卷 — 所有題目將無答案（不列入題庫）")
+            logger.warning("  ⚠️ 無答案來源（無答案卷、PDF 原文也無答案欄）— 題目將排除")
 
         # 統計答案覆蓋
-        answered = sum(1 for q in questions if q["correct_answer"] in "ABCD")
+        answered = sum(1 for q in questions if q["correct_answer"] in ("A", "B", "C", "D"))
         no_answer = len(questions) - answered
         logger.info("  答案覆蓋: %d/%d 題有答案（來自答案卷），%d 題無答案（將排除）",
                      answered, len(questions), no_answer)
@@ -874,7 +949,7 @@ def convert_single_pdf(
 
     # ── 無答案題目過濾（董事會 2026-04-03：無答案不列入考題）──
     all_questions = questions  # 保留完整列表供記錄
-    valid_questions = [q for q in questions if q.get("correct_answer") in "ABCD"]
+    valid_questions = [q for q in questions if q.get("correct_answer") in ("A", "B", "C", "D")]
     excluded_count = len(all_questions) - len(valid_questions)
 
     if excluded_count > 0:
