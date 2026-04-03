@@ -1,0 +1,108 @@
+{
+  "import_meta": {
+    "source_name": "代號：60130 111年專門職業及技術人員高等考試建築師、",
+    "subject": "",
+    "year": 111,
+    "session": 0,
+    "total_questions": 7,
+    "bloom_distribution": {
+      "remember": 3,
+      "analyze": 2,
+      "understand": 1,
+      "apply": 1
+    },
+    "difficulty_distribution": {
+      "easy": 4,
+      "hard": 2,
+      "medium": 1
+    },
+    "source_pdf": "111_broker_regulations_q.pdf",
+    "answer_pdf": null
+  },
+  "questions": [
+    {
+      "question_number": 4,
+      "content": "依據不動產估價技術規則之規定，在一宗土地內有不同法定用途時，應如何估價？ 應考量不同用途之合併或分割前後之價格變動情形，予酌量增減",
+      "type": "single_choice",
+      "option_a": "應以合併用途後估價，並以合併用途前各筆土地價值比例分算其土地價格",
+      "option_b": "應考慮不同用途之建築物對宗地價格造成之影響，予以酌量增減",
+      "option_c": "應考量其最有效使用及各種用途之相關性及分割之難易度後，決定分別估價或依主要用途估價",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 7,
+      "content": "不動產估價成本法對勘估標的之營造或施工費，其中「指以類似勘估標的之比較標的或標準建物 之單位面積（或體積）營造或施工費單價為基礎，經比較並調整價格後，乘以勘估標的之面積（或",
+      "type": "single_choice",
+      "option_a": "體積）總數，以求取勘估標的營造或施工費。」方法，係指何方法？",
+      "option_b": "單位工程法 淨計法",
+      "option_c": "單位面積（或體積）比較法 工程造價比較法",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 9,
+      "content": "目前內政部積極推動試辦電腦估價，所應用計量模型分析法係指「蒐集相當數量具代表性之比較 標的，透過計量模型分析，求出各主要影響價格因素與比較標的價格二者之關係式，以推算各主",
+      "type": "single_choice",
+      "option_a": "要影響價格因素之調整率及調整額之方法。」請問應用時應符合條件中，截距項以外其他各主要",
+      "option_b": "影響價格因素之係數估計值同時為零之顯著機率不得大於多少？",
+      "option_c": "百分之五 百分之六 百分之七 百分之八",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 10,
+      "content": "不動產估價應就不同估價方法估價所獲得之價格進行綜合比較，視不同價格所蒐集資料可信度及 估價種類目的條件差異，考量價格形成因素之相近程度，決定勘估標的價格。若以契約約定租金",
+      "type": "single_choice",
+      "option_a": "作為不動產證券化受益證券信託利益分配基礎者，何種方法應視前項情形賦予相對較大之權重？",
+      "option_b": "比較法 直接資本化法之收益價格",
+      "option_c": "折現現金流量分析法之收益價格 成本法",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "understand"
+    },
+    {
+      "question_number": 12,
+      "content": "不動產估價之限定價格指具有市場性之不動產，在下列限定條件之一所形成之價值，並以貨幣金 額表示者。請問下列何者非屬限定條件？",
+      "type": "single_choice",
+      "option_a": "以不動產所有權以外其他權利與所有權合併為目的",
+      "option_b": "以不動產合併為目的",
+      "option_c": "以違反經濟合理性之不動產分割為前提",
+      "option_d": "經適當市場行銷及正常交易條件形成",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 14,
+      "content": "不動產估價比較法於市場成交資訊充足時廣為運用，有關比較法之敘述，下列何者錯誤？ 通常採用三件以上比較標的",
+      "type": "single_choice",
+      "option_a": "試算價格之調整運算過程中，任一單獨項目之價格調整率大於百分之十五，應排除該比較標的",
+      "option_b": "之適用",
+      "option_c": "試算價格之調整運算過程中，總調整率大於百分之三十時，應排除該比較標的之適用",
+      "option_d": "其調整以差額法為原則",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 23,
+      "content": "某甲有一棟5層透天住宅，其中第一層到第四層為合法建築物，頂樓層為違章建築物，某甲委託 估價人員進行房地估價，並要求估價人員對所有樓層進行估價，估價人員應如何估價較為恰當？",
+      "type": "single_choice",
+      "option_a": "僅針對合法建築物進行估價",
+      "option_b": "拒絕對建築物估價",
+      "option_c": "就合法建築物與違章建築物分別標示各該部分之價格",
+      "option_d": "合法建築物以成本法估價，違章建築物則以加速折舊方式估價",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "apply"
+    }
+  ]
+}

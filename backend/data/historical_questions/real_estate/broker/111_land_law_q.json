@@ -1,0 +1,189 @@
+{
+  "import_meta": {
+    "source_name": "代號：60140 111年專門職業及技術人員高等考試建築師、",
+    "subject": "",
+    "year": 111,
+    "session": 0,
+    "total_questions": 14,
+    "bloom_distribution": {
+      "remember": 13,
+      "evaluate": 1
+    },
+    "difficulty_distribution": {
+      "easy": 13,
+      "hard": 1
+    },
+    "source_pdf": "111_land_law_q.pdf",
+    "answer_pdf": null
+  },
+  "questions": [
+    {
+      "question_number": 1,
+      "content": "下列有關未辦繼承登記不動產處理方式之敘述，何者正確？ 未辦繼承登記不動產，於繼承開始之日起逾六個月未辦理繼承登記者，該管直轄市或縣市地政",
+      "type": "single_choice",
+      "option_a": "機關於查明後，應即公告繼承人於一個月內聲請登記",
+      "option_b": "未辦繼承登記不動產，由該管直轄市或縣市地政機關列冊管理期間為十年",
+      "option_c": "未辦繼承登記不動產，逾期仍未辦繼承而由該管直轄市或縣市地政機關公開標售時，土地或建",
+      "option_d": "築改良物租賃期間未超過五年者，於標售後以五年為限",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 2,
+      "content": "下列有關共有不動產處分等之敘述，何者錯誤？ 共有土地或建築改良物的處分、變更及設定地上權、農育權、不動產役權或典權，應有共有人",
+      "type": "single_choice",
+      "option_a": "過半數及其應有部分合計過半數之同意",
+      "option_b": "共有土地或建築改良物的處分、變更或設定負擔，共有人應事先以書面通知他共有人；如不能",
+      "option_c": "以書面通知時，應依法公示催告之",
+      "option_d": "共有人對共有土地或建築改良物的處分、變更及設定地上權、農育權、不動產役權或典權，對",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 4,
+      "content": "依房屋稅條例之規定，下列有關房屋稅納稅義務人之敘述，何者錯誤？ 原則上向房屋所有人徵收之",
+      "type": "single_choice",
+      "option_a": "未辦建物所有權第一次登記且所有人不明之房屋，向使用執照所載起造人徵收之",
+      "option_b": "未辦建物所有權第一次登記且所有人不明之房屋，無使用執照者，向建造執照所載起造人徵收之",
+      "option_c": "未辦建物所有權第一次登記且所有人不明之房屋，無使用執照、亦無建造執照者，暫不徵收之",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 6,
+      "content": "依契稅條例之規定，以不動產為信託財產時，在信託關係人間移轉所有權時，何種情形須課徵契 稅？",
+      "type": "single_choice",
+      "option_a": "因信託行為成立，委託人與受託人間",
+      "option_b": "信託契約明定信託財產之歸屬人為第三人者，信託關係消滅時，委託人與歸屬人間",
+      "option_c": "因信託行為不成立，委託人與受託人間",
+      "option_d": "信託關係存續中受託人變更時，原受託人與新受託人間",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 8,
+      "content": "依規定，非都市土地甲種建築用地之建蔽率為百分之六十，容積率為百分之二百四十。倘甲有 1 筆100坪的甲種建築用地想規劃蓋1棟豪宅自住，請問甲的房屋每層樓最大建坪有幾坪？可蓋幾",
+      "type": "single_choice",
+      "option_a": "層樓高？",
+      "option_b": "最大建坪60坪，4層樓高 最大建坪60坪，5層樓高",
+      "option_c": "最大建坪100坪，2層樓高 最大建坪100坪，3層樓高",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 11,
+      "content": "依土地徵收條例之規定，下列敘述何者正確？ 撤銷或廢止徵收者，徵收前原設定之他項權利及耕地租約得予回復",
+      "type": "single_choice",
+      "option_a": "撤銷或廢止徵收者，如原土地所有權人及他項權利人申請於發給之抵價地上設定抵押權或典權",
+      "option_b": "時，其原抵押權或典權不予回復",
+      "option_c": "撤銷或廢止徵收，由需用土地人向中央主管機關申請之",
+      "option_d": "撤銷或廢止徵收，由該管直轄市或縣（市）主管機關單獨向中央主管機關申請之",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 12,
+      "content": "都市計畫地區於訂定分區發展優先次序後，第一期發展地區應於主要計畫發布實施後，多久期限 完成細部計畫？並於細部計畫發布後，多久期限完成公共設施建設？",
+      "type": "single_choice",
+      "option_a": "五年內完成細部計畫，細部計畫發布後二年內完成公共設施建設",
+      "option_b": "四年內完成細部計畫，細部計畫發布後三年內完成公共設施建設",
+      "option_c": "三年內完成細部計畫，細部計畫發布後四年內完成公共設施建設",
+      "option_d": "二年內完成細部計畫，細部計畫發布後五年內完成公共設施建設",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "evaluate"
+    },
+    {
+      "question_number": 13,
+      "content": "依土地法第34條之1規定，共有土地之處分、變更，下列何比例之同意，方得行之？ 共有人三分之一及其應有部分合計過二分之一之同意",
+      "type": "single_choice",
+      "option_a": "共有人二分之一及其應有部分合計過三分之一之同意",
+      "option_b": "共有人合計逾三分之二之同意",
+      "option_c": "應有部分合計逾三分之二之同意",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 16,
+      "content": "依土地法規定，租用建築房屋之基地，發生下列何種情形時，出租人不得收回？ 承租人以基地供違反法令之使用時",
+      "type": "single_choice",
+      "option_a": "承租人轉租基地於他人時",
+      "option_b": "承租人積欠租金額，除以擔保現金抵償外，達二個月以上時",
+      "option_c": "承租人違反租賃契約時",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 17,
+      "content": "依土地徵收條例規定，區段徵收範圍內土地，經規劃整理後，有關其處理方式，下列敘述何者錯 誤？",
+      "type": "single_choice",
+      "option_a": "抵價地發交被徵收土地所有權人領回",
+      "option_b": "國民住宅用地得以讓售",
+      "option_c": "安置原住戶所需土地得以讓售",
+      "option_d": "可供建築土地依規定標租時，其期限不得逾二十五年",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 18,
+      "content": "甲為中華民國境內居住之個人，他在A市持有已長達10年的1筆面積為300坪土地，於民國（下 同）107 年間參加自辦市地重劃。該自辦市地重劃區於 110 年 6 月 1 日完成分配公告程序後，在",
+      "type": "single_choice",
+      "option_a": "110年10月1日完成重劃土地登記，在110 年10月20日完成土地交接，甲取回150坪土地，重",
+      "option_b": "劃後評定價格每坪為 30 萬元。甲在 111 年 5 月 1 日趁土地高價時將 150 坪土地全數出售，每坪",
+      "option_c": "售價40萬元。請問甲依法要繳多少稅率的房地交易所得稅？",
+      "option_d": "稅率為百分之四十五 稅率為百分之三十五",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 22,
+      "content": "依平均地權條例規定，土地所有權移轉或設定典權時，有關申報移轉現值之審核標準，下列敘述 何者正確？",
+      "type": "single_choice",
+      "option_a": "遺贈之土地，以遺贈人簽立遺囑當期之公告土地現值為準",
+      "option_b": "申報人逾訂定契約之日起三十日始申報者，以訂約日當期之公告土地現值為準",
+      "option_c": "依法院判決移轉登記者，以法院終局判決日當期之公告土地現值為準",
+      "option_d": "經法院拍賣之土地，以拍定日當期之公告土地現值為準",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 23,
+      "content": "依平均地權條例規定，實施市地重劃時，重劃區內供公共使用之道路等十項用地，應優先以下列 何種土地抵充？",
+      "type": "single_choice",
+      "option_a": "原廣場、綠地、停車場、零售市場地",
+      "option_b": "原公有道路、溝渠、河川及未登記地",
+      "option_c": "原兒童遊樂場、鄰里公園、國民小學、國民中學地",
+      "option_d": "原國有地、學產地、直轄市縣（市）有地、鄉鎮（市）有地",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 25,
+      "content": "依平均地權條例規定，下列銷售預售屋者相關規定之敘述，何者錯誤？ 應於銷售前將預售屋買賣定型化契約，報請預售屋坐落基地所在之直轄市、縣（市）主管機關",
+      "type": "single_choice",
+      "option_a": "備查",
+      "option_b": "原則上應於簽訂買賣契約書之日起三十日內，向直轄市、縣（市）主管機關申報登錄資訊",
+      "option_c": "向買受人收受定金，應以書面契據確立買賣價金等事項，並不得約定不利於買受人之事項",
+      "option_d": "向買受人收受定金所訂立之書面契據，得轉售予第三人",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    }
+  ]
+}

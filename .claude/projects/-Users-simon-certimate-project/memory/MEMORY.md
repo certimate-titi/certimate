@@ -1,0 +1,1 @@
+- [No direct DB mock](feedback_no_direct_db_mock.md) — Test data must go through UI flows (CSV import), never direct DB inserts

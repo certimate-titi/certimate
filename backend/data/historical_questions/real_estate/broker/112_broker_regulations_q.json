@@ -1,0 +1,107 @@
+{
+  "import_meta": {
+    "source_name": "代號：60130 112年專門職業及技術人員高等考試建築師、",
+    "subject": "",
+    "year": 112,
+    "session": 0,
+    "total_questions": 7,
+    "bloom_distribution": {
+      "apply": 1,
+      "remember": 4,
+      "analyze": 2
+    },
+    "difficulty_distribution": {
+      "medium": 1,
+      "easy": 4,
+      "hard": 2
+    },
+    "source_pdf": "112_broker_regulations_q.pdf",
+    "answer_pdf": null
+  },
+  "questions": [
+    {
+      "question_number": 50,
+      "content": "年、殘餘價格率 5%的條件下，依不動產估價技術規則的等速折舊路 徑計算，建物的現在價值是多少？另請以專業人士的觀點，分析這個價",
+      "type": "single_choice",
+      "option_a": "格的合理性。（25 分）",
+      "option_b": "乙、測驗題部分：（50分）",
+      "option_c": "本試題為單一選擇題，請選出一個正確或最適當答案。",
+      "option_d": "共25題，每題2分，須用2B鉛筆在試卡上依題號清楚劃記，於本試題或申論試卷上作答者，不予計分。",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "apply"
+    },
+    {
+      "question_number": 15,
+      "content": "依不動產估價技術規則之規定，有關特殊宗地估價之敘述，下列何者正確？ 高爾夫球場之估價，以比較法估價為原則",
+      "type": "single_choice",
+      "option_a": "溫泉地之估價，以比較法估價為原則",
+      "option_b": "鹽田之估價，以比較法估價為原則",
+      "option_c": "林地之估價，以比較法估價為原則",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 16,
+      "content": "有關計量模型分析法之敘述，下列何者錯誤？ 計量模型分析法截距項以外其他各主要影響價格因素之係數估計值同時為零之顯著機率不得",
+      "type": "single_choice",
+      "option_a": "大於百分之五",
+      "option_b": "計量模型分析法只能用以推算各主要影響價格因素之調整率",
+      "option_c": "計量模型分析法可求出各主要影響價格因素與比較標的價格二者之關係式",
+      "option_d": "計量模型分析採迴歸分析者，其調整後判定係數不得低於零點七",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 17,
+      "content": "有關不動產租金估計之敘述，下列何者正確？ 不動產租金估計，以估計勘估標的之承租人每期支付予出租人之租金，加計押金或保證金、權",
+      "type": "single_choice",
+      "option_a": "利金及其他相關運用收益之總數為原則",
+      "option_b": "新訂租約之租金估計得以勘估標的預估契約租金之淨收益，估計租金未來變動趨勢調整後，再",
+      "option_c": "加計必要費用",
+      "option_d": "續訂租約之租金估計得以勘估標的價格乘以租金收益率，以估計淨收益，再加計必要費用",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 21,
+      "content": "有關房地成本價格之計算公式，下列何者正確？ 房地成本價格＝土地總成本＋建物成本價格",
+      "type": "single_choice",
+      "option_a": "房地成本價格＝土地總成本＋建物總成本",
+      "option_b": "房地成本價格＝土地價格＋建物成本價格－建物累積折舊額",
+      "option_c": "房地成本價格＝土地價格＋建物成本價格＋建物累積折舊額",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 23,
+      "content": "比較法估價試算價格之調整運算過程中，區域因素調整、個別因素調整或區域因素及個別因素內 之任一單獨項目之價格調整率大於（甲），或情況、價格日期、區域因素及個別因素調整總調整率",
+      "type": "single_choice",
+      "option_a": "大於（乙）時，判定該比較標的與勘估標的差異過大，應排除該比較標的之適用。請問（甲）與",
+      "option_b": "（乙）各為多少？",
+      "option_c": "（甲）為百分之十五，（乙）為百分之十五",
+      "option_d": "（甲）為百分之十五，（乙）為百分之三十",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "analyze"
+    },
+    {
+      "question_number": 25,
+      "content": "有關一宗土地內有數種不同法定用途時之估價敘述，下列何者錯誤？ 估價前應先考量其最有效使用再決定估價方式",
+      "type": "single_choice",
+      "option_a": "在考量宗地狀況後可以視不同法定用途採分別估價",
+      "option_b": "估價前應先考量各種用途之相關性及分割之難易度再決定估價方式",
+      "option_c": "估價時無須考量是否有數種不同法定用途，只需依其主要用途估價",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    }
+  ]
+}

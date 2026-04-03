@@ -1,0 +1,67 @@
+{
+  "_description": "TiTi 版本號管理 — 三軌獨立版本",
+  "_convention": "語意化版本 MAJOR.MINOR.PATCH — MAJOR=破壞性變更, MINOR=新功能, PATCH=修復",
+  "_updated": "2026-04-03T18:00",
+  "_feature_count": 32,
+
+  "frontend": {
+    "version": "0.2.0",
+    "changelog": [
+      "0.2.0 (2026-04-03) — 考古題測驗範圍選擇、備考科目管理修復、知識節點載入",
+      "0.1.0 (初始) — 首版 UI：登入/註冊/引導/儀表板/知識庫/測驗/錯題/帳號/管理後台"
+    ],
+    "feature_coverage": {
+      "aligned": ["01","02","03","03a","03b","04","04a","05","06","07","08","08a","08b","13","14","15","17"],
+      "partial": ["10","12","12a","12b","12c"],
+      "missing": ["09","11","16","18","19","20","21"]
+    }
+  },
+
+  "backend": {
+    "version": "0.3.0",
+    "changelog": [
+      "0.3.0 (2026-04-03) — Migration 021-022, 考古題抽題機制, knowledge_nav available_questions",
+      "0.2.0 (2026-04-02) — Bloom enum, historical_source 欄位, 考科 seed",
+      "0.1.0 (初始) — 22 支 API router, 474 BDD scenarios (343 實作 / 131 @ignore)"
+    ],
+    "migration_head": "022",
+    "feature_coverage": {
+      "aligned": ["01","02","03","03a","03b","04","04a","05","06","07","08","08a","08b","09","10","11","12","12a","12b","12c","13","14","15","16","17"],
+      "no_test": ["18","19","20","21"]
+    }
+  },
+
+  "exam_bank": {
+    "version": "1.0.0",
+    "description": "考題設計模組 — 考古題題庫、爬蟲、解析器、Bloom 分類、出題策略",
+    "changelog": [
+      "1.0.0 (2026-04-03) — 首版：3 類 8 科 45 份試卷 2786 題, Bloom 分類完成, 知識節點映射完成"
+    ],
+    "statistics": {
+      "categories": 3,
+      "subjects": 8,
+      "exam_papers": 45,
+      "total_questions": 2786,
+      "with_answers": 2640,
+      "answer_rate": "94.8%",
+      "bloom_distribution": {
+        "remember": 2120,
+        "apply": 239,
+        "analyze": 201,
+        "understand": 83,
+        "create": 74,
+        "evaluate": 69
+      }
+    },
+    "subjects_detail": [
+      {"code": "securities", "name": "證券商業務員", "questions": 760, "source": "SFI"},
+      {"code": "derivatives", "name": "期貨商業務員", "questions": 587, "source": "SFI"},
+      {"code": "financial_planning", "name": "投信投顧業務員", "questions": 400, "source": "SFI"},
+      {"code": "anti_money_laundering", "name": "防制洗錢專業人員", "questions": 320, "source": "SFI"},
+      {"code": "ai_planner", "name": "AI 應用規劃師", "questions": 213, "source": "iPAS"},
+      {"code": "big_data", "name": "巨量資料分析師", "questions": 183, "source": "GitHub"},
+      {"code": "information_security", "name": "資訊安全工程師", "questions": 180, "source": "iPAS"},
+      {"code": "broker", "name": "不動產經紀人", "questions": 143, "source": "考選部"}
+    ]
+  }
+}

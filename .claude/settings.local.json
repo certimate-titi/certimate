@@ -80,7 +80,28 @@
       "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/register -H 'Content-Type: application/json' -d '{\"\"\"\"email\"\"\"\":\"\"\"\"test@certimate.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Test1234!\"\"\"\",\"\"\"\"display_name\"\"\"\":\"\"\"\"Test User\"\"\"\",\"\"\"\"terms_agreed\"\"\"\":true}')",
       "Bash(python3 -m json.tool)",
       "Bash(docker exec:*)",
-      "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"\"\"\"email\"\"\"\":\"\"\"\"test@certimate.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Test1234!\"\"\"\"}')"
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"\"\"\"email\"\"\"\":\"\"\"\"test@certimate.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Test1234!\"\"\"\"}')",
+      "Bash(export PATH=\"$HOME/.nvm/versions/node/*/bin:$HOME/.volta/bin:/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(command ls:*)",
+      "Bash(/opt/homebrew/bin/npx tsc:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npx tsc --noEmit --pretty)",
+      "Bash(curl -s http://localhost:8000/api/v1/health)",
+      "Bash(docker ps:*)",
+      "Bash(curl -s http://localhost:8000/docs)",
+      "Bash(/opt/homebrew/bin/docker ps:*)",
+      "Read(//usr/**)",
+      "Read(//Applications/**)",
+      "Bash(curl -s http://localhost:8000/api/v1/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@certimate.com\"\",\"\"password\"\":\"\"admin123\"\"}')",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" python -c \":*)",
+      "Bash(/usr/bin/python3 -c \":*)",
+      "Bash(ls /Users/simon/certimate/project/backend/.venv/bin/python*)",
+      "Bash(ls /Users/simon/certimate/project/backend/venv/bin/python*)",
+      "Bash(find /Users/simon/certimate/project/backend -name python* -path */bin/*)",
+      "Bash(.venv/bin/python -m alembic upgrade head)",
+      "Bash(lsof -ti:8000)",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(/bin/ls -la /Users/simon/.claude/skills/)",
+      "Read(//Users/simon/Downloads/**)"
     ]
   }
 }

@@ -3,11 +3,12 @@
   "configurations": [
     {
       "name": "frontend-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["/opt/homebrew/bin/npm", "run", "dev"],
       "cwd": "frontend",
       "env": {
-        "NEXT_PUBLIC_API_URL": "http://localhost:8000/api/v1"
+        "NEXT_PUBLIC_API_URL": "http://localhost:8000/api/v1",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
       },
       "port": 3000,
       "autoPort": true

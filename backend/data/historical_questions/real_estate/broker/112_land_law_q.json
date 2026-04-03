@@ -1,0 +1,235 @@
+{
+  "import_meta": {
+    "source_name": "代號：60140 112年專門職業及技術人員高等考試建築師、",
+    "subject": "",
+    "year": 112,
+    "session": 0,
+    "total_questions": 18,
+    "bloom_distribution": {
+      "remember": 18
+    },
+    "difficulty_distribution": {
+      "easy": 18
+    },
+    "source_pdf": "112_land_law_q.pdf",
+    "answer_pdf": null
+  },
+  "questions": [
+    {
+      "question_number": 2,
+      "content": "關於土地所有權人出售自用住宅用地時，土地增值稅適用「一生一次」之優惠稅率，下列何者正確？ 土地增值稅之優惠稅率為千分之二",
+      "type": "single_choice",
+      "option_a": "僅限於都市土地面積未超過三公畝部分或非都市土地面積未超過七公畝部分",
+      "option_b": "土地於出售前一年內，曾供營業使用或出租",
+      "option_c": "出售前應持有該土地三年以上",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 3,
+      "content": "依土地稅法規定，已規定地價之土地設定典權時之預繳土地增值稅，下列何者正確？ 典權人回贖時，原繳之土地增值稅，應加計利息退還",
+      "type": "single_choice",
+      "option_a": "典權人回贖時，原繳之土地增值稅，應無息退還",
+      "option_b": "出典人回贖時，原繳之土地增值稅，應加計利息退還",
+      "option_c": "出典人回贖時，原繳之土地增值稅，應無息退還",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 4,
+      "content": "土地所有權經法院判決移轉登記者，土地增值稅申報移轉現值之審核標準，下列何者正確？ 以法院判決日當期之公告土地現值為準",
+      "type": "single_choice",
+      "option_a": "以申報人向法院起訴日當期之公告土地現值為準",
+      "option_b": "以法院判決送達日當期之公告土地現值為準",
+      "option_c": "以申報人向主管稽徵機關申報日當期之公告土地現值為準",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 5,
+      "content": "依土地稅法規定，地價稅之稅率，下列何者錯誤？ 地價稅之基本稅率為千分之十",
+      "type": "single_choice",
+      "option_a": "土地所有權人之地價總額未超過土地所在地直轄市或縣（市）累進起點地價者，其地價稅按千",
+      "option_b": "分之十稅率徵收",
+      "option_c": "土地所有權人之地價總額超過土地所在地直轄市或縣（市）累進起點地價五倍者，就其超過部",
+      "option_d": "分課徵千分之十五",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 6,
+      "content": "依土地法規定，關於共有土地之處分，下列何者正確？ 應以共有人半數及其應有部分半數之同意行之",
+      "type": "single_choice",
+      "option_a": "應有部分合計三分之二者，其人數不予計算",
+      "option_b": "共有人不能以書面通知他共有人者，應公告之",
+      "option_c": "共有人不得單獨處分其應有部分",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 7,
+      "content": "有關土地總登記，經聲請而逾限未補繳證明文件者之情形，下列何者錯誤？ 其土地視為無主土地",
+      "type": "single_choice",
+      "option_a": "由該管直轄市或縣（市）地政機關公告之",
+      "option_b": "公告期間不得少於十五日",
+      "option_c": "公告期滿，無人提出異議，即為國有土地之登記",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 8,
+      "content": "依土地法規定，有關繼承登記，下列何者正確？ 繼承登記應於繼承開始之日起一個月內為之，否則視為逾期登記",
+      "type": "single_choice",
+      "option_a": "繼承開始之日起逾三個月未辦理繼承登記者，經該管直轄市或縣市地政機關查明後，應即公告",
+      "option_b": "繼承人於一年內聲請登記",
+      "option_c": "逾期未聲請繼承登記之土地，經地政機關列冊管理十五年，逾期仍未聲請繼承登記者，由地政",
+      "option_d": "機關將該土地清冊移請財政部國有財產署公開標售",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 9,
+      "content": "依平均地權條例之規定，預售屋或新建成屋買賣契約之買受人，於簽訂買賣契約後，不得讓與或 轉售買賣契約與第三人，並不得自行或委託刊登讓與或轉售廣告，但於下列何種情形不在此限？",
+      "type": "single_choice",
+      "option_a": "配偶、直系血親或二親等內旁系血親間之讓與或轉售",
+      "option_b": "配偶、直系姻親或二親等內旁系姻親間之讓與或轉售",
+      "option_c": "配偶、直系姻親或二親等內旁系血親間之讓與或轉售",
+      "option_d": "配偶、直系血親或二親等內旁系姻親間之讓與或轉售",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 10,
+      "content": "依平均地權條例之規定，委託不動產經紀業代銷預售屋者，應於何時向直轄市、縣（市）主管機 關申報登錄資訊？",
+      "type": "single_choice",
+      "option_a": "應於簽訂買賣契約之日起至少十日內申報",
+      "option_b": "應於簽訂買賣契約之日起至少十五日內申報",
+      "option_c": "應於簽訂買賣契約之日起三十日內申報",
+      "option_d": "應於簽訂買賣契約之日起四十五日內申報",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 11,
+      "content": "依市地重劃實施辦法之規定，土地所有權人重劃後應分配土地面積已達重劃區最小分配面積標準 二分之一，經主管機關按最小分配面積標準分配後，如申請放棄分配土地而改領現金補償，下列",
+      "type": "single_choice",
+      "option_a": "何者正確？",
+      "option_b": "以其重劃前原有面積按原位置評定重劃後地價發給現金補償",
+      "option_c": "以其重劃前原有面積按原位置評定重劃前地價發給現金補償",
+      "option_d": "以其應分配權利面積，按重劃後分配位置之評定重劃後地價予以計算補償",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 13,
+      "content": "依土地徵收條例規定，因受領遲延、拒絕受領或不能受領之補償費，下列何者正確？ 依提存法提存於直轄市或縣（市）主管機關於國庫設立之土地徵收補償費保管專戶",
+      "type": "single_choice",
+      "option_a": "直轄市或縣（市）主管機關應於補償費發給期限屆滿之日起三個月內存入專戶保管",
+      "option_b": "保管專戶儲存之補償費應給付利息",
+      "option_c": "已依規定繳存專戶保管之徵收補償費，自徵收公告期滿之日起，逾十五年未領取者，歸屬國庫",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 15,
+      "content": "依土地登記規則之規定，於何種情形下登記機關應以書面敘明理由或法令依據，通知申請人於接 到通知書之日起十五日內補正，下列何者錯誤？",
+      "type": "single_choice",
+      "option_a": "申請人之資格不符或其代理人之代理權有欠缺",
+      "option_b": "登記申請書不合程式，或應提出之文件不符或欠缺",
+      "option_c": "未依規定繳納登記規費",
+      "option_d": "登記之權利人、義務人或其與申請登記之法律關係有關之權利關係人間有爭執",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 18,
+      "content": "依土地法第三十四條之一執行要點規定，有關共有人權利之行使，下列何者錯誤？ 部分共有人就共有土地或建築改良物為處分、變更及設定地上權、農育權、不動產役權或典權，",
+      "type": "single_choice",
+      "option_a": "應就共有物之全部為之",
+      "option_b": "部分共有人依本法條規定為處分、變更或設定負擔前，應先行通知他共有人",
+      "option_c": "出賣共有土地或建築改良物時，他共有人得以出賣之同一條件共同或單獨優先購買",
+      "option_d": "他共有人於接到出賣通知後二十日內不表示者，其優先購買權視為放棄",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 19,
+      "content": "依土地法規定，有關地籍測量之相關規定，下列何者錯誤？ 地籍測量時，土地所有權人應設立界標，並永久保存之",
+      "type": "single_choice",
+      "option_a": "地籍測量，如由該管直轄市或縣（市）政府辦理，其實施計畫應經該地方之地政機關核定",
+      "option_b": "重新實施地籍測量時，土地所有權人應於地政機關通知之限期內，自行設立界標，並到場指界",
+      "option_c": "重新實施地籍測量之結果，應予公告，其期間為三十日",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 20,
+      "content": "依土地法之規定，有關土地登記之損害賠償，下列何者錯誤？ 因登記錯誤遺漏或虛偽致受損害者，由該地政機關負損害賠償責任",
+      "type": "single_choice",
+      "option_a": "登記人員或利害關係人，於登記完畢後，發見登記錯誤或遺漏時，非以書面聲請該管上級機關",
+      "option_b": "查明核准後，不得更正",
+      "option_c": "地政機關所負之損害賠償，如因登記人員之重大過失所致者，由該人員及地政機關負連帶損害",
+      "option_d": "賠償責任，撥歸登記儲金",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 21,
+      "content": "依平均地權條例規定，對私有空地之處置，下列何者錯誤？ 規定照價收買者，以收買當期之平均市價為準",
+      "type": "single_choice",
+      "option_a": "逾期未建築、增建、改建或重建者，按該宗土地應納地價稅基本稅額加徵二倍至五倍之空地稅",
+      "option_b": "或照價收買",
+      "option_c": "依規定限期建築、增建、改建或重建之土地，其新建之改良物價值不及所占基地申報地價百分",
+      "option_d": "之五十者，直轄市或縣（市）政府不予核發建築執照",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 23,
+      "content": "依所得稅法之規定，個人依第 14 條之 4 前 2 項規定計算之房屋、土地交易所得，減除當次交易 依土地稅法第 30 條第 1 項規定公告土地現值計算之土地漲價總數額後之餘額，不併計綜合所得",
+      "type": "single_choice",
+      "option_a": "總額，按相關規定稅率計算應納稅額，其在中華民國境內居住之個人應納稅額，下列何者正確？",
+      "option_b": "持有房屋、土地之期間在二年以內者，稅率為百分之三十五",
+      "option_c": "持有房屋、土地之期間超過二年，未逾五年者，稅率為百分之二十五",
+      "option_d": "因財政部公告之調職、非自願離職或其他非自願性因素，交易持有期間在五年以下之房屋、土",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    },
+    {
+      "question_number": 25,
+      "content": "有關土地利用計畫之通盤檢討相關規定，下列何者正確？ 全國國土計畫每五年通盤檢討一次",
+      "type": "single_choice",
+      "option_a": "直轄市、縣（市）國土計畫每十年通盤檢討一次",
+      "option_b": "都市計畫每三年內或五年內至少應通盤檢討一次",
+      "option_c": "區域計畫每十年通盤檢討一次",
+      "option_d": "",
+      "correct_answer": "",
+      "explanation": "",
+      "bloom_category": "remember"
+    }
+  ]
+}
