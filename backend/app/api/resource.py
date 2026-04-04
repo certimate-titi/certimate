@@ -2,8 +2,9 @@
 
 import uuid
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_current_user_id
@@ -12,11 +13,8 @@ from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
 from app.repositories.user_repository import UserRepository
 from app.services.resource_service import ResourceService
 from app.services.knowledge_map_service import KnowledgeMapService
+from app.services.storage_service import get_storage_service
 from app.schemas.resource import UploadResourceRequest, SubmitYoutubeRequest
-
-# Local upload directory
-UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
 
 router = APIRouter()
 
@@ -104,10 +102,11 @@ def delete_resource(
     db.delete(resource)
     db.commit()
 
-    # Delete file from disk
+    # Delete file from storage (local or GCS)
     if resource.gcs_path:
         try:
-            Path(resource.gcs_path).unlink(missing_ok=True)
+            storage = get_storage_service()
+            storage.delete_file(resource.gcs_path)
         except Exception:
             pass
 
@@ -159,6 +158,60 @@ def upload_resource(
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
+    return result
+
+
+@router.post("/resources/upload-file")
+async def upload_resource_file(
+    file: UploadFile = File(...),
+    subject_id: str = Form(...),
+    filename: Optional[str] = Form(None),
+    resource_type: Optional[str] = Form(None),
+    user_id: str = Depends(get_current_user_id),
+    service: ResourceService = Depends(_get_resource_service),
+    db: Session = Depends(get_db),
+):
+    """上傳資源（multipart file + metadata）。
+
+    接受實際檔案，存入 Storage Service，設定 gcs_path。
+    本地開發存到 uploads/，雲端存到 GCS。
+    """
+    actual_filename = filename or file.filename or "unnamed"
+    file_data = await file.read()
+    file_size_mb = len(file_data) / (1024 * 1024)
+
+    # 先做驗證（用原有 service）
+    result = service.upload(
+        user_id=user_id,
+        filename=actual_filename,
+        subject_id=subject_id,
+        file_size_mb=file_size_mb,
+        resource_type=resource_type,
+    )
+    if result.get("error"):
+        raise HTTPException(status_code=result["status_code"], detail=result["message"])
+
+    resource_id = result["id"]
+
+    # 存入 Storage Service
+    storage = get_storage_service()
+    storage_path = storage.save_file(
+        user_id=user_id,
+        resource_id=resource_id,
+        filename=actual_filename,
+        data=file_data,
+    )
+
+    # 更新 Resource 的 gcs_path
+    from app.models.resource import Resource
+    resource = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
+    if resource:
+        resource.gcs_path = storage_path
+        resource.file_size_bytes = len(file_data)
+        db.commit()
+
+    result["gcs_path"] = storage_path
+    result["file_size_bytes"] = len(file_data)
     return result
 
 

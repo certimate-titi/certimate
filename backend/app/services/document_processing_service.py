@@ -64,6 +64,10 @@ class DocumentProcessingService:
         self.chunk_repo = ResourceChunkRepository(db)
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
+        # Storage service for file access
+        from app.services.storage_service import get_storage_service
+        self.storage = get_storage_service()
+
         self.claude = None
         self.embedding_service = None
         self._llm = None
@@ -663,16 +667,24 @@ class DocumentProcessingService:
     # ================================================================
 
     def _cleanup_original_file(self, resource: Resource):
-        """Delete original PDF/image after successful processing. Keep .md."""
+        """Delete original PDF/image after successful processing. Keep .md.
+
+        使用 StorageService 統一刪除（本地/GCS 都支援）。
+        注意：不再清空 gcs_path，保留以供後續溯源。
+        """
         if not resource.gcs_path:
             return
-        original = Path(resource.gcs_path)
-        if original.exists() and original.suffix.lower() != ".md":
-            try:
-                original.unlink()
-                logger.info("Deleted original file: %s", original)
-                resource.gcs_path = None
-            except Exception as e:
+
+        # 不刪除 markdown 檔案
+        if resource.gcs_path.lower().endswith(".md"):
+            return
+
+        try:
+            self.storage.delete_file(resource.gcs_path)
+            logger.info("Deleted original file via storage service: %s", resource.gcs_path)
+            # 保留 gcs_path 記錄但標記為已清理
+            # resource.gcs_path 不再設為 None
+        except Exception as e:
                 logger.warning("Failed to delete original file: %s", e)
 
     # ================================================================
@@ -680,9 +692,23 @@ class DocumentProcessingService:
     # ================================================================
 
     def _resolve_file_path(self, resource: Resource) -> str:
-        if resource.gcs_path:
+        """取得可讀取的本地檔案路徑。
+
+        - 本地模式：gcs_path 就是本地路徑，直接回傳
+        - GCS 模式：下載到 /tmp 暫存目錄
+        """
+        if not resource.gcs_path:
+            raise ValueError("資源無檔案路徑（gcs_path 未設定，請確認上傳流程是否正確）")
+
+        # GCS 路徑：下載到暫存目錄
+        if resource.gcs_path.startswith("gs://"):
+            return self.storage.download_to_temp(resource.gcs_path)
+
+        # 本地路徑：直接回傳（但檢查是否存在）
+        if Path(resource.gcs_path).exists():
             return resource.gcs_path
-        raise ValueError("資源無檔案路徑")
+
+        raise ValueError(f"檔案不存在: {resource.gcs_path}")
 
     def _parse_json_response(self, text: str) -> dict:
         """Parse JSON from LLM response, handling markdown blocks and truncation."""

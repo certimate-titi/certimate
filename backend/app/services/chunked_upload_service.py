@@ -182,7 +182,31 @@ class ChunkedUploadService:
             subject_id=uuid.UUID(upload_info["subject_id"]) if upload_info.get("subject_id") else None,
         )
         self.db.add(resource)
+        self.db.flush()
+        self.db.refresh(resource)
+
+        # 合併分片並存入 Storage Service
+        from app.services.storage_service import get_storage_service
+        storage = get_storage_service()
+        chunk_dir = Path(upload_info["chunk_dir"])
+        merged_data = bytearray()
+        for i in range(upload_info["total_chunks"]):
+            chunk_path = chunk_dir / f"chunk_{i:05d}"
+            merged_data.extend(chunk_path.read_bytes())
+
+        storage_path = storage.save_file(
+            user_id=upload_info["user_id"],
+            resource_id=str(resource.id),
+            filename=upload_info["filename"],
+            data=bytes(merged_data),
+        )
+        resource.gcs_path = storage_path
         self.db.commit()
+
+        # 清理本地暫存分片
+        import shutil
+        if chunk_dir.exists():
+            shutil.rmtree(chunk_dir, ignore_errors=True)
 
         # Clean up in-memory state
         del _uploads[upload_id]
@@ -192,6 +216,7 @@ class ChunkedUploadService:
             "resource_id": str(resource.id),
             "status": "PENDING",
             "file_size_bytes": file_size,
+            "gcs_path": storage_path,
             "resource": {
                 "id": str(resource.id),
                 "status": "PENDING",

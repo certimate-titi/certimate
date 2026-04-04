@@ -97,7 +97,7 @@ export const documentService = {
     if (req.file) formData.append('file', req.file);
     if (req.subjectId) formData.append('subject_id', req.subjectId);
     if (req.title) formData.append('filename', req.title);
-    return apiClient.upload<UploadDocumentResponse>('/resources/upload', formData);
+    return apiClient.upload<UploadDocumentResponse>('/resources/upload-file', formData);
   },
 
   async list(): Promise<GetDocumentsResponse> {

@@ -1762,7 +1762,10 @@ class AiGenerationService:
         }
 
     def _persist_questions(self, exam: Exam, stage4_result: dict):
-        """Save generated questions to the database."""
+        """Save generated questions to the database.
+
+        使用 commit() 而非 flush()，確保資料持久化。
+        """
         for i, q in enumerate(stage4_result.get("questions", [])):
             options = q.get("options", [])
             question = Question(
@@ -1778,4 +1781,4 @@ class AiGenerationService:
                 explanation=q.get("explanation", ""),
             )
             self.db.add(question)
-        self.db.flush()
+        self.db.commit()
