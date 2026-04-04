@@ -3,9 +3,9 @@
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
 from app.core.deps import get_db, get_current_user_id
 from app.repositories.resource_repository import ResourceRepository
 from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
@@ -226,3 +226,75 @@ def generate_map(
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
     return result
+
+
+# ========== Chunked Upload (ULTRA only) ==========
+
+class InitChunkedUploadRequest(BaseModel):
+    filename: str
+    file_size: int | None = None
+    file_size_mb: int | None = None
+    subject_id: str | None = None
+
+
+def _handle_chunked_result(result: dict):
+    if result.get("error"):
+        raise HTTPException(status_code=result.get("status_code", 400), detail={"message": result["message"]})
+    return result
+
+
+@router.post("/resources/chunked/init")
+@router.post("/resources/chunked-upload/init")
+def init_chunked_upload(
+    body: InitChunkedUploadRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    from app.services.chunked_upload_service import ChunkedUploadService
+    service = ChunkedUploadService(db)
+    file_size = body.file_size
+    if file_size is None and body.file_size_mb is not None:
+        file_size = body.file_size_mb * 1024 * 1024
+    result = service.init_upload(user_id=user_id, filename=body.filename, file_size=file_size or 0, subject_id=body.subject_id)
+    return _handle_chunked_result(result)
+
+
+@router.post("/resources/chunked/{upload_id}/chunk/{chunk_index}")
+async def upload_chunk(
+    upload_id: str,
+    chunk_index: int,
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    from app.services.chunked_upload_service import ChunkedUploadService
+    chunk_data = await file.read()
+    service = ChunkedUploadService(db)
+    result = service.upload_chunk(user_id=user_id, upload_id=upload_id, chunk_index=chunk_index, chunk_data=chunk_data)
+    return _handle_chunked_result(result)
+
+
+@router.get("/resources/chunked/{upload_id}/status")
+@router.get("/resources/chunked-upload/{upload_id}/progress")
+def get_chunked_upload_status(
+    upload_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    from app.services.chunked_upload_service import ChunkedUploadService
+    service = ChunkedUploadService(db)
+    result = service.get_upload_status(user_id=user_id, upload_id=upload_id)
+    return _handle_chunked_result(result)
+
+
+@router.post("/resources/chunked/{upload_id}/merge")
+@router.post("/resources/chunked-upload/{upload_id}/complete")
+def merge_chunks(
+    upload_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    from app.services.chunked_upload_service import ChunkedUploadService
+    service = ChunkedUploadService(db)
+    result = service.merge_chunks(user_id=user_id, upload_id=upload_id)
+    return _handle_chunked_result(result)

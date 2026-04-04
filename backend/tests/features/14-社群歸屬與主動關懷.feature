@@ -53,6 +53,38 @@ Feature: 社群歸屬與主動關懷
       When 系統觸發每週學習報告生成排程
       Then 系統不應為使用者 "alice@example.com" 生成週報
 
+  # ========== 週報 Email 寄送 ==========
+
+  Rule: 後置（狀態）- 週報生成後應自動寄送 Email 至使用者信箱
+
+    Example: 活躍用戶收到週報 Email
+      Given 使用者 "bob@example.com" 在本週有學習活動
+      When 系統觸發每週學習報告生成排程
+      Then 系統應寄送週報 Email 至 "bob@example.com"
+      And Email 標題應包含「學習週報」
+      And Email 內容應包含學習時數、完成考試數與 AI 生成摘要
+      And Email 應包含「回到平台繼續學習」的 CTA 連結
+
+    Example: 本週無活動的用戶不寄送週報 Email
+      Given 使用者 "alice@example.com" 本週無任何學習活動
+      When 系統觸發每週學習報告生成排程
+      Then 系統不應寄送 Email 至 "alice@example.com"
+
+  Rule: 後置（回應）- 使用者可在平台內查看歷史週報列表
+
+    Example: 查看歷史週報列表
+      Given 使用者 "bob@example.com" 有 3 份歷史週報
+      When 使用者 "bob@example.com" 查看週報列表
+      Then 操作成功
+      And 回應應包含 3 份週報
+      And 每份週報應包含：
+        | 欄位               | 說明              |
+        | week_start         | 週報起始日期      |
+        | week_end           | 週報結束日期      |
+        | study_hours        | 學習時數          |
+        | exams_completed    | 完成考試數        |
+        | progress_summary   | AI 生成的進步摘要 |
+
   # ========== 低谷偵測與喚回 ==========
 
   Rule: 後置（狀態）- 超過 3 天未登入時系統應發送溫暖喚回通知

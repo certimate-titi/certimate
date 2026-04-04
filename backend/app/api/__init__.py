@@ -23,6 +23,11 @@ from app.api.feedback import router as feedback_router
 from app.api.community import router as community_router
 from app.api.anomaly import router as anomaly_router
 from app.api.announcements import router as announcements_router
+from app.api.ai_questions import router as ai_questions_router
+from app.api.retirement import router as retirement_router
+from app.api.learning_journey import router as learning_journey_router
+from app.api.ai_chat import router as ai_chat_router
+from app.api.pricing import router as pricing_router
 
 router = APIRouter()
 
@@ -47,3 +52,8 @@ router.include_router(feedback_router, tags=["feedback"])
 router.include_router(community_router, tags=["community"])
 router.include_router(anomaly_router, tags=["anomaly"])
 router.include_router(announcements_router, tags=["announcements"])
+router.include_router(ai_questions_router, tags=["ai-questions"])
+router.include_router(retirement_router, tags=["retirement"])
+router.include_router(learning_journey_router, tags=["learning-journeys"])
+router.include_router(ai_chat_router, tags=["ai-chat"])
+router.include_router(pricing_router, tags=["pricing"])

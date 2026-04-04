@@ -136,6 +136,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
           subjectId: s.subjectId,
           subjectName: s.subjectName,
           examDate: s.examDate,
+          resultDate: s.resultDate,
           selfAssessment: s.selfAssessment,
         })),
         dailyStudyMinutes: state.formData.dailyStudyMinutes,

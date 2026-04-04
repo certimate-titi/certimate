@@ -12,6 +12,7 @@ Feature: 付款後自動更新使用者角色與權限
       | PRO_199       | user    | 30             | 50        | 100       | 0             | 否       |
       | PRO_PLUS_399  | user    | 200            | 200       | 500       | 50            | 是       |
       | ULTRA_1599    | user    | 無限           | 無限      | 無限      | 500           | 是       |
+      | EDU           | student | 5              | 0         | 無限      | 0             | 否       |
 
   # ========== 升級觸發 ==========
 
@@ -80,3 +81,29 @@ Feature: 付款後自動更新使用者角色與權限
         | new_plan       | PRO_199                            |
         | trigger        | ecpay_callback                     |
         | transaction_id | (對應的 merchant_trade_no)          |
+
+  # ========== EDU 學生方案權限 ==========
+
+  Rule: 後置（狀態）- 機構管理員匯入學生後學生帳號自動設定為 EDU 方案
+
+    Example: CSV 匯入學生後帳號自動指派 EDU 方案
+      Given 使用者 "free@example.com" 被機構管理員透過 CSV 匯入至機構 1
+      Then 使用者 "free@example.com" 的訂閱方案應更新為 "EDU"
+      And 使用者 "free@example.com" 的角色應更新為 "student"
+      And 使用者 "free@example.com" 的每日 AI 對話限額應為 5
+      And 使用者 "free@example.com" 不可上傳資源
+      And 使用者 "free@example.com" 不可自主出題
+
+  Rule: 後置（狀態）- EDU 學生退出機構後自動降級為 FREE
+
+    Example: 學生被移除出機構後降為 FREE
+      Given 使用者 "free@example.com" 目前為機構 1 的 EDU 學生
+      When 機構管理員將使用者 "free@example.com" 從機構 1 移除
+      Then 使用者 "free@example.com" 的訂閱方案應自動降級為 "FREE"
+      And 使用者 "free@example.com" 的角色應更新為 "user"
+
+    Example: 機構退訂 ULTRA 後所有 EDU 學生降為 FREE
+      Given 機構 1 的管理員訂閱方案為 "ULTRA_1599"
+      And 機構 1 有 2 名 EDU 學生
+      When 機構 1 的管理員取消 ULTRA 訂閱且到期日已過
+      Then 機構 1 所有 EDU 學生的訂閱方案應自動降級為 "FREE"

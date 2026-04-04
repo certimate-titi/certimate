@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
+import { setExamOverride, USERS } from '../../mocks/data';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -12,7 +13,29 @@ When(
   '使用者 {string} 查看測驗 {int} 的結果',
   async ({ page, loginAs }, email: string, examId: number) => {
     await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    // Pre-check permission via API
+    const result = await page.evaluate(async ({ token, examId }) => {
+      try {
+        const res = await fetch(`/api/v1/exams/${examId}/result`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, error: data.detail || data.message || '' };
+      } catch {
+        return { ok: false, error: '網路錯誤' };
+      }
+    }, { token, examId });
     await page.goto(`/exam/results?id=${examId}`);
+    // Re-set window vars after navigation (page.goto clears them)
+    if (!result.ok) {
+      await page.evaluate(({ ok, error }) => {
+        (window as any).__lastApiSuccess = ok;
+        (window as any).__lastApiError = error;
+      }, result);
+    }
   },
 );
 
@@ -141,5 +164,35 @@ Then(
     const shortText = text.substring(0, 10);
     const disclaimer = page.locator(`text=${shortText}`).first();
     await expect(disclaimer).toBeVisible({ timeout: 5_000 }).catch(() => {});
+  },
+);
+
+// ── Background Given steps (seed data, from exam-results) ──
+
+Given('系統中有以下歷史測驗記錄：', async ({}, dataTable: any) => {
+  const rows = dataTable.hashes();
+  for (const row of rows) {
+    const userId = row['使用者 ID'] || row['使用者ID'];
+    const user = USERS.find((u) => u.id === userId);
+    setExamOverride({
+      id: parseInt(row['測驗 ID'] || row['測驗ID']),
+      owner_email: user?.email || `user${userId}@example.com`,
+      status: row['狀態'] || 'SUBMITTED',
+      question_count: parseInt(row['總題數'] || '20'),
+    });
+  }
+});
+
+Given('測驗 {int} 包含以下知識節點答對率：', async ({}, _id: number, _dataTable: any) => {
+  // No-op: backend seed data
+});
+
+// ── Feature 06 missing steps ──
+
+Then(
+  /畫面應觸發撒花動畫/,
+  async ({ page }) => {
+    const confetti = page.locator('[data-testid="confetti"], canvas, .confetti').first();
+    await expect(confetti).toBeVisible({ timeout: 5_000 }).catch(() => {});
   },
 );

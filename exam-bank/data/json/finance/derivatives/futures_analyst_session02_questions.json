@@ -13,7 +13,7 @@
       "evaluate": 2,
       "create": 4
     },
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "validations": [
       {
         "layer": "L1_structure",

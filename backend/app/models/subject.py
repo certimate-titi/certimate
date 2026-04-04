@@ -33,6 +33,7 @@ class Subject(Base):
     name_en: Mapped[str | None] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text)
     is_popular: Mapped[bool] = mapped_column(Boolean, default=False)
+    available_questions: Mapped[int] = mapped_column(Integer, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

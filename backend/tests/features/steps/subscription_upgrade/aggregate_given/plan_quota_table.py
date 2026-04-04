@@ -16,13 +16,21 @@ def step_impl(context):
         monthly_exam = row["考試數/月"]
         monthly_vision = row["Vision OCR/月"]
 
-        quota = PlanQuota(
-            plan=plan,
-            daily_ai_chats=None if daily_ai == "無限" else int(daily_ai),
-            monthly_uploads=None if monthly_upload == "無限" else int(monthly_upload),
-            monthly_exams=None if monthly_exam == "無限" else int(monthly_exam),
-            monthly_vision_pages=None if monthly_vision == "無限" else int(monthly_vision),
-        )
-        db.add(quota)
+        # Upsert: update if exists, insert if not
+        existing = db.query(PlanQuota).filter_by(plan=plan).first()
+        if existing:
+            existing.daily_ai_chats = None if daily_ai == "無限" else int(daily_ai)
+            existing.monthly_uploads = None if monthly_upload == "無限" else int(monthly_upload)
+            existing.monthly_exams = None if monthly_exam == "無限" else int(monthly_exam)
+            existing.monthly_vision_pages = None if monthly_vision == "無限" else int(monthly_vision)
+        else:
+            quota = PlanQuota(
+                plan=plan,
+                daily_ai_chats=None if daily_ai == "無限" else int(daily_ai),
+                monthly_uploads=None if monthly_upload == "無限" else int(monthly_upload),
+                monthly_exams=None if monthly_exam == "無限" else int(monthly_exam),
+                monthly_vision_pages=None if monthly_vision == "無限" else int(monthly_vision),
+            )
+            db.add(quota)
 
     db.commit()

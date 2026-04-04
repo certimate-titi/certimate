@@ -28,8 +28,24 @@ Given(
 
 When('使用者在資源庫頁面選擇學科 {string}', async ({ page, loginAs }, subject: string) => {
   await loginAs('alice@example.com', 'Password1!');
+  // Use API approach — verify resources are filtered by subject
+  const token = await page.evaluate(() =>
+    localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+  );
+  await page.evaluate(async ({ token, subject }) => {
+    try {
+      const res = await fetch(`/api/v1/resources?subject=${encodeURIComponent(subject)}`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json().catch(() => ({}));
+      (window as any).__lastApiSuccess = res.ok;
+      (window as any).__lastApiError = data.detail || data.message || '';
+      (window as any).__lastResourceList = data;
+    } catch {
+      (window as any).__lastApiSuccess = false;
+    }
+  }, { token, subject });
   await page.goto('/knowledge');
-  await page.getByText(subject).first().click().catch(() => {});
 });
 
 When(
@@ -40,8 +56,25 @@ When(
   },
 );
 
-When('使用者 {string} 刪除資源 {int}', async ({}, _email: string, _id: number) => {
-  // No-op: simulated action
+When('使用者 {string} 刪除資源 {int}', async ({ page, loginAs }, email: string, id: number) => {
+  await loginAs(email, 'Password1!');
+  const token = await page.evaluate(() =>
+    localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+  );
+  await page.evaluate(async ({ token, id }) => {
+    try {
+      const res = await fetch(`/api/v1/resources/${id}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json().catch(() => ({}));
+      (window as any).__lastApiSuccess = res.ok;
+      (window as any).__lastApiError = data.detail || data.message || '';
+    } catch {
+      (window as any).__lastApiSuccess = false;
+      (window as any).__lastApiError = '網路錯誤';
+    }
+  }, { token, id });
 });
 
 When('使用者 {string} 點擊刪除資源 {int}', async ({}, _email: string, _id: number) => {
@@ -103,7 +136,7 @@ Then('系統應彈出防呆模態框', async ({}) => {
   // No-op: UI verification
 });
 
-Then('模態框內容應警告：「{string}」', async ({}, _warning: string) => {
+Then(/模態框內容應警告：「([^」]*)」/, async ({}, _warning: string) => {
   // No-op: UI verification
 });
 

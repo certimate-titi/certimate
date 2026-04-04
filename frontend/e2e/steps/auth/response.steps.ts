@@ -21,20 +21,19 @@ Then('回應應包含有效的 JWT 存取憑證', async ({ page }) => {
 
 Then('回應中的使用者資訊應包含：', async ({ page }, dataTable: any) => {
   const rows = dataTable.rows() as string[][];
-  const token = await page.evaluate(
-    () =>
+  // Fetch /auth/me from within the page context so page.route() intercepts it
+  const userData = await page.evaluate(async () => {
+    const token =
       localStorage.getItem('certimate_jwt_token') ||
-      sessionStorage.getItem('certimate_jwt_token'),
-  );
-  if (!token) {
-    throw new Error('No JWT token found — login may have failed');
-  }
-
-  for (const [field, expectedValue] of rows) {
-    const res = await page.request.get('http://localhost:8000/api/v1/auth/me', {
+      sessionStorage.getItem('certimate_jwt_token');
+    if (!token) throw new Error('No JWT token found');
+    const res = await fetch('/api/v1/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const userData = await res.json();
+    return res.json();
+  });
+
+  for (const [field, expectedValue] of rows) {
     if (field === 'email') {
       expect(userData.email).toBe(expectedValue);
     } else if (field === '訂閱方案') {
@@ -53,10 +52,13 @@ Then(
     );
     expect(token, 'JWT token should exist after login').toBeTruthy();
 
-    const res = await page.request.get('http://localhost:8000/api/v1/auth/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const userData = await res.json();
+    // Fetch /auth/me from page context so page.route() intercepts it
+    const userData = await page.evaluate(async (t: string) => {
+      const res = await fetch('/api/v1/auth/me', {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      return res.json();
+    }, token!);
 
     // Backend stores short plan names (FREE/PRO/PRO_PLUS/ULTRA),
     // frontend uses display names (FREE/PRO_199/PRO_PLUS_399/ULTRA_1599)
@@ -109,7 +111,14 @@ Then('重設連結應在 1 小時後失效', async ({}) => {
 
 Then('系統不應洩漏該帳號是否存在的資訊', async ({ page }) => {
   // The forgot-password page should show the same success message
-  // regardless of whether the email exists
+  // regardless of whether the email exists.
+  // Since Firebase Auth doesn't work in mock env, the When step calls
+  // the API via page.evaluate and stores the result in window vars.
+  const sent = await page.evaluate(() => (window as any).__forgotPasswordSent);
+  if (sent !== undefined) {
+    expect(sent).toBe(true);
+    return;
+  }
   await expect(page.getByText('重設信件已寄出')).toBeVisible({ timeout: 5_000 });
 });
 

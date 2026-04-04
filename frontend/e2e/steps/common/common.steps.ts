@@ -20,19 +20,36 @@ Then('操作成功', async ({ page }) => {
 });
 
 Then('操作失敗', async ({ page }) => {
-  // Verify at least one error message is visible
-  const errorBanner = page.locator('.bg-rose-50, .text-red-500, .text-rose-500').first();
+  // Check if a When step stored an API result (for API-only steps)
+  const apiSuccess = await page.evaluate(() => (window as any).__lastApiSuccess);
+  if (apiSuccess !== undefined) {
+    if (apiSuccess) throw new Error('Expected operation to fail but API returned success');
+    return; // API returned error → operation failed ✓
+  }
+  // UI-based check: verify at least one error message is visible
+  const errorBanner = page.locator('.bg-rose-50, .text-red-400, .text-red-500, .text-rose-500').first();
   await expect(errorBanner).toBeVisible({ timeout: 5_000 });
 });
 
 Then('錯誤訊息應為 {string}', async ({ page }, message: string) => {
-  // Use filter to find the element containing the exact message
-  const error = page.locator('.bg-rose-50, .text-red-500, .text-rose-500').filter({ hasText: message });
+  // Check API-only result first
+  const apiError = await page.evaluate(() => (window as any).__lastApiError);
+  if (apiError !== undefined) {
+    expect(apiError).toContain(message);
+    return;
+  }
+  // UI-based check
+  const error = page.locator('.bg-rose-50, .text-red-400, .text-red-500, .text-rose-500').filter({ hasText: message });
   await expect(error.first()).toBeVisible({ timeout: 5_000 });
 });
 
 Then('操作失敗，錯誤為「{string}」', async ({ page }, message: string) => {
-  const error = page.locator('.bg-rose-50, .text-red-500, .text-rose-500').filter({ hasText: message });
+  const apiError = await page.evaluate(() => (window as any).__lastApiError);
+  if (apiError !== undefined) {
+    expect(apiError).toContain(message);
+    return;
+  }
+  const error = page.locator('.bg-rose-50, .text-red-400, .text-red-500, .text-rose-500').filter({ hasText: message });
   await expect(error.first()).toBeVisible({ timeout: 5_000 });
 });
 

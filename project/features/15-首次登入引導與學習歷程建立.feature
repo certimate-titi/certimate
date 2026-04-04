@@ -76,12 +76,12 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
 
   Rule: 後置（狀態）- Step 2 支援同時選擇多個備考科目並個別設定
 
-    Example: 使用者選擇多個備考科目並分別設定考試日期與程度
+    Example: 使用者選擇多個備考科目並分別設定考試日期、放榜日期與程度
       Given 使用者 "newbie@example.com" 進入 Step 2 選擇備考科目
       When 使用者選擇以下備考科目並設定：
-        | 科目         | 預計考試日期 | 自評程度   |
-        | AWS SAA      | 2026-06-15  | 有基礎     |
-        | CFA Level 1  | 2026-08-20  | 初學       |
+        | 科目         | 預計考試日期 | 預計放榜日期 | 自評程度   |
+        | AWS SAA      | 2026-06-15  | 2026-07-01  | 有基礎     |
+        | CFA Level 1  | 2026-08-20  | 2026-09-15  | 初學       |
       Then 已選科目列表應顯示 2 個科目及其設定
       And 每個科目旁應顯示可移除的按鈕
 
@@ -113,8 +113,8 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
 
     Example: 確認頁正確顯示所有設定摘要
       Given 使用者 "newbie@example.com" 已完成 Step 1 至 Step 3 的設定：
-        | 顯示名稱 | 備考科目               | 每日學習時間 | 偏好學習方式   |
-        | 小新     | AWS SAA, CFA Level 1   | 30 分鐘     | 觀念理解優先    |
+        | 顯示名稱 | 備考科目               | 每日學習時間 | 偏好學習方式   | 放榜日期                    |
+        | 小新     | AWS SAA, CFA Level 1   | 30 分鐘     | 觀念理解優先    | 2026-07-01, 2026-09-15     |
       When 使用者進入 Step 4 確認頁
       Then 畫面應顯示完整的設定摘要
       And 各科目的考試日期與自評程度均應正確顯示
@@ -301,6 +301,7 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
         | 欄位                | 值              |
         | subject_name        | JLPT N1         |
         | exam_date           | 2026-07-01      |
+        | result_date         | 2026-07-20      |
         | self_assessed_level | beginner        |
       Then 操作應成功
       And 使用者 "alice@example.com" 的學習歷程應包含 "JLPT N1"

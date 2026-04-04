@@ -9,6 +9,7 @@ export interface SelectedSubject {
   subjectId: string;
   subjectName: string;
   examDate: string;
+  resultDate: string;
   selfAssessment: SelfAssessmentLevel;
 }
 
@@ -68,6 +69,17 @@ export default function SelectedSubjectCard({ subject, onUpdate, onRemove }: Sel
             type="date"
             value={subject.examDate}
             onChange={e => onUpdate({ ...subject, examDate: e.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Result date */}
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">預計放榜日期</label>
+          <input
+            type="date"
+            value={subject.resultDate}
+            onChange={e => onUpdate({ ...subject, resultDate: e.target.value })}
             className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>

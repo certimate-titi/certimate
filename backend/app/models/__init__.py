@@ -44,6 +44,8 @@ from app.models.maintenance_schedule import MaintenanceSchedule  # noqa: F401, E
 from app.models.maintenance_notification import MaintenanceNotification  # noqa: F401, E402
 from app.models.resource_chunk import ResourceChunk  # noqa: F401, E402
 from app.models.student_group import StudentGroup, StudentGroupMember  # noqa: F401, E402
+from app.models.institution_assignment import InstitutionAssignment  # noqa: F401, E402
+from app.models.early_warning_rule import EarlyWarningRule  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -85,4 +87,6 @@ __all__ = [
     "ResourceChunk",
     "StudentGroup",
     "StudentGroupMember",
+    "InstitutionAssignment",
+    "EarlyWarningRule",
 ]

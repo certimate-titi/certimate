@@ -11,7 +11,7 @@
       "analyze": 1,
       "create": 1
     },
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "validations": [
       {
         "layer": "L1_structure",

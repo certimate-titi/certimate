@@ -36,8 +36,12 @@ Given(
   },
 );
 
-Given('管理員上傳的考古題 JSON 缺少 correct_answer 欄位', async ({}) => {
-  // No-op: state precondition
+Given('管理員上傳的考古題 JSON 缺少 correct_answer 欄位', async ({ page, loginAs }) => {
+  await loginAs('admin@example.com', 'Password1!');
+  // Set flag so the import step knows to send invalid data
+  await page.evaluate(() => {
+    (window as any).__importInvalidSchema = true;
+  });
 });
 
 // ── When steps ──
@@ -70,16 +74,29 @@ When(
   },
 );
 
-When('使用者查看測驗結果', async ({}) => {
-  // No-op: simulated navigation
-});
-
 When('管理員觸發「自動 Bloom 分類」', async ({}) => {
   // No-op: admin action
 });
 
-When('管理員觸發匯入', async ({}) => {
-  // No-op: admin action
+When('管理員觸發匯入', async ({ page }) => {
+  const token = await page.evaluate(() =>
+    localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+  );
+  await page.evaluate(async (token) => {
+    try {
+      const res = await fetch('/api/v1/admin/questions/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ questions: [{ id: 1, correct_answer: 'A' }, { id: 2, correct_answer: 'B' }, { id: 3 }] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      (window as any).__lastApiSuccess = res.ok;
+      (window as any).__lastApiError = data.detail || data.message || '';
+    } catch {
+      (window as any).__lastApiSuccess = false;
+      (window as any).__lastApiError = '網路錯誤';
+    }
+  }, token);
 });
 
 // ── Then steps ──
@@ -115,9 +132,6 @@ Then('exam 的 bloom_source 應為 {string}', async ({}, _source: string) => {
   // No-op: backend verification
 });
 
-Then('系統應套用預設 Bloom 配比：', async ({}, _dataTable: any) => {
-  // No-op: backend verification
-});
 
 Then(
   '生成的 {int} 題應依手動指定的配比出題（誤差 ±1 題）',
@@ -130,12 +144,6 @@ Then('結果中應包含 Bloom 層次分析：', async ({}, _dataTable: any) => 
   // No-op: API response verification
 });
 
-Then(
-  'AI 教練應針對答錯的 {string} 層次給予強化建議',
-  async ({}, _level: string) => {
-    // No-op: content verification
-  },
-);
 
 Then(
   '系統應呼叫 AI 分類服務，為每道題目填入 bloom_category',

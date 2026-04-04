@@ -27,6 +27,7 @@ _PLAN_DISPLAY_NAMES = {
     SubscriptionPlan.PRO: "PRO_199",
     SubscriptionPlan.PRO_PLUS: "PRO_PLUS_399",
     SubscriptionPlan.ULTRA: "ULTRA_1599",
+    SubscriptionPlan.EDU: "EDU",
 }
 
 _PLAN_INPUT_MAP = {
@@ -37,6 +38,7 @@ _PLAN_INPUT_MAP = {
     "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS,
     "ULTRA": SubscriptionPlan.ULTRA,
     "ULTRA_1599": SubscriptionPlan.ULTRA,
+    "EDU": SubscriptionPlan.EDU,
 }
 
 

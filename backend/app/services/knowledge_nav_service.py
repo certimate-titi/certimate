@@ -17,6 +17,18 @@ class KnowledgeNavService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _ensure_exam_bank_resource(self, subject_id: uuid.UUID) -> None:
+        """若科目有考古題但無 Resource，觸發自動建立。"""
+        from app.models.subject import Subject
+        from app.services.onboarding_service import OnboardingService
+        subject = self.db.query(Subject).filter_by(id=subject_id).first()
+        if subject and subject.available_questions and subject.available_questions > 0:
+            existing = self.db.query(Resource).filter_by(subject_id=subject_id).first()
+            if not existing:
+                svc = OnboardingService(self.db)
+                svc._ensure_exam_bank_resource(subject)
+                self.db.flush()
+
     def get_nodes_by_subject(self, subject_id: str, user_id: str) -> dict:
         """取得科目下的知識節點（含掌握度顏色）。"""
         uid = uuid.UUID(user_id)
@@ -28,6 +40,9 @@ class KnowledgeNavService:
         ).first()
         if not journey:
             return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
+
+        # 確保考古題 Resource 存在
+        self._ensure_exam_bank_resource(sid)
 
         # 找此科目下所有資源
         resources = self.db.query(Resource).filter_by(subject_id=sid).all()

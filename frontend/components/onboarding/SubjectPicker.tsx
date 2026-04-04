@@ -47,6 +47,7 @@ export default function SubjectPicker({
   }, []);
 
   const defaultExamDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
+  const defaultResultDate = format(addMonths(new Date(), 4), 'yyyy-MM-dd');
 
   const filteredSubjects = useMemo(() => {
     return catalog.filter(s => {
@@ -83,6 +84,7 @@ export default function SubjectPicker({
           subjectId: item.id,
           subjectName: item.name,
           examDate: defaultExamDate,
+          resultDate: defaultResultDate,
           selfAssessment: 'beginner' as const,
         },
       ]);
@@ -108,6 +110,7 @@ export default function SubjectPicker({
         subjectId: customId,
         subjectName: name,
         examDate: defaultExamDate,
+        resultDate: defaultResultDate,
         selfAssessment: 'beginner' as const,
       },
     ]);

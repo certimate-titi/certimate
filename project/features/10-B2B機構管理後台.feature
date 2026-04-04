@@ -24,6 +24,63 @@ Feature: B2B 機構管理後台
       | 最低平均分 | 最大連續下降次數 | 最大未登入天數 |
       | 60         | 3                | 5              |
 
+  # ========== EDU 學生方案與機構人數上限 ==========
+
+  Rule: 前置（狀態）- ULTRA 方案含 30 名 EDU 學生，超過需額外付費
+
+    Example: 匯入第 31 名學生時提示需額外付費
+      Given 機構 1 目前已有 30 名 EDU 學生
+      When 使用者 "org-admin@school.com" 上傳包含 1 名新學生的 CSV 進行學員匯入
+      Then 操作失敗，錯誤為「已達免費學生上限（30 名），每增加一名學生需額外 NT$30/月，請確認後再匯入」
+
+    Example: 確認加購後匯入第 31 名學生成功
+      Given 機構 1 目前已有 30 名 EDU 學生
+      When 使用者 "org-admin@school.com" 上傳包含 1 名新學生的 CSV 進行學員匯入，並確認加購
+      Then 操作成功
+      And 系統應建立 1 個新學員帳號，方案為 "EDU"
+      And 機構 1 的每月附加費用應為 NT$30
+
+  Rule: 後置（狀態）- 匯入學生後帳號自動設定為 EDU 方案與 student 角色
+
+    Example: CSV 匯入學生自動指派 EDU 方案
+      When 使用者 "org-admin@school.com" 上傳以下合法 CSV 進行學員匯入：
+        | 姓名   | 電子郵件          | 群組             |
+        | 新同學 | new@example.com   | AWS 雲端基礎班 A |
+      Then 操作成功
+      And 使用者 "new@example.com" 的訂閱方案應為 "EDU"
+      And 使用者 "new@example.com" 的角色應為 "student"
+      And 使用者 "new@example.com" 的每日 AI 對話限額應為 5
+      And 使用者 "new@example.com" 不可上傳資源
+      And 使用者 "new@example.com" 不可自主建立測驗
+
+  # ========== DPA 資料處理合約 ==========
+
+  Rule: 前置（狀態）- 機構管理員首次匯入學生前須簽署資料處理合約（DPA）
+
+    Example: 未簽署 DPA 即匯入學生失敗
+      Given 使用者 "org-admin@school.com" 尚未簽署機構資料處理合約
+      When 使用者 "org-admin@school.com" 上傳合法 CSV 進行學員匯入，並已勾選同意「學員資料處理條款」
+      Then 操作失敗，錯誤為「請先簽署機構資料處理合約（DPA）後才可匯入學生資料」
+
+    Example: 已簽署 DPA 後匯入學生成功
+      Given 使用者 "org-admin@school.com" 已簽署機構資料處理合約
+      When 使用者 "org-admin@school.com" 上傳以下合法 CSV 進行學員匯入：
+        | 姓名   | 電子郵件          | 群組             |
+        | 王小明 | wang@example.com  | PMP 衝刺班 B     |
+      Then 操作成功
+
+  Rule: 後置（回應）- 機構管理員可查看已簽署的 DPA 記錄
+
+    Example: 查看 DPA 簽署記錄
+      Given 使用者 "org-admin@school.com" 已於 2026-03-15 簽署機構資料處理合約
+      When 使用者 "org-admin@school.com" 查看機構 1 的 DPA 簽署記錄
+      Then 操作成功
+      And 回應應包含：
+        | 欄位        | 值              |
+        | signed_at   | 2026-03-15      |
+        | signed_by   | org-admin@school.com |
+        | version     | 1.0             |
+
   # ========== 前置條件 ==========
 
   Rule: 前置（狀態）- 管理後台僅限 ULTRA 方案的機構管理員存取
@@ -296,6 +353,22 @@ Feature: B2B 機構管理後台
         | mastery_rate    | 掌握率（0-100）              |
         | student_count   | 未達標學員人數               |
         | total_students  | 群組總學員數                 |
+
+  # ========== 班級弱點針對練習卷 ==========
+
+  Rule: 後置（狀態）- 機構管理員可一鍵生成班級弱點加強練習卷
+
+    Example: 為群組生成弱點針對練習卷成功
+      Given 群組 1 的班級弱點分析顯示 "IAM 身分管理" 掌握率最低（35%）
+      When 使用者 "org-admin@school.com" 為群組 1 生成弱點針對練習卷，題數為 20
+      Then 操作成功
+      And 練習卷應包含 20 題
+      And 練習卷中至少 60% 的題目應來自弱點知識節點
+      And 系統應自動將練習卷派發給群組 1 所有學員
+
+    Example: 群組無考試數據時無法生成弱點練習卷
+      When 使用者 "org-admin@school.com" 為群組 2 生成弱點針對練習卷，題數為 20
+      Then 操作失敗，錯誤為「此群組尚無足夠的考試數據，請先派發考卷」
 
   # ========== 未實作功能 Placeholder ==========
 

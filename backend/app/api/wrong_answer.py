@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_db, get_current_user_id
 from app.services.wrong_answer_service import WrongAnswerService
+from app.services.ai_coach_service import AICoachService
 
 router = APIRouter(prefix="/wrong-answers")
 
@@ -19,6 +20,32 @@ def _handle_result(result: dict):
         status_code = result.get("status_code", 400)
         raise HTTPException(status_code=status_code, detail={"message": result["message"]})
     return result
+
+
+# ========== Advanced AI Coach (ULTRA only) ==========
+
+@router.get("/advanced-coach")
+def get_advanced_coach(
+    subject_id: str | None = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """ULTRA 專屬進階 AI 教練 — 弱點分析 + 突破策略 + 衝刺計畫。"""
+    service = AICoachService(db)
+    result = service.get_advanced_analysis(user_id=user_id, subject_id=subject_id)
+    return _handle_result(result)
+
+
+@router.get("/advanced-coach/history")
+def get_learning_history(
+    days: int = 30,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """ULTRA 專屬 — 近 N 天學習歷史摘要。"""
+    service = AICoachService(db)
+    result = service.get_learning_history_summary(user_id=user_id, days=days)
+    return _handle_result(result)
 
 
 @router.get("")

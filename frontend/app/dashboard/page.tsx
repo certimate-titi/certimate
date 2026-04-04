@@ -178,6 +178,7 @@ export default function DashboardPage() {
         subjectId: s.subjectId,
         subjectName: s.subjectName,
         examDate: s.examDate,
+        resultDate: s.resultDate,
         selfAssessment: s.selfAssessment,
       });
     }

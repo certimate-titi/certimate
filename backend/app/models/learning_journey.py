@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    String,
     UniqueConstraint,
     func,
 )
@@ -47,6 +48,11 @@ class LearningJourney(Base):
         UUID(as_uuid=True), ForeignKey("subjects.id"), nullable=False
     )
     exam_date: Mapped[date | None] = mapped_column(Date)
+    result_date: Mapped[date | None] = mapped_column(Date)
+    exam_result_status: Mapped[str | None] = mapped_column(
+        String(20)
+    )
+    data_expiry_date: Mapped[date | None] = mapped_column(Date)
     self_assessed_level: Mapped[str] = mapped_column(
         Enum(SelfAssessedLevel, name="self_assessed_level", create_type=False,
              values_callable=lambda e: [m.value for m in e]),

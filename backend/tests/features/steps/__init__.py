@@ -63,6 +63,9 @@ from .auth.readmodel_then import user_info  # noqa: F401
 
 # Resource — aggregate_given
 from .resource.aggregate_given import user_subject  # noqa: F401
+from .resource.aggregate_given import chunked_upload_init  # noqa: F401
+from .resource.aggregate_given import chunked_upload_partial  # noqa: F401
+from .resource.aggregate_given import chunked_upload_all  # noqa: F401
 
 # Resource — commands
 from .resource.commands import upload_file  # noqa: F401
@@ -71,12 +74,17 @@ from .resource.commands import upload_image  # noqa: F401
 from .resource.commands import upload_pdf  # noqa: F401
 from .resource.commands import submit_youtube  # noqa: F401
 from .resource.commands import upload_missing_params  # noqa: F401
+from .resource.commands import init_chunked_upload  # noqa: F401
+from .resource.commands import query_chunked_progress  # noqa: F401
+from .resource.commands import complete_chunked_upload  # noqa: F401
 
 # Resource — readmodel_then
 from .resource.readmodel_then import resource_status  # noqa: F401
 from .resource.readmodel_then import processing_engine  # noqa: F401
 from .resource.readmodel_then import implicit_consent  # noqa: F401
 from .resource.readmodel_then import resource_type  # noqa: F401
+from .resource.readmodel_then import can_resume_upload  # noqa: F401
+from .resource.readmodel_then import resource_file_size  # noqa: F401
 
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
@@ -159,6 +167,12 @@ from .exam.aggregate_given import user_profile_empty  # noqa: F401
 from .exam.aggregate_given import stage_given  # noqa: F401
 from .exam.aggregate_given import admin_login  # noqa: F401
 from .exam.aggregate_given import exam_task_with_id  # noqa: F401
+from .exam.aggregate_given import bloom_stats  # noqa: F401
+from .exam.aggregate_given import user_learning_journey  # noqa: F401
+from .exam.aggregate_given import subject_historical_questions  # noqa: F401
+from .exam.aggregate_given import subject_node_limited_questions  # noqa: F401
+from .exam.aggregate_given import user_no_resources  # noqa: F401
+from .exam.aggregate_given import subject_historical_nodes  # noqa: F401
 
 # Exam — commands
 from .exam.commands import submit_exam_no_nodes  # noqa: F401
@@ -172,6 +186,11 @@ from .exam.commands import ai_generate_start  # noqa: F401
 from .exam.commands import stage_prompt_inputs  # noqa: F401
 from .exam.commands import prompt_template_commands  # noqa: F401
 from .exam.commands import ai_retry_commands  # noqa: F401
+from .exam.commands import submit_exam_table  # noqa: F401
+from .exam.commands import submit_exam_by_node_name  # noqa: F401
+from .exam.commands import submit_exam_custom_bloom  # noqa: F401
+from .exam.commands import submit_exam_question_types  # noqa: F401
+from .exam.commands import select_resource  # noqa: F401
 
 # Exam — query
 from .exam.query import select_subject_filter  # noqa: F401
@@ -194,6 +213,20 @@ from .exam.readmodel_then import stage3_output  # noqa: F401
 from .exam.readmodel_then import stage4_output  # noqa: F401
 from .exam.readmodel_then import prompt_template_then  # noqa: F401
 from .exam.readmodel_then import retry_then  # noqa: F401
+from .exam.readmodel_then import bloom_source  # noqa: F401
+from .exam.readmodel_then import bloom_applied  # noqa: F401
+from .exam.readmodel_then import default_bloom_applied  # noqa: F401
+from .exam.readmodel_then import exam_contains_questions  # noqa: F401
+from .exam.readmodel_then import all_historical  # noqa: F401
+from .exam.readmodel_then import no_ai_service  # noqa: F401
+from .exam.readmodel_then import response_hint  # noqa: F401
+from .exam.readmodel_then import historical_ratio  # noqa: F401
+from .exam.readmodel_then import standard_ratio  # noqa: F401
+from .exam.readmodel_then import bloom_distribution_custom  # noqa: F401
+from .exam.readmodel_then import bloom_source_not_custom  # noqa: F401
+from .exam.readmodel_then import historical_questions_only  # noqa: F401
+from .exam.readmodel_then import exam_question_types  # noqa: F401
+from .exam.readmodel_then import exam_hard_difficulty  # noqa: F401
 
 # Mock Exam — aggregate_given
 from .mock_exam.aggregate_given import exams  # noqa: F401
@@ -235,12 +268,14 @@ from .wrong_answer.aggregate_given import exam_wrong_records  # noqa: F401
 from .wrong_answer.aggregate_given import user_profile  # noqa: F401
 from .wrong_answer.aggregate_given import historical_wrong  # noqa: F401
 from .wrong_answer.aggregate_given import cooldown_history  # noqa: F401
+from .wrong_answer.aggregate_given import learning_history  # noqa: F401
 
 # Wrong Answer — commands
 from .wrong_answer.commands import filter_by_subject  # noqa: F401
 from .wrong_answer.commands import view_wrong_answers  # noqa: F401
 from .wrong_answer.commands import ai_coach  # noqa: F401
 from .wrong_answer.commands import ai_coach_generic  # noqa: F401
+from .wrong_answer.commands import advanced_coach  # noqa: F401
 
 # Wrong Answer — readmodel_then
 from .wrong_answer.readmodel_then import subject_filter  # noqa: F401
@@ -258,12 +293,14 @@ from .wrong_answer.readmodel_then import ai_coach_history  # noqa: F401
 from .wrong_answer.readmodel_then import ai_coach_reply_contains  # noqa: F401
 from .wrong_answer.readmodel_then import ai_coach_cooldown  # noqa: F401
 from .wrong_answer.readmodel_then import disclaimer  # noqa: F401
+from .wrong_answer.readmodel_then import advanced_coach_analysis  # noqa: F401
 
 # Subscription — aggregate_given
 from .subscription.aggregate_given import invoices  # noqa: F401
 
 # Subscription — commands
 from .subscription.commands import subscribe  # noqa: F401
+from .subscription.commands import subscribe_empty  # noqa: F401
 from .subscription.commands import view_subscription  # noqa: F401
 from .subscription.commands import upgrade  # noqa: F401
 from .subscription.commands import downgrade  # noqa: F401
@@ -297,12 +334,54 @@ from .schedule.readmodel_then import schedule_recommendations  # noqa: F401
 
 # B2B — aggregate_given
 from .b2b.aggregate_given import institutions  # noqa: F401
+from .b2b.aggregate_given import student_groups  # noqa: F401
+from .b2b.aggregate_given import group_members  # noqa: F401
+from .b2b.aggregate_given import early_warning_rules  # noqa: F401
+from .b2b.aggregate_given import edu_students  # noqa: F401
+from .b2b.aggregate_given import dpa_state  # noqa: F401
+from .b2b.aggregate_given import org_exam_config  # noqa: F401
+from .b2b.aggregate_given import student_scores  # noqa: F401
+from .b2b.aggregate_given import weakness_data  # noqa: F401
 
 # B2B — commands
 from .b2b.commands import access_admin  # noqa: F401
+from .b2b.commands import import_csv_count  # noqa: F401
+from .b2b.commands import import_csv_table  # noqa: F401
+from .b2b.commands import import_csv_consent  # noqa: F401
+from .b2b.commands import view_dpa  # noqa: F401
+from .b2b.commands import view_students  # noqa: F401
+from .b2b.commands import assign_exam  # noqa: F401
+from .b2b.commands import view_heatmap  # noqa: F401
+from .b2b.commands import view_error_ranking  # noqa: F401
+from .b2b.commands import view_health_kpi  # noqa: F401
+from .b2b.commands import view_early_warning  # noqa: F401
+from .b2b.commands import update_warning_rules  # noqa: F401
+from .b2b.commands import view_student_competency  # noqa: F401
+from .b2b.commands import request_ai_suggestion  # noqa: F401
+from .b2b.commands import generate_remediation  # noqa: F401
+
+# B2B — aggregate_then
+from .b2b.aggregate_then import new_student_accounts  # noqa: F401
+from .b2b.aggregate_then import monthly_surcharge  # noqa: F401
+from .b2b.aggregate_then import user_plan_check  # noqa: F401
+from .b2b.aggregate_then import invitation_email  # noqa: F401
+from .b2b.aggregate_then import group_member_count  # noqa: F401
+from .b2b.aggregate_then import warning_rules  # noqa: F401
 
 # B2B — readmodel_then
 from .b2b.readmodel_then import institution_name  # noqa: F401
+# Note: b2b response_contains removed — duplicate of knowledge_map response_contains_table
+from .b2b.readmodel_then import empty_students  # noqa: F401
+from .b2b.readmodel_then import empty_hint  # noqa: F401
+from .b2b.readmodel_then import onboarding_guide  # noqa: F401
+from .b2b.readmodel_then import assignment_record  # noqa: F401
+from .b2b.readmodel_then import heatmap_matrix  # noqa: F401
+from .b2b.readmodel_then import error_ranking  # noqa: F401
+from .b2b.readmodel_then import early_warning_student  # noqa: F401
+from .b2b.readmodel_then import student_competency  # noqa: F401
+from .b2b.readmodel_then import ai_suggestions  # noqa: F401
+from .b2b.readmodel_then import student_trend  # noqa: F401
+from .b2b.readmodel_then import remediation_exam  # noqa: F401
 
 # Resource Library — aggregate_given
 from .resource_lib.aggregate_given import resources as rl_resources  # noqa: F401
@@ -661,12 +740,15 @@ from .community.aggregate_given import no_activity  # noqa: F401
 from .community.aggregate_given import last_login  # noqa: F401
 from .community.aggregate_given import score_decline  # noqa: F401
 from .community.aggregate_given import score_stable  # noqa: F401
+from .community.aggregate_given import has_activity  # noqa: F401
+from .community.aggregate_given import historical_reports  # noqa: F401
 
 # Community — commands
 from .community.commands import browse_dashboard  # noqa: F401
 from .community.commands import trigger_weekly_report  # noqa: F401
 from .community.commands import run_valley_detection  # noqa: F401
 from .community.commands import browse_exam_results  # noqa: F401
+from .community.commands import view_weekly_reports  # noqa: F401
 
 # Community — readmodel_then
 from .community.readmodel_then import no_banner  # noqa: F401
@@ -681,6 +763,148 @@ from .community.readmodel_then import email_sent  # noqa: F401
 from .community.readmodel_then import email_title  # noqa: F401
 from .community.readmodel_then import email_tone  # noqa: F401
 from .community.readmodel_then import no_callback_email  # noqa: F401
+from .community.readmodel_then import weekly_email_sent  # noqa: F401
+from .community.readmodel_then import weekly_email_title  # noqa: F401
+from .community.readmodel_then import weekly_email_content  # noqa: F401
+from .community.readmodel_then import weekly_email_cta  # noqa: F401
+from .community.readmodel_then import no_weekly_email  # noqa: F401
+from .community.readmodel_then import report_count  # noqa: F401
+from .community.readmodel_then import report_fields  # noqa: F401
 from .community.readmodel_then import coach_appears  # noqa: F401
 from .community.readmodel_then import coach_message  # noqa: F401
 from .community.readmodel_then import coach_not_appear  # noqa: F401
+
+# Question Retirement — aggregate_given
+from .question_retirement.aggregate_given import ai_gen_service  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_answered_correct  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_bookmarked  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_idle  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_in_wrong_book  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_no_interaction  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_reported  # noqa: F401
+from .question_retirement.aggregate_given import ai_question_soft_deleted  # noqa: F401
+from .question_retirement.aggregate_given import ai_questions_generated  # noqa: F401
+from .question_retirement.aggregate_given import ai_questions_never_answered  # noqa: F401
+from .question_retirement.aggregate_given import blind_spot_corrected  # noqa: F401
+from .question_retirement.aggregate_given import dangerous_blind_spot  # noqa: F401
+from .question_retirement.aggregate_given import expires_at_passed  # noqa: F401
+from .question_retirement.aggregate_given import knowledge_node_mastery  # noqa: F401
+from .question_retirement.aggregate_given import learning_journey_with_result_date  # noqa: F401
+from .question_retirement.aggregate_given import result_notification_state  # noqa: F401
+from .question_retirement.aggregate_given import sm2_completed  # noqa: F401
+from .question_retirement.aggregate_given import sm2_stage  # noqa: F401
+from .question_retirement.aggregate_given import subject_question_counts  # noqa: F401
+
+# Question Retirement — commands
+from .question_retirement.commands import ai_consent  # noqa: F401
+from .question_retirement.commands import ai_generate  # noqa: F401
+from .question_retirement.commands import confirm_result  # noqa: F401
+from .question_retirement.commands import quality_gate  # noqa: F401
+from .question_retirement.commands import result_notification  # noqa: F401
+from .question_retirement.commands import retirement_scan  # noqa: F401
+
+# Question Retirement — aggregate_then
+from .question_retirement.aggregate_then import available_questions_count  # noqa: F401
+from .question_retirement.aggregate_then import hard_delete_result  # noqa: F401
+from .question_retirement.aggregate_then import learning_journey_state  # noqa: F401
+from .question_retirement.aggregate_then import quality_gate_result  # noqa: F401
+from .question_retirement.aggregate_then import question_source_type  # noqa: F401
+from .question_retirement.aggregate_then import retirement_state  # noqa: F401
+
+# Question Retirement — readmodel_then
+from .question_retirement.readmodel_then import ai_consent_response  # noqa: F401
+from .question_retirement.readmodel_then import notification_content  # noqa: F401
+from .question_retirement.readmodel_then import onboarding_result_date  # noqa: F401
+from .question_retirement.readmodel_then import retirement_scan_stats  # noqa: F401
+
+# Subscription Trial — commands
+from .subscription_trial.commands import start_trial  # noqa: F401
+
+# Subscription Trial — aggregate_then
+from .subscription_trial.aggregate_then import trial_status  # noqa: F401
+
+# FUP — commands
+from .fup.commands import fup_check  # noqa: F401
+
+# EDU Plan — commands
+from .edu_plan.commands import subscribe_edu  # noqa: F401
+
+# Subscription — readmodel_then (08 new)
+from .subscription.readmodel_then import plan_comparison  # noqa: F401
+from .subscription.readmodel_then import invoice_detail  # noqa: F401
+
+# Subscription — aggregate_then (08 new)
+from .subscription.aggregate_then import upload_limit  # noqa: F401
+from .subscription.aggregate_then import plan_until_date  # noqa: F401
+from .subscription.aggregate_then import feature_access_until  # noqa: F401
+from .subscription.aggregate_then import auto_downgrade  # noqa: F401
+
+# Subscription Trial — commands (08 new)
+from .subscription_trial.commands import start_ultra_trial  # noqa: F401
+from .subscription_trial.commands import trial_expiry_check  # noqa: F401
+
+# Subscription Trial — aggregate_given (08 new)
+from .subscription_trial.aggregate_given import has_used_trial  # noqa: F401
+from .subscription_trial.aggregate_given import trial_expiring  # noqa: F401
+from .subscription_trial.aggregate_given import pre_trial_plan  # noqa: F401
+from .subscription_trial.aggregate_given import in_trial  # noqa: F401
+from .subscription_trial.aggregate_given import in_trial_remaining  # noqa: F401
+
+# Subscription Trial — aggregate_then (08 new)
+from .subscription_trial.aggregate_then import trial_end_date  # noqa: F401
+from .subscription_trial.aggregate_then import no_downgrade_trigger  # noqa: F401
+
+# FUP — aggregate_given (08 new)
+from .fup.aggregate_given import ai_usage_today  # noqa: F401
+from .fup.aggregate_given import consecutive_soft_cap  # noqa: F401
+
+# FUP — commands (08 new)
+from .fup.commands import ai_chat_request  # noqa: F401
+from .fup.commands import daily_fup_check  # noqa: F401
+
+# FUP — aggregate_then (08 new)
+from .fup.aggregate_then import soft_cap_alert  # noqa: F401
+
+# FUP — readmodel_then (08 new)
+from .fup.readmodel_then import alert_content  # noqa: F401
+
+# Common Then (08 new)
+from .common_then import success_no_block  # noqa: F401
+
+# Subscription Upgrade — aggregate_given (08b new)
+from .subscription_upgrade.aggregate_given import csv_import_student  # noqa: F401
+from .subscription_upgrade.aggregate_given import edu_student  # noqa: F401
+from .subscription_upgrade.aggregate_given import institution_admin_plan  # noqa: F401
+from .subscription_upgrade.aggregate_given import edu_student_count  # noqa: F401
+
+# Subscription Upgrade — commands (08b new)
+from .subscription_upgrade.commands import remove_from_institution  # noqa: F401
+from .subscription_upgrade.commands import institution_cancel  # noqa: F401
+
+# Subscription Upgrade — aggregate_then (08b new)
+from .subscription_upgrade.aggregate_then import role_updated  # noqa: F401
+from .subscription_upgrade.aggregate_then import quota_exact  # noqa: F401
+from .subscription_upgrade.aggregate_then import edu_restrictions  # noqa: F401
+from .subscription_upgrade.aggregate_then import batch_downgrade  # noqa: F401
+
+# Pricing — aggregate_given
+from .pricing.aggregate_given import plan_definitions  # noqa: F401
+from .pricing.aggregate_given import monthly_uploads  # noqa: F401
+from .pricing.aggregate_given import never_used_trial  # noqa: F401
+
+# Pricing — commands
+from .pricing.commands import browse_pricing_guest  # noqa: F401
+from .pricing.commands import browse_pricing_user  # noqa: F401
+from .pricing.commands import upload_resource_limit  # noqa: F401
+from .pricing.commands import use_coach  # noqa: F401
+from .pricing.commands import access_edu_admin  # noqa: F401
+
+# Pricing — readmodel_then
+from .pricing.readmodel_then import plans_count  # noqa: F401
+from .pricing.readmodel_then import plan_fields  # noqa: F401
+from .pricing.readmodel_then import current_plan_marked  # noqa: F401
+from .pricing.readmodel_then import ultra_cta  # noqa: F401
+from .pricing.readmodel_then import edu_section  # noqa: F401
+from .pricing.readmodel_then import upgrade_guidance  # noqa: F401
+from .pricing.readmodel_then import ultra_trial_cta  # noqa: F401
+from .pricing.readmodel_then import ultra_upgrade_cta  # noqa: F401

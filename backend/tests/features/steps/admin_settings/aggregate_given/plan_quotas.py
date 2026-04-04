@@ -10,13 +10,21 @@ def step_impl(context):
     db = context.db_session
 
     for row in context.table:
-        quota = PlanQuota(
-            plan=row["方案"],
-            monthly_uploads=int(row["每月上傳數"]),
-            monthly_exams=int(row["每月考試數"]),
-            daily_ai_chats=int(row["每日 AI 對話數"]),
-            monthly_vision_pages=int(row["每月 Vision 頁數"]),
-        )
-        db.add(quota)
+        plan = row["方案"]
+        existing = db.query(PlanQuota).filter_by(plan=plan).first()
+        if existing:
+            existing.monthly_uploads = int(row["每月上傳數"])
+            existing.monthly_exams = int(row["每月考試數"])
+            existing.daily_ai_chats = int(row["每日 AI 對話數"])
+            existing.monthly_vision_pages = int(row["每月 Vision 頁數"])
+        else:
+            quota = PlanQuota(
+                plan=plan,
+                monthly_uploads=int(row["每月上傳數"]),
+                monthly_exams=int(row["每月考試數"]),
+                daily_ai_chats=int(row["每日 AI 對話數"]),
+                monthly_vision_pages=int(row["每月 Vision 頁數"]),
+            )
+            db.add(quota)
 
     db.commit()

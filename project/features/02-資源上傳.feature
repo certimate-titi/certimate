@@ -102,6 +102,48 @@ Feature: 資源上傳與隱性版權約定
       Then 操作成功
       And 預定使用的解析引擎應為 "gemini_flash"
 
+  # ========== 分片上傳（ULTRA 大檔案支援）==========
+
+  Rule: 前置（參數）- 超過 100MB 的檔案必須使用分片上傳
+
+    Example: ULTRA 用戶上傳 300MB 檔案時系統啟動分片上傳流程
+      When 使用者 "ultra@example.com" 初始化分片上傳，檔案名稱為 "大型教科書.pdf"，大小為 300MB，科目為 1
+      Then 操作成功
+      And 回應應包含：
+        | 欄位        | 說明                           |
+        | upload_id   | 分片上傳任務 ID                |
+        | chunk_size  | 每片建議大小（5MB）            |
+        | total_chunks| 預計分片數                     |
+
+  Rule: 後置（狀態）- 分片上傳支援斷點續傳
+
+    Example: 上傳中斷後可從斷點續傳
+      Given 使用者 "ultra@example.com" 已初始化分片上傳任務，總共 60 片
+      And 已成功上傳前 30 片
+      When 使用者 "ultra@example.com" 查詢分片上傳進度
+      Then 操作成功
+      And 回應應包含：
+        | 欄位              | 值  |
+        | uploaded_chunks   | 30  |
+        | total_chunks      | 60  |
+        | status            | in_progress |
+      And 使用者可從第 31 片繼續上傳
+
+    Example: 所有分片上傳完成後合併檔案
+      Given 使用者 "ultra@example.com" 已上傳所有 60 片
+      When 使用者 "ultra@example.com" 完成分片上傳合併
+      Then 操作成功
+      And 新建立的資源狀態應為 "PENDING"
+      And 資源檔案大小應為 300MB
+
+  Rule: 前置（狀態）- 非 ULTRA 方案不可使用分片上傳
+
+    Example: PRO 用戶嘗試初始化分片上傳失敗
+      When 使用者 "pro@example.com" 初始化分片上傳，檔案名稱為 "大型檔案.pdf"，大小為 200MB，科目為 1
+      Then 操作失敗，錯誤為「檔案大小超過 PRO_199 方案限制（100MB）」
+
+  # ========== YouTube URL ==========
+
   Rule: 前置（參數）- YouTube URL 格式必須有效
 
     Example: 提交無效的 YouTube URL 失敗

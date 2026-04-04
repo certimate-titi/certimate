@@ -122,3 +122,83 @@ Feature: 訂閱管理與多階層控制
         | plan        | PRO_PLUS_399        |
         | status      | success             |
         | created_at  | 2026-03-01 00:00:00 |
+
+  # ========== EDU 學生方案 ==========
+
+  Rule: 後置（回應）- EDU 方案應出現在方案權限對照表中
+
+    Example: 查看訂閱資訊時 EDU 方案列於比較表中
+      When 使用者 "free@example.com" 查看訂閱管理頁
+      Then 操作成功
+      And 回應應包含各方案額度比較：
+        | 方案          | AI 對話次數 | 上傳數 | 考試數 | Vision OCR | 自主出題 | 高階教練 |
+        | FREE          | 3           | 5      | 10     | 0          | 是       | 否       |
+        | PRO_199       | 30          | 50     | 100    | 0          | 是       | 否       |
+        | PRO_PLUS_399  | 200         | 200    | 500    | 50         | 是       | 是       |
+        | ULTRA_1599    | 無限        | 無限   | 無限   | 500        | 是       | 是       |
+        | EDU           | 5           | 0      | 無限   | 0          | 否       | 否       |
+
+  Rule: 後置（狀態）- EDU 方案僅可由機構管理員透過 CSV 匯入或邀請指派，不可自行訂閱
+
+    Example: 一般用戶嘗試訂閱 EDU 方案失敗
+      When 使用者 "free@example.com" 訂閱 "EDU" 方案
+      Then 操作失敗，錯誤為「EDU 方案僅限機構管理員指派，無法自行訂閱」
+
+  # ========== 14 天免費試用 ==========
+
+  Rule: 前置（狀態）- 每個帳號僅可使用一次 ULTRA 免費試用
+
+    Example: 首次啟用 ULTRA 14 天試用成功
+      When 使用者 "free@example.com" 啟用 ULTRA 14 天免費試用
+      Then 操作成功
+      And 使用者 "free@example.com" 的訂閱方案應為 "ULTRA_1599"
+      And 使用者 "free@example.com" 的訂閱狀態應為 "trial"
+      And 使用者 "free@example.com" 的試用到期日應為啟用日起第 14 天
+
+    Example: 已使用過試用的用戶再次啟用失敗
+      Given 使用者 "pro@example.com" 已使用過 ULTRA 免費試用
+      When 使用者 "pro@example.com" 啟用 ULTRA 14 天免費試用
+      Then 操作失敗，錯誤為「您已使用過免費試用，請直接訂閱」
+
+  Rule: 後置（狀態）- 試用到期後應自動降回原方案
+
+    Example: 試用到期後自動降回 FREE
+      Given 使用者 "free@example.com" 的 ULTRA 試用將於 2026-04-01 到期
+      And 使用者 "free@example.com" 試用前的方案為 "FREE"
+      When 系統執行試用到期檢查排程，當前日期為 2026-04-01
+      Then 使用者 "free@example.com" 的訂閱方案應自動降級為 "FREE"
+      And 使用者 "free@example.com" 的訂閱狀態應為 "無"
+
+    Example: 試用期間轉為正式訂閱後不再觸發降級
+      Given 使用者 "free@example.com" 正在 ULTRA 試用中
+      When 使用者 "free@example.com" 完成 "ULTRA_1599" 方案訂閱付款
+      Then 使用者 "free@example.com" 的訂閱狀態應更新為 "active"
+      And 系統不應在原試用到期日觸發降級
+
+  Rule: 後置（回應）- 試用期間應顯示剩餘天數提示
+
+    Example: 試用中查看訂閱資訊取得剩餘天數
+      Given 使用者 "free@example.com" 正在 ULTRA 試用中，剩餘 7 天
+      When 使用者 "free@example.com" 查看訂閱管理頁
+      Then 操作成功
+      And 回應應包含：
+        | 欄位                | 值          |
+        | current_plan        | ULTRA_1599  |
+        | subscription_status | trial       |
+        | trial_days_left     | 7           |
+
+  # ========== Fair Use Policy（公平使用限制）==========
+
+  Rule: 後置（狀態）- ULTRA 無限配額應設有 soft cap 防濫用機制
+
+    Example: 單日 AI 呼叫超過 1000 次觸發 soft cap 告警
+      Given 使用者 "ultra@example.com" 今日已使用 AI 對話 1000 次
+      When 使用者 "ultra@example.com" 發起第 1001 次 AI 對話
+      Then 操作成功（不阻斷使用者）
+      And 系統應記錄 soft cap 告警日誌，包含 user_id 與當日用量
+
+    Example: 連續 3 天觸發 soft cap 後系統通知管理員
+      Given 使用者 "ultra@example.com" 連續 3 天觸發 soft cap 告警
+      When 系統執行每日 FUP 檢查排程
+      Then 系統應發送告警通知至管理員 Email
+      And 告警內容應包含使用者 Email 與連續觸發天數

@@ -11,6 +11,7 @@ Enum subscription_plan {
   PRO_199
   PRO_PLUS_399
   ULTRA_1599
+  EDU
 }
 
 Enum user_status {
@@ -23,6 +24,7 @@ Enum user_status {
 
 Enum user_role {
   user
+  student
   org_admin
   admin
   super_admin
@@ -111,6 +113,7 @@ Enum subscription_status {
   active
   cancelled       // 已取消但未到期
   expired
+  trial           // 14天免費試用中
 }
 
 Enum announcement_type {
@@ -199,6 +202,11 @@ Table users {
   subscription_status subscription_status [default: 'active']
   next_billing_date timestamptz
   stripe_customer_id varchar(100)
+  trial_start_date timestamptz
+  trial_end_date timestamptz
+  has_used_trial boolean [default: false]
+  pre_trial_plan varchar(20) [note: '試用前原方案，到期後降回']
+  org_id uuid [ref: > institutions.id, note: 'EDU 學生所屬機構']
   role user_role [default: 'user']
   status user_status [default: 'active']
   onboarding_completed boolean [default: false]
@@ -253,6 +261,9 @@ Table learning_journeys {
   user_id uuid [not null]
   subject_id uuid [not null]
   exam_date date
+  result_date date [note: '放榜日期']
+  exam_result_status varchar(20) [note: 'NULL / passed / failed / retake']
+  data_expiry_date date [note: '資料預定刪除日期']
   self_assessed_level self_assessed_level [default: 'beginner']
   learning_mode learning_mode [default: 'standard']
   is_archived boolean [default: false, note: '移除科目時封存而非刪除']
@@ -394,7 +405,14 @@ Table questions {
   correct_answer varchar(10) [not null]
   explanation text [note: 'AI 生成的詳解（Markdown）']
   source_citation text [note: '原文溯源引用']
-  historical_source varchar(255) [note: '考古題來源：如 "112年第1次金融業務人員"]
+  historical_source varchar(255) [note: '考古題來源：如 "112年第1次金融業務人員"']
+  source_type varchar(20) [default: 'historical', note: 'historical / ai_generated']
+  quality_flag varchar(20) [default: 'ok', note: '品質標記：ok / review / low']
+  flag_reason text [note: '品質問題說明']
+  validation_model varchar(50) [note: 'AI 驗證模型名稱']
+  expires_at timestamptz [note: 'AI 題過期時間，NULL = 永不過期（考古題）']
+  retired_at timestamptz [note: '軟刪除時間']
+  retention_reason varchar(50) [note: '保留/退場原因']
 }
 
 Ref: questions.exam_id > exams.id [delete: cascade]
@@ -578,6 +596,10 @@ Table institutions {
   id uuid [pk, default: `gen_random_uuid()`]
   name varchar(200) [not null]
   admin_user_id uuid [not null]
+  dpa_signed_at timestamptz
+  dpa_signer_name varchar(100)
+  edu_student_limit int [default: 30]
+  surcharge_confirmed boolean [default: false]
   created_at timestamptz [default: `now()`]
 }
 

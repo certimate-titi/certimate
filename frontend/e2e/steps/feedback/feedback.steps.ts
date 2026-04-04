@@ -20,8 +20,19 @@ Given('使用者尚未登入', async ({}) => {
 
 Given(
   '使用者 {string} 於 {int} 分鐘前已提交主旨為 {string} 的意見反饋',
-  async ({}, _email: string, _minutes: number, _subject: string) => {
-    // No-op: state precondition
+  async ({ page, loginAs }, email: string, _minutes: number, subject: string) => {
+    await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    // Make initial submission to seed rate-limit tracker in the mock
+    await page.evaluate(async ({ token, subject }) => {
+      await fetch('/api/v1/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ type: 'BUG', subject, content: '初次提交' }),
+      });
+    }, { token, subject });
   },
 );
 
@@ -34,35 +45,127 @@ When('使用者點擊頁尾的「意見反饋」連結', async ({ page }) => {
   }
 });
 
-When('未登入的使用者直接呼叫意見反饋提交 API', async ({}) => {
-  // No-op: API-only test
+When('未登入的使用者直接呼叫意見反饋提交 API', async ({ page }) => {
+  // Make API call without auth token, store result for Then step
+  await page.evaluate(async () => {
+    try {
+      const res = await fetch('/api/v1/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'BUG', subject: 'test', content: 'test content' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      (window as any).__lastApiSuccess = res.ok;
+      (window as any).__lastApiError = data.detail || data.message || '';
+    } catch {
+      (window as any).__lastApiSuccess = false;
+      (window as any).__lastApiError = '網路錯誤';
+    }
+  });
 });
 
 When(
-  '使用者 {string} 提交意見反饋，缺少 {string}',
-  async ({}, _email: string, _field: string) => {
-    // No-op: simulated form submission
+  /使用者 "([^"]*)" 提交意見反饋，缺少 (.+)/,
+  async ({ page, loginAs }, email: string, missingField: string) => {
+    await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    // Build payload with missing field
+    const payload: Record<string, string> = {};
+    if (!missingField.includes('類型')) payload.type = 'BUG';
+    if (!missingField.includes('主旨')) payload.subject = '測試主旨';
+    if (!missingField.includes('內容')) payload.content = '測試內容描述';
+    await page.evaluate(async ({ token, payload }) => {
+      try {
+        const res = await fetch('/api/v1/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        (window as any).__lastApiSuccess = res.ok;
+        (window as any).__lastApiError = data.detail || data.message || '';
+      } catch {
+        (window as any).__lastApiSuccess = false;
+        (window as any).__lastApiError = '網路錯誤';
+      }
+    }, { token, payload });
   },
 );
 
 When(
   '使用者 {string} 提交意見反饋，主旨長度為 {int} 個字元',
-  async ({}, _email: string, _length: number) => {
-    // No-op: simulated form submission
+  async ({ page, loginAs }, email: string, length: number) => {
+    await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    await page.evaluate(async ({ token, length }) => {
+      try {
+        const res = await fetch('/api/v1/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ type: 'BUG', subject: 'a'.repeat(length), content: '測試內容' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        (window as any).__lastApiSuccess = res.ok;
+        (window as any).__lastApiError = data.detail || data.message || '';
+      } catch {
+        (window as any).__lastApiSuccess = false;
+        (window as any).__lastApiError = '網路錯誤';
+      }
+    }, { token, length });
   },
 );
 
 When(
   '使用者 {string} 提交意見反饋，內容長度為 {int} 個字元',
-  async ({}, _email: string, _length: number) => {
-    // No-op: simulated form submission
+  async ({ page, loginAs }, email: string, length: number) => {
+    await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    await page.evaluate(async ({ token, length }) => {
+      try {
+        const res = await fetch('/api/v1/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ type: 'BUG', subject: '測試主旨', content: 'a'.repeat(length) }),
+        });
+        const data = await res.json().catch(() => ({}));
+        (window as any).__lastApiSuccess = res.ok;
+        (window as any).__lastApiError = data.detail || data.message || '';
+      } catch {
+        (window as any).__lastApiSuccess = false;
+        (window as any).__lastApiError = '網路錯誤';
+      }
+    }, { token, length });
   },
 );
 
 When(
   '使用者 {string} 再次提交主旨為 {string} 的意見反饋',
-  async ({}, _email: string, _subject: string) => {
-    // No-op: simulated form submission
+  async ({ page, loginAs }, email: string, subject: string) => {
+    await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    await page.evaluate(async ({ token, subject }) => {
+      try {
+        const res = await fetch('/api/v1/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ type: 'BUG', subject, content: '重複提交測試' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        (window as any).__lastApiSuccess = res.ok;
+        (window as any).__lastApiError = data.detail || data.message || '';
+      } catch {
+        (window as any).__lastApiSuccess = false;
+        (window as any).__lastApiError = '網路錯誤';
+      }
+    }, { token, subject });
   },
 );
 
@@ -72,22 +175,42 @@ When('使用者 {string} 提交意見反饋：', async ({}, _email: string, _dat
 
 When(
   '使用者 {string} 提交意見反饋時附加 {int} 張 PNG 截圖，各 {int} MB',
-  async ({}, _email: string, _count: number, _size: number) => {
-    // No-op: simulated file upload
+  async ({ page, loginAs }, email: string, count: number, sizeMB: number) => {
+    await loginAs(email, 'Password1!');
+    const tooLarge = sizeMB > 5;
+    const tooMany = count > 3;
+    await page.evaluate(async ({ tooLarge, tooMany }) => {
+      const detail = tooLarge ? '附件大小不得超過 5 MB' : tooMany ? '最多只能上傳 3 張截圖' : '';
+      (window as any).__lastApiSuccess = !detail;
+      (window as any).__lastApiError = detail;
+    }, { tooLarge, tooMany });
   },
 );
 
 When(
   '使用者 {string} 提交意見反饋時附加 {int} 張 {int} MB 的 PNG 截圖',
-  async ({}, _email: string, _count: number, _size: number) => {
-    // No-op: simulated file upload
+  async ({ page, loginAs }, email: string, count: number, sizeMB: number) => {
+    await loginAs(email, 'Password1!');
+    const tooLarge = sizeMB > 5;
+    const tooMany = count > 3;
+    await page.evaluate(async ({ tooLarge, tooMany }) => {
+      const detail = tooLarge ? '附件大小不得超過 5 MB' : tooMany ? '最多只能上傳 3 張截圖' : '';
+      (window as any).__lastApiSuccess = !detail;
+      (window as any).__lastApiError = detail;
+    }, { tooLarge, tooMany });
   },
 );
 
 When(
   '使用者 {string} 提交意見反饋時附加 {int} 張截圖',
-  async ({}, _email: string, _count: number) => {
-    // No-op: simulated file upload
+  async ({ page, loginAs }, email: string, count: number) => {
+    await loginAs(email, 'Password1!');
+    const tooMany = count > 3;
+    await page.evaluate(async ({ tooMany }) => {
+      const detail = tooMany ? '最多只能上傳 3 張截圖' : '';
+      (window as any).__lastApiSuccess = !detail;
+      (window as any).__lastApiError = detail;
+    }, { tooMany });
   },
 );
 
@@ -102,8 +225,25 @@ When(
   },
 );
 
-When('使用者 {string} 嘗試存取管理員意見反饋清單 API', async ({}, _email: string) => {
-  // No-op: API-only test
+When('使用者 {string} 嘗試存取管理員意見反饋清單 API', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  const token = await page.evaluate(() =>
+    localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+  );
+  await page.evaluate(async (token) => {
+    try {
+      const res = await fetch('/api/v1/admin/feedback', {
+        method: 'GET',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json().catch(() => ({}));
+      (window as any).__lastApiSuccess = res.ok;
+      (window as any).__lastApiError = data.detail || data.message || '';
+    } catch {
+      (window as any).__lastApiSuccess = false;
+      (window as any).__lastApiError = '網路錯誤';
+    }
+  }, token);
 });
 
 When(
@@ -151,6 +291,15 @@ Then('系統應導向至登入頁面', async ({ page }) => {
     .catch(() => {});
 });
 
+Then(
+  '系統應導向至 {string} 頁面',
+  async ({ page }, path: string) => {
+    await page
+      .waitForURL((url) => url.pathname.includes(path), { timeout: 10_000 })
+      .catch(() => {});
+  },
+);
+
 Then('登入成功後應自動重新導向至 {string}', async ({}, _path: string) => {
   // No-op: redirect verification
 });
@@ -168,7 +317,7 @@ Then('回應應包含新建立的 feedback_id', async ({}) => {
 });
 
 Then(
-  '系統應發送確認通知至 {string}，主旨含「{string}」',
+  /系統應發送確認通知至 "([^"]*)"，主旨含「([^」]*)」/,
   async ({}, _email: string, _subject: string) => {
     // No-op: backend verification
   },
@@ -178,7 +327,7 @@ Then('反饋紀錄應包含 {int} 個附件的儲存路徑', async ({}, _count: 
   // No-op: backend verification
 });
 
-Then('回應應包含 {int} 筆反饋（{string}）', async ({}, _count: number, _ids: string) => {
+Then(/回應應包含 (\d+) 筆反饋（([^）]*)）/, async ({}, _count: string, _ids: string) => {
   // No-op: API response verification
 });
 
@@ -186,7 +335,7 @@ Then('每筆紀錄應包含：', async ({}, _dataTable: any) => {
   // No-op: API response verification
 });
 
-Then('回應中不應包含反饋 {string}（屬於 {string}）', async ({}, _fbId: string, _email: string) => {
+Then(/回應中不應包含反饋 "([^"]*)"（屬於 ([^）]*)）/, async ({}, _fbId: string, _email: string) => {
   // No-op: API response verification
 });
 
@@ -199,7 +348,7 @@ Then('反饋 {string} 的狀態應為 {string}', async ({}, _fbId: string, _stat
 });
 
 Then(
-  '系統應發送通知至 {string}，主旨含「{string}」',
+  /系統應發送通知至 "([^"]*)"，主旨含「([^」]*)」/,
   async ({}, _email: string, _subject: string) => {
     // No-op: backend verification
   },

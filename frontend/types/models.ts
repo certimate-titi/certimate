@@ -4,11 +4,11 @@
 
 // --- Enums ---
 
-export type SubscriptionTier = 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599';
+export type SubscriptionTier = 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599' | 'EDU';
 
-export type UserRole = 'USER' | 'ADMIN';
+export type UserRole = 'USER' | 'ADMIN' | 'STUDENT';
 
-export type SubscriptionStatus = 'ACTIVE' | 'CANCELED' | 'PAST_DUE';
+export type SubscriptionStatus = 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIAL';
 
 export type DocumentSourceType = 'PDF' | 'MARKDOWN' | 'YOUTUBE_URL' | 'IMAGE_MATH';
 
@@ -218,6 +218,7 @@ export interface UserSubject {
   subjectId: string;
   subjectName: string;
   examDate: string; // ISO date YYYY-MM-DD
+  resultDate: string; // ISO date YYYY-MM-DD
   selfAssessment: SelfAssessmentLevel;
   createdAt: string; // ISO timestamp
 }
@@ -231,6 +232,7 @@ export interface OnboardingFormData {
     subjectId: string;
     subjectName: string;
     examDate: string; // YYYY-MM-DD
+    resultDate: string; // YYYY-MM-DD
     selfAssessment: SelfAssessmentLevel;
   }>;
   dailyStudyMinutes: number;

@@ -234,8 +234,12 @@ function ExamSetupPage() {
       setGeneratedExamId(examId);
       // Navigate immediately after API completes
       router.push(`/exam/workspace?examId=${examId}`);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Exam generation failed:', e);
+      // Extract error detail from API response
+      const msg = e?.message || '';
+      const detailMatch = msg.match(/"detail"\s*:\s*"([^"]+)"/);
+      setValidationError(detailMatch ? detailMatch[1] : '測驗生成失敗，請稍後再試');
       setIsGenerating(false);
     }
   }, [selectedDocIds, selectedNodeIds, questionCount, difficulty, questionTypes, examMode, router]);

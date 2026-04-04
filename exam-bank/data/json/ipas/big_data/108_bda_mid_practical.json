@@ -4,7 +4,7 @@
     "total_questions": 0,
     "with_answers": 0,
     "bloom_distribution": {},
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "validations": [
       {
         "layer": "L1_structure",

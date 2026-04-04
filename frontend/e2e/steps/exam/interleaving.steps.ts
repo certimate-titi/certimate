@@ -8,7 +8,7 @@ const { Given, When, Then } = createBdd(test);
 // ── Exam ordering ──
 
 When(
-  /AI 生成 (\d+) 題完成/,
+  /^AI 生成 (\d+) 題完成$/,
   async ({}, _count: number) => {
     // No-op: backend AI generation process
   },
@@ -150,3 +150,23 @@ Then(
     // No-op: content verification
   },
 );
+
+// ── Additional steps (from interleaved-practice) ──
+
+When(
+  'AI 生成 {int} 題完成，各節點各 {int} 題',
+  async ({}, _total: number, _perNode: number) => {
+    // No-op: backend event
+  },
+);
+
+When(
+  'AI 生成 {int} 題完成，節點 {int} 有 {int} 題、節點 {int} 有 {int} 題、節點 {int} 有 {int} 題',
+  async ({}, _total: number, _n1: number, _c1: number, _n2: number, _c2: number, _n3: number, _c3: number) => {
+    // No-op: backend event
+  },
+);
+
+Then('題目應交錯排列知識節點', async ({}) => {
+  // No-op: ordering verification
+});

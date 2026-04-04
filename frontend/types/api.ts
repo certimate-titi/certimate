@@ -281,6 +281,7 @@ export interface SubmitOnboardingRequest {
     subjectId: string;
     subjectName?: string;
     examDate: string;
+    resultDate?: string;
     selfAssessment: SelfAssessmentLevel;
   }>;
   dailyStudyMinutes: number;
@@ -304,6 +305,7 @@ export interface AddUserSubjectRequest {
   subjectId: string;
   subjectName?: string;
   examDate: string;
+  resultDate?: string;
   selfAssessment: SelfAssessmentLevel;
 }
 

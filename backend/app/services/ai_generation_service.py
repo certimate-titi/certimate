@@ -985,6 +985,8 @@ class AiGenerationService:
             user_difficulty=user_diff,
             exam_date=exam_date,
             wrong_answer_count=wrong_count,
+            custom_bloom_ratio=getattr(exam, 'custom_bloom_ratio', None),
+            historical_priority=getattr(exam, 'historical_priority', False),
         )
 
         logger.info("Hybrid plan: mode=%s, nodes=%d, wrong_review=%d",

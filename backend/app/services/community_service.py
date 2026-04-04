@@ -27,7 +27,7 @@ class CommunityService:
 
         # Only ULTRA users see the banner
         if plan in ("ULTRA", "ULTRA_1599"):
-            cutoff_date = date.today() - timedelta(days=7)
+            cutoff_date = date.today() - timedelta(days=30)
             active_count = self.db.query(User).filter(
                 User.last_login_at.isnot(None),
                 func.date(User.last_login_at) >= cutoff_date,
@@ -43,19 +43,27 @@ class CommunityService:
     def generate_weekly_reports(self, activities: dict) -> dict:
         """Generate weekly reports for users with activity."""
         reports = []
+        emails_sent = []
+        emails_skipped = []
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+
         for user_email, activity in activities.items():
             if activity is None:
+                emails_skipped.append(user_email)
                 continue
             user = self.db.query(User).filter_by(email=user_email).first()
             if not user:
                 continue
+            progress_summary = "本週學習表現良好，持續保持！建議可以加強弱點領域的練習。"
             report = WeeklyReport(
                 user_id=user.id,
-                report_week=date.today(),
+                report_week=today,
                 study_hours=activity["study_hours"],
                 exams_completed=activity["exams_completed"],
                 questions_answered=activity["questions_answered"],
-                progress_summary="本週學習表現良好，持續保持！建議可以加強弱點領域的練習。",
+                progress_summary=progress_summary,
             )
             self.db.add(report)
             reports.append({
@@ -63,10 +71,48 @@ class CommunityService:
                 "study_hours": float(activity["study_hours"]),
                 "exams_completed": activity["exams_completed"],
                 "questions_answered": activity["questions_answered"],
-                "progress_summary": report.progress_summary,
+                "progress_summary": progress_summary,
+            })
+            emails_sent.append({
+                "to": user_email,
+                "subject": f"CertiMate 學習週報 — {week_start.isoformat()} ~ {week_end.isoformat()}",
+                "body": {
+                    "study_hours": float(activity["study_hours"]),
+                    "exams_completed": activity["exams_completed"],
+                    "progress_summary": progress_summary,
+                    "cta_url": "https://certimate.tw/dashboard",
+                    "cta_text": "回到平台繼續學習",
+                },
             })
         self.db.commit()
-        return {"reports": reports}
+        return {
+            "reports": reports,
+            "emails_sent": emails_sent,
+            "emails_skipped": emails_skipped,
+        }
+
+    def get_weekly_reports(self, user_id: str) -> dict:
+        """Get weekly report list for a user."""
+        reports = (
+            self.db.query(WeeklyReport)
+            .filter_by(user_id=uuid.UUID(user_id))
+            .order_by(WeeklyReport.report_week.desc())
+            .all()
+        )
+        result = []
+        for r in reports:
+            week_start = r.report_week - timedelta(days=r.report_week.weekday())
+            week_end = week_start + timedelta(days=6)
+            result.append({
+                "id": str(r.id),
+                "week_start": week_start.isoformat(),
+                "week_end": week_end.isoformat(),
+                "study_hours": float(r.study_hours) if r.study_hours else 0,
+                "exams_completed": r.exams_completed or 0,
+                "questions_answered": r.questions_answered or 0,
+                "progress_summary": r.progress_summary or "",
+            })
+        return {"reports": result}
 
     def run_valley_detection(self, current_date_str: str) -> dict:
         """Detect inactive users and send recall notifications."""

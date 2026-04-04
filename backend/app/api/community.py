@@ -47,6 +47,15 @@ def run_valley_detection(
     return service.run_valley_detection(body.current_date)
 
 
+@router.get("/weekly-reports")
+def get_weekly_reports(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = CommunityService(db)
+    return service.get_weekly_reports(user_id)
+
+
 @router.get("/exam-results/coaching")
 def get_exam_coaching(
     user_id: str = Depends(get_current_user_id),

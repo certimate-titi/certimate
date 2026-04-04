@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
 from app.core.deps import set_session_factory
+from app.core.scheduler import init_scheduler, start_scheduler, shutdown_scheduler
 from app.api import router as api_router
 
 settings = get_settings()
@@ -21,7 +22,11 @@ async def lifespan(app: FastAPI):
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     set_session_factory(session_local)
     print(f"✅ Database connected: {settings.DATABASE_URL.split('@')[-1]}")
+    # 啟動背景排程
+    init_scheduler(session_local)
+    await start_scheduler()
     yield
+    await shutdown_scheduler()
     engine.dispose()
     print("🔌 Database connection closed")
 

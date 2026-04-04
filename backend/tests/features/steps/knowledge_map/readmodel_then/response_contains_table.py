@@ -31,11 +31,15 @@ def step_impl(context):
         for row in context.table:
             field = row["欄位"]
             expected_value = row["值"]
-            actual_value = data.get(field)
-            assert actual_value is not None, \
-                f"回應缺少欄位 '{field}'，實際回應: {list(data.keys())}"
 
-            if expected_value.startswith("（"):
+            assert field in data, \
+                f"回應缺少欄位 '{field}'，實際回應: {list(data.keys())}"
+            actual_value = data[field]
+
+            if expected_value == "null":
+                assert actual_value is None, \
+                    f"欄位 '{field}' 預期為 null，實際為 '{actual_value}'"
+            elif expected_value.startswith("（"):
                 assert actual_value is not None and str(actual_value).strip() != "", \
                     f"欄位 '{field}' 應非空白，實際為 '{actual_value}'"
             else:

@@ -115,7 +115,10 @@ npm run dev    # http://localhost:3005
   isProPlus: boolean          // PRO_PLUS_399+
   isUltra: boolean            // ULTRA_1599
   isAdmin: boolean            // ADMIN / SUPER_ADMIN
-  subscriptionTier: 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599'
+  isStudent: boolean          // STUDENT role (EDU plan)
+  isEdu: boolean              // EDU tier
+  isTrial: boolean            // 14-day trial active
+  subscriptionTier: 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599' | 'EDU'
   onboardingCompleted: boolean
   loginWithCredentials(email, password, rememberMe)
   loginWithGoogle()
@@ -154,8 +157,9 @@ APP_URL=http://localhost:3005
 
 ```typescript
 // types/models.ts
-SubscriptionTier: 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599'
-UserRole: 'USER' | 'ADMIN'
+SubscriptionTier: 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599' | 'EDU'
+SubscriptionStatus: 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIAL'
+UserRole: 'USER' | 'ADMIN' | 'STUDENT'
 ```
 
 ## 注意事項

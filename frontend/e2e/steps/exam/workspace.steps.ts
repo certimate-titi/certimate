@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
+import { setExamOverride, USERS } from '../../mocks/data';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -12,7 +13,29 @@ When(
   '使用者 {string} 開始測驗 {int}',
   async ({ page, loginAs }, email: string, examId: number) => {
     await loginAs(email, 'Password1!');
+    const token = await page.evaluate(() =>
+      localStorage.getItem('certimate_jwt_token') || sessionStorage.getItem('certimate_jwt_token'),
+    );
+    // Pre-check permission via API
+    const result = await page.evaluate(async ({ token, examId }) => {
+      try {
+        const res = await fetch(`/api/v1/exams/${examId}/resume`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, error: data.detail || data.message || '' };
+      } catch {
+        return { ok: false, error: '網路錯誤' };
+      }
+    }, { token, examId });
     await page.goto(`/exam/workspace?id=${examId}`);
+    // Re-set window vars after navigation (page.goto clears them)
+    if (!result.ok) {
+      await page.evaluate(({ ok, error }) => {
+        (window as any).__lastApiSuccess = ok;
+        (window as any).__lastApiError = error;
+      }, result);
+    }
   },
 );
 
@@ -232,3 +255,38 @@ When('系統倒數時間歸零', async ({}) => {
 When('系統時間推進使剩餘時間變為 {int} 分 {int} 秒', async ({}, _min: number, _sec: number) => {
   // Can't manipulate system time
 });
+
+// ── Background Given steps (seed data, no-op for frontend) ──
+
+Given('系統中有以下測驗：', async ({}, dataTable: any) => {
+  const rows = dataTable.hashes();
+  for (const row of rows) {
+    const userId = row['使用者 ID'] || row['使用者ID'];
+    const user = USERS.find((u) => u.id === userId);
+    setExamOverride({
+      id: parseInt(row['測驗 ID'] || row['測驗ID']),
+      owner_email: user?.email || `user${userId}@example.com`,
+      status: row['狀態'] || 'READY',
+      question_count: parseInt(row['總題數'] || '20'),
+    });
+  }
+});
+
+Given('測驗 {int} 包含以下題目：', async ({}, _id: number, _dataTable: any) => {
+  // No-op: backend seed data
+});
+
+Given('測驗 {int} 包含以下已暫存作答：', async ({}, _id: number, _dataTable: any) => {
+  // No-op: backend seed data
+});
+
+Given('測驗 {int} 包含以下數學工程題目：', async ({}, _id: number, _dataTable: any) => {
+  // No-op: backend seed data
+});
+
+When(
+  '使用者 {string} 瀏覽題目 {int} 但未輸入任何內容',
+  async ({}, _email: string, _qId: number) => {
+    // No-op: simulated navigation
+  },
+);

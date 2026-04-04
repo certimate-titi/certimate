@@ -122,6 +122,27 @@ def before_all(context):
     set_session_factory(_SessionLocal)
 
 
+def _seed_plan_quotas(session):
+    """Seed default plan quota data if not exists."""
+    from app.models.plan_quota import PlanQuota
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from sqlalchemy import insert as sa_insert
+
+    defaults = [
+        {"plan": "FREE", "daily_ai_chats": 3, "monthly_uploads": 5, "monthly_exams": 10, "monthly_vision_pages": 0, "max_file_size_mb": 10},
+        {"plan": "PRO_199", "daily_ai_chats": 30, "monthly_uploads": 50, "monthly_exams": 100, "monthly_vision_pages": 0, "max_file_size_mb": 100},
+        {"plan": "PRO_PLUS_399", "daily_ai_chats": 200, "monthly_uploads": 200, "monthly_exams": 500, "monthly_vision_pages": 50, "max_file_size_mb": 100},
+        {"plan": "ULTRA_1599", "daily_ai_chats": None, "monthly_uploads": None, "monthly_exams": None, "monthly_vision_pages": 500, "max_file_size_mb": 500},
+        {"plan": "EDU", "daily_ai_chats": 5, "monthly_uploads": 0, "monthly_exams": None, "monthly_vision_pages": 0, "max_file_size_mb": 0},
+    ]
+
+    for row in defaults:
+        existing = session.query(PlanQuota).filter_by(plan=row["plan"]).first()
+        if existing is None:
+            session.add(PlanQuota(**row))
+    session.commit()
+
+
 def before_scenario(context, scenario):
     """每個 Scenario 執行前初始化。"""
     context.last_error = None
@@ -132,6 +153,9 @@ def before_scenario(context, scenario):
 
     # 初始化 DB Session
     context.db_session = _SessionLocal()
+
+    # Seed plan quotas (truncated after each scenario)
+    _seed_plan_quotas(context.db_session)
 
     # 初始化 HTTP Client（FastAPI TestClient）
     from fastapi.testclient import TestClient

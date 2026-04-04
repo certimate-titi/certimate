@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from app.core.deps import get_db, get_current_user_id
 from app.services.subscription_service import SubscriptionService
+from app.services.trial_service import TrialService
+from app.services.fup_service import FUPService
 
 router = APIRouter(prefix="/subscriptions")
 
@@ -71,6 +73,50 @@ def cancel(
 ):
     service = SubscriptionService(db)
     result = service.cancel(user_id=user_id)
+    return _handle_result(result)
+
+
+# ========== 14 天試用 ==========
+
+@router.post("/trial/start")
+def start_trial(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = TrialService(db)
+    result = service.start_trial(user_id=user_id)
+    return _handle_result(result)
+
+
+@router.get("/trial/status")
+def get_trial_status(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = TrialService(db)
+    result = service.get_trial_status(user_id=user_id)
+    return _handle_result(result)
+
+
+@router.post("/trial/convert")
+def convert_trial_to_paid(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = TrialService(db)
+    result = service.convert_to_paid(user_id=user_id)
+    return _handle_result(result)
+
+
+# ========== FUP ==========
+
+@router.get("/fup/check")
+def check_fup(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = FUPService(db)
+    result = service.check_daily_usage(user_id=user_id)
     return _handle_result(result)
 
 

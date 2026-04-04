@@ -164,6 +164,62 @@ Feature: 測驗設定
       And 回應應包含有效的測驗 ID
       And 回應應包含生成的題目總數 20
 
+  # ========== ULTRA 專屬：Bloom 層級自訂比例 ==========
+
+  Rule: 前置（參數）- ULTRA 方案可自訂 Bloom 認知層級比例
+
+    Example: ULTRA 用戶自訂 Bloom 比例成功提交
+      When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 50，自訂 Bloom 比例為：
+        | bloom_category | percentage |
+        | remember       | 10         |
+        | understand     | 15         |
+        | apply          | 30         |
+        | analyze        | 25         |
+        | evaluate       | 15         |
+        | create         | 5          |
+      Then 操作成功
+      And 測驗任務的 bloom_source 應為 "custom"
+      And 測驗任務的 bloom_distribution 應符合自訂比例
+
+    Example: 非 ULTRA 用戶傳入 Bloom 自訂比例時忽略，使用預設
+      When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，自訂 Bloom 比例為：
+        | bloom_category | percentage |
+        | remember       | 10         |
+        | understand     | 10         |
+        | apply          | 30         |
+        | analyze        | 30         |
+        | evaluate       | 15         |
+        | create         | 5          |
+      Then 操作成功
+      And 測驗任務的 bloom_source 應為 "default"（非 custom）
+      And 回應應包含提示 "Bloom 自訂比例為 ULTRA 方案專屬功能"
+
+    Example: ULTRA 用戶自訂 Bloom 比例加總不為 100 時失敗
+      When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 50，自訂 Bloom 比例為：
+        | bloom_category | percentage |
+        | remember       | 30         |
+        | understand     | 30         |
+        | apply          | 30         |
+        | analyze        | 20         |
+        | evaluate       | 0          |
+        | create         | 0          |
+      Then 操作失敗
+      And 錯誤訊息應為 "Bloom 比例加總必須為 100%"
+
+  # ========== ULTRA 專屬：考古題優先召回 ==========
+
+  Rule: 後置（配比）- ULTRA 用戶出題時考古題召回權重加倍
+
+    Example: ULTRA 用戶混合出題時考古題佔比顯著高於非 ULTRA
+      When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 50
+      Then 操作成功
+      And 測驗中考古題（reliability 為 green）佔比應不低於 60%（在題庫充足時）
+
+    Example: PRO 用戶混合出題時使用標準召回權重
+      When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20
+      Then 操作成功
+      And 測驗中考古題與 AI 生成題的比例應依標準權重分配
+
   # ========== UI 元件補充場景 ==========
 
   Rule: 前置（參數）- 題型切換應支援選擇多種題型

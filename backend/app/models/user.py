@@ -24,12 +24,14 @@ class SubscriptionPlan(str, enum.Enum):
     PRO = "PRO"
     PRO_PLUS = "PRO_PLUS"
     ULTRA = "ULTRA"
+    EDU = "EDU"
 
 
 class SubscriptionStatus(str, enum.Enum):
     ACTIVE = "active"
     CANCELLED = "cancelled"
     EXPIRED = "expired"
+    TRIAL = "trial"
 
 
 class UserStatus(str, enum.Enum):
@@ -42,6 +44,7 @@ class UserStatus(str, enum.Enum):
 
 class UserRole(str, enum.Enum):
     USER = "user"
+    STUDENT = "student"
     ORG_ADMIN = "org_admin"
     ADMIN = "admin"
     SUPER_ADMIN = "super_admin"
@@ -83,6 +86,17 @@ class User(Base):
     )
     plan_source: Mapped[str | None] = mapped_column(String(20))  # 'payment' or 'admin'
     stripe_customer_id: Mapped[str | None] = mapped_column(String(100))
+    trial_start_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    trial_end_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+    has_used_trial: Mapped[bool] = mapped_column(Boolean, default=False)
+    pre_trial_plan: Mapped[str | None] = mapped_column(String(20))
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True)
+    )
     role: Mapped[str] = mapped_column(
         Enum(UserRole, name="user_role", create_type=False,
              values_callable=lambda e: [m.value for m in e]),

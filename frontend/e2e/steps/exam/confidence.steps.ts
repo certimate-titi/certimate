@@ -159,3 +159,15 @@ Given(
     // No-op: state setup
   },
 );
+
+// ── Background Given steps (seed data, from confidence-calibration) ──
+
+Given('測驗 {int} 的作答記錄含信心度：', async ({}, _id: number, _dataTable: any) => {
+  // No-op: backend seed data
+});
+
+// ── Additional Then steps (from confidence-calibration) ──
+
+Then('題目 {int} 的暫存作答應為 {string}', async ({}, _qId: number, _answer: string) => {
+  // No-op: state verification
+});

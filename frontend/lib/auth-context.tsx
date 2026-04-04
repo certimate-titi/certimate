@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth as firebaseAuth, googleProvider } from '@/firebase';
-import type { User, SubscriptionTier, UserRole } from '@/types';
+import type { User, SubscriptionTier, SubscriptionStatus, UserRole } from '@/types';
 import { apiClient, getStoredToken, setStoredToken, clearStoredToken } from '@/lib/api/client';
 import { authService } from '@/lib/api/services';
 
@@ -13,11 +13,13 @@ const PLAN_TO_TIER: Record<string, SubscriptionTier> = {
   PRO: 'PRO_199',
   PRO_PLUS: 'PRO_PLUS_399',
   ULTRA: 'ULTRA_1599',
+  EDU: 'EDU',
 };
 
 /** Backend role → frontend role mapping */
 function mapRole(backendRole: string): UserRole {
   if (backendRole === 'ADMIN' || backendRole === 'SUPER_ADMIN') return 'ADMIN';
+  if (backendRole === 'student') return 'STUDENT';
   return 'USER';
 }
 
@@ -56,6 +58,13 @@ interface BackendMeResponse {
   nav_items: { label: string; path: string }[];
 }
 
+function mapStatus(backendStatus: string): SubscriptionStatus {
+  if (backendStatus === 'trial') return 'TRIAL';
+  if (backendStatus === 'cancelled' || backendStatus === 'canceled') return 'CANCELED';
+  if (backendStatus === 'past_due') return 'PAST_DUE';
+  return 'ACTIVE';
+}
+
 function backendMeToUser(me: BackendMeResponse): User {
   const tier = mapTier(me.subscription_plan);
   return {
@@ -64,7 +73,7 @@ function backendMeToUser(me: BackendMeResponse): User {
     displayName: me.display_name || me.email.split('@')[0],
     avatarUrl: me.avatar_url || null,
     subscriptionTier: tier,
-    subscriptionStatus: 'ACTIVE',
+    subscriptionStatus: mapStatus(me.status),
     currentPeriodEnd: null,
     stripeCustomerId: null,
     onboardingCompleted: me.onboarding_completed,
@@ -86,6 +95,9 @@ interface AuthContextValue {
   isProPlus: boolean;
   isUltra: boolean;
   isAdmin: boolean;
+  isStudent: boolean;
+  isEdu: boolean;
+  isTrial: boolean;
   subscriptionTier: SubscriptionTier;
   setSubscriptionTier: (tier: SubscriptionTier) => void;
   onboardingCompleted: boolean;
@@ -169,6 +181,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isProPlus: subscriptionTier === 'PRO_PLUS_399' || subscriptionTier === 'ULTRA_1599',
     isUltra: subscriptionTier === 'ULTRA_1599',
     isAdmin: user?.role === 'ADMIN',
+    isStudent: user?.role === 'STUDENT',
+    isEdu: subscriptionTier === 'EDU',
+    isTrial: user?.subscriptionStatus === 'TRIAL',
     subscriptionTier,
     setSubscriptionTier,
     onboardingCompleted,

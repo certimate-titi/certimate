@@ -9,11 +9,14 @@ def step_impl(context):
 
     subjects = []
     for row in context.table:
-        subjects.append({
+        entry = {
             "subject_name": row["科目"],
             "exam_date": row["預計考試日期"],
             "self_assessed_level": row["自評程度"],
-        })
+        }
+        if "預計放榜日期" in row.headings:
+            entry["result_date"] = row["預計放榜日期"]
+        subjects.append(entry)
 
     response = context.api_client.post(
         "/api/v1/onboarding/subjects",

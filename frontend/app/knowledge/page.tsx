@@ -128,6 +128,7 @@ export default function KnowledgeBasePage() {
           timestampStart: (srcCitation.source_timestamp_seconds as number) || null,
           sourceUrl: '',
         },
+        citationText: (raw.source_text as string) || '（無原文摘要）',
         sourceText: (raw.source_text as string) || '（無原文摘要）',
         sourceType: (raw.source_type as string) || 'pdf',
         sourceRef: (raw.source_ref as string) || '',
@@ -416,8 +417,8 @@ export default function KnowledgeBasePage() {
 
                     {/* Highlighted Citation Text */}
                     <div className="p-5 bg-yellow-50/40">
-                      <p className="text-sm text-slate-700 leading-relaxed border-l-3 border-yellow-400 pl-4 italic">
-                        <span className="bg-yellow-200/60 px-0.5">{selectedNodeDetail.citationText}</span>
+                      <p className="text-sm text-slate-700 leading-relaxed border-l-3 border-yellow-400 pl-4 whitespace-pre-line">
+                        {selectedNodeDetail.citationText}
                       </p>
                     </div>
                   </div>

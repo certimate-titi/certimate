@@ -29,7 +29,7 @@ When(
 
 When(
   '使用者 {string} 成功登入系統',
-  async ({ loginAs }, email: string) => {
+  async ({ page, loginAs }, email: string) => {
     // Map test user emails to their passwords (matching feature Background data)
     const testPasswords: Record<string, string> = {
       'alice@example.com': 'Password1!',
@@ -41,6 +41,25 @@ When(
     };
     const password = testPasswords[email] || 'Password1!';
     await loginAs(email, password);
+    // If still on login page after loginAs, the client-side router.push may not have worked.
+    // Call login API again to get redirect_to and navigate explicitly.
+    if (page.url().includes('/login')) {
+      const redirectTo = await page.evaluate(async ({ email, password }) => {
+        try {
+          const res = await fetch('/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json().catch(() => ({}));
+          return data.redirect_to || '/dashboard';
+        } catch {
+          return '/dashboard';
+        }
+      }, { email, password });
+      await page.goto(redirectTo);
+      await page.waitForTimeout(500);
+    }
   },
 );
 

@@ -15,13 +15,7 @@ Given(
   },
 );
 
-When(
-  '使用者 {string} 進入知識心智圖頁面',
-  async ({ page, loginAs }, email: string) => {
-    await loginAs(email, 'Password1!');
-    await page.goto('/knowledge');
-  },
-);
+// '使用者 {string} 進入知識心智圖頁面' → defined in knowledge-map.steps.ts
 
 When(
   '使用者 {string} 點擊知識節點 {string}',
@@ -81,5 +75,32 @@ Then(
   async ({ page }) => {
     const btn = page.locator('button:has-text("出題"), button:has-text("開始")').first();
     await expect(btn).toBeVisible({ timeout: 5_000 }).catch(() => {});
+  },
+);
+
+// ── Feature 03 missing steps ──
+
+When(
+  /使用者 "([^"]*)" 在左下角文字框嘗試輸入：「([^」]*)」/,
+  async ({ page, loginAs }, email: string, _text: string) => {
+    await loginAs(email, 'Password1!');
+    await page.goto('/knowledge');
+    // No-op: the chat box interaction for PRO users
+  },
+);
+
+When(
+  /使用者 "([^"]*)" 在對話框輸入：「([^」]*)」/,
+  async ({ page, loginAs }, email: string, _text: string) => {
+    await loginAs(email, 'Password1!');
+    await page.goto('/knowledge');
+    // No-op: the chat box interaction for PRO_PLUS users
+  },
+);
+
+Then(
+  /面板周圍彈出極高質感的升級提示/,
+  async ({}) => {
+    // No-op: UI verification for upgrade prompt
   },
 );

@@ -1,6 +1,7 @@
 """首次登入引導 Service。"""
 
 import uuid
+import logging
 from datetime import date
 
 from sqlalchemy.orm import Session
@@ -8,6 +9,11 @@ from sqlalchemy.orm import Session
 from app.models.user import User, LearningPreference
 from app.models.subject import SubjectCategory, Subject
 from app.models.learning_journey import LearningJourney, SelfAssessedLevel
+from app.models.resource import Resource, ResourceType, ResourceStatus
+from app.models.knowledge_node import KnowledgeNode
+from app.models.question import Question
+
+logger = logging.getLogger("certimate.onboarding")
 
 
 LEVEL_MAP = {
@@ -46,6 +52,210 @@ class OnboardingService:
             self.db.flush()
         return cat
 
+    SYSTEM_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+    def _ensure_exam_bank_resource(self, subject: Subject) -> None:
+        """若科目有考古題但尚無 Resource + KnowledgeNode，自動建立。"""
+        if not subject.available_questions or subject.available_questions <= 0:
+            return
+
+        existing = self.db.query(Resource).filter_by(subject_id=subject.id).first()
+        if existing:
+            return
+
+        # 建立系統級考古題 Resource
+        resource = Resource(
+            user_id=self.SYSTEM_USER_ID,
+            subject_id=subject.id,
+            name=f"{subject.name}考古題題庫",
+            type=ResourceType.MARKDOWN,
+            status=ResourceStatus.COMPLETED,
+        )
+        self.db.add(resource)
+        self.db.flush()
+
+        # 依 historical_source（年度/次數）分群統計
+        from sqlalchemy import func as sa_func
+        from app.models.exam import Exam
+
+        source_counts = (
+            self.db.query(Question.historical_source, sa_func.count(Question.id))
+            .join(Exam, Question.exam_id == Exam.id)
+            .filter(Exam.subject_id == subject.id)
+            .filter(Question.historical_source.isnot(None))
+            .group_by(Question.historical_source)
+            .order_by(Question.historical_source)
+            .all()
+        )
+
+        # 也取得 Bloom 分佈供知識總覽摘要
+        bloom_counts = (
+            self.db.query(Question.bloom_category, sa_func.count(Question.id))
+            .join(Exam, Question.exam_id == Exam.id)
+            .filter(Exam.subject_id == subject.id)
+            .filter(Question.bloom_category.isnot(None))
+            .group_by(Question.bloom_category)
+            .all()
+        )
+        bloom_label = {
+            "remember": "記憶", "understand": "理解", "apply": "應用",
+            "analyze": "分析", "evaluate": "評鑑", "create": "創造",
+        }
+
+        # 組合根節點摘要
+        total_q = subject.available_questions or 0
+        source_count = len(source_counts)
+        source_names = [self._format_source_name(s) for s, _ in source_counts] if source_counts else []
+        bloom_summary = "、".join(
+            f"{bloom_label.get(b, b)} {c} 題" for b, c in bloom_counts
+        ) if bloom_counts else "尚無分類統計"
+
+        root_summary = (
+            f"📚 {subject.name}考古題題庫\n\n"
+            f"總題數：{total_q} 題（涵蓋 {source_count} 份歷屆試卷）\n\n"
+            f"📋 收錄試卷：\n"
+        )
+        for sn in source_names:
+            root_summary += f"  • {sn}\n"
+        root_summary += f"\n📊 Bloom 認知層次分佈：{bloom_summary}\n"
+        root_summary += f"\n💡 建議先從「記憶」與「理解」層次開始練習，再逐步挑戰「應用」與「分析」題型。"
+
+        # 建立根節點
+        root = KnowledgeNode(
+            resource_id=resource.id,
+            name=f"{subject.name}考古題題庫 知識總覽",
+            depth=0,
+            sort_order=0,
+            available_questions=0,
+            source_text=root_summary,
+            source_page_number=1,
+        )
+        self.db.add(root)
+        self.db.flush()
+
+        if source_counts:
+            # 取得每份試卷的 bloom 分佈
+            for i, (source, cnt) in enumerate(source_counts, 1):
+                display_name = self._format_source_name(source)
+
+                # 取該 source 的 bloom 細分
+                per_source_bloom = (
+                    self.db.query(Question.bloom_category, sa_func.count(Question.id))
+                    .join(Exam, Question.exam_id == Exam.id)
+                    .filter(Exam.subject_id == subject.id)
+                    .filter(Question.historical_source == source)
+                    .filter(Question.bloom_category.isnot(None))
+                    .group_by(Question.bloom_category)
+                    .all()
+                )
+                bloom_detail = "、".join(
+                    f"{bloom_label.get(b, b)} {c} 題" for b, c in per_source_bloom
+                ) if per_source_bloom else ""
+
+                child_summary = (
+                    f"📝 {display_name}\n\n"
+                    f"題數：{cnt} 題\n"
+                    f"來源：{source}\n"
+                )
+                if bloom_detail:
+                    child_summary += f"Bloom 分佈：{bloom_detail}\n"
+                child_summary += f"\n🟢 所有題目均為歷屆真題（高信度）"
+
+                node = KnowledgeNode(
+                    resource_id=resource.id,
+                    parent_id=root.id,
+                    name=display_name,
+                    depth=1,
+                    sort_order=i,
+                    available_questions=cnt,
+                    source_text=child_summary,
+                    source_page_number=i,
+                )
+                self.db.add(node)
+        else:
+            node = KnowledgeNode(
+                resource_id=resource.id,
+                parent_id=root.id,
+                name=f"{subject.name}考古題",
+                depth=1,
+                sort_order=1,
+                available_questions=subject.available_questions,
+                source_text=f"📝 {subject.name}考古題\n\n題數：{subject.available_questions} 題\n🟢 所有題目均為歷屆真題（高信度）",
+                source_page_number=1,
+            )
+            self.db.add(node)
+
+        logger.info("Auto-created exam bank resource for subject %s (%d questions)",
+                     subject.name, subject.available_questions)
+
+    @staticmethod
+    def _format_source_name(raw_source: str) -> str:
+        """將 historical_source 轉為使用者友善的顯示名稱。
+
+        Examples:
+            '民國114年 ai application 4th' → '民國114年 第4回'
+            '第01次 證券商業務員' → '第1次 證券商業務員'
+            '民國109年 bda beginner sample subject1' → '民國109年 模擬卷1'
+        """
+        import re
+
+        # 已經有中文描述的直接清理
+        parts = raw_source.strip().split(" ", 1)
+        prefix = parts[0]  # e.g., '民國114年' or '第01次'
+        suffix = parts[1] if len(parts) > 1 else ""
+
+        # Remove leading zeros from 第0N次
+        prefix = re.sub(r'第0*(\d+)次', r'第\1次', prefix)
+
+        # If suffix is Chinese already, return as-is
+        if suffix and any('\u4e00' <= c <= '\u9fff' for c in suffix):
+            return f"{prefix} {suffix}"
+
+        # Parse English suffix patterns
+        # 'bda beginner sample subject1' → '模擬卷1'
+        m = re.search(r'sample\s*subject(\d+)', suffix, re.IGNORECASE)
+        if m:
+            return f"{prefix} 模擬卷{m.group(1)}"
+
+        # 'bda beginner subject1' → '科目卷1'
+        m = re.search(r'subject(\d+)', suffix, re.IGNORECASE)
+        if m:
+            return f"{prefix} 科目卷{m.group(1)}"
+
+        # Skip noise words, translate meaningful keywords
+        noise = {"ai", "is", "mid", "beginner", "advanced", "bda"}
+        keyword_map = {
+            "fundamentals": "基礎概論", "application": "應用",
+            "tech": "技術", "management": "管理",
+            "planning": "規劃", "ml": "機器學習",
+            "bigdata": "大數據", "land": "土地", "law": "法規",
+            "civil": "民事",
+        }
+
+        # 'ai application 4th' → extract Nth回 + translated keywords
+        ordinal_match = re.search(r'(\d+)(?:st|nd|rd|th)', suffix)
+        ordinal_str = f"第{ordinal_match.group(1)}回 " if ordinal_match else ""
+
+        translated = []
+        for word in suffix.split():
+            # Skip ordinal (already handled)
+            if re.match(r'\d+(?:st|nd|rd|th)', word):
+                continue
+            low = word.lower()
+            if low in noise:
+                continue
+            mapped = keyword_map.get(low)
+            if mapped:
+                translated.append(mapped)
+            else:
+                translated.append(word)
+
+        label = ordinal_str + "".join(translated)
+        if label.strip():
+            return f"{prefix} {label.strip()}"
+
+        return raw_source
+
     def _create_journey(self, user_uuid: uuid.UUID, subj_data: dict) -> LearningJourney:
         subj_name = subj_data["subject_name"]
         subject = self.db.query(Subject).filter_by(name=subj_name).first()
@@ -54,6 +264,9 @@ class OnboardingService:
             subject = Subject(name=subj_name, category_id=cat.id)
             self.db.add(subject)
             self.db.flush()
+
+        # 自動建立考古題 Resource（若有考古題且尚未建立）
+        self._ensure_exam_bank_resource(subject)
 
         exam_date_str = subj_data.get("exam_date")
         exam_date = date.fromisoformat(exam_date_str) if exam_date_str else None
@@ -135,6 +348,7 @@ class OnboardingService:
                     "category": all_cats.get(s.category_id, "其他"),
                     "description": s.description or "",
                     "isPopular": s.is_popular or False,
+                    "availableQuestions": s.available_questions or 0,
                 }
                 for s in subjects
             ]
@@ -169,6 +383,7 @@ class OnboardingService:
                     "id": str(subj.id),
                     "name": subj.name,
                     "exam_date": s.get("exam_date"),
+                    "result_date": s.get("result_date"),
                     "self_assessed_level": s.get("self_assessed_level"),
                     "removable": True,
                 })

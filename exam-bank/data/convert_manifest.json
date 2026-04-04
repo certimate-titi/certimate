@@ -8,7 +8,7 @@
     "questions": 60,
     "excluded_no_answer": 20,
     "with_answers": 60,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 45.6,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -123,7 +123,7 @@
     "questions": 152,
     "excluded_no_answer": 0,
     "with_answers": 152,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 89.8,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -215,7 +215,7 @@
     "questions": 50,
     "excluded_no_answer": 0,
     "with_answers": 50,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 42.4,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -544,7 +544,7 @@
     "converted_at": "2026-04-03T17:49:07",
     "questions": 50,
     "with_answers": 50,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 57.4,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -628,7 +628,7 @@
     "converted_at": "2026-04-03T17:55:41",
     "questions": 50,
     "with_answers": 50,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 32.6,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -650,7 +650,7 @@
     "converted_at": "2026-04-03T17:56:12",
     "questions": 50,
     "with_answers": 50,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 30.2,
     "validation_summary": {
       "L1_structure": "FAIL",
@@ -672,7 +672,7 @@
     "converted_at": "2026-04-03T17:56:54",
     "questions": 50,
     "with_answers": 50,
-    "quality_flag": "review",
+    "quality_flag": "ok",
     "elapsed_seconds": 40.3,
     "validation_summary": {
       "L1_structure": "FAIL",

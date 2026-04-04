@@ -1,6 +1,7 @@
 """Given 系統中有以下機構 — Aggregate Given"""
 
 import uuid
+from datetime import datetime, timezone
 
 from behave import given
 
@@ -22,6 +23,8 @@ def step_impl(context):
             id=uuid.UUID(int=inst_id),
             name=name,
             admin_user_id=admin_uuid,
+            dpa_signed_at=datetime.now(timezone.utc),
+            dpa_signer_name="auto-signed",
         )
         db.add(inst)
         db.flush()

@@ -127,6 +127,40 @@ Feature: 錯題複習與 AI 教練
       Then 操作成功
       And AI 教練回覆應提及使用者在 EC2 相關題目的歷史錯誤模式
 
+  # ========== ULTRA 專屬：進階 AI 教練 ==========
+
+  Rule: 後置（回應）- ULTRA 用戶可使用進階 AI 教練取得深度學習策略
+
+    Example: ULTRA 用戶取得弱點突破策略與考前衝刺計畫
+      When 使用者 "ultra@example.com" 請求進階 AI 教練分析
+      Then 操作成功
+      And 回應應包含弱點分析：
+        | 欄位             | 說明                        |
+        | weak_topics      | 掌握度最低的前 3 個知識節點 |
+        | error_pattern    | 常見錯誤模式描述            |
+      And 回應應包含突破策略：
+        | 欄位             | 說明                        |
+        | strategy         | 至少 1 條具體學習策略        |
+        | recommended_quiz | 建議練習的題目範圍           |
+      And 回應應包含考前衝刺計畫：
+        | 欄位             | 說明                        |
+        | daily_plan       | 每日建議學習內容（最多 7 天）|
+        | focus_area       | 重點衝刺知識節點            |
+
+    Example: 非 ULTRA 用戶請求進階 AI 教練失敗
+      When 使用者 "pro@example.com" 請求進階 AI 教練分析
+      Then 操作失敗，錯誤為「進階 AI 教練為 ULTRA 方案專屬功能」
+
+  Rule: 後置（個人化）- 進階 AI 教練應根據學習歷程提供個人化建議
+
+    Example: 有完整學習歷程的 ULTRA 用戶收到個人化建議
+      Given 使用者 "ultra@example.com" 過去 30 天完成 12 次測驗
+      And 使用者 "ultra@example.com" 的弱點節點為 "整合管理" 和 "範疇管理"
+      When 使用者 "ultra@example.com" 請求進階 AI 教練分析
+      Then 操作成功
+      And 弱點分析應提及 "整合管理" 和 "範疇管理"
+      And 突破策略應針對這兩個弱點節點
+
   # ========== 超綱防護 ==========
 
   Rule: 後置（回應）- 詢問超出題庫範圍的問題時應回覆範圍外提示

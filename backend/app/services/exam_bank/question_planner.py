@@ -124,7 +124,8 @@ WEAKNESS_BLOOM = {
     "green":  {"remember": 0, "understand": 10, "apply": 20, "analyze": 25, "evaluate": 25, "create": 20},
 }
 
-HISTORICAL_RATIO = 0.20  # 20% 考古題
+HISTORICAL_RATIO = 0.20  # 20% 考古題（標準）
+ULTRA_HISTORICAL_RATIO = 0.60  # 60% 考古題（ULTRA 優先召回）
 
 
 # ── QuestionPlanner ──────────────────────────────────────
@@ -139,6 +140,8 @@ class QuestionPlanner:
         user_difficulty: int = 2,          # 1/2/3
         exam_date: Optional[date] = None,
         wrong_answer_count: int = 0,       # 使用者累計錯題數
+        custom_bloom_ratio: Optional[dict] = None,  # ULTRA: 自訂 Bloom 比例 {remember:20, ...}
+        historical_priority: bool = False,  # ULTRA: 考古題優先召回
     ) -> PlanResult:
         """執行完整四層 Pipeline，回傳出題計畫"""
 
@@ -165,18 +168,19 @@ class QuestionPlanner:
         new_count = total_q - wrong_count
 
         # Layer 1: 配比計算
-        self._allocate_quota(nodes, new_count, user_difficulty, mode_cfg)
+        self._allocate_quota(nodes, new_count, user_difficulty, mode_cfg, custom_bloom_ratio)
 
         # Layer 2: 混合出題計畫 + Bloom 分配
         node_plans = []
         bloom_totals = defaultdict(int)
 
+        hist_ratio = ULTRA_HISTORICAL_RATIO if historical_priority else HISTORICAL_RATIO
+
         for node in nodes:
             if node.quota <= 0:
                 continue
 
-            # 20% 考古題
-            hist_target = max(1, round(node.quota * HISTORICAL_RATIO))
+            hist_target = max(1, round(node.quota * hist_ratio))
             hist_actual = min(hist_target, node.historical_count)
             ai_count = node.quota - hist_actual
 
@@ -255,10 +259,12 @@ class QuestionPlanner:
         new_count: int,
         user_difficulty: int,
         mode_cfg: dict,
+        custom_bloom_ratio: Optional[dict] = None,
     ):
         base_diff = DIFFICULTY_PRESETS.get(user_difficulty, DIFFICULTY_PRESETS[2])
         wi = mode_cfg["weakness_influence"]
-        mode_bloom = mode_cfg["bloom_bias"]
+        # ULTRA 自訂 Bloom 比例：若提供則覆蓋 mode_bloom
+        mode_bloom = custom_bloom_ratio if custom_bloom_ratio else mode_cfg["bloom_bias"]
 
         total_weight = sum(n.weight for n in nodes) or 1.0
 
@@ -280,12 +286,18 @@ class QuestionPlanner:
                 for k in ["easy", "medium", "hard"]
             }
 
-            # Bloom：弱點狀態 + mode 偏好混合
-            wa_bloom = WEAKNESS_BLOOM.get(node.mastery_color, mode_bloom)
-            node.bloom_target = {
-                k: round(mode_bloom.get(k, 0) * 0.4 + wa_bloom.get(k, 0) * 0.6)
-                for k in ["remember", "understand", "apply", "analyze", "evaluate", "create"]
-            }
+            # Bloom：custom_bloom_ratio 直接使用；否則混合弱點 + mode
+            if custom_bloom_ratio:
+                node.bloom_target = {
+                    k: custom_bloom_ratio.get(k, 0)
+                    for k in ["remember", "understand", "apply", "analyze", "evaluate", "create"]
+                }
+            else:
+                wa_bloom = WEAKNESS_BLOOM.get(node.mastery_color, mode_bloom)
+                node.bloom_target = {
+                    k: round(mode_bloom.get(k, 0) * 0.4 + wa_bloom.get(k, 0) * 0.6)
+                    for k in ["remember", "understand", "apply", "analyze", "evaluate", "create"]
+                }
 
     # ── Layer 2 輔助：百分比 → 實際題數 ──
 

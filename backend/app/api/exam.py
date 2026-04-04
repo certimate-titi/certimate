@@ -22,6 +22,11 @@ class ExamConfigRequest(BaseModel):
     difficulty_distribution: dict | None = None
     question_types: list[str] | None = None
     exam_mode: str | None = None  # "hybrid" (default) | "historical_only"
+    custom_bloom_ratio: dict | None = None
+
+
+class SelectResourceRequest(BaseModel):
+    resource_id: str
 
 
 def _handle_result(result: dict):
@@ -63,19 +68,27 @@ def submit_exam_config(
         }
         diff_dist = diff_map.get(body.difficulty, {"easy": 30, "medium": 50, "hard": 20})
 
-    # Store exam_mode in config
-    if diff_dist is None:
-        diff_dist = {}
-    if body.exam_mode:
-        diff_dist["exam_mode"] = body.exam_mode
-
     service = ExamService(db)
     result = service.submit_config(
         node_ids=node_ids,
         question_count=body.question_count,
         user_id=user_id,
         difficulty_distribution=diff_dist,
+        custom_bloom_ratio=body.custom_bloom_ratio,
+        question_types=body.question_types,
+        exam_mode=body.exam_mode,
     )
+    return _handle_result(result)
+
+
+@router.post("/select-resource")
+def select_resource(
+    body: SelectResourceRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = ExamService(db)
+    result = service.select_resource(user_id=user_id, resource_id=body.resource_id)
     return _handle_result(result)
 
 

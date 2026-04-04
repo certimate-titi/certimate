@@ -79,6 +79,7 @@ def search_subjects(
 class SubjectInput(BaseModel):
     subject_name: str
     exam_date: str | None = None
+    result_date: str | None = None
     self_assessed_level: str = "beginner"
 
 

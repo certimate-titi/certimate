@@ -129,6 +129,27 @@ export const documentService = {
   async delete(documentId: string): Promise<void> {
     await apiClient.delete(`/resources/${documentId}`);
   },
+
+  async initChunkedUpload(filename: string, fileSize: number) {
+    return apiClient.post<{ upload_id: string; chunk_size: number; total_chunks: number }>(
+      '/resources/chunked/init',
+      { filename, file_size: fileSize }
+    );
+  },
+
+  async uploadChunk(uploadId: string, chunkIndex: number, chunk: Blob) {
+    const formData = new FormData();
+    formData.append('file', chunk);
+    return apiClient.upload(`/resources/chunked/${uploadId}/chunk/${chunkIndex}`, formData);
+  },
+
+  async getChunkedUploadStatus(uploadId: string) {
+    return apiClient.get(`/resources/chunked/${uploadId}/status`);
+  },
+
+  async mergeChunks(uploadId: string) {
+    return apiClient.post(`/resources/chunked/${uploadId}/merge`);
+  },
 };
 
 // ===========================
@@ -277,6 +298,15 @@ export const reviewService = {
       { message: req.message },
     );
   },
+
+  async getAdvancedCoach(subjectId?: string) {
+    const params = subjectId ? `?subject_id=${subjectId}` : '';
+    return apiClient.get(`/wrong-answers/advanced-coach${params}`);
+  },
+
+  async getLearningHistory(days = 30) {
+    return apiClient.get(`/wrong-answers/advanced-coach/history?days=${days}`);
+  },
 };
 
 // ===========================
@@ -373,6 +403,22 @@ export const subscriptionService = {
   async cancel(): Promise<void> {
     await apiClient.post('/subscriptions/cancel');
   },
+
+  async startTrial() {
+    return apiClient.post('/subscriptions/trial/start');
+  },
+
+  async getTrialStatus() {
+    return apiClient.get('/subscriptions/trial/status');
+  },
+
+  async convertTrialToPaid() {
+    return apiClient.post('/subscriptions/trial/convert');
+  },
+
+  async checkFup() {
+    return apiClient.get('/subscriptions/fup/check');
+  },
 };
 
 // ===========================
@@ -385,10 +431,37 @@ export const adminService = {
     return apiClient.get<GetStudentListResponse>(`/b2b/dashboard${params}`);
   },
 
-  async importStudents(file: File): Promise<ImportStudentsResponse> {
+  async importStudents(file: File, consentChecked = true, confirmSurcharge = false): Promise<ImportStudentsResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.upload<ImportStudentsResponse>('/b2b/import-students', formData);
+    return apiClient.upload<ImportStudentsResponse>(
+      `/b2b/students/import?consent_checked=${consentChecked}&confirm_surcharge=${confirmSurcharge}`,
+      formData
+    );
+  },
+
+  async signDpa(signerName: string) {
+    return apiClient.post('/b2b/dpa/sign', { signer_name: signerName });
+  },
+
+  async getDpa() {
+    return apiClient.get('/b2b/dpa');
+  },
+
+  async removeStudent(studentId: string) {
+    return apiClient.delete(`/b2b/students/${studentId}`);
+  },
+
+  async getStudentReport(studentId: string) {
+    return apiClient.get(`/b2b/students/${studentId}/report`);
+  },
+
+  async getClassWeakness(groupId: string) {
+    return apiClient.get(`/b2b/class/${groupId}/weakness`);
+  },
+
+  async generateRemediationExam(groupId: string, questionCount = 20) {
+    return apiClient.post(`/b2b/exam/remediation/${groupId}`, { question_count: questionCount });
   },
 };
 
@@ -598,6 +671,7 @@ export const subjectService = {
         name?: string;
         subject_name?: string;
         exam_date?: string;
+        result_date?: string;
         self_assessed_level?: string;
       }>;
     }>('/onboarding/summary');
@@ -606,6 +680,7 @@ export const subjectService = {
       subjectId: s.id || `subject_${i}`,
       subjectName: s.subject_name || s.name || '',
       examDate: s.exam_date || '',
+      resultDate: s.result_date || '',
       selfAssessment: (s.self_assessed_level || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
       createdAt: new Date().toISOString(),
     }));
@@ -616,6 +691,7 @@ export const subjectService = {
     return apiClient.post<AddUserSubjectResponse>('/subjects', {
       subject_name: req.subjectName || req.subjectId,
       exam_date: req.examDate,
+      result_date: req.resultDate,
       self_assessed_level: req.selfAssessment,
     });
   },

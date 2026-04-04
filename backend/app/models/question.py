@@ -2,7 +2,10 @@
 
 import enum
 
+from datetime import datetime
+
 from sqlalchemy import (
+    DateTime,
     Enum,
     ForeignKey,
     Integer,
@@ -74,6 +77,12 @@ class Question(Base):
     explanation: Mapped[str | None] = mapped_column(Text)
     source_citation: Mapped[str | None] = mapped_column(Text)
     historical_source: Mapped[str | None] = mapped_column(String(255))
+    source_type: Mapped[str] = mapped_column(
+        String(20), server_default="historical"
+    )
     quality_flag: Mapped[str | None] = mapped_column(String(20), default="ok")
     flag_reason: Mapped[str | None] = mapped_column(Text)
     validation_model: Mapped[str | None] = mapped_column(String(50))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retention_reason: Mapped[str | None] = mapped_column(String(50))
