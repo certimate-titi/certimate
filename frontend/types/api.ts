@@ -209,6 +209,22 @@ export interface GetUserUsageResponse {
     visionOcrPagesPerMonth: number;
     maxFileSizeMB: number;
   };
+  uploads?: {
+    used: number;
+    limit: number;
+  };
+  ai_queries?: {
+    used: number;
+    limit: number;
+  };
+  vision_ocr?: {
+    used: number;
+    limit: number;
+  };
+  vision_pages?: {
+    used: number;
+    limit: number;
+  };
 }
 
 export interface GetAchievementsResponse {

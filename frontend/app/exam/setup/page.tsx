@@ -23,6 +23,7 @@ const TIER_QUESTION_LIMITS: Record<SubscriptionTier, { max: number; upgradeMessa
   PRO_199: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
   PRO_PLUS_399: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
   ULTRA_1599: { max: Infinity, upgradeMessage: null },
+  EDU: { max: 50, upgradeMessage: 'EDU 方案每次測驗最多 50 題' },
 };
 
 const LOADING_STAGES = [

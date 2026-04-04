@@ -277,4 +277,16 @@ case "${1:-all}" in
     ;;
 esac
 
+# --- Post-deploy smoke test (optional, does not block deployment) ---
+if [ "${1:-all}" = "all" ] || [ "${1:-all}" = "backend" ]; then
+  SMOKE_URL="${BACKEND_URL:-}"
+  if [ -z "$SMOKE_URL" ] && [ -f .backend_url ]; then
+    SMOKE_URL=$(cat .backend_url)
+  fi
+  if [ -n "$SMOKE_URL" ] && [ -x "./smoke-test.sh" ]; then
+    log "Running post-deploy smoke test..."
+    ./smoke-test.sh "$SMOKE_URL" || warn "Smoke test had failures (non-blocking)."
+  fi
+fi
+
 log "Done!"

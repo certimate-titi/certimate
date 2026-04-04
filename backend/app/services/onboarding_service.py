@@ -54,14 +54,22 @@ class OnboardingService:
 
     SYSTEM_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
-    def _ensure_exam_bank_resource(self, subject: Subject) -> None:
-        """若科目有考古題但尚無 Resource + KnowledgeNode，自動建立。"""
+    def _ensure_exam_bank_resource(self, subject: Subject, parent_subject: Subject | None = None) -> None:
+        """若科目有考古題但尚無 Resource + KnowledgeNode，自動建立。
+
+        Args:
+            subject: 目標科目（Resource 將建在此科目下）
+            parent_subject: 若子科目本身無考古題，可傳入父科目以查詢其考古題
+        """
         if not subject.available_questions or subject.available_questions <= 0:
             return
 
         existing = self.db.query(Resource).filter_by(subject_id=subject.id).first()
         if existing:
             return
+
+        # 決定查詢考古題的 subject_id（優先用父科目）
+        exam_subject_id = parent_subject.id if parent_subject else subject.id
 
         # 建立系統級考古題 Resource
         resource = Resource(
@@ -81,7 +89,7 @@ class OnboardingService:
         source_counts = (
             self.db.query(Question.historical_source, sa_func.count(Question.id))
             .join(Exam, Question.exam_id == Exam.id)
-            .filter(Exam.subject_id == subject.id)
+            .filter(Exam.subject_id == exam_subject_id)
             .filter(Question.historical_source.isnot(None))
             .group_by(Question.historical_source)
             .order_by(Question.historical_source)
@@ -92,7 +100,7 @@ class OnboardingService:
         bloom_counts = (
             self.db.query(Question.bloom_category, sa_func.count(Question.id))
             .join(Exam, Question.exam_id == Exam.id)
-            .filter(Exam.subject_id == subject.id)
+            .filter(Exam.subject_id == exam_subject_id)
             .filter(Question.bloom_category.isnot(None))
             .group_by(Question.bloom_category)
             .all()
@@ -142,7 +150,7 @@ class OnboardingService:
                 per_source_bloom = (
                     self.db.query(Question.bloom_category, sa_func.count(Question.id))
                     .join(Exam, Question.exam_id == Exam.id)
-                    .filter(Exam.subject_id == subject.id)
+                    .filter(Exam.subject_id == exam_subject_id)
                     .filter(Question.historical_source == source)
                     .filter(Question.bloom_category.isnot(None))
                     .group_by(Question.bloom_category)

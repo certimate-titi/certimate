@@ -192,6 +192,63 @@ def import_json(session, json_path: str, base_dir: str, dry_run: bool = False):
     return len(questions)
 
 
+def sync_child_subjects(conn):
+    """同步 available_questions 到子科目。
+
+    兩種匹配路徑:
+    1. 名稱模式: 子科目名稱以「父科目名稱（」開頭（例如「證券商高級業務員（投資學）」是「證券商高級業務員」的子科目）
+    2. FK 關聯: 若 parent_subject_id 欄位存在，也透過該 FK 同步
+    """
+    # 查詢所有有題目的科目
+    parents = conn.execute(
+        text("SELECT id, name, available_questions FROM subjects "
+             "WHERE available_questions > 0")
+    ).fetchall()
+
+    if not parents:
+        print("\n⚠️  沒有 available_questions > 0 的科目，跳過子科目同步")
+        return
+
+    total_synced = 0
+
+    # ── 路徑 1: 名稱模式匹配 ──
+    for parent in parents:
+        parent_id, parent_name, parent_count = parent
+        # 找子科目：名稱以「父名（」開頭
+        pattern = parent_name + "（%"
+        children = conn.execute(
+            text("UPDATE subjects SET available_questions = :count "
+                 "WHERE name LIKE :pattern AND id != :pid "
+                 "RETURNING id, name"),
+            {"count": parent_count, "pattern": pattern, "pid": str(parent_id)}
+        ).fetchall()
+        for child in children:
+            print(f"  🔗 名稱匹配同步: {child[1]} ← {parent_count} 題")
+            total_synced += 1
+
+    # ── 路徑 2: FK 關聯（parent_subject_id）──
+    has_fk = conn.execute(
+        text("SELECT column_name FROM information_schema.columns "
+             "WHERE table_name = 'subjects' AND column_name = 'parent_subject_id'")
+    ).fetchone()
+
+    if has_fk:
+        for parent in parents:
+            parent_id, parent_name, parent_count = parent
+            fk_children = conn.execute(
+                text("UPDATE subjects SET available_questions = :count "
+                     "WHERE parent_subject_id = :pid "
+                     "RETURNING id, name"),
+                {"count": parent_count, "pid": str(parent_id)}
+            ).fetchall()
+            for child in fk_children:
+                print(f"  🔗 FK 同步: {child[1]} ← {parent_count} 題")
+                total_synced += 1
+
+    conn.commit()
+    print(f"\n子科目同步完成: {total_synced} 個子科目已更新")
+
+
 def main():
     dry_run = "--dry-run" in sys.argv
 
@@ -242,6 +299,17 @@ def main():
     print(f"匯入: {total_imported} 題 | 跳過: {total_skipped} 份")
     if dry_run:
         print("(DRY RUN — 未實際寫入 DB)")
+    else:
+        # 同步 available_questions 到子科目
+        print("\n--- 同步子科目 available_questions ---")
+        sync_session = Session()
+        try:
+            sync_child_subjects(sync_session)
+        except Exception as e:
+            sync_session.rollback()
+            print(f"⚠️  子科目同步失敗: {e}")
+        finally:
+            sync_session.close()
 
 
 if __name__ == "__main__":

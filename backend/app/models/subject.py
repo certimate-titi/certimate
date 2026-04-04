@@ -1,10 +1,11 @@
 """Subject & SubjectCategory ORM Models — derived from erm.dbml."""
 
 from datetime import datetime
+from typing import Optional, List
 
 from sqlalchemy import DateTime, Integer, String, Text, Boolean, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
 
 from app.models import Base
@@ -32,8 +33,19 @@ class Subject(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     name_en: Mapped[str | None] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text)
+    parent_subject_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subjects.id"), nullable=True
+    )
     is_popular: Mapped[bool] = mapped_column(Boolean, default=False)
     available_questions: Mapped[int] = mapped_column(Integer, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+    parent: Mapped[Optional["Subject"]] = relationship(
+        "Subject", remote_side="Subject.id", foreign_keys=[parent_subject_id],
+        back_populates="children",
+    )
+    children: Mapped[List["Subject"]] = relationship(
+        "Subject", back_populates="parent", foreign_keys="Subject.parent_subject_id",
     )

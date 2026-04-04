@@ -247,6 +247,7 @@ Table subject_categories {
 Table subjects {
   id uuid [pk, default: `gen_random_uuid()`]
   category_id uuid [not null]
+  parent_subject_id uuid [ref: > subjects.id, note: '父科目 ID（子科目如「初級」「中級」指向主科目）']
   name varchar(200) [not null]
   name_en varchar(200)
   description text

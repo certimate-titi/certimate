@@ -18,15 +18,56 @@ class KnowledgeNavService:
         self.db = db
 
     def _ensure_exam_bank_resource(self, subject_id: uuid.UUID) -> None:
-        """若科目有考古題但無 Resource，觸發自動建立。"""
+        """若科目有考古題但無 Resource，觸發自動建立。
+
+        若子科目本身無考古題，會自動查找同名父科目的考古題。
+        例如「AI 應用規劃師（初級）」→「AI 應用規劃師」。
+        """
         from app.models.subject import Subject
         from app.services.onboarding_service import OnboardingService
+
         subject = self.db.query(Subject).filter_by(id=subject_id).first()
-        if subject and subject.available_questions and subject.available_questions > 0:
-            existing = self.db.query(Resource).filter_by(subject_id=subject_id).first()
-            if not existing:
+        if not subject:
+            return
+
+        # 已有 Resource → 跳過
+        existing = self.db.query(Resource).filter_by(subject_id=subject_id).first()
+        if existing:
+            return
+
+        # 若本科目有題 → 直接建立
+        if subject.available_questions and subject.available_questions > 0:
+            svc = OnboardingService(self.db)
+            svc._ensure_exam_bank_resource(subject)
+            self.db.flush()
+            return
+
+        # 子科目無題 → 優先透過 parent_subject_id FK 查找父科目
+        if subject.parent_subject_id:
+            parent = self.db.query(Subject).filter_by(id=subject.parent_subject_id).first()
+            if parent and parent.available_questions and parent.available_questions > 0:
+                subject.available_questions = parent.available_questions
+                self.db.flush()
                 svc = OnboardingService(self.db)
-                svc._ensure_exam_bank_resource(subject)
+                svc._ensure_exam_bank_resource(subject, parent_subject=parent)
+                self.db.flush()
+                return
+
+        # Fallback: 字串比對（去掉括號後綴），向後相容尚未設定 parent_subject_id 的資料
+        base_name = subject.name.split("（")[0].strip()
+        if base_name != subject.name:
+            parent = (
+                self.db.query(Subject)
+                .filter(Subject.name == base_name)
+                .filter(Subject.available_questions > 0)
+                .first()
+            )
+            if parent:
+                # 繼承父科目的題數
+                subject.available_questions = parent.available_questions
+                self.db.flush()
+                svc = OnboardingService(self.db)
+                svc._ensure_exam_bank_resource(subject, parent_subject=parent)
                 self.db.flush()
 
     def get_nodes_by_subject(self, subject_id: str, user_id: str) -> dict:
@@ -41,8 +82,9 @@ class KnowledgeNavService:
         if not journey:
             return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
 
-        # 確保考古題 Resource 存在
+        # 確保考古題 Resource 存在（並 commit 以持久化）
         self._ensure_exam_bank_resource(sid)
+        self.db.commit()
 
         # 找此科目下所有資源
         resources = self.db.query(Resource).filter_by(subject_id=sid).all()
