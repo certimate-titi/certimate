@@ -25,6 +25,8 @@ from app.models.exam import Exam, ExamStatus
 from app.models.knowledge_node import KnowledgeNode
 from app.models.prompt_template import PromptTemplate, PromptTemplateHistory
 from app.models.question import Question
+from app.models.resource import Resource
+from app.models.subject import Subject
 from app.models.user import User, UserRole
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,83 @@ class AiGenerationService:
         else:
             self._llm = None
             self._retrieval = None
+
+    # ------------------------------------------------------------------ #
+    # Helper: subject-level historical question queries
+    # ------------------------------------------------------------------ #
+
+    def _get_subject_ids_for_exam(self, exam) -> list:
+        """取得考試對應的科目 ID 列表（含父科目），用於 subject-level 考古題查詢。
+
+        匯入的考古題 Question.node_id = NULL，透過 Question.exam_id → Exam.subject_id
+        連結到父科目。子科目（如「AI 應用規劃師（初級）」）需要同時查詢父科目。
+        """
+        subject_ids = [exam.subject_id]
+        subject = self.db.query(Subject).filter_by(id=exam.subject_id).first()
+        if subject:
+            # 透過 FK 查找父科目
+            if subject.parent_subject_id and subject.parent_subject_id != subject.id:
+                subject_ids.append(subject.parent_subject_id)
+            else:
+                # Fallback: 字串比對（去掉括號後綴）
+                base_name = subject.name.split("（")[0].strip()
+                if base_name != subject.name:
+                    parent = self.db.query(Subject).filter(
+                        Subject.name == base_name
+                    ).first()
+                    if parent:
+                        subject_ids.append(parent.id)
+        return subject_ids
+
+    def _query_historical_by_subject(self, exam, limit: int = None,
+                                      quality_filter: bool = False,
+                                      exclude_ids: set = None):
+        """透過 subject_id 查詢考古題（當 node_id 查詢無結果時的 fallback）。
+
+        匯入的考古題 node_id = NULL，但它們的 exam 記錄有正確的 subject_id。
+        """
+        from sqlalchemy.sql.expression import func as sqlfunc
+
+        subject_ids = self._get_subject_ids_for_exam(exam)
+
+        query = self.db.query(Question).join(
+            Exam, Question.exam_id == Exam.id
+        ).filter(
+            Exam.subject_id.in_(subject_ids),
+            Question.historical_source.isnot(None),
+        )
+
+        if quality_filter:
+            query = query.filter(Question.quality_flag == "ok")
+
+        if exclude_ids:
+            query = query.filter(
+                ~Question.id.in_([uuid.UUID(uid) if isinstance(uid, str) else uid
+                                  for uid in exclude_ids])
+            )
+
+        query = query.order_by(sqlfunc.random())
+
+        if limit:
+            query = query.limit(limit)
+
+        return query.all()
+
+    def _count_historical_by_subject(self, exam, quality_filter: bool = False) -> int:
+        """計算 subject-level 可用考古題數量。"""
+        subject_ids = self._get_subject_ids_for_exam(exam)
+
+        query = self.db.query(Question).join(
+            Exam, Question.exam_id == Exam.id
+        ).filter(
+            Exam.subject_id.in_(subject_ids),
+            Question.historical_source.isnot(None),
+        )
+
+        if quality_filter:
+            query = query.filter(Question.quality_flag == "ok")
+
+        return query.count()
 
     # ------------------------------------------------------------------ #
     # Public: full pipeline
@@ -756,6 +835,15 @@ class AiGenerationService:
             Question.quality_flag == "ok",
         ).count()
 
+        # Fallback: subject-level query（匯入考古題 node_id = NULL）
+        use_subject_fallback = (available == 0)
+        if use_subject_fallback:
+            available = self._count_historical_by_subject(exam, quality_filter=True)
+            if available == 0:
+                # 不限 quality_flag 再試一次
+                available = self._count_historical_by_subject(exam, quality_filter=False)
+            logger.info("Historical-only: using subject fallback, found %d questions", available)
+
         actual_count = min(total_q, available)
         auto_adjusted = actual_count < total_q
         adjustment_msg = None
@@ -771,11 +859,20 @@ class AiGenerationService:
             }
 
         # 隨機抽取（僅高品質題目）
-        picked = self.db.query(Question).filter(
-            Question.node_id.in_(node_ids),
-            Question.historical_source.isnot(None),
-            Question.quality_flag == "ok",
-        ).order_by(sqlfunc.random()).limit(actual_count).all()
+        if use_subject_fallback:
+            picked = self._query_historical_by_subject(
+                exam, limit=actual_count, quality_filter=True
+            )
+            if not picked:
+                picked = self._query_historical_by_subject(
+                    exam, limit=actual_count, quality_filter=False
+                )
+        else:
+            picked = self.db.query(Question).filter(
+                Question.node_id.in_(node_ids),
+                Question.historical_source.isnot(None),
+                Question.quality_flag == "ok",
+            ).order_by(sqlfunc.random()).limit(actual_count).all()
 
         # 建立題目 dict
         all_questions = []
@@ -939,6 +1036,11 @@ class AiGenerationService:
                 Question.historical_source.isnot(None),
             ).count()
 
+            # Fallback: 若 node-level 無考古題，用 subject-level 計數
+            # （匯入的考古題 node_id = NULL，透過 exam.subject_id 關聯）
+            if hist_count == 0:
+                hist_count = self._count_historical_by_subject(exam)
+
             profiles.append(NodeProfile(
                 node_id=str(nid),
                 name=node.name,
@@ -1006,6 +1108,15 @@ class AiGenerationService:
                     Question.historical_source.isnot(None),
                 ).order_by(sqlfunc.random()).limit(np.historical_count).all()
 
+                # Fallback: subject-level query（匯入考古題 node_id = NULL）
+                if not hist_qs:
+                    hist_qs = self._query_historical_by_subject(
+                        exam, limit=np.historical_count, exclude_ids=used_question_ids
+                    )
+                    if hist_qs:
+                        logger.info("Historical fallback: found %d via subject for node %s",
+                                   len(hist_qs), np.name)
+
                 for src in hist_qs:
                     used_question_ids.add(str(src.id))
                     all_questions.append({
@@ -1027,7 +1138,8 @@ class AiGenerationService:
             # 2. AI generate remainder (80%) — 多級補題策略
             if np.ai_count > 0:
                 ai_qs = self._generate_ai_for_node(
-                    node_uuid, np, all_questions[-np.historical_count:] if np.historical_count else []
+                    node_uuid, np, all_questions[-np.historical_count:] if np.historical_count else [],
+                    exam=exam,
                 )
                 all_questions.extend(ai_qs)
 
@@ -1035,7 +1147,7 @@ class AiGenerationService:
                 shortfall = np.ai_count - len(ai_qs)
                 if shortfall > 0:
                     logger.warning("AI generation shortfall: need %d more for node %s", shortfall, np.name)
-                    补_qs = self._fill_shortfall(node_uuid, shortfall, used_question_ids)
+                    补_qs = self._fill_shortfall(node_uuid, shortfall, used_question_ids, exam)
                     all_questions.extend(补_qs)
 
         # ── P17: Sprint/Standard wrong-answer interleaving ──
@@ -1086,6 +1198,9 @@ class AiGenerationService:
                     Question.node_id == uuid.UUID(np.node_id),
                     Question.historical_source.isnot(None),
                 ).order_by(sqlfunc.random()).limit(5).all()
+                # Fallback: subject-level pool
+                if not pool_qs:
+                    pool_qs = self._query_historical_by_subject(exam, limit=5)
                 for pq in pool_qs:
                     replacement_pool.append({
                         "id": str(pq.id),
@@ -1193,12 +1308,13 @@ class AiGenerationService:
             ],
         }
 
-    def _fill_shortfall(self, node_uuid, shortfall: int, used_ids: set) -> list:
+    def _fill_shortfall(self, node_uuid, shortfall: int, used_ids: set, exam=None) -> list:
         """多級補題策略 — 確保不會因 AI 生成失敗而短缺題目。
 
         Level 1: 同節點考古題擴大抽取（排除已使用）
         Level 2: 同科目跨節點考古題借題
         Level 3: 同科目所有歷史題（最後手段）
+        Level 4: Subject-level 考古題（node_id = NULL 的匯入題目）
         """
         from sqlalchemy.sql.expression import func as sqlfunc
         filled = []
@@ -1289,12 +1405,40 @@ class AiGenerationService:
                 if level3:
                     logger.info("Shortfall L3: filled %d from all subject nodes", len(level3))
 
+        # Level 4: Subject-level 考古題（node_id = NULL 的匯入題目）
+        if remaining > 0 and exam:
+            subject_qs = self._query_historical_by_subject(
+                exam, limit=remaining, exclude_ids=used_ids
+            )
+            for src in subject_qs:
+                if str(src.id) in used_ids:
+                    continue
+                used_ids.add(str(src.id))
+                filled.append({
+                    "node_id": str(src.node_id) if src.node_id else str(node_uuid),
+                    "content": src.content,
+                    "type": src.type or "single_choice",
+                    "difficulty": src.difficulty or "medium",
+                    "bloom_category": src.bloom_category or "remember",
+                    "option_a": src.option_a or "",
+                    "option_b": src.option_b or "",
+                    "option_c": src.option_c or "",
+                    "option_d": src.option_d or "",
+                    "correct_answer": src.correct_answer or "A",
+                    "explanation": src.explanation or "",
+                    "historical_source": src.historical_source,
+                    "reliability": "green" if src.historical_source else "yellow",
+                })
+            remaining -= len(subject_qs)
+            if subject_qs:
+                logger.info("Shortfall L4: filled %d from subject-level historical", len(subject_qs))
+
         if remaining > 0:
             logger.warning("Could not fill %d questions — subject has insufficient question bank", remaining)
 
         return filled
 
-    def _generate_ai_for_node(self, node_uuid, node_plan, few_shot_examples):
+    def _generate_ai_for_node(self, node_uuid, node_plan, few_shot_examples, exam=None):
         """Generate AI questions for a single node.
 
         Strategy (spec v2.0 Layer 2):
@@ -1313,6 +1457,10 @@ class AiGenerationService:
             Question.node_id == node_uuid,
             Question.historical_source.isnot(None),
         ).order_by(Question.id).limit(10).all()
+
+        # Fallback: subject-level few-shot（匯入考古題 node_id = NULL）
+        if not hist_pool and exam:
+            hist_pool = self._query_historical_by_subject(exam, limit=10)
 
         # ── Path 1: LLM available → real AI generation ──
         if self._llm:
@@ -1467,10 +1615,34 @@ class AiGenerationService:
         return None
 
     def _get_exam_node_ids(self, exam: Exam) -> list:
-        """Extract node IDs from exam config."""
-        # If difficulty_distribution has node_ids, use them
+        """Extract node IDs from exam config.
+
+        Fallback chain:
+        1. difficulty_distribution.node_ids（前端選擇的節點）
+        2. 透過 subject_id 查找該科目下所有知識節點（含父科目的 Resource）
+        """
+        # Priority 1: explicit node_ids from exam config
         if exam.difficulty_distribution and "node_ids" in exam.difficulty_distribution:
-            return [uuid.UUID(nid) for nid in exam.difficulty_distribution["node_ids"]]
+            node_ids = exam.difficulty_distribution["node_ids"]
+            if node_ids:
+                return [uuid.UUID(nid) for nid in node_ids]
+
+        # Priority 2: find nodes via subject_id → Resource → KnowledgeNode
+        subject_ids = self._get_subject_ids_for_exam(exam)
+        resources = self.db.query(Resource).filter(
+            Resource.subject_id.in_(subject_ids)
+        ).all()
+        resource_ids = [r.id for r in resources]
+
+        if resource_ids:
+            nodes = self.db.query(KnowledgeNode).filter(
+                KnowledgeNode.resource_id.in_(resource_ids)
+            ).all()
+            if nodes:
+                logger.info("_get_exam_node_ids: found %d nodes via subject fallback for exam %s",
+                           len(nodes), exam.id)
+                return [n.id for n in nodes]
+
         return []
 
     def _try_historical_questions(self, exam: Exam, node_ids: list, total_q: int):
@@ -1489,16 +1661,25 @@ class AiGenerationService:
             Question.historical_source.isnot(None),
         ).count()
 
+        # Fallback: subject-level query（匯入考古題 node_id = NULL）
+        use_subject_fallback = (available == 0)
+        if use_subject_fallback:
+            available = self._count_historical_by_subject(exam)
+
         if available == 0:
             return None
 
-        logger.info("Historical question bank: %d available, need %d", available, total_q)
+        logger.info("Historical question bank: %d available (subject_fallback=%s), need %d",
+                    available, use_subject_fallback, total_q)
 
         # Randomly select questions from the bank
-        picked = self.db.query(Question).filter(
-            Question.node_id.in_(node_ids),
-            Question.historical_source.isnot(None),
-        ).order_by(sqlfunc.random()).limit(total_q).all()
+        if use_subject_fallback:
+            picked = self._query_historical_by_subject(exam, limit=total_q)
+        else:
+            picked = self.db.query(Question).filter(
+                Question.node_id.in_(node_ids),
+                Question.historical_source.isnot(None),
+            ).order_by(sqlfunc.random()).limit(total_q).all()
 
         if not picked:
             return None
