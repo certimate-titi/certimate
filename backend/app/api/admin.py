@@ -44,7 +44,7 @@ def get_version():
         "backend_commit": _CACHED_COMMIT,
         "api_prefix": "/api/v1",
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        "alembic_head": "030",
+        "alembic_head": "033",
         "deployed_at": os.environ.get("DEPLOYED_AT", "unknown"),
         "environment": environment,
     }

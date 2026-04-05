@@ -1,7 +1,7 @@
 """Fix category names to match frontend tabs.
 
-Revision ID: 030
-Revises: 029
+Revision ID: 033
+Revises: 032
 
 Merge legacy categories (金融證照, 不動產證照 → 金融) and (iPAS 產業人才鑑定 → IT).
 Frontend tabs expect: 金融, IT, 語言, 醫療, 公務員
@@ -9,8 +9,8 @@ Frontend tabs expect: 金融, IT, 語言, 醫療, 公務員
 from alembic import op
 import sqlalchemy as sa
 
-revision = "030"
-down_revision = "029"
+revision = "033"
+down_revision = "032"
 branch_labels = None
 depends_on = None
 
