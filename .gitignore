@@ -1,5 +1,6 @@
-# Dev server PID
+# Dev server PIDs
 .dev-server.pid
+.frontend-server.pid
 
 # Dependencies
 node_modules/
