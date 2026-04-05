@@ -1,3 +1,6 @@
+# Dev server PID
+.dev-server.pid
+
 # Dependencies
 node_modules/
 
