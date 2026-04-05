@@ -11,7 +11,7 @@
 #   ./smoke-test.sh https://your-backend.run.app # Custom URL
 # ============================================================
 
-BASE_URL="${1:-https://certimate-63018063271.asia-east1.run.app}"
+BASE_URL="${1:-https://certimate-titi-63018063271.asia-east1.run.app}"
 
 # --- Colors ---
 RED='\033[0;31m'

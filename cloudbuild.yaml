@@ -54,7 +54,7 @@ steps:
       - 'DATABASE_URL=${_DATABASE_URL},JWT_SECRET_KEY=${_JWT_SECRET_KEY}'
 
 substitutions:
-  _SERVICE_NAME: certimate-api
+  _SERVICE_NAME: certimate-titi
   _REGION: asia-east1
   _DATABASE_URL: ''
   _JWT_SECRET_KEY: ''
