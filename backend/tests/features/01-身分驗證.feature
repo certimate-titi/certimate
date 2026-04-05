@@ -209,6 +209,24 @@ Feature: 身分驗證
       Then 前端導覽列不應顯示「教育後台」連結
       And 前端導覽列不應顯示「後台管理」連結
 
+  Rule: 前置（狀態）- 未登入使用者不得存取受保護 API
+
+    Scenario Outline: 未帶 JWT 存取受保護 API 應回傳 401
+      When 未登入使用者嘗試存取 "<method>" "<api_path>"
+      Then HTTP 狀態碼應為 401
+
+      Examples:
+        | method | api_path                  |
+        | GET    | /api/v1/dashboard         |
+        | GET    | /api/v1/subjects/available|
+        | GET    | /api/v1/auth/me           |
+        | GET    | /api/v1/onboarding/summary|
+
+    Example: 非管理員存取管理 API 應回傳 403
+      Given 使用者 "alice@example.com" 訂閱方案為 "FREE" 且角色為 "USER"
+      When 使用者 "alice@example.com" 嘗試存取管理 API "GET" "/api/v1/admin/users"
+      Then HTTP 狀態碼應為 403
+
   Rule: 後置（狀態）- 刪除帳號時應同步清除所有快取與存儲資料 (Right to be Forgotten)
 
     Example: 使用者請求刪除帳號後系統徹底清空資料

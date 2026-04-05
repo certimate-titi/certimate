@@ -350,3 +350,15 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
       When 使用者 "alice@example.com" 查詢備考科目清單
       Then 操作應成功
       And API 回應應包含科目 "AWS SAA" 及其考試日期和自評程度
+
+  Rule: 查詢 - 可用科目清單應正確區分同一證照的初級/中級
+
+    Example: AI 應用規劃師應分為初級與中級兩個獨立科目
+      Given 系統中有科目 "AI 應用規劃師（初級）" 屬於分類 "IT"
+      And 系統中有科目 "AI 應用規劃師（中級）" 屬於分類 "IT"
+      When 使用者 "alice@example.com" 查詢可選科目清單
+      Then 操作應成功
+      And "IT" 分類下應包含 "AI 應用規劃師（初級）"
+      And "IT" 分類下應包含 "AI 應用規劃師（中級）"
+      And "AI 應用規劃師（初級）" 的考古題數量應大於 0
+      And "AI 應用規劃師（中級）" 的考古題數量應大於 0

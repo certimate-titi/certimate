@@ -35,6 +35,8 @@ from .auth.commands import user_action  # noqa: F401
 from .auth.commands import verify_email  # noqa: F401
 from .auth.commands import verify_email_invalid  # noqa: F401
 from .auth.commands import resend_verification  # noqa: F401
+from .auth.commands import unauthenticated_access  # noqa: F401
+from .auth.commands import admin_api_access  # noqa: F401
 
 # Auth — aggregate_then
 from .auth.aggregate_then import auth_provider_linked  # noqa: F401
@@ -60,6 +62,7 @@ from .auth.readmodel_then import password_strength  # noqa: F401
 from .auth.readmodel_then import redirect_to  # noqa: F401
 from .auth.readmodel_then import response_contains  # noqa: F401
 from .auth.readmodel_then import user_info  # noqa: F401
+
 
 # Resource — aggregate_given
 from .resource.aggregate_given import user_subject  # noqa: F401
@@ -415,6 +418,7 @@ from .onboarding.aggregate_given import current_subject  # noqa: F401
 from .onboarding.aggregate_given import at_profile_page  # noqa: F401
 from .onboarding.aggregate_given import archived_journey  # noqa: F401
 from .onboarding.aggregate_given import parent_child_subjects  # noqa: F401
+from .onboarding.aggregate_given import subject_in_category  # noqa: F401
 
 # Onboarding — commands
 from .onboarding.commands import view_status  # noqa: F401
@@ -482,6 +486,8 @@ from .onboarding.readmodel_then import saved_hint  # noqa: F401
 from .onboarding.readmodel_then import available_subjects_exclude  # noqa: F401
 from .onboarding.readmodel_then import available_subjects_include  # noqa: F401
 from .onboarding.readmodel_then import subject_list_contains  # noqa: F401
+from .onboarding.readmodel_then import category_contains_subject  # noqa: F401
+from .onboarding.readmodel_then import subject_question_count  # noqa: F401
 
 # Admin — aggregate_given
 from .admin.aggregate_given import admin_roles_doc  # noqa: F401
