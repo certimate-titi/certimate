@@ -61,6 +61,9 @@ class ResourceLibraryService:
         if resource.user_id != user_uuid:
             return {"error": True, "status_code": 403, "message": "無存取此資源的權限"}
 
+        if resource.status in (ResourceStatus.PENDING, ResourceStatus.PROCESSING):
+            return {"error": True, "status_code": 409, "message": "資源正在處理中，請稍後再試"}
+
         resource.status = ResourceStatus.PENDING
         self.db.commit()
         return {"message": "已重新觸發解析"}

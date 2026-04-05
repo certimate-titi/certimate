@@ -203,6 +203,134 @@
           "data_path": "ipas/information_security/"
         }
       ]
+    },
+    {
+      "category_id": "it",
+      "category_name": "IT",
+      "priority": "A",
+      "source_org": "AWS / Google / Microsoft",
+      "source_url": "",
+      "subjects": [
+        {
+          "subject_code": "aws_saa",
+          "subject_name": "AWS SAA",
+          "exam_name": "AWS Certified Solutions Architect – Associate",
+          "sub_subjects": [
+            { "code": "aws_saa_design", "name": "設計彈性架構", "question_count_per_exam": 65, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2020, "to": 2025 },
+          "sessions_per_year": 0,
+          "data_path": "it/aws_saa/"
+        },
+        {
+          "subject_code": "aws_sap",
+          "subject_name": "AWS SAP",
+          "exam_name": "AWS Certified Solutions Architect – Professional",
+          "sub_subjects": [
+            { "code": "aws_sap_advanced", "name": "進階架構設計", "question_count_per_exam": 75, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2020, "to": 2025 },
+          "sessions_per_year": 0,
+          "data_path": "it/aws_sap/"
+        },
+        {
+          "subject_code": "gcp_ace",
+          "subject_name": "GCP ACE",
+          "exam_name": "Google Cloud Associate Cloud Engineer",
+          "sub_subjects": [
+            { "code": "gcp_ace_core", "name": "雲端基礎設施管理", "question_count_per_exam": 50, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2020, "to": 2025 },
+          "sessions_per_year": 0,
+          "data_path": "it/gcp_ace/"
+        },
+        {
+          "subject_code": "azure_az900",
+          "subject_name": "Azure AZ-900",
+          "exam_name": "Microsoft Azure Fundamentals",
+          "sub_subjects": [
+            { "code": "az900_fundamentals", "name": "雲端概念與 Azure 服務", "question_count_per_exam": 40, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2020, "to": 2025 },
+          "sessions_per_year": 0,
+          "data_path": "it/azure_az900/"
+        }
+      ]
+    },
+    {
+      "category_id": "language",
+      "category_name": "語言",
+      "priority": "B",
+      "source_org": "ETS / JLPT",
+      "source_url": "",
+      "subjects": [
+        {
+          "subject_code": "toeic",
+          "subject_name": "TOEIC",
+          "exam_name": "多益英語測驗",
+          "sub_subjects": [
+            { "code": "toeic_listening", "name": "聽力測驗", "question_count_per_exam": 100, "type": "single_choice" },
+            { "code": "toeic_reading", "name": "閱讀測驗", "question_count_per_exam": 100, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2018, "to": 2025 },
+          "sessions_per_year": 12,
+          "data_path": "language/toeic/"
+        },
+        {
+          "subject_code": "jlpt_n1",
+          "subject_name": "JLPT N1",
+          "exam_name": "日本語能力試驗 N1",
+          "sub_subjects": [
+            { "code": "jlpt_n1_vocab", "name": "言語知識（文字・語彙・文法）", "question_count_per_exam": 55, "type": "single_choice" },
+            { "code": "jlpt_n1_reading", "name": "讀解", "question_count_per_exam": 25, "type": "single_choice" }
+          ],
+          "available_years": { "from": 2015, "to": 2025 },
+          "sessions_per_year": 2,
+          "data_path": "language/jlpt_n1/"
+        }
+      ]
+    },
+    {
+      "category_id": "medical",
+      "category_name": "醫療",
+      "priority": "B",
+      "source_org": "考選部",
+      "source_url": "https://wwwc.moex.gov.tw",
+      "subjects": [
+        {
+          "subject_code": "nurse",
+          "subject_name": "護理師",
+          "exam_name": "護理師國家考試",
+          "sub_subjects": [
+            { "code": "nurse_basic", "name": "基本護理學", "question_count_per_exam": 50, "type": "single_choice" },
+            { "code": "nurse_medical", "name": "內外科護理學", "question_count_per_exam": 80, "type": "single_choice" }
+          ],
+          "available_years": { "from": 105, "to": 113 },
+          "sessions_per_year": 2,
+          "data_path": "medical/nurse/"
+        }
+      ]
+    },
+    {
+      "category_id": "civil_service",
+      "category_name": "公務員",
+      "priority": "B",
+      "source_org": "考選部",
+      "source_url": "https://wwwc.moex.gov.tw",
+      "subjects": [
+        {
+          "subject_code": "civil_general",
+          "subject_name": "普考",
+          "exam_name": "公務人員普通考試",
+          "sub_subjects": [
+            { "code": "civil_general_law", "name": "法學知識與英文", "question_count_per_exam": 30, "type": "single_choice" },
+            { "code": "civil_general_admin", "name": "行政學概要", "question_count_per_exam": 25, "type": "mixed" }
+          ],
+          "available_years": { "from": 105, "to": 113 },
+          "sessions_per_year": 1,
+          "data_path": "civil_service/general/"
+        }
+      ]
     }
   ],
   "subject_code_to_db_mapping": {
@@ -220,12 +348,25 @@
     "big_data":              {"uuid": "b0000003-0002-0000-0000-000000000002", "db_name": "巨量資料分析師"},
     "iot":                   {"uuid": "b0000003-0003-0000-0000-000000000003", "db_name": "物聯網應用工程師"},
     "blockchain":            {"uuid": "b0000003-0004-0000-0000-000000000004", "db_name": "區塊鏈智能合約開發者"},
-    "information_security":  {"uuid": "b0000003-0005-0000-0000-000000000005", "db_name": "資訊安全工程師"}
+    "information_security":  {"uuid": "b0000003-0005-0000-0000-000000000005", "db_name": "資訊安全工程師"},
+    "aws_saa":               {"uuid": "b0000004-0001-0000-0000-000000000001", "db_name": "AWS SAA"},
+    "aws_sap":               {"uuid": "b0000004-0002-0000-0000-000000000002", "db_name": "AWS SAP"},
+    "gcp_ace":               {"uuid": "b0000004-0003-0000-0000-000000000003", "db_name": "GCP ACE"},
+    "azure_az900":           {"uuid": "b0000004-0004-0000-0000-000000000004", "db_name": "Azure AZ-900"},
+    "cfa_level1":            {"uuid": "b0000001-0007-0000-0000-000000000007", "db_name": "CFA Level 1"},
+    "toeic":                 {"uuid": "b0000005-0001-0000-0000-000000000001", "db_name": "TOEIC"},
+    "jlpt_n1":               {"uuid": "b0000005-0002-0000-0000-000000000002", "db_name": "JLPT N1"},
+    "nurse":                 {"uuid": "b0000006-0001-0000-0000-000000000001", "db_name": "護理師"},
+    "civil_general":         {"uuid": "b0000007-0001-0000-0000-000000000001", "db_name": "普考"}
   },
   "category_to_db_mapping": {
-    "finance":     {"uuid": "a0000001-0000-0000-0000-000000000001", "db_name": "金融證照"},
-    "real_estate": {"uuid": "a0000001-0000-0000-0000-000000000002", "db_name": "不動產證照"},
-    "ipas":        {"uuid": "a0000001-0000-0000-0000-000000000003", "db_name": "iPAS 產業人才鑑定"}
+    "finance":       {"uuid": "a0000001-0000-0000-0000-000000000001", "db_name": "金融證照"},
+    "real_estate":   {"uuid": "a0000001-0000-0000-0000-000000000002", "db_name": "不動產證照"},
+    "ipas":          {"uuid": "a0000001-0000-0000-0000-000000000003", "db_name": "iPAS 產業人才鑑定"},
+    "it":            {"uuid": "a0000001-0000-0000-0000-000000000004", "db_name": "IT"},
+    "language":      {"uuid": "a0000001-0000-0000-0000-000000000005", "db_name": "語言"},
+    "medical":       {"uuid": "a0000001-0000-0000-0000-000000000006", "db_name": "醫療"},
+    "civil_service": {"uuid": "a0000001-0000-0000-0000-000000000007", "db_name": "公務員"}
   },
   "bloom_categories": ["remember", "understand", "apply", "analyze", "evaluate", "create"],
   "file_naming_convention": "{年份}_{sub_subject_code}_{session}.json",

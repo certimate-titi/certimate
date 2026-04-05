@@ -171,6 +171,17 @@ Feature: B2B 機構管理後��
         | chen@example.com |
       And 群組 "PMP 衝刺班 B" 的成員數應為 2
 
+  Rule: 後置（狀態）- 重複匯入已存在的學員時應更新其方案與機構歸屬
+
+    Example: 重新匯入已在系統中的學員應更新為 EDU 方案
+      Given 系統中已存在使用者 "li@example.com"，訂閱方案為 "FREE"
+      When 使用者 "org-admin@school.com" 上傳以下合法 CSV 進行學員匯入：
+        | 姓名   | 電子郵件          | 群組         |
+        | 李小美 | li@example.com    | PMP 衝刺班 B |
+      Then 操作成功
+      And 使用者 "li@example.com" 的訂閱方案應為 "EDU"
+      And 使用者 "li@example.com" 的角色應為 "student"
+
   # ========== 考卷派發 ==========
 
   Rule: 後置（狀態）- 派發考卷後群組學員應看到待完成測驗

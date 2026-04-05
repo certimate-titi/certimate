@@ -56,6 +56,12 @@ class CommunityService:
             user = self.db.query(User).filter_by(email=user_email).first()
             if not user:
                 continue
+            # 防止重複產生同一週的報告
+            existing = self.db.query(WeeklyReport).filter_by(
+                user_id=user.id, report_week=today
+            ).first()
+            if existing:
+                continue
             progress_summary = "本週學習表現良好，持續保持！建議可以加強弱點領域的練習。"
             report = WeeklyReport(
                 user_id=user.id,

@@ -23,7 +23,7 @@ def _ensure_subject(context, subject_name):
         context.ids["default_cat"] = str(cat.id)
 
     cat_id = uuid.UUID(context.ids["default_cat"])
-    subj = Subject(name=subject_name, category_id=cat_id)
+    subj = Subject(name=subject_name, category_id=cat_id, available_questions=100)
     db.add(subj)
     db.flush()
     context.ids[subj_key] = str(subj.id)

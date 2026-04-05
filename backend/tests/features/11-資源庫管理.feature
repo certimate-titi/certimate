@@ -45,6 +45,15 @@ Feature: 資源庫管理
       Then 操作成功
       And 資源 3 的狀態應為 "PENDING"
 
+  Rule: 前置（狀態）- 處理中的資源不可重複觸發解析
+
+    Example: 對 PENDING 狀態的資源觸發重新解析應被拒絕
+      When 使用者 "alice@example.com" 重新解析資源 3
+      Then 操作成功
+      When 使用者 "alice@example.com" 重新解析資源 3
+      Then 操作失敗
+      And 錯誤訊息應為 "資源正在處理中，請稍後再試"
+
   # ========== 刪除 ==========
 
   Rule: 後置（狀態）- FAILED 資源可直接刪除

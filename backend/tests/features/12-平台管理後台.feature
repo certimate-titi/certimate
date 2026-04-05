@@ -166,6 +166,14 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | target   | 使用者 5              |
         | details  | 違反使用條款          |
 
+  Rule: 前置（狀態）- 已停權帳號不可重複停權
+
+    Example: 對已停權帳號再次停權應被拒絕
+      Given 使用者 5 的狀態為 "suspended"
+      When 使用者 "ops@certimate.com" 停權使用者 5 的帳號，原因為 "再次違規"
+      Then 操作失敗
+      And 錯誤訊息應為 "此帳號已停權"
+
   Rule: 後置（狀態）- 恢復帳號應將狀態改回 active 並寫入審計日誌
 
     Example: 恢復用戶帳號成功

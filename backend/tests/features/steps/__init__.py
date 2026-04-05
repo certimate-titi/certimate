@@ -342,6 +342,7 @@ from .b2b.aggregate_given import dpa_state  # noqa: F401
 from .b2b.aggregate_given import org_exam_config  # noqa: F401
 from .b2b.aggregate_given import student_scores  # noqa: F401
 from .b2b.aggregate_given import weakness_data  # noqa: F401
+from .b2b.aggregate_given import existing_user_with_plan  # noqa: F401
 
 # B2B — commands
 from .b2b.commands import access_admin  # noqa: F401
@@ -412,6 +413,8 @@ from .onboarding.aggregate_given import at_step4  # noqa: F401
 from .onboarding.aggregate_given import onboarding_with_subjects  # noqa: F401
 from .onboarding.aggregate_given import current_subject  # noqa: F401
 from .onboarding.aggregate_given import at_profile_page  # noqa: F401
+from .onboarding.aggregate_given import archived_journey  # noqa: F401
+from .onboarding.aggregate_given import parent_child_subjects  # noqa: F401
 
 # Onboarding — commands
 from .onboarding.commands import view_status  # noqa: F401
@@ -433,6 +436,10 @@ from .onboarding.commands import remove_subject_account  # noqa: F401
 from .onboarding.commands import confirm_remove  # noqa: F401
 from .onboarding.commands import view_profile  # noqa: F401
 from .onboarding.commands import update_profile  # noqa: F401
+from .onboarding.commands import query_available_subjects  # noqa: F401
+from .onboarding.commands import add_subject_table  # noqa: F401
+from .onboarding.commands import remove_and_confirm  # noqa: F401
+from .onboarding.commands import query_subject_list  # noqa: F401
 
 # Onboarding — aggregate_then
 from .onboarding.aggregate_then import journeys_created  # noqa: F401
@@ -443,6 +450,10 @@ from .onboarding.aggregate_then import journey_unaffected  # noqa: F401
 from .onboarding.aggregate_then import journey_archived  # noqa: F401
 from .onboarding.aggregate_then import switcher_removed  # noqa: F401
 from .onboarding.aggregate_then import profile_updated  # noqa: F401
+from .onboarding.aggregate_then import journey_active  # noqa: F401
+from .onboarding.aggregate_then import journey_contains  # noqa: F401
+from .onboarding.aggregate_then import journey_archived_by_name  # noqa: F401
+from .onboarding.aggregate_then import active_journey_excludes  # noqa: F401
 
 # Onboarding — readmodel_then
 from .onboarding.readmodel_then import onboarding_status  # noqa: F401
@@ -468,6 +479,9 @@ from .onboarding.readmodel_then import can_set_subject  # noqa: F401
 from .onboarding.readmodel_then import editable_fields  # noqa: F401
 from .onboarding.readmodel_then import fields_prefilled  # noqa: F401
 from .onboarding.readmodel_then import saved_hint  # noqa: F401
+from .onboarding.readmodel_then import available_subjects_exclude  # noqa: F401
+from .onboarding.readmodel_then import available_subjects_include  # noqa: F401
+from .onboarding.readmodel_then import subject_list_contains  # noqa: F401
 
 # Admin — aggregate_given
 from .admin.aggregate_given import admin_roles_doc  # noqa: F401

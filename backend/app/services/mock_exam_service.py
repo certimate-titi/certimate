@@ -95,6 +95,8 @@ class MockExamService:
             return {"error": True, "status_code": 404, "message": "測驗不存在"}
         if exam.user_id != uid:
             return {"error": True, "status_code": 403, "message": "無存取此測驗的權限"}
+        if exam.status == ExamStatus.SUBMITTED:
+            return {"error": True, "status_code": 400, "message": "測驗已提交，無法重複提交"}
 
         # Grade: compare each answer with correct answer
         questions = self.db.query(Question).filter_by(exam_id=exam.id).all()

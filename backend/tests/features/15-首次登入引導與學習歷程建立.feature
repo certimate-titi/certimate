@@ -305,6 +305,35 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
       Then 操作應成功
       And 使用者 "alice@example.com" 的學習歷程應包含 "JLPT N1"
 
+  Rule: 前置（狀態）- 不可重複新增已在備考的科目
+
+    Example: 重複新增已在備考的科目應回傳衝突錯誤
+      Given 使用者 "alice@example.com" 有學習歷程於科目 "AWS SAA"
+      When 使用者新增備考科目 "AWS SAA"，設定考試日期為 "2026-08-01"，自評程度為 "intermediate"
+      Then 操作失敗
+      And 錯誤訊息應為 "已在備考 AWS SAA，無需重複新增"
+
+    Example: 重新新增已封存的科目應自動啟用
+      Given 使用者 "alice@example.com" 有已封存的學習歷程於科目 "CFA Level 1"
+      When 使用者新增備考科目 "CFA Level 1"，設定考試日期為 "2026-09-01"，自評程度為 "beginner"
+      Then 操作應成功
+      And 使用者 "alice@example.com" 的學習歷程 "CFA Level 1" 應為活躍狀態
+
+  Rule: 查詢（過濾）- 可選科目清單應排除已備考科目與傘狀父科目
+
+    Example: 可選科目清單不包含已備考的科目
+      Given 使用者 "alice@example.com" 有學習歷程於科目 "AWS SAA"
+      When 使用者 "alice@example.com" 查詢可選科目清單
+      Then 操作應成功
+      And 可選科目清單不應包含 "AWS SAA"
+
+    Example: 可選科目清單不包含有子級的傘狀父科目
+      Given 系統中有科目 "AI 應用規劃師" 及其子科目 "AI 應用規劃師（初級）"
+      When 使用者 "alice@example.com" 查詢可選科目清單
+      Then 操作應成功
+      And 可選科目清單不應包含 "AI 應用規劃師"
+      And 可選科目清單應包含 "AI 應用規劃師（初級）"
+
   Rule: 命令（移除）- 使用者可移除備考科目（封存而非刪除）
 
     Example: 移除備考科目後學習歷程被封存

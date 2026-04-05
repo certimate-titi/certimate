@@ -36,7 +36,7 @@ def step_impl(context, email):
         # Use a subject from the categories if available
         subj = db.query(Subject).first()
         if not subj:
-            subj = Subject(name="Default Subject", category_id=cat_id)
+            subj = Subject(name="Default Subject", category_id=cat_id, available_questions=100)
             db.add(subj)
             db.flush()
 

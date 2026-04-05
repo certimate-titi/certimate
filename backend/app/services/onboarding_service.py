@@ -280,6 +280,17 @@ class OnboardingService:
         exam_date = date.fromisoformat(exam_date_str) if exam_date_str else None
         level = LEVEL_MAP.get(subj_data.get("self_assessed_level", "beginner"), SelfAssessedLevel.BEGINNER)
 
+        # 防止重複建立（unique constraint: user_id + subject_id）
+        existing = self.db.query(LearningJourney).filter_by(
+            user_id=user_uuid, subject_id=subject.id
+        ).first()
+        if existing:
+            if existing.is_archived:
+                existing.is_archived = False
+                existing.exam_date = exam_date
+                existing.self_assessed_level = level
+            return existing
+
         journey = LearningJourney(
             user_id=user_uuid,
             subject_id=subject.id,
@@ -334,10 +345,29 @@ class OnboardingService:
 
         return {"message": "OK", "next_step": step + 1}
 
+    def _get_parent_subject_ids(self) -> set:
+        """取得傘狀父科目 ID（有子科目的）。"""
+        parent_ids = {
+            row[0] for row in
+            self.db.query(Subject.parent_subject_id)
+            .filter(Subject.parent_subject_id.isnot(None))
+            .distinct()
+            .all()
+        }
+        all_names = {s.name for s in self.db.query(Subject.name).all()}
+        for name in list(all_names):
+            for suffix in ("（初級）", "（中級）", "（高級）"):
+                if name.endswith(suffix):
+                    base = name[: -len(suffix)]
+                    base_subj = self.db.query(Subject).filter_by(name=base).first()
+                    if base_subj:
+                        parent_ids.add(base_subj.id)
+        return parent_ids
+
     def browse_subjects(self, user_id: str, category: str | None = None):
         """瀏覽科目分類。"""
-        # Build a category name lookup
         all_cats = {c.id: c.name for c in self.db.query(SubjectCategory).all()}
+        parent_ids = self._get_parent_subject_ids()
 
         query = self.db.query(Subject)
         if category:
@@ -359,6 +389,8 @@ class OnboardingService:
                     "availableQuestions": s.available_questions or 0,
                 }
                 for s in subjects
+                if s.id not in parent_ids
+                and (s.available_questions or 0) > 0
             ]
         }
 
@@ -491,24 +523,70 @@ class OnboardingService:
     def add_subject(self, user_id: str, data: dict):
         """新增備考科目。"""
         user_uuid = uuid.UUID(user_id)
+        subj_name = data["subject_name"]
+
+        # 檢查是否已有此科目的學習歷程
+        subject = self.db.query(Subject).filter_by(name=subj_name).first()
+        if subject:
+            existing = self.db.query(LearningJourney).filter_by(
+                user_id=user_uuid, subject_id=subject.id
+            ).first()
+            if existing:
+                if existing.is_archived:
+                    # 重新啟用已封存的學習歷程
+                    existing.is_archived = False
+                    exam_date_str = data.get("exam_date")
+                    if exam_date_str:
+                        existing.exam_date = date.fromisoformat(exam_date_str)
+                    level = LEVEL_MAP.get(data.get("self_assessed_level", "beginner"), SelfAssessedLevel.BEGINNER)
+                    existing.self_assessed_level = level
+                    self.db.commit()
+                    return {"message": f"已重新啟用備考科目 {subj_name}"}
+                return {"error": True, "status_code": 409, "message": f"已在備考 {subj_name}，無需重複新增"}
+
         self._create_journey(user_uuid, data)
         self.db.commit()
-        return {"message": f"已新增備考科目 {data['subject_name']}"}
+        return {"message": f"已新增備考科目 {subj_name}"}
 
     def get_available_subjects(self, user_id: str):
-        """取得可選科目列表。"""
+        """取得可選科目列表（排除已備考科目與無考古題的傘狀科目）。"""
+        user_uuid = uuid.UUID(user_id)
+
+        # 取得使用者已有的（未封存）學習歷程科目
+        active_subject_ids = {
+            row[0] for row in
+            self.db.query(LearningJourney.subject_id)
+            .filter_by(user_id=user_uuid, is_archived=False)
+            .all()
+        }
+
+        parent_ids = self._get_parent_subject_ids()
+
         categories = self.db.query(SubjectCategory).all()
         result = []
+        all_subjects = []
         for cat in categories:
             subjects = self.db.query(Subject).filter_by(category_id=cat.id).all()
-            result.append({
-                "category": cat.name,
-                "subjects": [{"id": str(s.id), "name": s.name} for s in subjects],
-            })
-        return {"categories": result, "subjects": [
-            {"id": str(s.id), "name": s.name}
-            for s in self.db.query(Subject).all()
-        ]}
+            cat_subjects = []
+            for s in subjects:
+                # 排除：已備考的、傘狀父科目、無考古題的
+                if s.id in active_subject_ids:
+                    continue
+                if s.id in parent_ids:
+                    continue
+                if (s.available_questions or 0) == 0:
+                    continue
+                entry = {
+                    "id": str(s.id),
+                    "name": s.name,
+                    "available_questions": s.available_questions or 0,
+                }
+                cat_subjects.append(entry)
+                all_subjects.append(entry)
+            if cat_subjects:
+                result.append({"category": cat.name, "subjects": cat_subjects})
+
+        return {"categories": result, "subjects": all_subjects}
 
     def remove_subject(self, user_id: str, subject_id: str):
         """移除備考科目（返回確認提示）。"""

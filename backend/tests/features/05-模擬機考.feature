@@ -94,6 +94,13 @@ Feature: 模擬機考
       Then 操作成功
       And 測驗 1 的狀態應更新為 "SUBMITTED"
 
+  Rule: 前置（狀態）- 不可重複提交已完成的測驗
+
+    Example: 重複提交已完成的測驗應被拒絕
+      When 使用者 "alice@example.com" 提交測驗 4
+      Then 操作失敗
+      And 錯誤訊息應為 "測驗已提交，無法重複提交"
+
   Rule: 後置（回應）- 繼續進行中的測驗時應恢復已暫存的作答記錄
 
     Example: 重新進入進行中的測驗時恢復暫存狀態

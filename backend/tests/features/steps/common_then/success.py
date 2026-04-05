@@ -1,6 +1,7 @@
 from behave import then
 
 
+@then('操作應成功')
 @then('操作成功')
 def step_impl(context):
     """驗證前一個操作執行成功。

@@ -347,16 +347,19 @@ class AdminService:
         if not target:
             return {"error": True, "status_code": 404, "message": "目標使用者不存在"}
 
-        target.status = UserStatus.SUSPENDED
-        self.db.commit()
+        if target.status == UserStatus.SUSPENDED:
+            return {"error": True, "status_code": 409, "message": "此帳號已停權"}
 
-        self._write_audit_log(
-            admin_id=actor_id,
+        target.status = UserStatus.SUSPENDED
+        log = AdminAuditLog(
+            admin_id=uuid.UUID(actor_id),
             action="suspend_user",
             target_type="user",
-            target_id=target_user_id,
+            target_id=uuid.UUID(target_user_id),
             details={"reason": reason},
         )
+        self.db.add(log)
+        self.db.commit()
 
         return {"success": True}
 

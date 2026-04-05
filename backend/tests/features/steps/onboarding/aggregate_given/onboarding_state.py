@@ -33,7 +33,7 @@ def step_impl_subject(context, email, subject_name):
 
     subj_key = f"subject_{subject_name}"
     if subj_key not in context.ids:
-        subj = Subject(name=subject_name, category_id=cat_id)
+        subj = Subject(name=subject_name, category_id=cat_id, available_questions=100)
         db.add(subj)
         db.flush()
         context.ids[subj_key] = str(subj.id)

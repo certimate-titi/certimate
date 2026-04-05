@@ -18,10 +18,10 @@ depends_on = None
 # New subject UUIDs for split levels
 NEW_SUBJECTS = [
     # AI 應用規劃師 — split into 初級 + 中級
-    ("b0000003-0001-0001-0000-000000000001", "a0000001-0000-0000-0000-000000000003",
+    ("b0000003-0001-0001-0000-000000000001", "a0000001-0000-0000-0000-000000000004",
      "AI 應用規劃師（初級）", "AI Application Planner (Beginner)",
      "經濟部產業發展署 iPAS — 人工智慧應用規劃師初級能力鑑定", True),
-    ("b0000003-0001-0002-0000-000000000001", "a0000001-0000-0000-0000-000000000003",
+    ("b0000003-0001-0002-0000-000000000001", "a0000001-0000-0000-0000-000000000004",
      "AI 應用規劃師（中級）", "AI Application Planner (Intermediate)",
      "經濟部產業發展署 iPAS — 人工智慧應用規劃師中級能力鑑定", True),
     # 巨量資料分析師 — rename to 初級
@@ -41,8 +41,13 @@ AI_OLD_ID = "b0000003-0001-0000-0000-000000000001"
 def upgrade():
     conn = op.get_bind()
 
-    # 1. Add available_questions column to subjects
-    op.add_column("subjects", sa.Column("available_questions", sa.Integer(), server_default="0"))
+    # 1. Add available_questions column to subjects (skip if already added by 021)
+    result = conn.execute(sa.text(
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_name = 'subjects' AND column_name = 'available_questions'"
+    ))
+    if not result.fetchone():
+        op.add_column("subjects", sa.Column("available_questions", sa.Integer(), server_default="0"))
 
     # 2. Insert new AI 初級 and 中級 subjects
     for subj_id, cat_id, name, name_en, desc, is_pop in NEW_SUBJECTS:
@@ -107,13 +112,16 @@ def upgrade():
             WHERE subject_id = :old_id
         """), {"new_id": AI_INTERMEDIATE_ID, "old_id": AI_OLD_ID})
 
-    # 6. Update available_questions count for all subjects
+    # 6. Update available_questions — only count official 考古題 (historical_source IS NOT NULL)
     conn.execute(sa.text("""
-        UPDATE subjects s SET available_questions = (
-            SELECT COUNT(*) FROM questions q
-            JOIN exams e ON e.id = q.exam_id
-            WHERE e.subject_id = s.id
-        )
+        UPDATE subjects s SET available_questions = COALESCE(sub.cnt, 0)
+        FROM (
+            SELECT e.subject_id, COUNT(*) as cnt
+            FROM questions q JOIN exams e ON e.id = q.exam_id
+            WHERE q.historical_source IS NOT NULL AND q.historical_source != ''
+            GROUP BY e.subject_id
+        ) sub
+        WHERE s.id = sub.subject_id
     """))
 
     # 7. Reassign user_subjects from old AI to new (default to 初級) — table may not exist yet

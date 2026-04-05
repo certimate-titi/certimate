@@ -38,6 +38,23 @@ class ExamService:
         if not node_ids:
             return {"error": True, "status_code": 400, "message": "請至少選擇一個知識範圍"}
 
+        # 防止連點重複建立：檢查是否有相同配置的 PENDING/READY 測驗
+        pending_exam = (
+            self.db.query(Exam)
+            .filter(Exam.user_id == uid)
+            .filter(Exam.status.in_([ExamStatus.PENDING, ExamStatus.READY]))
+            .filter(Exam.total_questions == question_count)
+            .order_by(Exam.created_at.desc())
+            .first()
+        )
+        if pending_exam and pending_exam.difficulty_distribution:
+            existing_nodes = set(pending_exam.difficulty_distribution.get("node_ids", []))
+            if existing_nodes == set(node_ids):
+                return {
+                    "error": True, "status_code": 409,
+                    "message": "已有相同配置的測驗正在準備中，請勿重複建立",
+                }
+
         # 查詢使用者
         user = self.db.query(User).filter_by(id=uid).first()
         if not user:

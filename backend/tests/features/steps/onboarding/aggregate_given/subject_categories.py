@@ -21,7 +21,7 @@ def step_impl(context):
         # Parse subjects separated by 、
         subject_names = [s.strip() for s in examples_raw.split("、") if s.strip()]
         for sname in subject_names:
-            subj = Subject(name=sname, category_id=cat.id)
+            subj = Subject(name=sname, category_id=cat.id, available_questions=100)
             db.add(subj)
             db.flush()
             context.ids[f"subject_{sname}"] = str(subj.id)

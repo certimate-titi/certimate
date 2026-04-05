@@ -7,15 +7,27 @@ Feature: 考古題題庫管理
       | 1        | admin@example.com  | ULTRA_1599   | SUPER_ADMIN  |
       | 2        | user@example.com   | PRO_199      | USER         |
     And 系統中有以下考科分類：
-      | 分類 ID | 名稱       |
-      | 1       | 金融證照    |
-      | 2       | 不動產證照  |
-      | 3       | iPAS 產業人才鑑定 |
+      | 分類 ID | 名稱               |
+      | 1       | 金融                |
+      | 2       | IT                  |
+      | 3       | 語言                |
+      | 4       | 醫療                |
+      | 5       | 公務員              |
     And 系統中有以下考科：
-      | 考科 ID | 分類 ID | 名稱           | is_popular |
-      | 1       | 1       | 證券商業務員    | true       |
-      | 2       | 1       | 期貨商業務員    | true       |
-      | 3       | 3       | AI 應用規劃師   | true       |
+      | 考科 ID | 分類 ID | 名稱                          | is_popular |
+      | 1       | 1       | 證券商業務員                   | true       |
+      | 2       | 1       | 期貨商業務員                   | true       |
+      | 3       | 2       | AI 應用規劃師                  | true       |
+      | 4       | 2       | AWS SAA                        | true       |
+      | 5       | 2       | AWS SAP                        | false      |
+      | 6       | 2       | GCP ACE                        | true       |
+      | 7       | 2       | Azure AZ-900                   | false      |
+      | 8       | 1       | CFA Level 1                    | true       |
+      | 9       | 3       | TOEIC                          | true       |
+      | 10      | 3       | JLPT N1                        | false      |
+      | 11      | 4       | 護理師                         | true       |
+      | 12      | 5       | 普考                           | false      |
+      | 13      | 1       | 不動產經紀人                   | true       |
 
   # ========== 考科 Seed ==========
 
@@ -102,3 +114,23 @@ Feature: 考古題題庫管理
       Given 題庫中有一道 AI 生成題（historical_source 為空）
       When 查詢該題目的信度標示
       Then 信度應為 "yellow"（🟡 AI 模擬題）
+
+  # ========== 備考科目清單過濾 ==========
+
+  Rule: 前置（過濾）- 新增備考科目清單只顯示有官方考古題的科目
+
+    Example: 只有官方考古題的科目才出現在可選清單
+      Given 考科 "證券商業務員" 有 100 題官方考古題（historical_source 非空）
+      And 考科 "AWS SAA" 只有 AI 生成題（historical_source 為空）
+      And 考科 "GCP ACE" 沒有任何題目
+      When 使用者 "user@example.com" 查詢可選備考科目清單
+      Then 操作應成功
+      And 可選科目清單應包含 "證券商業務員"
+      And 可選科目清單不應包含 "AWS SAA"
+      And 可選科目清單不應包含 "GCP ACE"
+
+    Example: 科目的可用題數應只計算官方考古題
+      Given 考科 "AI 應用規劃師（初級）" 有 110 題官方考古題和 26 題 AI 生成題
+      When 使用者 "user@example.com" 查詢可選備考科目清單
+      Then 操作應成功
+      And 科目 "AI 應用規劃師（初級）" 的可用題數應為 110

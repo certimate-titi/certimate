@@ -29,7 +29,7 @@ def step_impl(context, email, count):
     # Create N subjects and journeys
     for i in range(count):
         subj_name = f"Subject_{i+1}"
-        subj = Subject(name=subj_name, category_id=cat_id)
+        subj = Subject(name=subj_name, category_id=cat_id, available_questions=100)
         db.add(subj)
         db.flush()
         context.ids[f"subject_{subj_name}"] = str(subj.id)
