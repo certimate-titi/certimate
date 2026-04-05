@@ -15,6 +15,20 @@ from app.api import router as api_router
 settings = get_settings()
 
 
+def _run_migrations():
+    """Run Alembic migrations on startup."""
+    try:
+        from alembic.config import Config
+        from alembic import command
+        import os
+        alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+        command.upgrade(alembic_cfg, "head")
+        print("✅ Alembic migrations applied")
+    except Exception as e:
+        print(f"⚠️ Alembic migration warning: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用程式生命週期：啟動時初始化 DB session factory。"""
@@ -22,6 +36,7 @@ async def lifespan(app: FastAPI):
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     set_session_factory(session_local)
     print(f"✅ Database connected: {settings.DATABASE_URL.split('@')[-1]}")
+    _run_migrations()
     # 啟動背景排程
     init_scheduler(session_local)
     await start_scheduler()
