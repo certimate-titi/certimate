@@ -212,6 +212,33 @@ Feature: 身分驗證
       Then 前端導覽列不應顯示「教育後台」連結
       And 前端導覽列不應顯示「後台管理」連結
 
+  Rule: 前置（狀態）- 未登入使用者不得存取受保護頁面
+
+    Scenario Outline: 未登入使用者存取受保護頁面時應導向登入頁
+      Given 使用者尚未登入（無有效 JWT）
+      When 使用者嘗試直接存取 "<頁面路徑>"
+      Then 系統應自動導向至 "/login"
+
+      Examples:
+        | 頁面路徑                    |
+        | /dashboard                  |
+        | /knowledge                  |
+        | /exam/setup                 |
+        | /exam/workspace             |
+        | /exam/results               |
+        | /review                     |
+        | /account                    |
+        | /feedback                   |
+        | /edu-console                |
+        | /super-admin/dashboard      |
+        | /super-admin/users          |
+        | /super-admin/settings       |
+
+    Example: 非管理員存取平台管理頁面時應導向儀表板
+      Given 使用者 "alice@example.com" 角色為 "USER" 且已登入
+      When 使用者嘗試直接存取 "/super-admin/dashboard"
+      Then 系統應自動導向至 "/dashboard"
+
   Rule: 後置（狀態）- 刪除帳號時應同步清除所有快取與存儲資料 (Right to be Forgotten)
 
     Example: 使用者請求刪除帳號後系統徹底清空資料
