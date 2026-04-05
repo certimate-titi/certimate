@@ -1,5 +1,9 @@
 """平台管理後台 API。"""
 
+import os
+import sys
+import subprocess
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -10,6 +14,40 @@ from app.core.deps import get_db, get_current_user_id
 from app.services.admin_service import AdminService
 
 router = APIRouter(prefix="/admin")
+
+
+# ── Version Info (public, no auth) ──────────────────────────────────────────
+
+def _get_git_commit() -> str:
+    """Get short git commit hash, fallback to 'dev'."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=5,
+        )
+        return result.stdout.strip() if result.returncode == 0 else "dev"
+    except Exception:
+        return "dev"
+
+
+_CACHED_COMMIT = _get_git_commit()
+
+
+@router.get("/version")
+def get_version():
+    """公開版本資訊端點（不需認證）。"""
+    database_url = os.environ.get("DATABASE_URL", "")
+    environment = "production" if "cloudsql" in database_url else "development"
+
+    return {
+        "backend_version": "0.3.1",
+        "backend_commit": _CACHED_COMMIT,
+        "api_prefix": "/api/v1",
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "alembic_head": "030",
+        "deployed_at": os.environ.get("DEPLOYED_AT", "unknown"),
+        "environment": environment,
+    }
 
 
 def _handle_result(result: dict):

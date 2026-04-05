@@ -634,6 +634,18 @@ export const superAdminService = {
   async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number }[] }> {
     return apiClient.get('/admin/dashboard/charts');
   },
+
+  async getVersionInfo(): Promise<{
+    backend_version: string;
+    backend_commit: string;
+    api_prefix: string;
+    python_version: string;
+    alembic_head: string;
+    deployed_at: string;
+    environment: string;
+  }> {
+    return apiClient.get('/admin/version');
+  },
 };
 
 // ===========================

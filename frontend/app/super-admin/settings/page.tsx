@@ -1,28 +1,33 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Settings, 
-  Cpu, 
-  Zap, 
-  Bell, 
-  Flag, 
-  ShieldCheck, 
-  Save, 
-  RefreshCw, 
-  Plus, 
+import {
+  Settings,
+  Cpu,
+  Zap,
+  Bell,
+  Flag,
+  ShieldCheck,
+  Save,
+  RefreshCw,
+  Plus,
   Trash2,
   ChevronRight,
   Info,
   User,
   Mail,
   Shield,
-  MoreVertical
+  MoreVertical,
+  Server,
+  CheckCircle,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
+import { BUILD_INFO } from '@/lib/build-info';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,6 +43,7 @@ export default function SettingsPage() {
     { id: 'announcements', name: '公告管理', icon: Bell },
     { id: 'flags', name: 'Feature Flags', icon: Flag },
     { id: 'admins', name: '管理員帳號', icon: ShieldCheck },
+    { id: 'version', name: '版本資訊', icon: Server },
   ];
 
   const handleSaveSettings = async () => {
@@ -115,6 +121,18 @@ export default function SettingsPage() {
     timeout: 3000, retries: 2,
   });
 
+  const [versionInfo, setVersionInfo] = useState<{
+    backend_version: string;
+    backend_commit: string;
+    api_prefix: string;
+    python_version: string;
+    alembic_head: string;
+    deployed_at: string;
+    environment: string;
+  } | null>(null);
+  const [versionLoading, setVersionLoading] = useState(false);
+  const [versionError, setVersionError] = useState(false);
+
   React.useEffect(() => {
     superAdminService.getModelRouting().then(res => {
       const routings = (res as Record<string, unknown>).routings;
@@ -157,6 +175,13 @@ export default function SettingsPage() {
     superAdminService.getAnnouncements().then(res => {
       if (Array.isArray(res?.announcements)) setAnnouncements(res.announcements);
     }).catch(() => {});
+    setVersionLoading(true);
+    superAdminService.getVersionInfo().then(res => {
+      setVersionInfo(res);
+      setVersionError(false);
+    }).catch(() => {
+      setVersionError(true);
+    }).finally(() => setVersionLoading(false));
   }, []);
 
   const handleAddAdmin = async () => {
@@ -528,6 +553,119 @@ export default function SettingsPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'version' && (
+              <div className="p-8 space-y-8">
+                <h3 className="text-lg font-bold text-slate-900 mb-6">版本資訊</h3>
+
+                {/* Frontend Info */}
+                <section>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Frontend</h4>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Version</p>
+                      <p className="text-lg font-bold text-slate-900">{BUILD_INFO.version}</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Commit</p>
+                      <p className="text-lg font-mono font-bold text-slate-900">{BUILD_INFO.commit}</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Build Time</p>
+                      <p className="text-sm font-bold text-slate-900">{BUILD_INFO.buildTime}</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Backend Info */}
+                <section>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Backend</h4>
+                  {versionLoading ? (
+                    <div className="flex items-center gap-3 p-6 rounded-2xl bg-slate-50 border border-slate-100">
+                      <Loader2 className="h-5 w-5 text-slate-400 animate-spin" />
+                      <span className="text-sm text-slate-500">Loading backend info...</span>
+                    </div>
+                  ) : versionError ? (
+                    <div className="flex items-center gap-3 p-6 rounded-2xl bg-rose-50 border border-rose-100">
+                      <XCircle className="h-5 w-5 text-rose-500" />
+                      <span className="text-sm text-rose-700">Unable to connect to backend API</span>
+                      <button
+                        onClick={() => {
+                          setVersionLoading(true);
+                          setVersionError(false);
+                          superAdminService.getVersionInfo().then(res => {
+                            setVersionInfo(res);
+                          }).catch(() => setVersionError(true)).finally(() => setVersionLoading(false));
+                        }}
+                        className="ml-auto text-xs font-bold text-rose-600 hover:text-rose-800 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : versionInfo ? (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Version</p>
+                        <p className="text-lg font-bold text-slate-900">{versionInfo.backend_version}</p>
+                      </div>
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Commit</p>
+                        <p className="text-lg font-mono font-bold text-slate-900">{versionInfo.backend_commit}</p>
+                      </div>
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Python</p>
+                        <p className="text-lg font-bold text-slate-900">{versionInfo.python_version}</p>
+                      </div>
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Alembic Head</p>
+                        <p className="text-lg font-mono font-bold text-slate-900">{versionInfo.alembic_head}</p>
+                      </div>
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Environment</p>
+                        <span className={cn(
+                          "inline-block text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider mt-1",
+                          versionInfo.environment === 'production'
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        )}>
+                          {versionInfo.environment}
+                        </span>
+                      </div>
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Deployed At</p>
+                        <p className="text-sm font-bold text-slate-900">{versionInfo.deployed_at}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </section>
+
+                {/* Connection Status */}
+                <section>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Connection Status</h4>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+                      {versionInfo ? (
+                        <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-rose-500 shrink-0" />
+                      )}
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Database</p>
+                        <p className="text-sm font-bold text-slate-900">{versionInfo ? 'Connected' : 'Unreachable'}</p>
+                      </div>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">API URL</p>
+                      <p className="text-sm font-mono font-bold text-slate-900 break-all">
+                        {typeof window !== 'undefined'
+                          ? (process.env.NEXT_PUBLIC_API_URL || '/api/v1')
+                          : '/api/v1'}
+                      </p>
+                    </div>
+                  </div>
+                </section>
               </div>
             )}
 
