@@ -144,6 +144,56 @@ Feature: 訂閱管理與多階層控制
       When 使用者 "free@example.com" 訂閱 "EDU" 方案
       Then 操作失敗，錯誤為「EDU 方案僅限機構管理員指派，無法自行訂閱」
 
+  # ========== EDU 學生既有訂閱衝突處置 ==========
+  # 決議（2026-04-06 CEO）：
+  # 1. 學生被機構指派 EDU 方案時，若已有個人付費訂閱（PRO_199 / PRO_PLUS_399），
+  #    個人訂閱自動「暫停計費」（suspended），期間以 EDU 方案權益為主。
+  # 2. EDU 方案結束（機構移除/ULTRA 到期）後，個人訂閱自動恢復計費，
+  #    次月扣款日延後至恢復日起重新計算。
+  # 3. 若個人訂閱在 EDU 暫停期間自然到期，則 EDU 結束後回到 FREE。
+  # 4. 個人訂閱的剩餘期限在暫停期間凍結保留，不消耗。
+
+  Rule: 後置（狀態）- 已有個人訂閱的用戶被機構指派 EDU 方案時個人訂閱應自動暫停計費
+
+    Example: PRO_199 用戶被機構指派 EDU 後個人訂閱暫停
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email              | 訂閱方案  | 訂閱狀態 | 下次扣款日 |
+        | 10       | pro@school.com     | PRO_199   | active   | 2026-05-01 |
+      When 機構管理員將 "pro@school.com" 指派為 EDU 學生
+      Then 使用者 "pro@school.com" 的訂閱方案應為 "EDU"
+      And 使用者 "pro@school.com" 的個人訂閱狀態應為 "suspended"
+      And 系統應記錄個人訂閱暫停紀錄，保留原方案為 "PRO_199"，下次扣款日為 "2026-05-01"
+
+    Example: PRO_PLUS_399 用戶被機構指派 EDU 後個人訂閱暫停
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案      | 訂閱狀態 | 下次扣款日 |
+        | 11       | proplus@school.com   | PRO_PLUS_399  | active   | 2026-05-01 |
+      When 機構管理員將 "proplus@school.com" 指派為 EDU 學生
+      Then 使用者 "proplus@school.com" 的訂閱方案應為 "EDU"
+      And 使用者 "proplus@school.com" 的個人訂閱狀態應為 "suspended"
+
+  Rule: 後置（狀態）- EDU 方案結束後個人訂閱應自動恢復
+
+    Example: 機構移除學生後個人 PRO_199 訂閱自動恢復
+      Given 使用者 "pro@school.com" 目前為 EDU 方案且個人訂閱（PRO_199）已暫停
+      When 機構管理員將 "pro@school.com" 從機構中移除
+      Then 使用者 "pro@school.com" 的訂閱方案應恢復為 "PRO_199"
+      And 使用者 "pro@school.com" 的訂閱狀態應為 "active"
+      And 使用者 "pro@school.com" 的下次扣款日應從恢復日起重新計算 30 天
+
+    Example: 機構 ULTRA 方案到期後 EDU 學生個人訂閱自動恢復
+      Given 機構 1 的 ULTRA_1599 方案將於 "2026-04-30" 到期
+      And 使用者 "pro@school.com" 為機構 1 的 EDU 學生，個人訂閱（PRO_199）已暫停
+      When 系統執行訂閱到期檢查排程，當前日期為 "2026-04-30"
+      Then 使用者 "pro@school.com" 的訂閱方案應恢復為 "PRO_199"
+      And 使用者 "pro@school.com" 的訂閱狀態應為 "active"
+
+    Example: EDU 期間個人訂閱自然到期則 EDU 結束後回 FREE
+      Given 使用者 "pro@school.com" 目前為 EDU 方案且個人訂閱（PRO_199）已於暫停期間自然到期
+      When 機構管理員將 "pro@school.com" 從機構中移除
+      Then 使用者 "pro@school.com" 的訂閱方案應為 "FREE"
+      And 使用者 "pro@school.com" 的訂閱狀態應為 "無"
+
   # ========== 14 天免費試用 ==========
 
   Rule: 前置（狀態）- 每個帳號僅可使用一次 ULTRA 免費試用

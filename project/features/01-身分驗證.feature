@@ -373,3 +373,51 @@ Feature: 身分驗證
       Then 操作成功
       And 回應應包含有效的 JWT 存取憑證
       And 系統應導向至 "個人儀表板首頁"
+
+  # ========== EDU 學生邀請啟用流程 ==========
+  # 決議（2026-04-06 CEO）：
+  # Edu 學生收到邀請信後，點擊連結應導向「設定密碼頁面」（/invite/setup-password?token={token}），
+  # 而非直接進入首頁。密碼設定完成後才完成帳號啟用並導向儀表板。
+
+  Rule: 後置（狀態）- EDU 學生點擊邀請連結後應導向密碼設定頁，完成設定後帳號才啟用
+
+    Example: EDU 學生點擊有效邀請連結後導向密碼設定頁
+      Given 系統已向 "student@school.com" 發送 EDU 啟用邀請信
+      And 邀請 token 為有效且未過期
+      When 使用者點擊邀請信中的啟用連結
+      Then 系統應導向密碼設定頁面 "/invite/setup-password"
+      And 頁面應顯示「歡迎加入！請設定您的登入密碼」
+      And 使用者 "student@school.com" 的帳號狀態應仍為 "待啟用"
+
+    Example: EDU 學生在密碼設定頁完成密碼設定後帳號啟用並導向儀表板
+      Given 使用者 "student@school.com" 正在密碼設定頁，邀請 token 有效
+      When 使用者輸入密碼 "SchoolPass#2024" 並確認密碼 "SchoolPass#2024" 後送出
+      Then 操作成功
+      And 使用者 "student@school.com" 的帳號狀態應更新為 "已啟用"
+      And 使用者 "student@school.com" 的訂閱方案應為 "EDU"
+      And 回應應包含有效的 JWT 存取憑證
+      And 系統應導向至 "個人儀表板首頁"
+
+    Example: 密碼確認欄位不一致時設定失敗
+      Given 使用者 "student@school.com" 正在密碼設定頁，邀請 token 有效
+      When 使用者輸入密碼 "SchoolPass#2024" 但確認密碼輸入 "DifferentPass#2024" 後送出
+      Then 操作失敗
+      And 錯誤訊息應為 "兩次輸入的密碼不一致"
+
+    Example: 密碼強度不足時設定失敗
+      Given 使用者 "student@school.com" 正在密碼設定頁，邀請 token 有效
+      When 使用者輸入密碼 "123456" 並確認密碼 "123456" 後送出
+      Then 操作失敗
+      And 錯誤訊息應為 "密碼強度不足"
+
+    Example: 邀請 token 過期時密碼設定頁顯示過期提示
+      Given 邀請 token "expired-token-001" 已過期（超過 72 小時）
+      When 使用者以 token "expired-token-001" 訪問密碼設定頁
+      Then 系統應顯示錯誤提示「邀請連結已過期，請聯繫機構管理員重新發送邀請」
+      And 頁面應提供「聯繫管理員」引導
+
+    Example: 邀請 token 已使用時密碼設定頁顯示已啟用提示
+      Given 使用者 "student@school.com" 已完成密碼設定，帳號狀態為 "已啟用"
+      When 使用者再次以同一邀請 token 訪問密碼設定頁
+      Then 系統應顯示提示「您的帳號已完成啟用，請直接登入」
+      And 頁面應提供「前往登入」連結
