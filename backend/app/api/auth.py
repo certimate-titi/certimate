@@ -105,6 +105,41 @@ def get_current_user(
     }
 
 
+@router.post("/auth/seed-demo")
+def seed_demo_account(db: Session = Depends(get_db)):
+    """建立 demo 帳號（已驗證 + SUPER_ADMIN），供 smoke test 與開發快速登入使用。"""
+    from app.models.user import User, UserStatus, UserRole, SubscriptionPlan
+    import hashlib
+
+    repo = UserRepository(db)
+    email = "admin@certimate.com"
+    existing = repo.find_by_email(email)
+    if existing:
+        # Ensure existing account is active + admin
+        if existing.status != UserStatus.ACTIVE or existing.role != UserRole.SUPER_ADMIN:
+            existing.status = UserStatus.ACTIVE
+            existing.role = UserRole.SUPER_ADMIN
+            existing.subscription_plan = SubscriptionPlan.ULTRA
+            existing.onboarding_completed = True
+            existing.password_hash = hashlib.sha256("admin123".encode()).hexdigest()
+            db.commit()
+            return {"message": "Demo account updated to active admin", "email": email}
+        return {"message": "Demo account already exists", "email": email}
+
+    user = User(
+        email=email,
+        password_hash=hashlib.sha256("admin123".encode()).hexdigest(),
+        display_name="Super Admin",
+        role=UserRole.SUPER_ADMIN,
+        status=UserStatus.ACTIVE,
+        subscription_plan=SubscriptionPlan.ULTRA,
+        onboarding_completed=True,
+    )
+    db.add(user)
+    db.commit()
+    return {"message": "Demo account created", "email": email}
+
+
 @router.delete("/auth/delete-account")
 def delete_account(
     user_id: str = Depends(get_current_user_id),

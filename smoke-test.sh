@@ -22,7 +22,7 @@ NC='\033[0m'
 
 PASSED=0
 FAILED=0
-TOTAL=5
+TOTAL=8
 
 echo ""
 echo -e "${BOLD}CertiMate Smoke Test${NC}"
@@ -111,6 +111,53 @@ check_endpoint \
   "GET" \
   "/api/v1/dashboard" \
   "401,403"
+
+# 6. Health check — should return 200
+check_endpoint \
+  "GET  /health" \
+  "GET" \
+  "/health" \
+  "200"
+
+# 7. Login with demo account — should return 200 with JWT token
+echo ""
+echo -e "  ${YELLOW}Login Flow Tests${NC}"
+LOGIN_BODY='{"email":"admin@certimate.com","password":"admin123"}'
+LOGIN_RESULT=$(curl -s -w "\n%{http_code}" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d "$LOGIN_BODY" \
+  --max-time 15 \
+  "${BASE_URL}/api/v1/auth/login" 2>/dev/null)
+LOGIN_STATUS=$(echo "$LOGIN_RESULT" | tail -1)
+LOGIN_JSON=$(echo "$LOGIN_RESULT" | sed '$d')
+LOGIN_TOKEN=$(echo "$LOGIN_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
+
+if [ "$LOGIN_STATUS" = "200" ] && [ -n "$LOGIN_TOKEN" ]; then
+  echo -e "  ${GREEN}Pass${NC}  POST /api/v1/auth/login (demo)  (HTTP ${LOGIN_STATUS}, got token)"
+  PASSED=$((PASSED + 1))
+else
+  echo -e "  ${RED}FAIL${NC}  POST /api/v1/auth/login (demo)  (HTTP ${LOGIN_STATUS}, no token)"
+  FAILED=$((FAILED + 1))
+fi
+
+# 8. GET /auth/me with token — should return 200 with user info
+if [ -n "$LOGIN_TOKEN" ]; then
+  ME_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: Bearer $LOGIN_TOKEN" \
+    --max-time 15 \
+    "${BASE_URL}/api/v1/auth/me" 2>/dev/null)
+  if [ "$ME_STATUS" = "200" ]; then
+    echo -e "  ${GREEN}Pass${NC}  GET  /api/v1/auth/me (with token)  (HTTP ${ME_STATUS})"
+    PASSED=$((PASSED + 1))
+  else
+    echo -e "  ${RED}FAIL${NC}  GET  /api/v1/auth/me (with token)  (HTTP ${ME_STATUS})"
+    FAILED=$((FAILED + 1))
+  fi
+else
+  echo -e "  ${RED}FAIL${NC}  GET  /api/v1/auth/me (skipped — no token from login)"
+  FAILED=$((FAILED + 1))
+fi
 
 # --- Summary ---
 echo "----------------------------------------"

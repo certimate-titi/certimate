@@ -52,16 +52,28 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+  throw new Error('Failed to fetch');
+}
+
 export const apiClient = {
   async get<T>(path: string): Promise<T> {
     const headers = getAuthHeaders();
-    const response = await fetch(`${BASE_URL}${path}`, { headers });
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, { headers });
     return handleResponse<T>(response);
   },
 
   async post<T>(path: string, body?: unknown): Promise<T> {
     const headers = getAuthHeaders();
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, {
       method: 'POST',
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -71,7 +83,7 @@ export const apiClient = {
 
   async put<T>(path: string, body?: unknown): Promise<T> {
     const headers = getAuthHeaders();
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, {
       method: 'PUT',
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -81,7 +93,7 @@ export const apiClient = {
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
     const headers = getAuthHeaders();
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, {
       method: 'PATCH',
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -91,7 +103,7 @@ export const apiClient = {
 
   async delete<T>(path: string): Promise<T> {
     const headers = getAuthHeaders();
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, {
       method: 'DELETE',
       headers,
     });
@@ -105,7 +117,7 @@ export const apiClient = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     // Don't set Content-Type — browser sets it with boundary for multipart
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithRetry(`${BASE_URL}${path}`, {
       method: 'POST',
       headers,
       body: formData,
