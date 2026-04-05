@@ -8,6 +8,8 @@ import {
   Upload, Download, X, FileText, AlertCircle
 } from 'lucide-react';
 
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { adminService } from '@/lib/api/services';
 import type { Student, GetStudentListResponse } from '@/types';
 
@@ -419,9 +421,11 @@ function ImportStudentModal({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EduConsolePage() {
+  const router = useRouter();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  
+
   const [students, setStudents] = useState<Student[]>([]);
   const [classStats, setClassStats] = useState<GetStudentListResponse['classStats']>({
     averageScore: 0,
@@ -429,6 +433,12 @@ export default function EduConsolePage() {
     topWeaknesses: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
   const [isEmpty, setIsEmpty] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

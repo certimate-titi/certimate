@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, ArrowRight, BrainCircuit, Trophy, Target, Clock, TrendingUp, TrendingDown, Flag, Share2, Download, Sparkles } from 'lucide-react';
 import { examService } from '@/lib/api/services';
@@ -18,12 +18,19 @@ export default function ExamResultsPageWrapper() {
 }
 
 function ExamResultsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId') || 'exam_001';
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   const [data, setData] = useState<GetExamResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {

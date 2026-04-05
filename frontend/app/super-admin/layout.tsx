@@ -43,8 +43,16 @@ export default function SuperAdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut: authSignOut } = useAuth();
+  const { user, loading, isAuthenticated, isAdmin, signOut: authSignOut } = useAuth();
   const userEmail = user?.email ?? null;
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/login');
+    } else if (!loading && isAuthenticated && !isAdmin) {
+      router.replace('/dashboard');
+    }
+  }, [loading, isAuthenticated, isAdmin, router]);
 
   const handleLogout = async () => {
     try {
@@ -54,6 +62,14 @@ export default function SuperAdminLayout({
       console.error('Logout failed', error);
     }
   };
+
+  if (loading || !isAuthenticated || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">

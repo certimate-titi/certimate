@@ -15,8 +15,14 @@ type TabId = 'profile' | 'billing' | 'security' | 'preferences' | 'achievements'
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier, signOut } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');

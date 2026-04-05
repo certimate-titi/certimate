@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Clock, Flag, ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 import { examService } from '@/lib/api/services';
 import type { Question } from '@/types';
 
@@ -32,7 +33,14 @@ export default function MockExamWorkspacePageWrapper() {
 function MockExamWorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const examId = searchParams.get('examId') || 'exam_001';
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [examTitle, setExamTitle] = useState('');
