@@ -43,8 +43,20 @@ def step_impl(context):
                 assert actual_value is not None and str(actual_value).strip() != "", \
                     f"欄位 '{field}' 應非空白，實際為 '{actual_value}'"
             else:
-                assert str(actual_value) == expected_value, \
-                    f"欄位 '{field}' 預期為 '{expected_value}'，實際為 '{actual_value}'"
+                # Try direct string comparison first
+                if str(actual_value) == expected_value:
+                    pass  # match
+                elif (
+                    hasattr(context, 'ids')
+                    and expected_value in context.ids
+                    and field.endswith("_id")
+                ):
+                    # Only resolve via context.ids for fields ending with _id
+                    assert str(actual_value) == context.ids[expected_value], \
+                        f"欄位 '{field}' 預期為 '{expected_value}' (UUID: {context.ids[expected_value]})，實際為 '{actual_value}'"
+                else:
+                    assert str(actual_value) == expected_value, \
+                        f"欄位 '{field}' 預期為 '{expected_value}'，實際為 '{actual_value}'"
 
     # 格式 3: "欄位" / "說明" — 只驗證欄位存在
     elif "欄位" in headings and "說明" in headings:

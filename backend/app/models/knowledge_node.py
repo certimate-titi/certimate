@@ -16,8 +16,11 @@ class KnowledgeNode(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    resource_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("resources.id", ondelete="CASCADE"), nullable=False
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resources.id", ondelete="CASCADE")
+    )
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subjects.id")
     )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
@@ -29,6 +32,8 @@ class KnowledgeNode(Base):
     source_timestamp_seconds: Mapped[int | None] = mapped_column(Integer)
     source_text: Mapped[str | None] = mapped_column(Text)
     available_questions: Mapped[int] = mapped_column(Integer, default=0)
+    exam_frequency: Mapped[str | None] = mapped_column(String(10))
+    source_origin: Mapped[str] = mapped_column(String(20), server_default="document")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

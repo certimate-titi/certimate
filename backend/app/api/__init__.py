@@ -28,6 +28,10 @@ from app.api.retirement import router as retirement_router
 from app.api.learning_journey import router as learning_journey_router
 from app.api.ai_chat import router as ai_chat_router
 from app.api.pricing import router as pricing_router
+from app.api.reverse_engineering import router as reverse_engineering_router
+from app.api.wrong_answer_map import router as wrong_answer_map_router
+from app.api.difficulty_progression import router as difficulty_progression_router
+from app.api.knowledge_merge import router as knowledge_merge_router
 
 router = APIRouter()
 
@@ -57,3 +61,7 @@ router.include_router(retirement_router, tags=["retirement"])
 router.include_router(learning_journey_router, tags=["learning-journeys"])
 router.include_router(ai_chat_router, tags=["ai-chat"])
 router.include_router(pricing_router, tags=["pricing"])
+router.include_router(reverse_engineering_router, tags=["reverse-engineering"])
+router.include_router(wrong_answer_map_router, tags=["wrong-answer-map"])
+router.include_router(difficulty_progression_router, tags=["difficulty-progression"])
+router.include_router(knowledge_merge_router, tags=["knowledge-merge"])

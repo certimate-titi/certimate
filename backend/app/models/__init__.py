@@ -46,6 +46,9 @@ from app.models.resource_chunk import ResourceChunk  # noqa: F401, E402
 from app.models.student_group import StudentGroup, StudentGroupMember  # noqa: F401, E402
 from app.models.institution_assignment import InstitutionAssignment  # noqa: F401, E402
 from app.models.early_warning_rule import EarlyWarningRule  # noqa: F401, E402
+from app.models.reverse_engineering_task import ReverseEngineeringTask  # noqa: F401, E402
+from app.models.merge_conflict import MergeConflict  # noqa: F401, E402
+from app.models.merge_history import MergeHistory  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -89,4 +92,7 @@ __all__ = [
     "StudentGroupMember",
     "InstitutionAssignment",
     "EarlyWarningRule",
+    "ReverseEngineeringTask",
+    "MergeConflict",
+    "MergeHistory",
 ]

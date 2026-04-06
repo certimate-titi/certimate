@@ -452,8 +452,24 @@ export const adminService = {
     return apiClient.delete(`/b2b/students/${studentId}`);
   },
 
+  async batchRemoveStudents(studentIds: string[]) {
+    return apiClient.post('/b2b/students/batch-remove', { student_ids: studentIds });
+  },
+
+  async deleteGroup(groupId: string) {
+    return apiClient.delete(`/b2b/groups/${groupId}`);
+  },
+
   async getStudentReport(studentId: string) {
     return apiClient.get(`/b2b/students/${studentId}/report`);
+  },
+
+  async getStudentCompetency(studentId: string) {
+    return apiClient.get(`/b2b/students/${studentId}/competency`);
+  },
+
+  async getAiSuggestions(studentId: string) {
+    return apiClient.post(`/b2b/students/${studentId}/ai-suggestions`, {});
   },
 
   async getClassWeakness(groupId: string) {
@@ -462,6 +478,14 @@ export const adminService = {
 
   async generateRemediationExam(groupId: string, questionCount = 20) {
     return apiClient.post(`/b2b/exam/remediation/${groupId}`, { question_count: questionCount });
+  },
+
+  async getRemediationDefaults(studentId: string) {
+    return apiClient.get(`/b2b/students/${studentId}/remediation-defaults`);
+  },
+
+  async createStudentRemediation(studentId: string, data: { question_count: number; competency_weights: { label: string; weight: number }[] }) {
+    return apiClient.post(`/b2b/students/${studentId}/remediation-exam`, data);
   },
 };
 

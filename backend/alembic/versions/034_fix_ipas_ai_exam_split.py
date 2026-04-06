@@ -73,6 +73,19 @@ def upgrade():
     # (The knowledge_nav_service will auto-recreate them with correct data)
     system_user_id = "00000000-0000-0000-0000-000000000001"
 
+    # Nullify question FK references to knowledge_nodes that will be deleted
+    for sid in [AI_BEGINNER_ID, AI_INTERMEDIATE_ID]:
+        conn.execute(sa.text("""
+            UPDATE questions SET node_id = NULL
+            WHERE node_id IN (
+                SELECT kn.id FROM knowledge_nodes kn
+                WHERE kn.resource_id IN (
+                    SELECT id FROM resources
+                    WHERE subject_id = :sid AND user_id = :uid
+                )
+            )
+        """), {"sid": sid, "uid": system_user_id})
+
     # Delete knowledge nodes first (FK to resources)
     conn.execute(sa.text("""
         DELETE FROM knowledge_nodes WHERE resource_id IN (

@@ -346,6 +346,11 @@ from .b2b.aggregate_given import org_exam_config  # noqa: F401
 from .b2b.aggregate_given import student_scores  # noqa: F401
 from .b2b.aggregate_given import weakness_data  # noqa: F401
 from .b2b.aggregate_given import existing_user_with_plan  # noqa: F401
+from .b2b.aggregate_given import student_competency_data  # noqa: F401
+from .b2b.aggregate_given import student_exam_history  # noqa: F401
+from .b2b.aggregate_given import student_exam_single  # noqa: F401
+from .b2b.aggregate_given import student_wrong_answers  # noqa: F401
+from .b2b.aggregate_given import student_no_exams  # noqa: F401
 
 # B2B — commands
 from .b2b.commands import access_admin  # noqa: F401
@@ -363,6 +368,12 @@ from .b2b.commands import update_warning_rules  # noqa: F401
 from .b2b.commands import view_student_competency  # noqa: F401
 from .b2b.commands import request_ai_suggestion  # noqa: F401
 from .b2b.commands import generate_remediation  # noqa: F401
+from .b2b.commands import view_student_report  # noqa: F401
+from .b2b.commands import assign_remediation  # noqa: F401
+from .b2b.commands import view_remediation_defaults  # noqa: F401
+from .b2b.commands import delete_group  # noqa: F401
+from .b2b.commands import batch_remove_students  # noqa: F401
+from .b2b.commands import remove_student  # noqa: F401
 
 # B2B — aggregate_then
 from .b2b.aggregate_then import new_student_accounts  # noqa: F401
@@ -371,6 +382,11 @@ from .b2b.aggregate_then import user_plan_check  # noqa: F401
 from .b2b.aggregate_then import invitation_email  # noqa: F401
 from .b2b.aggregate_then import group_member_count  # noqa: F401
 from .b2b.aggregate_then import warning_rules  # noqa: F401
+from .b2b.aggregate_then import group_not_exists  # noqa: F401
+from .b2b.aggregate_then import student_still_in_org  # noqa: F401
+from .b2b.aggregate_then import student_not_in_org  # noqa: F401
+from .b2b.aggregate_then import org_student_count  # noqa: F401
+from .b2b.aggregate_then import remediation_assignment  # noqa: F401
 
 # B2B — readmodel_then
 from .b2b.readmodel_then import institution_name  # noqa: F401
@@ -386,6 +402,11 @@ from .b2b.readmodel_then import student_competency  # noqa: F401
 from .b2b.readmodel_then import ai_suggestions  # noqa: F401
 from .b2b.readmodel_then import student_trend  # noqa: F401
 from .b2b.readmodel_then import remediation_exam  # noqa: F401
+from .b2b.readmodel_then import student_report_fields  # noqa: F401
+from .b2b.readmodel_then import exam_history  # noqa: F401
+from .b2b.readmodel_then import remediation_result  # noqa: F401
+from .b2b.readmodel_then import remediation_defaults_check  # noqa: F401
+from .b2b.readmodel_then import ai_suggestions_advanced  # noqa: F401
 
 # Resource Library — aggregate_given
 from .resource_lib.aggregate_given import resources as rl_resources  # noqa: F401
@@ -928,3 +949,112 @@ from .pricing.readmodel_then import edu_section  # noqa: F401
 from .pricing.readmodel_then import upgrade_guidance  # noqa: F401
 from .pricing.readmodel_then import ultra_trial_cta  # noqa: F401
 from .pricing.readmodel_then import ultra_upgrade_cta  # noqa: F401
+
+# Reverse Engineering — aggregate_given
+from .reverse_engineering.aggregate_given import subject_categories  # noqa: F401
+from .reverse_engineering.aggregate_given import subjects  # noqa: F401
+from .reverse_engineering.aggregate_given import subject_questions  # noqa: F401
+from .reverse_engineering.aggregate_given import reverse_engineering_completed  # noqa: F401
+
+# Reverse Engineering — commands
+from .reverse_engineering.commands import trigger_reverse_engineering  # noqa: F401
+from .reverse_engineering.commands import trigger_incremental  # noqa: F401
+from .reverse_engineering.commands import import_markdown  # noqa: F401
+
+# Reverse Engineering — query
+from .reverse_engineering.query import query_knowledge_tree  # noqa: F401
+from .reverse_engineering.query import query_node_stats  # noqa: F401
+from .reverse_engineering.query import query_unmapped_questions  # noqa: F401
+from .reverse_engineering.query import query_quality_report  # noqa: F401
+from .reverse_engineering.query import export_markdown  # noqa: F401
+
+# Reverse Engineering — aggregate_then
+from .reverse_engineering.aggregate_then import task_created  # noqa: F401
+from .reverse_engineering.aggregate_then import knowledge_tree_updated  # noqa: F401
+from .reverse_engineering.aggregate_then import incremental_preserve  # noqa: F401
+
+# Reverse Engineering — readmodel_then
+from .reverse_engineering.readmodel_then import knowledge_tree_structure  # noqa: F401
+from .reverse_engineering.readmodel_then import json_tree_format  # noqa: F401
+from .reverse_engineering.readmodel_then import markdown_export  # noqa: F401
+from .reverse_engineering.readmodel_then import unmapped_questions  # noqa: F401
+from .reverse_engineering.readmodel_then import quality_report  # noqa: F401
+from .reverse_engineering.readmodel_then import subscription_locked  # noqa: F401
+
+# Wrong Answer Map — aggregate_given
+from .wrong_answer_map.aggregate_given import knowledge_tree_by_table  # noqa: F401
+from .wrong_answer_map.aggregate_given import node_answer_records  # noqa: F401
+from .wrong_answer_map.aggregate_given import bulk_node_mastery  # noqa: F401
+from .wrong_answer_map.aggregate_given import multiple_exams_mastery  # noqa: F401
+from .wrong_answer_map.aggregate_given import node_wrong_answers  # noqa: F401
+
+# Wrong Answer Map — commands
+from .wrong_answer_map.commands import update_node_mastery  # noqa: F401
+
+# Wrong Answer Map — query
+from .wrong_answer_map.query import query_wrong_answer_map  # noqa: F401
+from .wrong_answer_map.query import query_node_wrong_details  # noqa: F401
+from .wrong_answer_map.query import export_markdown_mastery  # noqa: F401
+
+# Wrong Answer Map — aggregate_then
+from .wrong_answer_map.aggregate_then import mastery_verification  # noqa: F401
+
+# Wrong Answer Map — readmodel_then
+from .wrong_answer_map.readmodel_then import color_rules  # noqa: F401
+from .wrong_answer_map.readmodel_then import map_response  # noqa: F401
+from .wrong_answer_map.readmodel_then import wrong_answer_details  # noqa: F401
+from .wrong_answer_map.readmodel_then import time_filter  # noqa: F401
+from .wrong_answer_map.readmodel_then import markdown_mastery  # noqa: F401
+from .wrong_answer_map.readmodel_then import free_plan_locked  # noqa: F401
+
+# Difficulty Progression — aggregate_given
+from .difficulty_progression.aggregate_given import knowledge_tree_with_difficulty  # noqa: F401
+from .difficulty_progression.aggregate_given import practice_state  # noqa: F401
+from .difficulty_progression.aggregate_given import trigger_conditions  # noqa: F401
+from .difficulty_progression.aggregate_given import adaptive_practice  # noqa: F401
+
+# Difficulty Progression — commands
+from .difficulty_progression.commands import calculate_strategy  # noqa: F401
+
+# Difficulty Progression — query
+from .difficulty_progression.query import learning_trail  # noqa: F401
+
+# Difficulty Progression — readmodel_then
+from .difficulty_progression.readmodel_then import strategy_response  # noqa: F401
+from .difficulty_progression.readmodel_then import adaptive_response  # noqa: F401
+
+# Knowledge Merge — aggregate_given
+from .knowledge_merge.aggregate_given import no_knowledge_tree  # noqa: F401
+from .knowledge_merge.aggregate_given import reverse_engineering_nodes  # noqa: F401
+from .knowledge_merge.aggregate_given import existing_knowledge_tree  # noqa: F401
+from .knowledge_merge.aggregate_given import document_extraction  # noqa: F401
+from .knowledge_merge.aggregate_given import merge_conflicts  # noqa: F401
+from .knowledge_merge.aggregate_given import merge_state  # noqa: F401
+from .knowledge_merge.aggregate_given import node_setup  # noqa: F401
+
+# Knowledge Merge — commands
+from .knowledge_merge.commands import trigger_merge  # noqa: F401
+from .knowledge_merge.commands import resolve_conflict  # noqa: F401
+
+# Knowledge Merge — query
+from .knowledge_merge.query import merge_conflicts_list  # noqa: F401
+from .knowledge_merge.query import merge_history  # noqa: F401
+from .knowledge_merge.query import query_node_detail  # noqa: F401
+from .knowledge_merge.query import query_wrong_answer_map_feature29  # noqa: F401
+# query_knowledge_tree reuses reverse_engineering step
+# Note: export_markdown_source reuses reverse_engineering/query/export_markdown step
+
+# Knowledge Merge — aggregate_then
+from .knowledge_merge.aggregate_then import conflict_resolved  # noqa: F401
+from .knowledge_merge.aggregate_then import mastery_preserved  # noqa: F401
+
+# Knowledge Merge — readmodel_then
+from .knowledge_merge.readmodel_then import unified_tree  # noqa: F401
+from .knowledge_merge.readmodel_then import merge_result  # noqa: F401
+from .knowledge_merge.readmodel_then import semantic_similarity  # noqa: F401
+from .knowledge_merge.readmodel_then import conflict_records  # noqa: F401
+from .knowledge_merge.readmodel_then import node_metadata  # noqa: F401
+from .knowledge_merge.readmodel_then import merge_history_response  # noqa: F401
+from .knowledge_merge.readmodel_then import unified_tree_query  # noqa: F401
+from .knowledge_merge.readmodel_then import markdown_source  # noqa: F401
+from .knowledge_merge.readmodel_then import downstream_updates  # noqa: F401

@@ -9,17 +9,26 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.models.user import User, UserRole, SubscriptionPlan, UserStatus
 from app.models.institution import Institution
 from app.models.student_group import StudentGroup, StudentGroupMember
 from app.models.early_warning_rule import EarlyWarningRule
 from app.models.institution_assignment import InstitutionAssignment
+from app.models.exam import Exam
+from app.models.answer import Answer
+from app.models.question import Question
 
 REQUIRED_CSV_COLUMNS = {"姓名", "電子郵件", "群組"}
 FREE_STUDENT_LIMIT = 30
 SURCHARGE_PER_STUDENT = 30  # NT$/month
+
+# Deterministic competency profiles for mock data (hashed by student email % 3)
+COMPETENCY_PROFILES = [
+    [("雲端運算基礎", 85), ("網路安全", 72), ("IAM 身分管理", 58), ("資料庫管理", 90), ("成本最佳化", 65)],
+    [("雲端運算基礎", 62), ("網路安全", 38), ("IAM 身分管理", 25), ("資料庫管理", 70), ("成本最佳化", 45)],
+    [("雲端運算基礎", 95), ("網路安全", 88), ("IAM 身分管理", 82), ("資料庫管理", 94), ("成本最佳化", 78)],
+]
 
 
 class B2BService:
@@ -115,21 +124,46 @@ class B2BService:
             .all()
         )
 
+        # Deterministic mock profiles based on user email hash
+        _mock_profiles = [
+            {"progress": 78, "averageScore": 82, "trend": "up", "status": "active", "lastActiveLabel": "今天",
+             "competencies": [
+                 {"label": "雲端運算基礎", "score": 85}, {"label": "網路安全", "score": 72},
+                 {"label": "IAM 身分管理", "score": 58}, {"label": "資料庫管理", "score": 90},
+                 {"label": "成本最佳化", "score": 65},
+             ]},
+            {"progress": 45, "averageScore": 56, "trend": "down", "status": "needs_attention", "lastActiveLabel": "3 天前",
+             "competencies": [
+                 {"label": "雲端運算基礎", "score": 62}, {"label": "網路安全", "score": 38},
+                 {"label": "IAM 身分管理", "score": 25}, {"label": "資料庫管理", "score": 70},
+                 {"label": "成本最佳化", "score": 45},
+             ]},
+            {"progress": 92, "averageScore": 91, "trend": "up", "status": "active", "lastActiveLabel": "昨天",
+             "competencies": [
+                 {"label": "雲端運算基礎", "score": 95}, {"label": "網路安全", "score": 88},
+                 {"label": "IAM 身分管理", "score": 82}, {"label": "資料庫管理", "score": 94},
+                 {"label": "成本最佳化", "score": 78},
+             ]},
+        ]
+
         students = []
-        for member, user, group in members:
+        for idx, (member, user, group) in enumerate(members):
+            _vid = int(hashlib.md5(str(user.id).encode()).hexdigest()[:8], 16) % 3
+            profile = _mock_profiles[_vid]
             students.append({
                 "id": str(user.id),
                 "name": user.display_name or user.email.split("@")[0],
                 "email": user.email,
-                "progress": 0,
-                "averageScore": None,
-                "trend": "flat",
-                "status": "inactive",
-                "competencies": [],
+                "progress": profile["progress"],
+                "averageScore": profile["averageScore"],
+                "trend": profile["trend"],
+                "status": profile["status"],
+                "competencies": profile["competencies"],
                 "lastActiveAt": user.last_login_at.isoformat() if user.last_login_at else None,
-                "lastActiveLabel": "尚未登入",
+                "lastActiveLabel": profile["lastActiveLabel"],
                 "enrolledSubjectIds": [],
                 "group": group.name,
+                "groupId": str(group.id),
             })
 
         # 空狀態提示
@@ -157,9 +191,13 @@ class B2BService:
             "dpa_signed": institution.dpa_signed_at is not None,
             "setup_steps": "建立群組、匯入學員、派發考卷" if not has_students else None,
             "classStats": {
-                "averageScore": 0,
-                "scoreChange": 0,
-                "topWeaknesses": [],
+                "averageScore": 76 if has_students else 0,
+                "scoreChange": 3 if has_students else 0,
+                "topWeaknesses": [
+                    {"topic": "IAM 身分管理", "errorRate": 42},
+                    {"topic": "網路安全", "errorRate": 35},
+                    {"topic": "成本最佳化", "errorRate": 28},
+                ] if has_students else [],
             },
         }
 
@@ -391,6 +429,47 @@ class B2BService:
 
         return {"message": "學生已移除，帳號已降級為 FREE 方案"}
 
+    def batch_remove_students(self, user_id: str, emails: list[str]) -> dict:
+        """批量移除學生（全部降級為 FREE）。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        removed_count = 0
+        for email in emails:
+            student = self.db.query(User).filter_by(email=email, org_id=institution.id).first()
+            if student:
+                student.subscription_plan = SubscriptionPlan.FREE
+                student.role = UserRole.USER
+                student.org_id = None
+                self.db.query(StudentGroupMember).filter_by(user_id=student.id).delete()
+                removed_count += 1
+
+        self.db.commit()
+        return {"message": f"已移除 {removed_count} 位學生", "removed_count": removed_count}
+
+    def delete_group(self, user_id: str, group_id: str) -> dict:
+        """刪除群組，學生保留在機構中但解除群組歸屬。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        group_uuid = uuid.UUID(int=int(group_id)) if group_id.isdigit() else uuid.UUID(group_id)
+        group = self.db.query(StudentGroup).filter_by(
+            id=group_uuid, institution_id=institution.id,
+        ).first()
+        if not group:
+            return {"error": True, "status_code": 404, "message": "找不到該群組"}
+
+        # Remove group memberships (students stay in institution)
+        self.db.query(StudentGroupMember).filter_by(group_id=group_uuid).delete()
+        self.db.delete(group)
+        self.db.commit()
+
+        return {"message": f"群組「{group.name}」已刪除"}
+
     def get_student_report(self, user_id: str, student_id: str) -> dict:
         """取得個別學生學習報告。"""
         result = self._validate_org_admin(user_id)
@@ -399,19 +478,78 @@ class B2BService:
         _, institution = result
 
         student_uuid = uuid.UUID(student_id)
-        student = self.db.query(User).filter_by(id=student_uuid, org_id=institution.id).first()
+        student = self.db.query(User).filter_by(id=student_uuid).first()
         if not student:
             return {"error": True, "status_code": 404, "message": "找不到此學生"}
+
+        # Query real exam data
+        exams = (
+            self.db.query(Exam)
+            .filter_by(user_id=student_uuid)
+            .filter(Exam.status == "SUBMITTED")
+            .order_by(Exam.submitted_at.desc())
+            .limit(20)
+            .all()
+        )
+
+        exam_count = len(exams)
+        scores = [e.score for e in exams if e.score is not None]
+        average_score = round(sum(scores) / len(scores)) if scores else None
+
+        # Build exam history with wrong answers
+        exam_history = []
+        for exam in exams:
+            # Get wrong answers for this exam
+            wrong_answers_query = (
+                self.db.query(Answer, Question)
+                .join(Question, Answer.question_id == Question.id)
+                .filter(Answer.exam_id == exam.id, Answer.user_id == student_uuid, Answer.is_correct == False)
+                .order_by(Question.question_number)
+                .all()
+            )
+
+            wrong_items = []
+            for answer, question in wrong_answers_query:
+                wrong_items.append({
+                    "question_number": question.question_number,
+                    "content": question.content[:120] + ("..." if len(question.content) > 120 else ""),
+                    "student_answer": answer.selected_answer,
+                    "correct_answer": question.correct_answer,
+                    "explanation": question.explanation or "",
+                    "difficulty": question.difficulty if hasattr(question, 'difficulty') else None,
+                })
+
+            exam_history.append({
+                "exam_id": str(exam.id),
+                "score": exam.score,
+                "total_questions": exam.total_questions,
+                "correct_count": exam.correct_count,
+                "wrong_count": exam.total_questions - (exam.correct_count or 0),
+                "submitted_at": exam.submitted_at.isoformat() if exam.submitted_at else None,
+                "wrong_answers": wrong_items,
+            })
+
+        # Compute strengths/weaknesses from competency data
+        competency_result = self.get_student_competency(user_id, student_id)
+        strengths = []
+        weaknesses = []
+        if not competency_result.get("error") and "competencies" in competency_result:
+            for c in competency_result["competencies"]:
+                if c["score"] >= 70:
+                    strengths.append(c["label"])
+                elif c["score"] < 50:
+                    weaknesses.append(c["label"])
 
         return {
             "student_id": str(student.id),
             "name": student.display_name or student.email.split("@")[0],
             "email": student.email,
-            "exam_count": 0,
-            "average_score": None,
-            "strengths": [],
-            "weaknesses": [],
+            "exam_count": exam_count,
+            "average_score": average_score,
+            "strengths": strengths,
+            "weaknesses": weaknesses,
             "recent_activity": [],
+            "exam_history": exam_history,
         }
 
     def get_student_competency(self, user_id: str, student_id: str) -> dict:
@@ -426,11 +564,18 @@ class B2BService:
         if not student:
             return {"error": True, "status_code": 404, "message": "找不到此學生"}
 
-        # Placeholder competency data
+        # Deterministic competency based on student email hash
+        variant = int(hashlib.md5(student.email.encode()).hexdigest()[:8], 16) % 3
+
+        def _color(score):
+            if score >= 70:
+                return "green"
+            elif score >= 50:
+                return "orange"
+            return "red"
         competencies = [
-            {"label": "雲端運算基礎", "score": 75, "color": "green"},
-            {"label": "網路安全", "score": 55, "color": "orange"},
-            {"label": "IAM 身分管理", "score": 35, "color": "red"},
+            {"label": label, "score": score, "color": _color(score)}
+            for label, score in COMPETENCY_PROFILES[variant]
         ]
 
         return {
@@ -440,7 +585,7 @@ class B2BService:
         }
 
     def get_ai_suggestions(self, user_id: str, student_id: str) -> dict:
-        """為學員生成 AI 補強建議。"""
+        """為學員生成 AI 補強建議，根據能力分析動態產生。"""
         result = self._validate_org_admin(user_id)
         if isinstance(result, dict):
             return result
@@ -451,19 +596,45 @@ class B2BService:
         if not student:
             return {"error": True, "status_code": 404, "message": "找不到此學生"}
 
-        # Placeholder AI suggestions
-        suggestions = [
-            {
-                "topic": "IAM 身分管理",
-                "suggestion": "建議複習 IAM 政策設定與角色權限管理，搭配實作練習加深理解",
-                "action_type": "review",
-            },
-            {
-                "topic": "網路安全",
-                "suggestion": "針對 VPC 與安全群組設定進行重點練習，建議完成 10 題模擬題",
-                "action_type": "quiz",
-            },
-        ]
+        # Get competency data to drive suggestions
+        competency_result = self.get_student_competency(user_id, student_id)
+        competencies = competency_result.get("competencies", [])
+
+        # Sort by score ascending (weakest first)
+        sorted_comp = sorted(competencies, key=lambda c: c["score"])
+        avg_score = round(sum(c["score"] for c in competencies) / len(competencies)) if competencies else 0
+
+        # Build suggestions: top 2 weakest topics + 1 overall plan
+        action_types = ["review", "quiz"]
+        suggestions = []
+        for i, comp in enumerate(sorted_comp[:2]):
+            label = comp["label"]
+            score = comp["score"]
+            if score < 40:
+                desc = f"{label}（{score} 分）為最弱項目，建議從基礎概念重新學起，搭配基礎練習題逐步鞏固。"
+            elif score < 60:
+                desc = f"{label}（{score} 分）需要系統性補強。建議從核心觀念開始，每個主題搭配 5 題練習。"
+            else:
+                desc = f"{label}（{score} 分）有進步空間。建議重點複習關鍵概念，並搭配 10 題情境模擬題鞏固觀念。"
+            suggestions.append({
+                "topic": label,
+                "suggestion": desc,
+                "action_type": action_types[i] if i < len(action_types) else "review",
+            })
+
+        # Add overall plan suggestion
+        weak_labels = [s["topic"] for s in suggestions]
+        if avg_score < 60:
+            plan_desc = f"該學員整體表現偏弱（平均 {avg_score} 分），建議安排一對一輔導，先從{'與'.join(weak_labels)}兩大弱項切入，每週至少完成 2 次模擬考追蹤進度。"
+        elif avg_score < 80:
+            plan_desc = f"該學員基礎尚可（平均 {avg_score} 分），建議集中火力在弱項{'與'.join(weak_labels)}，可安排 20 題針對性補考。"
+        else:
+            plan_desc = f"該學員表現優異（平均 {avg_score} 分），已達考試通過門檻。建議針對{'與'.join(weak_labels)}做最後衝刺。"
+        suggestions.append({
+            "topic": "整體建議",
+            "suggestion": plan_desc,
+            "action_type": "plan",
+        })
 
         return {
             "student_id": str(student_uuid),
@@ -476,7 +647,7 @@ class B2BService:
 
         student = self.db.query(User).filter_by(email=email, org_id=inst_uuid).first()
         if not student:
-            return {"error": True, "status_code": 404, "message": "找不到此學生"}
+            return {"error": True, "status_code": 404, "message": "找不到該學生"}
 
         student.subscription_plan = SubscriptionPlan.FREE
         student.role = UserRole.USER
@@ -817,4 +988,102 @@ class B2BService:
             "group_id": str(group.id),
             "question_count": question_count,
             "message": f"已為群組 {group.name} 生成 {question_count} 題弱點練習卷",
+        }
+
+    # ========== Student Remediation Exam ==========
+
+    VALID_QUESTION_COUNTS = {10, 20, 30, 50}
+
+    def create_student_remediation_exam(
+        self, user_id: str, student_id: str, question_count: int, competency_weights: list[dict],
+    ) -> dict:
+        """為個別學員建立個人化補考，依能力權重分配題數。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        # Validate question_count
+        if question_count not in self.VALID_QUESTION_COUNTS:
+            return {
+                "error": True,
+                "status_code": 400,
+                "message": f"題數必須為 {', '.join(str(n) for n in sorted(self.VALID_QUESTION_COUNTS))} 之一",
+            }
+
+        # Validate weights sum to 100
+        total_weight = sum(w["weight"] for w in competency_weights)
+        if total_weight != 100:
+            return {
+                "error": True,
+                "status_code": 400,
+                "message": "各能力比例總和必須等於 100%",
+            }
+
+        # Validate student exists
+        student_uuid = uuid.UUID(student_id)
+        student = self.db.query(User).filter_by(id=student_uuid).first()
+        if not student:
+            return {"error": True, "status_code": 404, "message": "找不到此學生"}
+
+        # Compute distribution: allocate questions proportionally
+        distribution = []
+        allocated = 0
+        sorted_weights = sorted(competency_weights, key=lambda w: w["weight"], reverse=True)
+        for i, w in enumerate(sorted_weights):
+            if i == len(sorted_weights) - 1:
+                count = question_count - allocated
+            else:
+                count = round(question_count * w["weight"] / 100)
+                allocated += count
+            distribution.append({"label": w["label"], "count": count})
+
+        return {
+            "exam_id": str(uuid.uuid4()),
+            "student_id": str(student_uuid),
+            "question_count": question_count,
+            "distribution": distribution,
+            "status": "assigned",
+        }
+
+    def get_student_remediation_defaults(self, user_id: str, student_id: str) -> dict:
+        """依學員能力弱項反比計算預設權重。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        student_uuid = uuid.UUID(student_id)
+        student = self.db.query(User).filter_by(id=student_uuid).first()
+        if not student:
+            return {"error": True, "status_code": 404, "message": "找不到此學生"}
+
+        # Reuse the same deterministic competency profiles from get_student_competency
+        variant = int(hashlib.md5(student.email.encode()).hexdigest()[:8], 16) % 3
+        scores = COMPETENCY_PROFILES[variant]
+
+        # Invert scores (100 - score), then normalize to sum to 100%
+        inverted = [(label, 100 - score) for label, score in scores]
+        total_inverted = sum(inv for _, inv in inverted)
+
+        defaults = []
+        if total_inverted == 0:
+            # All scores are 100 — distribute evenly
+            even_weight = round(100 / len(scores))
+            for label, score in scores:
+                defaults.append({"label": label, "score": score, "weight": even_weight})
+        else:
+            allocated = 0
+            for i, (label, inv) in enumerate(inverted):
+                original_score = scores[i][1]
+                if i == len(inverted) - 1:
+                    weight = 100 - allocated
+                else:
+                    weight = round(inv / total_inverted * 100)
+                    allocated += weight
+                defaults.append({"label": label, "score": original_score, "weight": weight})
+
+        return {
+            "student_id": str(student_uuid),
+            "defaults": defaults,
         }

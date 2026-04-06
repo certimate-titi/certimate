@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  Users, FileSpreadsheet, Send, BarChart3, Search, MoreVertical,
+  Users, FileSpreadsheet, Send, BarChart3, Search, Trash2,
   ShieldCheck, TrendingUp, TrendingDown, Minus, AlertTriangle,
   Sparkles, ChevronRight, Brain, Target, Clock, CheckCircle2,
-  Upload, Download, X, FileText, AlertCircle
+  Upload, Download, X, FileText, AlertCircle, ExternalLink
 } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
@@ -424,8 +424,6 @@ export default function EduConsolePage() {
   const router = useRouter();
   const { loading: authLoading, isAuthenticated } = useAuth();
   const [search, setSearch] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
   const [students, setStudents] = useState<Student[]>([]);
   const [classStats, setClassStats] = useState<GetStudentListResponse['classStats']>({
     averageScore: 0,
@@ -443,9 +441,12 @@ export default function EduConsolePage() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeGroup, setActiveGroup] = useState<string>('all');
+  const [deleteGroupConfirm, setDeleteGroupConfirm] = useState('');
 
   // 獲取學員資料（B2B dashboard 直接回傳機構學員）
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
     const fetchData = async () => {
       setIsLoading(true);
       setIsEmpty(false);
@@ -465,7 +466,7 @@ export default function EduConsolePage() {
       }
     };
     fetchData();
-  }, [refreshKey]);
+  }, [refreshKey, authLoading, isAuthenticated]);
 
 
   // 從學員資料提取群組列表
@@ -552,6 +553,58 @@ export default function EduConsolePage() {
           </div>
         </div>
       )}
+
+      {/* Group Management Bar — only when a specific group is selected */}
+      {activeGroup !== 'all' && !isLoading && !isEmpty && (() => {
+        const groupStudentObj = students.find(s => s.group === activeGroup);
+        const groupId = groupStudentObj?.groupId ?? '';
+        const memberCount = students.filter(s => s.group === activeGroup).length;
+        return (
+          <div className="bg-white border-b border-slate-200 px-6 py-3">
+            <div className="container mx-auto max-w-6xl flex items-center justify-between">
+              <span className="text-sm text-slate-500">
+                群組「<span className="font-semibold text-slate-700">{activeGroup}</span>」共 {memberCount} 位成員
+              </span>
+              <div className="flex items-center gap-2">
+                {deleteGroupConfirm === activeGroup ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-rose-600">輸入群組名稱確認刪除：</span>
+                    <input
+                      autoFocus
+                      placeholder={activeGroup}
+                      className="px-2 py-1 border border-rose-300 rounded-lg text-sm w-40 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                      onKeyDown={async e => {
+                        if (e.key === 'Enter' && (e.target as HTMLInputElement).value === activeGroup) {
+                          try {
+                            await adminService.deleteGroup(groupId);
+                            setActiveGroup('all');
+                            setDeleteGroupConfirm('');
+                            refreshData();
+                          } catch { alert('刪除群組失敗'); }
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => setDeleteGroupConfirm('')}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      取消
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeleteGroupConfirm(activeGroup)}
+                    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-rose-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    刪除此群組
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-6 lg:p-8">
@@ -667,7 +720,7 @@ export default function EduConsolePage() {
                       </p>
                     </div>
                     <button className="shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-                      onClick={() => alert('此功能即將推出，敬請期待！')}>
+                      onClick={() => router.push(`/edu-console/student/${s.id}`)}>
                       查看詳情
                     </button>
                   </div>
@@ -764,87 +817,50 @@ export default function EduConsolePage() {
 
               <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
                 {filtered.map(s => (
-                  <div key={s.id}>
-                    {/* Row */}
-                    <div
-                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer"
-                      onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                    >
-                      {/* Avatar */}
-                      <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-sm font-bold text-indigo-600">
-                        {s.name[0]}
-                      </div>
-
-                      {/* Name + email */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-900 text-sm">{s.name}</span>
-                          <TrendIcon trend={s.trend} />
-                        </div>
-                        <span className="text-xs text-slate-400">{s.email}</span>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="hidden sm:flex items-center gap-2 w-28">
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${s.progress >= 70 ? 'bg-emerald-500' : s.progress >= 40 ? 'bg-amber-400' : 'bg-slate-300'}`}
-                            style={{ width: `${s.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-slate-500 w-8 text-right">{s.progress}%</span>
-                      </div>
-
-                      {/* Score */}
-                      <div className="w-10 text-right">
-                        <span className={`text-sm font-bold ${(s.averageScore || 0) >= 70 ? 'text-emerald-600' : (s.averageScore || 0) >= 50 ? 'text-amber-600' : 'text-slate-400'}`}>
-                          {s.averageScore || '—'}
-                        </span>
-                      </div>
-
-                      {/* Status */}
-                      <div className="w-16 flex justify-center">
-                        <StatusBadge status={s.status} />
-                      </div>
-
-                      {/* More */}
-                      <button
-                        className="text-slate-400 hover:text-slate-600 shrink-0"
-                        onClick={e => { e.stopPropagation(); alert('此功能即將推出，敬請期待！'); }}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/edu-console/student/${s.id}`)}
+                  >
+                    {/* Avatar */}
+                    <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-sm font-bold text-indigo-600">
+                      {s.name[0]}
                     </div>
 
-                    {/* ── Expanded: Competency Profile (Redmenta: per-student skill breakdown) ── */}
-                    {expandedId === s.id && (
-                      <div className="bg-slate-50 px-5 py-4 border-t border-slate-100">
-                        <div className="flex items-start gap-6">
-                          {/* Competency bars */}
-                          <div className="flex-1 space-y-2">
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">能力分析</p>
-                            {s.competencies.map(c => (
-                              <CompetencyBar key={c.label} {...c} />
-                            ))}
-                          </div>
-                          {/* Actions */}
-                          <div className="shrink-0 flex flex-col gap-2 items-end">
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">操作</p>
-                            <button className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-                              onClick={() => alert('此功能即將推出，敬請期待！')}>
-                              <Sparkles className="h-3.5 w-3.5" />
-                              AI 個人化補強建議
-                            </button>
-                            <button className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-                              onClick={() => alert('此功能即將推出，敬請期待！')}>
-                              <Send className="h-3.5 w-3.5" />
-                              指派補考
-                            </button>
-                            <span className="text-xs text-slate-400 mt-1">最後活躍：{s.lastActiveLabel}</span>
-                          </div>
-                        </div>
+                    {/* Name + email */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-900 text-sm">{s.name}</span>
+                        <TrendIcon trend={s.trend} />
                       </div>
-                    )}
+                      <span className="text-xs text-slate-400">{s.email}</span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="hidden sm:flex items-center gap-2 w-28">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${s.progress >= 70 ? 'bg-emerald-500' : s.progress >= 40 ? 'bg-amber-400' : 'bg-slate-300'}`}
+                          style={{ width: `${s.progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-slate-500 w-8 text-right">{s.progress}%</span>
+                    </div>
+
+                    {/* Score */}
+                    <div className="w-10 text-right">
+                      <span className={`text-sm font-bold ${(s.averageScore || 0) >= 70 ? 'text-emerald-600' : (s.averageScore || 0) >= 50 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {s.averageScore || '—'}
+                      </span>
+                    </div>
+
+                    {/* Status */}
+                    <div className="w-16 flex justify-center">
+                      <StatusBadge status={s.status} />
+                    </div>
+
+                    {/* Detail link */}
+                    <ExternalLink className="h-4 w-4 text-slate-400 hover:text-indigo-500 shrink-0" />
                   </div>
                 ))}
               </div>

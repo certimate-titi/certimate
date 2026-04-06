@@ -86,3 +86,6 @@ class Question(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     retention_reason: Mapped[str | None] = mapped_column(String(50))
+    suggested_node_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+    )

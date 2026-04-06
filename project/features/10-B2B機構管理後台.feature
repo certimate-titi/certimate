@@ -286,6 +286,170 @@ Feature: B2B 機構管理後台
       When 使用者 "student1@school.com" 為學員 5 請求 AI 補強建議
       Then 操作失敗，錯誤為「您沒有機構管理員權限」
 
+    Example: AI 補強建議應根據學員能力弱項提供分級建議
+      Given 學員 "student2@school.com" 的能力分析為：
+        | 知識節點     | 分數 |
+        | 雲端運算基礎 | 62   |
+        | 網路安全     | 38   |
+        | IAM 身分管理 | 25   |
+        | 資料庫管理   | 70   |
+        | 成本最佳化   | 45   |
+      When 使用者 "org-admin@school.com" 為學員 5 請求 AI 補強建議
+      Then 操作成功
+      And 回應應包含至少 3 條建議
+      And 建議應優先針對分數最低的能力（IAM 身分管理、網路安全）
+      And 回應應包含一條 action_type 為 "plan" 的整體建議
+
+  # ========== 學員詳情報告 ==========
+
+  Rule: 後置（回應）- 學員詳情報告應回傳考試統計與強弱項分析
+
+    Example: 查看學員詳情報告取得考試摘要與強弱項
+      Given 學員 "student1@school.com" 已完成以下考試：
+        | 考試 ID | 分數 | 總題數 | 正確數 | 繳交時間                 |
+        | 1       | 88   | 20     | 18     | 2026-04-03T14:30:00+08:00 |
+        | 2       | 78   | 20     | 16     | 2026-03-28T10:15:00+08:00 |
+        | 3       | 70   | 20     | 14     | 2026-03-20T16:45:00+08:00 |
+      When 使用者 "org-admin@school.com" 查看學員 4 的詳情報告
+      Then 操作成功
+      And 回應應包含：
+        | 欄位          | 值               |
+        | student_id    | 4                |
+        | exam_count    | 3                |
+        | average_score | 79               |
+      And 回應應包含 strengths 列表（分數 >= 70 的能力節點）
+      And 回應應包含 weaknesses 列表（分數 < 50 的能力節點）
+
+    Example: 非機構管理員無法查看學員詳情報告
+      When 使用者 "student1@school.com" 查看學員 5 的詳情報告
+      Then 操作失敗，錯誤為「您沒有機構管理員權限」
+
+    Example: 查看不存在的學員詳情報告回傳錯誤
+      When 使用者 "org-admin@school.com" 查看學員 999 的詳情報告
+      Then 操作失敗，錯誤為「找不到此學生」
+
+  # ========== 考試歷程與錯題詳情 ==========
+
+  Rule: 後置（回應）- 學員詳情報告中的考試歷程應包含每次考試的錯題詳情
+
+    Example: 考試歷程包含錯題的題號、內容、作答與解析
+      Given 學員 "student1@school.com" 已完成考試 1（分數 88，共 20 題）
+      And 考試 1 中學員答錯以下題目：
+        | 題號 | 題目內容                                             | 學生作答 | 正確答案 | 難度   | 解析                                                         |
+        | 7    | 在 AWS 中，下列哪個服務負責管理使用者身分與存取權限？ | C        | B        | medium | IAM 是 AWS 負責管理使用者、群組及其存取權限的核心服務         |
+        | 15   | VPC 中的 NAT Gateway 主要功能為何？                  | A        | D        | hard   | NAT Gateway 允許私有子網路中的資源連線到網際網路，但不允許外部主動連入 |
+      When 使用者 "org-admin@school.com" 查看學員 4 的詳情報告
+      Then 操作成功
+      And 回應中 exam_history 應包含 1 筆考試紀錄
+      And 該考試紀錄的 wrong_answers 應包含 2 筆錯題
+      And 每筆錯題應包含：
+        | 欄位            | 說明                 |
+        | question_number | 題號                 |
+        | content         | 題目內容（前 120 字）|
+        | student_answer  | 學生作答選項         |
+        | correct_answer  | 正確答案選項         |
+        | explanation     | 解析說明             |
+        | difficulty      | easy / medium / hard |
+
+    Example: 無考試記錄的學員報告中考試歷程為空陣列
+      Given 學員 "student2@school.com" 尚未完成任何考試
+      When 使用者 "org-admin@school.com" 查看學員 5 的詳情報告
+      Then 操作成功
+      And 回應中 exam_count 應為 0
+      And 回應中 exam_history 應為空陣列
+
+  # ========== 指派補考（個人化補救試卷） ==========
+
+  Rule: 命令（寫入）- 機構管理員可為學員指派個人化補考，按能力比例分配題數
+
+    Example: 指派補考設定各能力比例成功
+      When 使用者 "org-admin@school.com" 為學員 4 指派補考，設定如下：
+        | 總題數 | 20 |
+      And 各能力比例設定為：
+        | 能力節點     | 比例 |
+        | 雲端運算基礎 | 10%  |
+        | 網路安全     | 20%  |
+        | IAM 身分管理 | 35%  |
+        | 資料庫管理   | 5%   |
+        | 成本最佳化   | 30%  |
+      Then 操作成功
+      And 系統應生成包含 20 題的補救試卷
+      And 試卷中各能力的題數分配應為：
+        | 能力節點     | 題數 |
+        | 雲端運算基礎 | 2    |
+        | 網路安全     | 4    |
+        | IAM 身分管理 | 7    |
+        | 資料庫管理   | 1    |
+        | 成本最佳化   | 6    |
+      And 系統應自動將補救試卷指派給學員 4
+
+    Example: 各能力比例總和不等於 100% 時指派失敗
+      When 使用者 "org-admin@school.com" 為學員 4 指派補考，設定如下：
+        | 總題數 | 20 |
+      And 各能力比例設定為：
+        | 能力節點     | 比例 |
+        | 雲端運算基礎 | 10%  |
+        | 網路安全     | 20%  |
+        | IAM 身分管理 | 35%  |
+      Then 操作失敗，錯誤為「各能力比例總和必須等於 100%」
+
+    Example: 支援不同總題數選項
+      When 使用者 "org-admin@school.com" 為學員 4 指派補考，設定如下：
+        | 總題數 | 50 |
+      And 各能力比例設定為：
+        | 能力節點     | 比例 |
+        | 雲端運算基礎 | 20%  |
+        | 網路安全     | 20%  |
+        | IAM 身分管理 | 20%  |
+        | 資料庫管理   | 20%  |
+        | 成本最佳化   | 20%  |
+      Then 操作成功
+      And 系統應生成包含 50 題的補救試卷
+      And 各能力應各分配 10 題
+
+    Example: 非機構管理員無法指派補考
+      When 使用者 "student1@school.com" 為學員 5 指派補考，設定如下：
+        | 總題數 | 20 |
+      And 各能力比例設定為：
+        | 能力節點     | 比例  |
+        | 雲端運算基礎 | 100%  |
+      Then 操作失敗，錯誤為「您沒有機構管理員權限」
+
+  Rule: 後置（回應）- 補考預設比例應依學員弱項自動反向分配
+
+    Example: 系統自動計算補考預設比例
+      Given 學員 "student1@school.com" 的能力分析為：
+        | 知識節點     | 分數 |
+        | 雲端運算基礎 | 85   |
+        | 網路安全     | 72   |
+        | IAM 身分管理 | 58   |
+        | 資料庫管理   | 90   |
+        | 成本最佳化   | 65   |
+      When 使用者 "org-admin@school.com" 查看學員 4 的補考預設比例
+      Then 操作成功
+      And 弱項能力（分數較低）應獲得較高的預設比例
+      And 各能力的預設比例總和應等於 100%
+
+  # ========== 學員複習排程 ==========
+
+  @ignore
+  Rule: 後置（回應）- 機構管理員可查看學員的艾賓浩斯複習排程
+
+    Example: 查看學員複習排程取得未來複習日程
+      When 使用者 "org-admin@school.com" 查看學員 4 的複習排程
+      Then 操作成功
+      And 回應應包含學員 ID 4 的複習排程列表
+      And 每筆排程應包含：
+        | 欄位           | 說明                     |
+        | knowledge_node | 知識節點名稱             |
+        | scheduled_date | 預定複習日期             |
+        | interval_days  | 距上次複習天數           |
+        | status         | pending / completed      |
+
+    Example: 非機構管理員無法查看學員複習排程
+      When 使用者 "student1@school.com" 查看學員 5 的複習排程
+      Then 操作失敗，錯誤為「您沒有機構管理員權限」
+
   # ========== 學員列表 ==========
 
   Rule: 後置（回應）- 學員列表應包含趨勢指標
@@ -370,6 +534,53 @@ Feature: B2B 機構管理後台
       When 使用者 "org-admin@school.com" 為群組 2 生成弱點針對練習卷，題數為 20
       Then 操作失敗，錯誤為「此群組尚無足夠的考試數據，請先派發考卷」
 
+  # ========== 學員與群組批量管理 ==========
+
+  Rule: 命令（寫入）- 機構管理員可刪除群組
+
+    Example: 刪除空群組
+      When 使用者 "org-admin@school.com" 刪除機構 1 的群組 "PMP 衝刺班 B"
+      Then 操作成功
+      And 機構 1 不再包含群組 "PMP 衝刺班 B"
+
+    Example: 刪除含成員的群組會同時解除學生的群組歸屬
+      When 使用者 "org-admin@school.com" 刪除機構 1 的群組 "AWS 雲端基礎班 A"
+      Then 操作成功
+      And 機構 1 不再包含群組 "AWS 雲端基礎班 A"
+      And 使用者 "student1@school.com" 仍存在於機構 1 中
+      And 使用者 "student2@school.com" 仍存在於機構 1 中
+
+    Example: 非機構管理員無法刪除群組
+      When 使用者 "student1@school.com" 刪除機構 1 的群組 "PMP 衝刺班 B"
+      Then 操作失敗，錯誤為「您沒有機構管理員權限」
+
+  Rule: 命令（寫入）- 機構管理員可批量移除學生
+
+    Example: 勾選多位學生後批量移除
+      When 使用者 "org-admin@school.com" 批量移除機構 1 的以下學生：
+        | Email               |
+        | student1@school.com |
+        | student2@school.com |
+      Then 操作成功
+      And 機構 1 的學生數量應為 0
+
+    Example: 非機構管理員無法批量移除學生
+      When 使用者 "student1@school.com" 批量移除機構 1 的以下學生：
+        | Email               |
+        | student2@school.com |
+      Then 操作失敗，錯誤為「您沒有機構管理員權限」
+
+  Rule: 命令（寫入）- 機構管理員可移除單一學生
+
+    Example: 從操作選單移除學生
+      When 使用者 "org-admin@school.com" 移除機構 1 的學生 "student1@school.com"
+      Then 操作成功
+      And 使用者 "student1@school.com" 不再屬於機構 1
+
+    Example: 移除不存在的學生回傳錯誤
+      When 使用者 "org-admin@school.com" 移除機構 1 的學生 "notexist@school.com"
+      Then 操作失敗，錯誤為「找不到該學生」
+
   # ========== 未實作功能 Placeholder ==========
 
   @ignore
@@ -384,20 +595,6 @@ Feature: B2B 機構管理後台
 
     Example: 點擊快速操作卡片顯示即將推出提示
       When 使用者 "org-admin@school.com" 在機構管理後台點擊快速操作卡片
-      Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
-
-  @ignore
-  Rule: 後置（回應）- AI 個人化強化按鈕顯示未實作提示
-
-    Example: 點擊 AI 個人化強化按鈕顯示即將推出提示
-      When 使用者 "org-admin@school.com" 在學員能力檔案頁點擊「AI 個人化強化」按鈕
-      Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
-
-  @ignore
-  Rule: 後置（回應）- 指派補考按鈕顯示未實作提示
-
-    Example: 點擊指派補考按鈕顯示即將推出提示
-      When 使用者 "org-admin@school.com" 在學員詳情頁點擊「指派補考」按鈕
       Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
 
   @ignore

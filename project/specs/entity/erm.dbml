@@ -160,6 +160,24 @@ Enum assignment_status {
   expired
 }
 
+Enum reverse_engineering_status {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+Enum exam_frequency {
+  high
+  medium
+  low
+}
+
+Enum source_origin {
+  exam       [note: '考古題逆向萃取']
+  document   [note: '教材順向萃取']
+  manual     [note: '手動 Markdown 匯入']
+}
+
 Enum anomaly_status {
   pending         [note: '待處理']
   investigating   [note: '調查中']
@@ -309,7 +327,8 @@ Ref: resources.institution_id > institutions.id
 
 Table knowledge_nodes {
   id uuid [pk, default: `gen_random_uuid()`]
-  resource_id uuid [not null]
+  resource_id uuid [note: 'nullable — 教材萃取時有值']
+  subject_id uuid [note: '考科 ID — 逆向工程時有值']
   parent_id uuid [note: 'null = 根節點']
   name varchar(300) [not null]
   depth integer [default: 0]
@@ -318,10 +337,14 @@ Table knowledge_nodes {
   source_timestamp_seconds integer [note: 'YouTube 時間戳（秒）']
   source_text text [note: '萃取的原文片段']
   available_questions integer [default: 0]
+  exam_frequency varchar(10) [note: 'high/medium/low — 出題頻率']
+  source_origin varchar(20) [default: 'document', note: 'exam/document/manual']
+  node_type varchar(20) [default: 'syllabus', note: 'syllabus=考科官方知識架構(Feature 26/29) / personal=用戶個人學習節點(Feature 03/04/27)']
   created_at timestamptz [default: `now()`]
 }
 
 Ref: knowledge_nodes.resource_id > resources.id [delete: cascade]
+Ref: knowledge_nodes.subject_id > subjects.id
 Ref: knowledge_nodes.parent_id > knowledge_nodes.id
 
 Table resource_chunks {
@@ -345,6 +368,29 @@ Table resource_chunks {
 
 Ref: resource_chunks.resource_id > resources.id [delete: cascade]
 Ref: resource_chunks.node_id > knowledge_nodes.id [delete: set null]
+
+// ============================================================
+// Reverse Engineering (Feature 26)
+// ============================================================
+
+Table reverse_engineering_tasks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  subject_id uuid [not null]
+  triggered_by uuid [not null]
+  status reverse_engineering_status [default: 'PROCESSING']
+  total_questions integer [not null, note: '輸入的考古題總數']
+  node_count integer [note: '產出的知識節點數']
+  coverage_rate decimal(5,2) [note: '題目覆蓋率（已映射/總題數）']
+  max_depth integer [note: '最大層級深度']
+  orphan_node_count integer [default: 0, note: '無題目對應的孤立節點數']
+  reliability varchar(10) [note: 'green/yellow/red']
+  error_message text
+  completed_at timestamptz
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: reverse_engineering_tasks.subject_id > subjects.id
+Ref: reverse_engineering_tasks.triggered_by > users.id
 
 Table node_mastery {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -414,10 +460,12 @@ Table questions {
   expires_at timestamptz [note: 'AI 題過期時間，NULL = 永不過期（考古題）']
   retired_at timestamptz [note: '軟刪除時間']
   retention_reason varchar(50) [note: '保留/退場原因']
+  suggested_node_id uuid [note: 'AI 建議歸屬節點（逆向工程未映射時）']
 }
 
 Ref: questions.exam_id > exams.id [delete: cascade]
 Ref: questions.node_id > knowledge_nodes.id
+Ref: questions.suggested_node_id > knowledge_nodes.id
 
 Table answers {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -963,3 +1011,96 @@ Table feedback_attachments {
 }
 
 Ref: feedback_attachments.feedback_id > feedbacks.id
+
+// ============================================================
+// Prompt Template Management (Feature 30)
+// ============================================================
+
+Enum prompt_category {
+  safety
+  knowledge
+  exam
+  teaching
+  emotion
+}
+
+Enum ab_test_status {
+  running
+  completed
+  cancelled
+}
+
+Table prompt_templates {
+  id uuid [pk, default: `gen_random_uuid()`]
+  template_id varchar(10) [unique, not null, note: 'e.g. S-01, K-01, T-02']
+  name varchar(100) [unique, not null, note: '英文識別名 e.g. safety_router']
+  display_name varchar(200) [not null, note: '中文顯示名 e.g. 三維度安全分類']
+  category prompt_category [not null]
+  model varchar(100) [not null, note: 'gemini-flash / claude-3.5-sonnet / vision / by-plan']
+  max_tokens integer [not null]
+  max_tokens_by_plan jsonb [note: '{"PRO_199":1024,"PRO_PLUS_399":2048,"ULTRA_1599":4096} — model=by-plan 時使用']
+  temperature decimal(2,1) [not null, default: 0.5]
+  system_prompt text [not null]
+  user_prompt text [not null]
+  variables jsonb [not null, default: '[]', note: '[{"name":"subject_name","description":"...","example":"..."}]']
+  feature_refs text[] [default: '{}', note: '關聯的 Feature 檔案']
+  current_version integer [not null, default: 1]
+  is_active boolean [default: true]
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  Note: 'Prompt 模板主表 — 存放當前生效版本。SSOT 來源：project/03_Prompt_Templates/'
+}
+
+Ref: prompt_templates.created_by > users.id
+
+Table prompt_template_versions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  template_id uuid [not null]
+  version integer [not null]
+  model varchar(100) [not null]
+  max_tokens integer [not null]
+  max_tokens_by_plan jsonb
+  temperature decimal(2,1) [not null]
+  system_prompt text [not null]
+  user_prompt text [not null]
+  variables jsonb [not null, default: '[]']
+  change_note text [note: '版本變更說明']
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (template_id, version) [unique]
+  }
+
+  Note: 'Prompt 版本歷史 — Append-only, immutable'
+}
+
+Ref: prompt_template_versions.template_id > prompt_templates.id [delete: cascade]
+Ref: prompt_template_versions.created_by > users.id
+
+Table prompt_ab_tests {
+  id uuid [pk, default: `gen_random_uuid()`]
+  template_id uuid [not null]
+  name varchar(200) [not null, note: 'A/B 測試名稱 e.g. "教練語氣對比"']
+  variant_a_version integer [not null, note: '對照組版本號']
+  variant_b_system_prompt text [not null]
+  variant_b_user_prompt text [not null]
+  variant_b_temperature decimal(2,1)
+  traffic_split integer [not null, default: 50, note: 'variant B 流量百分比 (0-100)']
+  status ab_test_status [default: 'running']
+  metric_name varchar(100) [note: '追蹤指標：accuracy / satisfaction / cost']
+  variant_a_metric_value decimal(10,4) [note: 'A 組指標值']
+  variant_b_metric_value decimal(10,4) [note: 'B 組指標值']
+  winner varchar(1) [note: 'A / B / null (未決)']
+  started_at timestamptz [default: `now()`]
+  ended_at timestamptz
+  created_by uuid [not null]
+  created_at timestamptz [default: `now()`]
+
+  Note: 'Prompt A/B 測試 — 同一模板最多一個 running 測試'
+}
+
+Ref: prompt_ab_tests.template_id > prompt_templates.id [delete: cascade]
+Ref: prompt_ab_tests.created_by > users.id

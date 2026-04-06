@@ -140,6 +140,21 @@ def remove_student(
     return _handle_result(result)
 
 
+class BatchRemoveRequest(BaseModel):
+    emails: list[str]
+
+
+@router.post("/students/batch-remove")
+def batch_remove_students(
+    body: BatchRemoveRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.batch_remove_students(user_id=user_id, emails=body.emails)
+    return _handle_result(result)
+
+
 @router.get("/students/{student_id}/report")
 def get_student_report(
     student_id: str,
@@ -274,6 +289,17 @@ def update_warning_rules(
 
 # ========== Group Management ==========
 
+@router.delete("/groups/{group_id}")
+def delete_group(
+    group_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.delete_group(user_id=user_id, group_id=group_id)
+    return _handle_result(result)
+
+
 @router.get("/groups/{group_id}/students")
 def get_group_students(
     group_id: str,
@@ -345,5 +371,48 @@ def generate_remediation_exam(
         user_id=user_id,
         group_id=group_id,
         question_count=body.question_count,
+    )
+    return _handle_result(result)
+
+
+# ========== Student Remediation Exam ==========
+
+class CompetencyWeight(BaseModel):
+    label: str
+    weight: int
+
+
+class StudentRemediationRequest(BaseModel):
+    question_count: int = 20
+    competency_weights: list[CompetencyWeight]
+
+
+@router.post("/students/{student_id}/remediation-exam")
+def create_student_remediation_exam(
+    student_id: str,
+    body: StudentRemediationRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.create_student_remediation_exam(
+        user_id=user_id,
+        student_id=student_id,
+        question_count=body.question_count,
+        competency_weights=[w.model_dump() for w in body.competency_weights],
+    )
+    return _handle_result(result)
+
+
+@router.get("/students/{student_id}/remediation-defaults")
+def get_student_remediation_defaults(
+    student_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.get_student_remediation_defaults(
+        user_id=user_id,
+        student_id=student_id,
     )
     return _handle_result(result)

@@ -50,18 +50,18 @@ export default function DashboardPage() {
 
   // Load subjects
   useEffect(() => {
-    if (!isAuthenticated || !onboardingCompleted) return;
+    if (authLoading || !isAuthenticated || !onboardingCompleted) return;
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects || []);
       if (res.subjects && res.subjects.length > 0) {
         setActiveSubjectId(res.subjects[0].id);
       }
     }).catch(() => setSubjects([]));
-  }, [isAuthenticated, onboardingCompleted]);
+  }, [authLoading, isAuthenticated, onboardingCompleted]);
 
   // Load dashboard data
   useEffect(() => {
-    if (!isAuthenticated || !onboardingCompleted) return;
+    if (authLoading || !isAuthenticated || !onboardingCompleted) return;
     dashboardService.get().then(d => {
       // Ensure all expected fields have defaults for backend compatibility
       setData({

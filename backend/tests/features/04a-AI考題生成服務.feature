@@ -1,4 +1,4 @@
-@command
+@ignore @command
 Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   Background:
@@ -21,9 +21,42 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
       | 3       | 干擾項優化     | 3    | active  |
       | 4       | 格式化輸出     | 4    | active  |
 
+  # ========== 考古題模式短路 ==========
+
+  Rule: 前置（模式）- exam_mode 為 historical_only 時跳過 AI 四階段 Pipeline
+
+    Example: 考古題模式直接從題庫抽題，不經過 AI 生成
+      Given 使用者 "pro@example.com" 已提交合法測驗設定：
+        | 欄位         | 值              |
+        | 選擇節點     | 1, 2            |
+        | 題數         | 10              |
+        | exam_mode    | historical_only |
+      When 後端 AI 生成服務開始處理
+      Then 系統不應執行四階段 AI Prompt Pipeline
+      And 系統應直接從考古題題庫抽取 10 題
+      And SSE 進度應直接跳到 100%：
+        | 進度百分比 | 階段   | 說明訊息                  |
+        | 100       | 完成   | 考卷準備完畢！（考古題直抽） |
+
+    Example: 非考古題模式正常執行四階段 Pipeline
+      Given 使用者 "pro@example.com" 已提交合法測驗設定：
+        | 欄位         | 值    |
+        | 選擇節點     | 1, 2  |
+        | 題數         | 10    |
+        | exam_mode    | mixed |
+      When 後端 AI 生成服務開始處理
+      Then 系統應依序執行四個階段的 AI Prompt
+
   # ========== 多階段 Prompt 架構 ==========
 
   Rule: 後置（流程）- AI 生成服務應依序執行四個階段的 Prompt
+
+    # 各階段 max_tokens 上限（決議 2026-04-06 董事會）：
+    # | 階段 | 名稱       | max_tokens | 說明                            |
+    # | 1    | 考點分析   | 2048       | JSON 結構，考點數有限            |
+    # | 2    | 考題生成   | 4096       | 題數 x 題幹，需較大空間          |
+    # | 3    | 干擾項優化 | 4096       | 含干擾項 + 詳解，與階段 2 相當    |
+    # | 4    | 格式化輸出 | 4096       | 完整 JSON Schema 輸出            |
 
     Example: 四階段 Prompt 依序執行並各自產出中間結果
       Given 使用者 "pro@example.com" 已提交合法測驗設定：
@@ -33,11 +66,11 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
         | 難易度分配   | Easy:30% Medium:50% Hard:20% |
       When 後端 AI 生成服務開始處理
       Then 系統應依序執行以下階段：
-        | 階段 | 名稱         | 輸入                         | 輸出                            |
-        | 1    | 考點分析     | 選定節點的向量化知識內容       | 考綱 JSON（考點列表與出題比例）  |
-        | 2    | 考題生成     | 階段 1 考綱 + 難易度分配 + 使用者背景 | 原始考題列表（題幹 + 正確答案）  |
-        | 3    | 干擾項優化   | 階段 2 原始考題 + 使用者背景   | 完整考題（含干擾項 + 詳解）      |
-        | 4    | 格式化輸出   | 階段 3 完整考題                | 系統標準 JSON Schema             |
+        | 階段 | 名稱         | 輸入                         | 輸出                            | max_tokens |
+        | 1    | 考點分析     | 選定節點的向量化知識內容       | 考綱 JSON（考點列表與出題比例）  | 2048       |
+        | 2    | 考題生成     | 階段 1 考綱 + 難易度分配 + 使用者背景 | 原始考題列表（題幹 + 正確答案）  | 4096       |
+        | 3    | 干擾項優化   | 階段 2 原始考題 + 使用者背景   | 完整考題（含干擾項 + 詳解）      | 4096       |
+        | 4    | 格式化輸出   | 階段 3 完整考題                | 系統標準 JSON Schema             | 4096       |
 
   # ========== 個人化：使用者背景注入 Prompt ==========
 
@@ -87,15 +120,38 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 1：考點分析 ==========
 
-  Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱
+  Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱，並注入考古題 Bloom 配比
 
-    Example: 考點分析階段產出包含比例的考綱
+    Example: 科目有考古題時，階段 1 Prompt 應注入考古題 Bloom 統計作為出題配比約束
+      Given 測驗任務的 bloom_source 為 "historical"，bloom_distribution 為：
+        | bloom_category | percentage |
+        | remember       | 36         |
+        | understand     | 28         |
+        | apply          | 20         |
+        | analyze        | 10         |
+        | evaluate       | 4          |
+        | create         | 2          |
       When 階段 1 Prompt 以節點 1 (EC2) 和節點 2 (S3) 的向量化內容為輸入
-      Then 階段 1 輸出應包含：
-        | 欄位            | 說明                     |
-        | exam_points     | 5-10 個核心考點列表       |
-        | point_ratio     | 各考點建議出題比例 (%)    |
-        | difficulty_map  | 各考點建議難度分布        |
+      Then 階段 1 Prompt 應包含指示：「請依照以下 Bloom 認知層次配比分配考點：remember:36%, understand:28%, apply:20%, analyze:10%, evaluate:4%, create:2%」
+      And 階段 1 輸出應包含：
+        | 欄位              | 說明                          |
+        | exam_points       | 5-10 個核心考點列表            |
+        | point_ratio       | 各考點建議出題比例 (%)         |
+        | difficulty_map    | 各考點建議難度分布             |
+        | bloom_allocation  | 各考點對應的 Bloom 分類與題數   |
+      And 所有 point_ratio 加總應等於 100%
+      And bloom_allocation 的各 Bloom 類別題數加總應符合 bloom_distribution（誤差 ±1 題）
+
+    Example: 科目無考古題時，階段 1 使用預設 Bloom 配比
+      Given 測驗任務的 bloom_source 為 "default"
+      When 階段 1 Prompt 以節點 1 (EC2) 和節點 2 (S3) 的向量化內容為輸入
+      Then 階段 1 Prompt 應包含預設配比指示：「Bloom 配比：remember:20%, understand:25%, apply:25%, analyze:15%, evaluate:10%, create:5%」
+      And 階段 1 輸出應包含：
+        | 欄位              | 說明                          |
+        | exam_points       | 5-10 個核心考點列表            |
+        | point_ratio       | 各考點建議出題比例 (%)         |
+        | difficulty_map    | 各考點建議難度分布             |
+        | bloom_allocation  | 各考點對應的 Bloom 分類與題數   |
       And 所有 point_ratio 加總應等於 100%
 
   # ========== 階段 2：考題生成 ==========

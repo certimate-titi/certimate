@@ -61,13 +61,28 @@ Feature: 測驗設定
     Example: PRO 用戶要求超過 50 題失敗
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 60
       Then 操作失敗
-      And 錯誤訊息應為 "PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上"
+      And 錯誤訊息應為 "PRO 方案每次測驗最多 50 題，升級 PRO_PLUS 最多可出 100 題"
 
     Example: PRO 用戶要求恰好 50 題成功
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 50
       Then 操作成功
 
-  Rule: 前置（參數）- ULTRA 方案每次測驗題數上限為 100 題以上
+  Rule: 前置（參數）- PRO_PLUS 方案每次測驗題數上限為 100 題
+
+    Example: PRO_PLUS 用戶要求 100 題成功
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案      |
+        | 4        | proplus@example.com  | PRO_PLUS_399  |
+      And 系統中有以下資源：
+        | 資源 ID | 使用者 ID | 名稱            | 狀態      |
+        | 4       | 4        | 大型題庫.pdf    | COMPLETED |
+      And 系統中有以下心智圖知識節點：
+        | 節點 ID | 資源 ID | 名稱       | 掌握度顏色 | 可出題數 |
+        | 7       | 4       | 綜合測驗   | 灰色       | 150      |
+      When 使用者 "proplus@example.com" 提交測驗設定，選擇節點 7，題數為 100
+      Then 操作成功
+
+  Rule: 前置（參數）- ULTRA 方案每次測驗題數無上限
 
     Example: ULTRA 用戶要求 100 題成功
       When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 100
@@ -237,22 +252,6 @@ Feature: 測驗設定
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，難易度分配為 Easy:0% Medium:0% Hard:100%
       Then 操作成功
       And 系統應建立測驗任務，難易度分配中 Hard 佔比應為 100%
-
-  Rule: 前置（參數）- PRO_PLUS 方案每次測驗題數上限為 100 題
-
-    @ignore
-    Example: PRO_PLUS 用戶要求 100 題成功
-      Given 系統中有以下使用者帳號：
-        | 使用者 ID | Email                | 訂閱方案  |
-        | 4        | proplus@example.com  | PRO_PLUS_399 |
-      And 系統中有以下資源：
-        | 資源 ID | 使用者 ID | 名稱            | 狀態      |
-        | 4       | 4        | 大型題庫.pdf    | COMPLETED |
-      And 系統中有以下心智圖知識節點：
-        | 節點 ID | 資源 ID | 名稱       | 掌握度顏色 | 可出題數 |
-        | 7       | 4       | 綜合測驗   | 灰色       | 150      |
-      When 使用者 "proplus@example.com" 提交測驗設定，選擇節點 7，題數為 100
-      Then 操作成功
 
   Rule: 前置（狀態）- 文件未處理完成時無法選擇作為測驗範圍
 

@@ -259,6 +259,7 @@ export interface Student {
   lastActiveLabel: string; // e.g. "今天", "3 天前"
   enrolledSubjectIds: string[]; // e.g. ["subj_pmp", "subj_aws_saa"]
   group?: string; // B2B group name
+  groupId?: string; // B2B group UUID
 }
 
 export interface Organization {
