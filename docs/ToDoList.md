@@ -2,24 +2,7 @@
 
 ## 待辦事項
 
-### 📌 7. Prompt 模板管理 — BDD 測試與前後端實作
-
-**後端 BDD E2E 測試（依 TDD 流程）：**
-
-1. **Schema Analysis** — 驗證 Feature 30 與 DBML 一致性，建立/更新 ORM 模型（`prompt_template.py`、`prompt_template_version.py`、`prompt_ab_test.py`）
-2. **Alembic Migration** — 建立 migration 新增 `prompt_templates`、`prompt_template_versions`、`prompt_ab_tests` 三張表
-3. **Step Template** — 生成 `tests/features/steps/prompt_template/` 下的 step definition 骨架
-4. **Red（紅燈）** — 實作完整 step definitions + repositories，測試以 HTTP 404 失敗
-5. **Green（綠燈）** — 實作 FastAPI endpoints（`app/api/prompt_template.py`）+ services（`app/services/prompt_template_service.py`），測試全部通過
-6. **Seed 腳本** — 實作 `app/scripts/seed_prompts.py`，從 `03_Prompt_Templates/` 同步至 DB
-7. **Refactor** — 在測試保護下改善程式碼品質
-
-**前端實作：**
-
-8. **管理後台 — Prompt 模板列表頁** — `/admin/prompt-templates`，支援分類篩選、啟用/停用切換
-9. **管理後台 — Prompt 模板編輯頁** — 即時編輯 system_prompt / user_prompt / temperature，儲存後自動版本++
-10. **管理後台 — 版本歷史與回滾** — 版本對比 diff view、一鍵回滾
-11. **管理後台 — A/B 測試管理** — 建立測試、設定流量比例、查看指標、結束選勝者
+*（目前無待辦事項）*
 
 ---
 
@@ -48,6 +31,25 @@
 ---
 
 *詳細處理紀錄：`docs/todo-processing-2026-04-02T10-00-00.md`*
+
+---
+
+### ✅ 7. Prompt 模板管理 — BDD 測試與前後端實作 — 完成於 2026-04-07
+
+**處理結果：**
+- 更新 `backend/app/models/prompt_template.py`：新增 `PromptTemplateV2`、`PromptTemplateVersion`、`PromptAbTest`
+- 新增 `backend/alembic/versions/037_create_prompt_templates_v2.py`：建立三張新表
+- 新增 `backend/app/repositories/prompt_template_repository.py`
+- 新增 `backend/app/services/prompt_template_service.py`（含 A/B 分流邏輯）
+- 新增 `backend/app/api/prompt_template.py`（admin + internal 路由）
+- 新增 `backend/tests/features/steps/prompt_template/`（完整 step definitions）
+- 移除 Feature 30 的 `@ignore @command` 標籤（進入 Green 階段）
+- 新增 `backend/app/scripts/seed_prompts.py`（YAML frontmatter 解析 + 同步）
+- 新增前端頁面：`/super-admin/prompt-templates/`（列表 + 編輯 + 版本歷史 + A/B 測試）
+
+**待手動執行**：`alembic upgrade head`、BDD 測試驗收、首次 seed 執行
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-07T22-14-10.md`*
 
 ---
 

@@ -732,3 +732,104 @@ export const subjectService = {
     });
   },
 };
+
+// ── Prompt Template Service ────────────────────────────────────────────────
+
+export interface PromptTemplateSummary {
+  template_id: string;
+  name: string;
+  display_name: string;
+  category: string;
+  model: string;
+  temperature: number;
+  current_version: number;
+  is_active: boolean;
+}
+
+export interface PromptTemplateDetail extends PromptTemplateSummary {
+  system_prompt: string;
+  user_prompt: string;
+  variables: Array<{ name: string; description: string; example: string }>;
+  max_tokens: number;
+  max_tokens_by_plan?: Record<string, number>;
+  feature_refs?: string[];
+  created_at?: string;
+}
+
+export interface PromptTemplateVersion {
+  version: number;
+  model: string;
+  system_prompt: string;
+  user_prompt: string;
+  temperature: number;
+  change_note?: string;
+  created_by?: string;
+  created_at?: string;
+}
+
+export interface PromptAbTest {
+  id: string;
+  template_id: string;
+  name: string;
+  variant_a_version: number;
+  traffic_split: number;
+  status: 'running' | 'completed' | 'cancelled';
+  winner?: string;
+  metric_name?: string;
+  started_at?: string;
+  ended_at?: string;
+}
+
+export const promptTemplateService = {
+  async listTemplates(category?: string): Promise<{ templates: PromptTemplateSummary[]; total: number }> {
+    const q = category ? `?category=${category}` : '';
+    return apiClient.get(`/admin/prompt-templates${q}`);
+  },
+
+  async getTemplate(templateId: string): Promise<PromptTemplateDetail> {
+    return apiClient.get(`/admin/prompt-templates/${templateId}`);
+  },
+
+  async createTemplate(data: Partial<PromptTemplateDetail> & { change_note?: string }): Promise<{ template_id: string; current_version: number }> {
+    return apiClient.post('/admin/prompt-templates', data);
+  },
+
+  async updateTemplate(templateId: string, data: Partial<PromptTemplateDetail> & { change_note?: string }): Promise<{ template_id: string; current_version: number }> {
+    return apiClient.patch(`/admin/prompt-templates/${templateId}`, data);
+  },
+
+  async deactivateTemplate(templateId: string): Promise<{ template_id: string; is_active: boolean }> {
+    return apiClient.delete(`/admin/prompt-templates/${templateId}`);
+  },
+
+  async listVersions(templateId: string): Promise<{ versions: PromptTemplateVersion[]; total: number }> {
+    return apiClient.get(`/admin/prompt-templates/${templateId}/versions`);
+  },
+
+  async rollbackTemplate(templateId: string, version: number): Promise<{ template_id: string; current_version: number }> {
+    return apiClient.post(`/admin/prompt-templates/${templateId}/rollback`, { version });
+  },
+
+  async createAbTest(templateId: string, data: {
+    name: string;
+    variant_b_system_prompt: string;
+    variant_b_user_prompt: string;
+    variant_b_temperature?: number;
+    traffic_split?: number;
+    metric_name?: string;
+  }): Promise<{ ab_test_id: string; variant_a_version: number; status: string }> {
+    return apiClient.post(`/admin/prompt-templates/${templateId}/ab-tests`, data);
+  },
+
+  async completeAbTest(testId: string, winner: 'A' | 'B'): Promise<{ ab_test_id: string; status: string; winner: string }> {
+    return apiClient.patch(`/admin/prompt-templates/ab-tests/${testId}`, { action: 'complete', winner });
+  },
+
+  async cancelAbTest(testId: string): Promise<{ ab_test_id: string; status: string }> {
+    return apiClient.patch(`/admin/prompt-templates/ab-tests/${testId}`, { action: 'cancel' });
+  },
+
+  async listAbTests(): Promise<{ ab_tests: PromptAbTest[]; total: number }> {
+    return apiClient.get('/admin/prompt-templates/ab-tests');
+  },
+};

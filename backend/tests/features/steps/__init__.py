@@ -1058,3 +1058,21 @@ from .knowledge_merge.readmodel_then import merge_history_response  # noqa: F401
 from .knowledge_merge.readmodel_then import unified_tree_query  # noqa: F401
 from .knowledge_merge.readmodel_then import markdown_source  # noqa: F401
 from .knowledge_merge.readmodel_then import downstream_updates  # noqa: F401
+
+# Prompt Template — aggregate_given
+from .prompt_template.aggregate_given import prompt_templates  # noqa: F401
+
+# Prompt Template — commands
+from .prompt_template.commands import list_templates  # noqa: F401
+from .prompt_template.commands import get_template  # noqa: F401
+from .prompt_template.commands import create_template  # noqa: F401
+from .prompt_template.commands import update_template  # noqa: F401
+from .prompt_template.commands import version_commands  # noqa: F401
+from .prompt_template.commands import ab_test_commands  # noqa: F401
+
+# Prompt Template — aggregate_then
+from .prompt_template.aggregate_then import template_state  # noqa: F401
+from .prompt_template.aggregate_then import ab_test_state  # noqa: F401
+
+# Prompt Template — readmodel_then
+from .prompt_template.readmodel_then import template_response  # noqa: F401
