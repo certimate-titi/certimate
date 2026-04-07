@@ -7,10 +7,12 @@ Feature: Prompt 模板管理（僅 super_admin）
   # 2. 版本管理（自動 version++、歷史查詢、版本回滾）
   # 3. A/B 測試（建立、流量分配、結束並選出勝者）
   # 4. Seed 同步（從檔案系統 seed 至 DB）
+  # 5. AI 服務整合（Internal API、變數替換、Fallback）
   #
   # SSOT 來源：project/03_Research_and_Development/03_Prompt_Templates/
-  # DB 表：prompt_templates, prompt_template_versions, prompt_ab_tests
+  # DB 表：prompt_templates_v2, prompt_template_versions, prompt_ab_tests
   # API 前綴：/api/v1/admin/prompt-templates
+  # Internal API：/api/v1/internal/prompt-templates
   # ============================================================
 
   Background:
@@ -334,6 +336,49 @@ Feature: Prompt 模板管理（僅 super_admin）
       Then 操作成功
       And 模板 "T-05" 的 model 應為 "by-plan"
       And 模板 "T-05" 的 max_tokens_by_plan 應包含 PRO_199、PRO_PLUS_399、ULTRA_1599
+
+  # ========== AI 服務整合 ==========
+
+  Rule: 後置（回應）- Internal API 應依 name 回傳生效中 prompt（無需 auth）
+
+    Example: Internal API 依 name 取得啟用中模板
+      When Internal API 請求模板 "safety_router"
+      Then 操作成功
+      And 回應應包含 system_prompt 欄位
+      And 回應應包含 user_prompt 欄位
+      And 回應應包含 model 欄位
+      And 回應應包含 max_tokens 欄位
+      And 回應應包含 temperature 欄位
+
+    Example: Internal API 請求不存在的模板應回傳 404
+      When Internal API 請求模板 "nonexistent_template"
+      Then 操作失敗，錯誤為「模板不存在」
+
+  Rule: 後置（回應）- Prompt 模板的變數佔位符應可被 render_prompt 正確替換
+
+    # render_prompt 邏輯：
+    # 模板中的 {var_name} 佔位符會被替換為實際值
+    # 例如：system_prompt 中的 {subject_name} → "AWS SAA"
+
+    Example: render_prompt 正確替換佔位符
+      Given 一段 prompt 模板內容為 "你正在學習 {subject_name}，請回答 {user_input}"
+      When 使用變數 subject_name="AWS SAA"、user_input="什麼是 EC2？" 進行替換
+      Then 替換結果應為 "你正在學習 AWS SAA，請回答 什麼是 EC2？"
+      And 替換結果不應包含 "{subject_name}"
+      And 替換結果不應包含 "{user_input}"
+
+  Rule: 後置（狀態）- AI 服務讀取模板失敗時應 fallback 至 hardcoded prompt
+
+    # fallback 邏輯：
+    # 1. AI 服務呼叫 get_prompt_for_ai(name) 取得 DB 模板
+    # 2. 若模板不存在 → 回傳 error
+    # 3. 呼叫端使用 hardcoded prompt 作為 fallback
+    # 4. 系統繼續正常運作，不影響使用者體驗
+
+    Example: 模板不存在時 get_prompt_for_ai 回傳錯誤
+      Given 資料庫中無任何 Prompt 模板
+      When 以 service 查詢模板 "stage2_question_generation"
+      Then service 應回傳 error 且 status_code 為 404
 
   # ========== API 端點摘要 ==========
 

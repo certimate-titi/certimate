@@ -19,6 +19,27 @@ from app.models.ai_cooldown import AiCooldown
 class WrongAnswerService:
     def __init__(self, db: Session):
         self.db = db
+        # Prompt template service for DB-based prompts
+        from app.services.prompt_template_service import PromptTemplateService
+        from app.repositories.prompt_template_repository import PromptTemplateRepository
+        self._prompt_svc = PromptTemplateService(db, PromptTemplateRepository(db))
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """Load prompt template from DB with fallback."""
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            result = self._prompt_svc.get_prompt_for_ai(name)
+            if result.get("error"):
+                return None
+            if variables:
+                render = self._prompt_svc.render_prompt
+                result["system_prompt"] = render(result["system_prompt"], variables)
+                result["user_prompt"] = render(result["user_prompt"], variables)
+            return result
+        except Exception as e:
+            logger.warning("Failed to load prompt template '%s': %s", name, e)
+            return None
 
     def list_by_subject(self, user_id: str, subject_id: str | None = None):
         """列出使用者的錯題，可按科目過濾。"""
@@ -199,7 +220,14 @@ class WrongAnswerService:
                 from app.services.llm_service import LLMService
                 llm = LLMService(db=self.db)
 
+                # Try loading prompt from DB (S-01: safety_router)
+                db_prompt = self._load_prompt("safety_router", {
+                    "subject_name": node_name or "",
+                    "exam_status": "",
+                    "user_input": message,
+                })
                 system_prompt = (
+                    db_prompt["system_prompt"] if db_prompt else
                     "你是一位嚴格的學術相關性判斷器。\n"
                     "判斷學生的提問是否與以下題目或知識概念相關。\n"
                     "相關的定義包括：\n"
@@ -295,7 +323,10 @@ class WrongAnswerService:
                     "例如：「你答對了，但你能解釋為什麼不是其他選項嗎？」"
                 )
 
+            # Try loading prompt from DB (T-02: coach_advanced)
+            db_prompt = self._load_prompt("coach_advanced")
             system_prompt = (
+                db_prompt["system_prompt"] if db_prompt else
                 "你是 Certi，TiTi 平台的 AI 蘇格拉底教練。\n\n"
                 "【核心原則 — 蘇格拉底式教學】\n"
                 "1. 絕對不要直接告訴學生答案或直接解釋為什麼某個選項正確\n"

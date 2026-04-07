@@ -52,6 +52,34 @@ class AiGenerationService:
             self._llm = None
             self._retrieval = None
 
+        # Prompt template service for DB-based prompts
+        from app.services.prompt_template_service import PromptTemplateService
+        from app.repositories.prompt_template_repository import PromptTemplateRepository
+        self._prompt_svc = PromptTemplateService(db, PromptTemplateRepository(db))
+
+    # ------------------------------------------------------------------ #
+    # Helper: load prompt from DB with fallback
+    # ------------------------------------------------------------------ #
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """Load prompt template from DB by name, render variables.
+
+        Returns dict with system_prompt, user_prompt, model, max_tokens, temperature
+        or None if template not found (caller should fallback to hardcoded).
+        """
+        try:
+            result = self._prompt_svc.get_prompt_for_ai(name)
+            if result.get("error"):
+                return None
+            if variables:
+                render = self._prompt_svc.render_prompt
+                result["system_prompt"] = render(result["system_prompt"], variables)
+                result["user_prompt"] = render(result["user_prompt"], variables)
+            return result
+        except Exception as e:
+            logger.warning("Failed to load prompt template '%s': %s", name, e)
+            return None
+
     # ------------------------------------------------------------------ #
     # Helper: subject-level historical question queries
     # ------------------------------------------------------------------ #
@@ -381,7 +409,10 @@ class AiGenerationService:
         """
         import time
 
+        # Try loading prompt from DB (E-02: stage2_question_generation)
+        db_prompt = self._load_prompt("stage2_question_generation")
         system_prompt = (
+            db_prompt["system_prompt"] if db_prompt else
             "你是一位專業的證照考試出題老師。\n"
             "如果有提供文件段落，請根據文件內容出題。\n"
             "如果沒有文件段落，請根據考點名稱，用你的專業知識出題。\n"
@@ -541,7 +572,10 @@ class AiGenerationService:
         """Use Claude to generate distractors and explanations."""
         prompt_ctx = self._build_prompt_contexts(user_context)
 
+        # Try loading prompt from DB (E-03: stage3_distractor_optimization)
+        db_prompt = self._load_prompt("stage3_distractor_optimization")
         system_prompt = (
+            db_prompt["system_prompt"] if db_prompt else
             "你是一位專業的考題設計師。為每道選擇題設計 3 個高品質的干擾選項和詳細解釋。\n"
             "干擾選項應基於常見迷思概念，而非明顯錯誤。\n"
             f"個人化上下文：{prompt_ctx.get('stage_3', '無')}"
@@ -1534,7 +1568,10 @@ class AiGenerationService:
             f"{k} {v} 題" for k, v in bloom_target.items() if v > 0
         )
 
+        # Try loading prompt from DB (E-02: stage2_question_generation)
+        db_prompt = self._load_prompt("stage2_question_generation")
         system_prompt = (
+            db_prompt["system_prompt"] if db_prompt else
             "你是專業的證照考試出題老師。請根據提供的考點和考古題範例，"
             "生成高品質的選擇題。題目必須與考古題相關但不重複。"
             "每題必須有題幹、4 個選項（A/B/C/D）、正確答案字母、和 50 字以內的解析。"

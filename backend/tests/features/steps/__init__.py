@@ -1069,6 +1069,7 @@ from .prompt_template.commands import create_template  # noqa: F401
 from .prompt_template.commands import update_template  # noqa: F401
 from .prompt_template.commands import version_commands  # noqa: F401
 from .prompt_template.commands import ab_test_commands  # noqa: F401
+from .prompt_template.commands import internal_api  # noqa: F401
 
 # Prompt Template — aggregate_then
 from .prompt_template.aggregate_then import template_state  # noqa: F401
@@ -1076,3 +1077,4 @@ from .prompt_template.aggregate_then import ab_test_state  # noqa: F401
 
 # Prompt Template — readmodel_then
 from .prompt_template.readmodel_then import template_response  # noqa: F401
+from .prompt_template.readmodel_then import internal_api_response  # noqa: F401

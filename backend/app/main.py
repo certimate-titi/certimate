@@ -2,8 +2,10 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -29,6 +31,84 @@ def _run_migrations():
         print(f"⚠️ Alembic migration warning: {e}")
 
 
+def _seed_on_startup(session_local):
+    """啟動時自動 seed 考古題 + 知識節點 + Prompt 模板（冪等：已存在則跳過）。"""
+    import os
+    import sys
+    from sqlalchemy import text
+
+    # 確保 backend/ 在 sys.path（Cloud Run cwd 可能不同）
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+
+    try:
+        session = session_local()
+
+        # 1. 考古題匯入（若 questions 表為空）
+        q_count = session.execute(text("SELECT COUNT(*) FROM questions")).scalar()
+        session.close()
+        if q_count == 0:
+            print("📦 偵測到考古題為空，開始自動匯入...")
+            try:
+                from scripts.import_historical_questions import main as import_questions
+                import_questions()
+                print("✅ 考古題匯入完成")
+            except Exception as e:
+                print(f"⚠️ 考古題匯入失敗: {e}")
+
+        # 2. 更新 subjects.available_questions 計數
+        session = session_local()
+        session.execute(text("""
+            UPDATE subjects s SET available_questions = COALESCE(sub.cnt, 0)
+            FROM (
+                SELECT e.subject_id, COUNT(q.id) as cnt
+                FROM exams e JOIN questions q ON q.exam_id = e.id
+                WHERE q.historical_source IS NOT NULL
+                GROUP BY e.subject_id
+            ) sub
+            WHERE s.id = sub.subject_id AND (s.available_questions IS NULL OR s.available_questions != sub.cnt)
+        """))
+        session.commit()
+
+        # 3. 知識節點 seed（若 knowledge_nodes 表為空且有考古題）
+        kn_count = session.execute(text("SELECT COUNT(*) FROM knowledge_nodes")).scalar()
+        session.close()
+        if kn_count == 0 and q_count > 0:
+            print("📦 偵測到知識節點為空，開始自動生成...")
+            try:
+                from scripts.seed_knowledge_nodes import main as seed_nodes
+                seed_nodes()
+                print("✅ 知識節點生成完成")
+            except Exception as e:
+                print(f"⚠️ 知識節點生成失敗: {e}")
+            # 填充 source_text
+            try:
+                from scripts.populate_node_source_text import main as populate_text
+                populate_text()
+                print("✅ 知識節點 source_text 填充完成")
+            except Exception as e:
+                print(f"⚠️ source_text 填充失敗: {e}")
+
+        # 4. Prompt 模板 seed（若 prompt_templates_v2 表為空）
+        session = session_local()
+        pt_count = session.execute(text("SELECT COUNT(*) FROM prompt_templates_v2")).scalar()
+        session.close()
+        if pt_count == 0:
+            print("📦 偵測到 Prompt 模板為空，開始自動 seed...")
+            try:
+                from app.scripts.seed_prompts import run_seed
+                run_seed()
+                print("✅ Prompt 模板 seed 完成")
+            except Exception as e:
+                print(f"⚠️ Prompt 模板 seed 失敗: {e}")
+
+        print("✅ 啟動 seed 檢查完成")
+
+    except Exception as e:
+        print(f"⚠️ 啟動 seed 警告: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用程式生命週期：啟動時初始化 DB session factory。"""
@@ -37,6 +117,7 @@ async def lifespan(app: FastAPI):
     set_session_factory(session_local)
     print(f"✅ Database connected: {settings.DATABASE_URL.split('@')[-1]}")
     _run_migrations()
+    _seed_on_startup(session_local)
     # 啟動背景排程
     init_scheduler(session_local)
     await start_scheduler()
@@ -64,6 +145,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Pydantic validation error → 中文錯誤訊息
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": {"message": "必要參數未提供"}},
+    )
 
 # 註冊 API 路由
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)

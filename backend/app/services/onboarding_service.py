@@ -390,7 +390,6 @@ class OnboardingService:
                 }
                 for s in subjects
                 if s.id not in parent_ids
-                and (s.available_questions or 0) > 0
             ]
         }
 

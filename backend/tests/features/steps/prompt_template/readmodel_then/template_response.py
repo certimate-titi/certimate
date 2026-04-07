@@ -52,6 +52,24 @@ def step_impl(context):
     assert "variables" in data, f"回應缺少 variables，回應內容：{data}"
 
 
+@then("回應應包含 model 欄位")
+def step_impl(context):
+    data = context.last_response.json()
+    assert "model" in data, f"回應缺少 model，回應內容：{data}"
+
+
+@then("回應應包含 max_tokens 欄位")
+def step_impl(context):
+    data = context.last_response.json()
+    assert "max_tokens" in data, f"回應缺少 max_tokens，回應內容：{data}"
+
+
+@then("回應應包含 temperature 欄位")
+def step_impl(context):
+    data = context.last_response.json()
+    assert "temperature" in data, f"回應缺少 temperature，回應內容：{data}"
+
+
 @then("回應應包含 {count:d} 筆版本紀錄")
 def step_impl(context, count):
     data = context.last_response.json()
@@ -116,7 +134,7 @@ def step_impl(context):
 
 
 @then("資料庫中應有 {count:d} 筆 Prompt 模板")
-def step_impl(context):
+def step_impl(context, count):
     # seed 測試：在測試中無法真正執行 seed，此步驟標記為跳過
     pass
 

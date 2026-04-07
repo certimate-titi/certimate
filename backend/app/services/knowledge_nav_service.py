@@ -8,6 +8,7 @@ from app.models.knowledge_node import KnowledgeNode
 from app.models.node_mastery import NodeMastery
 from app.models.learning_journey import LearningJourney
 from app.models.resource import Resource
+from app.models.subject import Subject
 from app.models.ai_chat import AiChatSession, AiChatMessage
 from app.models.user import User
 
@@ -86,16 +87,36 @@ class KnowledgeNavService:
         self._ensure_exam_bank_resource(sid)
         self.db.commit()
 
+        # 收集相關 subject IDs（含父科目，如 "AI 應用規劃師（初級）" → "AI 應用規劃師"）
+        subject_ids = [sid]
+        subject = self.db.query(Subject).filter_by(id=sid).first()
+        if subject and subject.parent_subject_id:
+            subject_ids.append(subject.parent_subject_id)
+        else:
+            # Fallback: name prefix match (e.g. "AI 應用規劃師（初級）" → "AI 應用規劃師")
+            if subject:
+                base_name = subject.name.split("（")[0].strip()
+                if base_name != subject.name:
+                    parent = self.db.query(Subject).filter(Subject.name == base_name).first()
+                    if parent:
+                        subject_ids.append(parent.id)
+
         # 找此科目下所有資源
-        resources = self.db.query(Resource).filter_by(subject_id=sid).all()
+        resources = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids)).all()
         resource_ids = [r.id for r in resources]
 
-        if not resource_ids:
+        # 找所有知識節點（by resource_id OR by subject_id）
+        from sqlalchemy import or_
+        conditions = []
+        if resource_ids:
+            conditions.append(KnowledgeNode.resource_id.in_(resource_ids))
+        conditions.append(KnowledgeNode.subject_id.in_(subject_ids))
+
+        if not conditions:
             return {"error": False, "nodes": [], "resources": []}
 
-        # 找所有知識節點
         nodes = self.db.query(KnowledgeNode).filter(
-            KnowledgeNode.resource_id.in_(resource_ids)
+            or_(*conditions)
         ).order_by(KnowledgeNode.sort_order).all()
 
         # 找掌握度
@@ -155,11 +176,14 @@ class KnowledgeNavService:
         if not node:
             return {"error": True, "status_code": 404, "message": "知識節點不存在"}
 
-        resource = self.db.query(Resource).filter_by(id=node.resource_id).first()
+        resource = self.db.query(Resource).filter_by(id=node.resource_id).first() if node.resource_id else None
 
         # 判斷來源類型
-        resource_type_val = resource.type.value if hasattr(resource.type, 'value') else resource.type
-        is_youtube = resource_type_val == "youtube"
+        if resource:
+            resource_type_val = resource.type.value if hasattr(resource.type, 'value') else resource.type
+            is_youtube = resource_type_val == "youtube"
+        else:
+            is_youtube = False
 
         if is_youtube:
             source_type = "youtube"

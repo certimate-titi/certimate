@@ -141,7 +141,7 @@ class PromptTemplateService:
             action="create_prompt_template",
             details={
                 "action": "create_prompt_template",
-                "details": f"{saved.template_id} {saved.name} ({saved.category})",
+                "details": f"{saved.template_id} {saved.name} ({saved.category.value if hasattr(saved.category, 'value') else saved.category})",
             },
         )
 
@@ -495,6 +495,16 @@ class PromptTemplateService:
             "max_tokens": t.max_tokens,
             "variables": t.variables,
         }
+
+    # ── Prompt Rendering ────────────────────────────────────────────────
+
+    @staticmethod
+    def render_prompt(template_str: str, variables: dict) -> str:
+        """Replace {var_name} placeholders with actual values."""
+        result = template_str
+        for key, value in variables.items():
+            result = result.replace(f"{{{key}}}", str(value))
+        return result
 
     # ── Private Helpers ───────────────────────────────────────────────────
 
