@@ -2,7 +2,32 @@
 
 ## 待辦事項
 
-*（目前無待辦事項）*
+幫我檢查目前的資料庫和後端是否有類似以下的資料庫保護和管理，若有缺失則幫我優化系統。
+同時檢查feature file。
+### 階段一：資料庫底層與安全性（基礎設施）
+* **[ ] 資料表 Schema 埋點：** 在所有業務相關資料表（Documents, Chunks, Quizzes 等）新增 `tenant_id` 欄位（UUID, 可為 Null）。
+* **[ ] 預設租戶設定：** 建立第一個預設租戶 `public_b2c`，並確保現有散客資料皆歸屬此 ID。
+* **[ ] 實作 RLS (Row Level Security)：** 在 PostgreSQL 針對 `personal_vectors` 等敏感資料表啟用 RLS，強制執行 `tenant_id` 物理隔離。
+* **[ ] 向量索引優化：** 針對 `embedding` 欄位建立 HNSW 索引，並確保查詢時包含 `tenant_id` 作為過濾條件（Pre-filtering）。
+* **[ ] SSRF 安全防護：** 實作 Egress Proxy，針對用戶輸入的 URL 進行出站流量隔離，防止內網探測攻擊。
+
+### 階段二：後端邏輯與認證（核心機制）
+* **[ ] JWT Token 擴充：** 在 JWT Payload 中新增 `tenant_id` 宣告（Claims）。
+* **[ ] 依賴注入 (DI) 實作：** 在 FastAPI 撰寫全域 Dependency，自動從 Token 提取 `tenant_id` 並注入資料庫 Session。
+* **[ ] LLM 防火牆配置：** 導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。
+* **[ ] 欄位級加密：** 針對 `Student_Answers` 表中的成績與個資實作應用層加密。
+
+### 階段三：效能與資源管理（商業營運）
+* **[ ] 語意快取 (Semantic Cache)：** 建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取，降低重複生成考題的 API 成本。
+* **[ ] 多租戶限流 (Rate Limiting)：** 實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制。
+* **[ ] 任務佇列隔離 (Queue Prioritization)：** 設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。
+
+### 階段四：可觀測性與退場機制（維護與合規）
+* **[ ] 全鏈路追蹤：** 導入 OpenTelemetry，確保每個請求的 `Trace_ID` 能追蹤跨服務的 `tenant_id` 資源消耗。
+* **[ ] 租戶資料抹除腳本 (Data Purge)：** 撰寫自動化清理程式，當企業租戶解約時，能物理性刪除該 `tenant_id` 關聯的向量與 S3 檔案。
+* **[ ] BDD 測試環境隔離：** 配置 `is_test` 標籤與自動化 Teardown 邏輯，防止測試資料污染正式環境。
+
+這份清單特別強調了 **RLS** 與 **HNSW 索引** 的結合，這是解決大規模多租戶向量檢索效能的標準做法。完成前兩個階段後，系統就具備了最基礎的商用安全性。
 
 ---
 
