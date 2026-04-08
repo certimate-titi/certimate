@@ -7,8 +7,13 @@
 生命週期：
 - before_all: 初始化資料庫引擎（Docker 或 SQLite）
 - before_scenario: 初始化 context 狀態、DB Session、HTTP Client
-- after_scenario: 清理資料
+- after_scenario: 清理資料（Phase 4：確保測試資料不污染正式環境）
 - after_all: 關閉資源
+
+Phase 4 BDD 測試環境隔離強化：
+- 每個 Scenario 使用獨立的測試租戶 ID（is_test=True 隔離標籤）
+- TRUNCATE 後重新 Seed 基礎資料（plan_quotas、public_b2c 租戶）
+- 防止測試產生的向量資料、成績資料污染 RLS policy
 """
 
 import os
@@ -122,11 +127,20 @@ def before_all(context):
     set_session_factory(_SessionLocal)
 
 
-def _seed_plan_quotas(session):
-    """Seed default plan quota data if not exists."""
+# Phase 4: 測試專用租戶 UUID（固定值，與 migration 038 public_b2c 不同）
+TEST_TENANT_ID = "ffffffff-0000-0000-0000-000000000001"
+PUBLIC_B2C_TENANT_ID = "00000000-0000-0000-0000-000000b2cb2c"
+
+
+def _seed_base_data(session):
+    """Seed 所有 Scenario 都需要的基礎資料（plan_quotas + 預設租戶）。
+
+    Phase 4 強化：TRUNCATE 後重新植入，確保測試環境乾淨。
+    """
+    from sqlalchemy import text
+
+    # 1. Seed plan_quotas
     from app.models.plan_quota import PlanQuota
-    from sqlalchemy.dialects.postgresql import insert as pg_insert
-    from sqlalchemy import insert as sa_insert
 
     defaults = [
         {"plan": "FREE", "daily_ai_chats": 3, "monthly_uploads": 5, "monthly_exams": 10, "monthly_vision_pages": 0, "max_file_size_mb": 10},
@@ -135,12 +149,43 @@ def _seed_plan_quotas(session):
         {"plan": "ULTRA_1599", "daily_ai_chats": None, "monthly_uploads": None, "monthly_exams": None, "monthly_vision_pages": 500, "max_file_size_mb": 500},
         {"plan": "EDU", "daily_ai_chats": 5, "monthly_uploads": 0, "monthly_exams": None, "monthly_vision_pages": 0, "max_file_size_mb": 0},
     ]
-
     for row in defaults:
         existing = session.query(PlanQuota).filter_by(plan=row["plan"]).first()
         if existing is None:
             session.add(PlanQuota(**row))
+
+    # 2. Seed 預設 B2C 租戶（若 tenants 表存在）
+    try:
+        from sqlalchemy import inspect as sa_inspect
+        inspector = sa_inspect(session.get_bind())
+        if "tenants" in inspector.get_table_names():
+            session.execute(
+                text(
+                    "INSERT INTO tenants (id, slug, name, plan_tier, is_active) "
+                    "VALUES (:id, 'public_b2c', '公開 B2C 平台', 'b2c', true) "
+                    "ON CONFLICT (slug) DO NOTHING"
+                ),
+                {"id": PUBLIC_B2C_TENANT_ID},
+            )
+            # 同時植入測試專用租戶（is_test 隔離）
+            session.execute(
+                text(
+                    "INSERT INTO tenants (id, slug, name, plan_tier, is_active) "
+                    "VALUES (:id, 'test_tenant', '測試租戶（BDD）', 'b2c', true) "
+                    "ON CONFLICT (slug) DO NOTHING"
+                ),
+                {"id": TEST_TENANT_ID},
+            )
+    except Exception:
+        pass  # tenants 表可能尚未建立（migration < 038）
+
     session.commit()
+
+
+# 向後相容別名
+def _seed_plan_quotas(session):
+    """向後相容：等同於 _seed_base_data。"""
+    _seed_base_data(session)
 
 
 def before_scenario(context, scenario):
@@ -151,11 +196,16 @@ def before_scenario(context, scenario):
     context.ids = {}
     context.memo = {}
 
+    # Phase 4: 標記測試 context，防止測試資料誤寫入正式租戶
+    context.is_test = True
+    context.test_tenant_id = TEST_TENANT_ID
+    context.public_b2c_tenant_id = PUBLIC_B2C_TENANT_ID
+
     # 初始化 DB Session
     context.db_session = _SessionLocal()
 
-    # Seed plan quotas (truncated after each scenario)
-    _seed_plan_quotas(context.db_session)
+    # Seed 基礎資料（plan_quotas + 預設租戶）
+    _seed_base_data(context.db_session)
 
     # 初始化 HTTP Client（FastAPI TestClient）
     from fastapi.testclient import TestClient

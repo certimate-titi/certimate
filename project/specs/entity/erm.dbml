@@ -206,6 +206,42 @@ Enum maintenance_schedule_status {
 }
 
 // ============================================================
+// Multi-Tenant (Feature 31 — Phase 1)
+// ============================================================
+
+Enum tenant_plan_tier {
+  b2c          [note: '預設 B2C 散客方案']
+  b2b_basic    [note: 'B2B 基本（補習班）']
+  b2b_pro      [note: 'B2B 進階（中型機構）']
+  b2b_enterprise [note: 'B2B 企業（大型機構）']
+}
+
+Table tenants {
+  id uuid [pk, default: `gen_random_uuid()`]
+  slug varchar(100) [unique, not null, note: '唯一識別碼，如 public_b2c / institution_xyz']
+  name varchar(255) [not null, note: '顯示名稱']
+  plan_tier tenant_plan_tier [default: 'b2c', not null]
+  is_active boolean [default: true, not null]
+  max_users integer [note: 'B2B 授權人數上限，B2C 為 NULL']
+  storage_quota_bytes bigint [note: '儲存容量配額，NULL = 無限制']
+  llm_monthly_budget_usd decimal(10,2) [note: '每月 LLM 預算上限（美元）']
+  metadata_json json [note: '可擴充租戶設定（SSO config, domain whitelist…）']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    slug [unique]
+    plan_tier
+  }
+
+  Note: '''
+  預設租戶 public_b2c（UUID: 00000000-0000-0000-0000-000000b2cb2c）
+  由 migration 038 植入，不可刪除。
+  RLS Policy: resource_chunks, answers 強制啟用 tenant_id 隔離。
+  '''
+}
+
+// ============================================================
 // Core User & Auth
 // ============================================================
 
@@ -306,6 +342,7 @@ Table resources {
   user_id uuid [not null]
   subject_id uuid [not null]
   institution_id uuid [note: 'non-null = 機構共享資源']
+  tenant_id uuid [note: '多租戶隔離鍵（Phase 1）']
   name varchar(500) [not null]
   type resource_type [not null]
   scope resource_scope [default: 'personal']
@@ -319,6 +356,10 @@ Table resources {
   error_message text [note: 'FAILED 時的失敗原因']
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]
+
+  indexes {
+    tenant_id
+  }
 }
 
 Ref: resources.user_id > users.id [delete: cascade]
@@ -351,6 +392,7 @@ Table resource_chunks {
   id uuid [pk, default: `gen_random_uuid()`]
   resource_id uuid [not null]
   node_id uuid [note: '關聯的知識節點']
+  tenant_id uuid [note: '多租戶隔離鍵（Phase 1）— RLS 強制啟用']
   chunk_index integer [not null]
   content text [not null]
   token_count integer [not null]
@@ -362,8 +404,11 @@ Table resource_chunks {
 
   indexes {
     resource_id
-    (embedding) [type: ivfflat, note: 'vector_cosine_ops']
+    tenant_id
+    (embedding) [type: hnsw, note: 'vector_cosine_ops, m=16, ef_construction=64（Phase 1 升級）']
   }
+
+  Note: 'RLS: ALTER TABLE resource_chunks ENABLE ROW LEVEL SECURITY'
 }
 
 Ref: resource_chunks.resource_id > resources.id [delete: cascade]
@@ -472,6 +517,7 @@ Table answers {
   exam_id uuid [not null]
   question_id uuid [not null]
   user_id uuid [not null]
+  tenant_id uuid [note: '多租戶隔離鍵（Phase 1）— RLS 強制啟用（含個資）']
   selected_answer varchar(10)
   is_correct boolean
   marked_for_review boolean [default: false]
@@ -479,7 +525,10 @@ Table answers {
 
   indexes {
     (exam_id, question_id, user_id) [unique]
+    tenant_id
   }
+
+  Note: 'RLS: ALTER TABLE answers ENABLE ROW LEVEL SECURITY（含成績個資）'
 }
 
 Ref: answers.exam_id > exams.id [delete: cascade]
