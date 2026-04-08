@@ -4,19 +4,42 @@
 
 ### 階段二（未完成項目）
 * **[ ] LLM 防火牆配置：** 導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。（需外部 LLM inference 服務）
-* **[ ] 欄位級加密：** 針對 `Student_Answers` 表中的成績與個資實作應用層加密。（需選定 KMS 方案）
+* **[x] 欄位級加密：** ~~針對 `Student_Answers` 表中的成績與個資實作應用層加密。（需選定 KMS 方案）~~ → **程式碼已完成，待部署 KMS 金鑰（2026-04-09）**
 
 ### 階段三（需外部基礎設施）
-* **[ ] 語意快取 (Semantic Cache)：** 建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取，降低重複生成考題的 API 成本。
-* **[ ] 多租戶限流 (Rate Limiting)：** 實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制。
+* **[x] 語意快取 (Semantic Cache)：** ~~建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取~~  → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
+* **[x] 多租戶限流 (Rate Limiting)：** ~~實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制~~ → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
 * **[ ] 任務佇列隔離 (Queue Prioritization)：** 設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。
 
 ### 階段四（未完成項目）
-* **[ ] 全鏈路追蹤：** 導入 OpenTelemetry，確保每個請求的 `Trace_ID` 能追蹤跨服務的 `tenant_id` 資源消耗。（建議整合 `opentelemetry-instrumentation-fastapi`）
+* **[x] 全鏈路追蹤：** ~~導入 OpenTelemetry~~ → **程式碼已完成，待 OTLP Collector / Grafana Tempo 部署（2026-04-09）**
 
 ---
 
 ## 完成事項
+
+### ✅ 9. 基礎設施安全層：欄位加密 + OTel + 限流 + 語意快取 — 完成於 2026-04-09
+
+**完成範圍**（階段二 1/2、階段三 2/3、階段四 1/1）：
+
+**新增/修改檔案：**
+- `backend/app/core/field_encryption.py`：Fernet 對稱加密服務（欄位加密、金鑰輪替）
+- `backend/app/models/answer.py`：Answer 模型新增 `is_answer_encrypted`、`encrypted_at`、便利方法
+- `backend/alembic/versions/041_add_answer_encryption_flag.py`：Migration 041
+- `backend/app/core/telemetry.py`：OpenTelemetry 初始化（FastAPI + SQLAlchemy instrument）
+- `backend/app/core/rate_limit.py`：多租戶 Token Bucket Middleware（Redis + 記憶體 Fallback）
+- `backend/app/services/semantic_cache_service.py`：語意快取服務（Redis + 記憶體 Fallback）
+- `backend/app/main.py`：整合 OTel setup + RateLimitMiddleware
+
+**待手動執行：** `alembic upgrade head`（migration 041）；設定 `FIELD_ENCRYPTION_KEY`、`REDIS_URL`、`OTEL_ENABLED=true`
+
+**未完成項目**（需外部基礎設施）：
+- 階段二：LLM 防火牆（Llama Guard）
+- 階段三：Celery 任務佇列隔離
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-09T09-00-00.md`*
+
+---
 
 ### ✅ 8. 資料庫保護與管理（階段一/二部分/四）— 完成於 2026-04-08
 

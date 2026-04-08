@@ -112,6 +112,13 @@ def _seed_on_startup(session_local):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用程式生命週期：啟動時初始化 DB session factory。"""
+    # ── OpenTelemetry 初始化（必須在 DB 連線前完成）──────────────────
+    try:
+        from app.core.telemetry import setup_telemetry
+        setup_telemetry(app)
+    except Exception as e:
+        print(f"⚠️ OpenTelemetry 初始化警告: {e}")
+
     engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     set_session_factory(session_local)
@@ -145,6 +152,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 多租戶限流 Middleware（Token Bucket；Redis + 記憶體 Fallback）
+try:
+    from app.core.rate_limit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware)
+except Exception as _e:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(f"限流 Middleware 載入失敗（已跳過）: {_e}")
 
 # Pydantic validation error → 中文錯誤訊息
 @app.exception_handler(RequestValidationError)
