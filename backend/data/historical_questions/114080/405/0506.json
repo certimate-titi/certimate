@@ -1,0 +1,192 @@
+{
+  "import_meta": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0506",
+    "total_questions": 15,
+    "questions_with_answer": 15
+  },
+  "questions": [
+    {
+      "question_number": 2,
+      "content": "關於多元文化主義流派的敘述，下列何者錯誤？",
+      "type": "single_choice",
+      "option_a": "保守派多元文化主義認為少數族群應該學習優越文化，以改變自己的生活處境",
+      "option_b": "自由派多元文化主義承認族群差異性，但強調只要有公平機會，所有族群都可以取得相同成就",
+      "option_c": "多元論多元文化主義強調同化之餘，應尊重差異存在",
+      "option_d": "批判的多元文化主義強調社會結構對於少數族群的不平等對待及壓迫",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 4,
+      "content": "關於社會工作的發展演變，下列敘述何者正確？",
+      "type": "single_choice",
+      "option_a": "睦鄰運動在社區中進駐、研究、改革的作法成為社區工作的前身",
+      "option_b": "濟貧法是由英國皇室從國庫中撥款支應相關費用",
+      "option_c": "慈善組織會社調查個人需求提供慈善救助的做法成為社區調查的先驅",
+      "option_d": "新濟貧法中將貧窮者分為三類進行分類救濟",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 7,
+      "content": "關於對同僚的倫理責任之敘述，下列何者正確？",
+      "type": "single_choice",
+      "option_a": "應該要遵守法律規範，爭取社會工作者公平合理的工作環境",
+      "option_b": "應該要致力於發展專業知能，樂於與同僚分享研究成果",
+      "option_c": "當社會工作者接受教育、督導時，應理性、自省，接納批評與建議",
+      "option_d": "當同僚與案主有服務爭議時，社會工作者應尊重同僚的專業知識與案主的合法權益",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 8,
+      "content": "對於基進派倫理的敘述，下列何者正確？",
+      "type": "single_choice",
+      "option_a": "增強案主能力感，確保其獨立不受他人支配",
+      "option_b": "在自然和社會的環境的脈絡中，實踐社會正義",
+      "option_c": "願意完全為了社會革命性的改變而委身奉獻",
+      "option_d": "平衡專業資源作為支持個案和探究議題的方法",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 9,
+      "content": "「社會工作者能夠認出、欣賞並肯定每位服務對象的獨特特質和差異性」屬於下列那一項社會工作 倫理守則？",
+      "type": "single_choice",
+      "option_a": "有目的地表達感受 個別化",
+      "option_b": "",
+      "option_c": "非評判的態度 接納",
+      "option_d": "",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 13,
+      "content": "對樓斯曼（Rothman）社區組織實務三大模型敘述，下列何者錯誤？",
+      "type": "single_choice",
+      "option_a": "社會計畫著重任務目標、地方發展以過程目標為主、社會行動任務與過程目標兼顧",
+      "option_b": "社會計畫是針對社區實質問題做處遇、地方發展是針對社區衰敗紊亂和失序問題做解決、社會",
+      "option_c": "社會計畫是透過小型任務團體進行操作、地方發展是以正式組織進行工作、社會行動是運用政",
+      "option_d": "社會計畫案主群為消費者、地方發展案主群為社區市民、社會行動案主群為體制犧牲者",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 14,
+      "content": "社會工作者應用下列何種態度來建立社區組織？",
+      "type": "single_choice",
+      "option_a": "應建立一個屬於社區成員的組織",
+      "option_b": "應以自己的想法單獨來設定社區組織的目的",
+      "option_c": "應試圖控制組織完成社會工作者的目標",
+      "option_d": "應成為組織內的領導者，達成社會工作者設定的目標",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 15,
+      "content": "關於加爾文（Garvin）和崔普曼（Tropman）的社區類型分類，下列配對何者錯誤？",
+      "type": "single_choice",
+      "option_a": "臉書（Facebook）社團「臺灣社工資訊交流團」是一種利益社區（communityofinterest）",
+      "option_b": "臺北市的「民生社區」是一種地理社區（geographiccommunity）",
+      "option_c": "新竹科學園區是一種工作社區（communityoftheworkplace）",
+      "option_d": "職棒球迷俱樂部是一種組織社區（organizational community）",
+      "correct_answer": "D",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 16,
+      "content": "在社區照顧的發展歷史中，1990年代逐漸主張所謂「被社區照顧」的意義，下列敘述何者正確？",
+      "type": "single_choice",
+      "option_a": "主要被專職的服務人員照顧 主要被醫院的專業醫療人員照顧",
+      "option_b": "",
+      "option_c": "主要來自社區居民的照顧支持 由大型機構內所召募的志工協助照顧",
+      "option_d": "",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 19,
+      "content": "關於團體工作模式的敘述，下列何者正確？",
+      "type": "single_choice",
+      "option_a": "社會目標模式裡的中心概念是社會意識與社會責任",
+      "option_b": "互惠模式裡的社會工作者所扮演的是影響者的角色",
+      "option_c": "社會目標模式裡的社會工作者扮演的是變遷媒介者",
+      "option_d": "互惠模式裡團體，支持成員發揮創新、正向的社會功能",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 20,
+      "content": "有關社會個案工作中的「情感轉移」，下列敘述何者正確？",
+      "type": "single_choice",
+      "option_a": "助人者對案主的非現實性反應",
+      "option_b": "助人者將案主視為早期或目前生活中的人物，或是將與他人相處不當方式，可能是其人格特質",
+      "option_c": "案主將早期所經驗到的特殊感受或情緒經驗投射到助人者或其他重要人等身上",
+      "option_d": "助人者投射的一種形式",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 21,
+      "content": "關於團體工作的敘述，下列何者正確？",
+      "type": "single_choice",
+      "option_a": "是社會工作的一種專業助人方法 是協調所有助人活動的一種過程",
+      "option_b": "",
+      "option_c": "是一種一對一方式助人的過程 是社會工作一種計劃變遷的過程",
+      "option_d": "",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 22,
+      "content": "關於團體評鑑（evaluation）的敘述，下列何者正確？",
+      "type": "single_choice",
+      "option_a": "團體成員的意見是重要的團體效率（efficiency）指標",
+      "option_b": "評鑑的工作也包含團體過程的評量",
+      "option_c": "效能（effectiveness）評估重在團體工作的成本與效益",
+      "option_d": "團體過程的評估主要是由成員來負責",
+      "correct_answer": "B",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 23,
+      "content": "司法矯治社會工作者對監所內受刑人的協助，下列敘述何者錯誤？",
+      "type": "single_choice",
+      "option_a": "排除監所對受刑人可能的不良影響，如：不信任管教人員、依賴被動或無望感",
+      "option_b": "分析觸法者個人、家庭和社會環境因素，思考如何協助不再犯",
+      "option_c": "疏導受刑人在監禁環境中的負面情緒，以利脫離監所團體生活",
+      "option_d": "預先規劃解決策略，協助受刑人面對離開矯治機構後的生活困境",
+      "correct_answer": "C",
+      "explanation": "",
+      "bloom_category": null
+    },
+    {
+      "question_number": 24,
+      "content": "關於學校社會工作的敘述，下列何者錯誤？",
+      "type": "single_choice",
+      "option_a": "源起於英國訪問教師（visitingteacher）運動",
+      "option_b": "主要服務對象為學生",
+      "option_c": "運用個案、團體與社區工作等方法提供服務",
+      "option_d": "以實現學校發展和運作為目的，協助學生準備現在與未來生活",
+      "correct_answer": "A",
+      "explanation": "",
+      "bloom_category": null
+    }
+  ]
+}

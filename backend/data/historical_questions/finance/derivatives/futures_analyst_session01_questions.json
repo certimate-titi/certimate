@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 3 次期貨交易分析人員資格測驗試題",
-    "subject": "期貨法規與自律規範",
-    "year": 114,
-    "session": 3,
+    "source": "114 年第 3 次期貨交易分析人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_analyst_session01_questions",
+    "exam_name": "114 年第 3 次期貨交易分析人員資格測驗試題",
     "total_questions": 141,
+    "questions_with_answer": 140,
     "bloom_distribution": {
       "remember": 108,
       "analyze": 11,
@@ -17,8 +19,7 @@
       "hard": 15,
       "medium": 16
     },
-    "source_pdf": "futures_analyst_session01_questions.pdf",
-    "answer_pdf": "futures_analyst_session01_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -31,7 +32,8 @@
       "option_d": "槓桿保證金契約",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -43,7 +45,8 @@
       "option_d": "二十四小時",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -55,7 +58,8 @@
       "option_d": "為期貨交易人支付全權委託期貨交易之經 理費",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -67,7 +71,8 @@
       "option_d": "九個月",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -79,7 +84,8 @@
       "option_d": "期貨結算機構",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -91,7 +97,8 @@
       "option_d": "三千萬元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -103,7 +110,8 @@
       "option_d": "外交部",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -115,7 +123,8 @@
       "option_d": "五年",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -127,7 +136,8 @@
       "option_d": "六個月",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -139,7 +149,8 @@
       "option_d": "期貨信託事業募集之期貨信託基金，應與其事業及基金保管機構之自有財產分別獨立。",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -151,7 +162,8 @@
       "option_d": "百分之二十",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -163,7 +175,8 @@
       "option_d": "期貨信託事業",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -175,7 +188,8 @@
       "option_d": "本國專業期貨商",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -187,7 +201,8 @@
       "option_d": "十日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -199,7 +214,8 @@
       "option_d": "違約期貨結算會員繳存之結算保證金",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -211,7 +227,8 @@
       "option_d": "喪失經濟效益",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -223,7 +240,8 @@
       "option_d": "十日",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -235,7 +253,8 @@
       "option_d": "結算保證金",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -247,7 +266,8 @@
       "option_d": "二十日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -259,7 +279,8 @@
       "option_d": "監察院",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -271,7 +292,8 @@
       "option_d": "六個月",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -283,7 +305,8 @@
       "option_d": "期貨業商業同業公會",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -295,7 +318,8 @@
       "option_d": "曾因違背期貨交易契約未結案且未滿五年者",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -307,7 +331,8 @@
       "option_d": "二日",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -319,7 +344,8 @@
       "option_d": "十人",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -331,7 +357,8 @@
       "option_d": "證券投資顧問事業於開始兼營期貨顧問事業後，依證券投資顧問事業管理規則規定應申報 之經會計師查核簽證之財務報告，每股淨值低於面額者，應於二年內改善",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -343,7 +370,8 @@
       "option_d": "百分之二十五",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -355,7 +383,8 @@
       "option_d": "放款",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -367,7 +396,8 @@
       "option_d": "擅為交易相對人",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -379,7 +409,8 @@
       "option_d": "九個月",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -391,7 +422,8 @@
       "option_d": "三個月",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -403,7 +435,8 @@
       "option_d": "公司制期貨交易所應設業務委員會及紀律委員會，其成員至少應有二分之一為在該交易所 交易之期貨商。",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -415,7 +448,8 @@
       "option_d": "五千萬元",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -427,7 +461,8 @@
       "option_d": "百分之五十",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -439,7 +474,8 @@
       "option_d": "十個月 二、申論題及計算題(共 3 題，共 30 分)",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 1,
@@ -451,7 +487,8 @@
       "option_d": "高估價格漲幅",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -463,7 +500,8 @@
       "option_d": "短存續期間與低凸性",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -475,7 +513,8 @@
       "option_d": "2.40",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -487,7 +526,8 @@
       "option_d": "資產價值",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -499,7 +539,8 @@
       "option_d": "長尾對稱",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -511,7 +552,8 @@
       "option_d": "兩個模型的統計估計方法一致",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -523,7 +565,8 @@
       "option_d": "一天VaR×評估期間之天數的兩倍",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -535,7 +578,8 @@
       "option_d": "敏感度分析 (sensitive analysis)",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -547,7 +591,8 @@
       "option_d": "假設未來的情況會與過去的歷史狀況相同",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -559,7 +604,8 @@
       "option_d": "以上皆非",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -571,7 +617,8 @@
       "option_d": "預期損失 (expected shortfall)",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -583,7 +630,8 @@
       "option_d": "預期損失 (expected shortfall)",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -595,7 +643,8 @@
       "option_d": "50-60%",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -607,7 +656,8 @@
       "option_d": "最小變異避險 (minimum variance hedge)",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -619,7 +669,8 @@
       "option_d": "交易對手風險",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -631,7 +682,8 @@
       "option_d": "7.8%",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -643,7 +695,8 @@
       "option_d": "購買保險",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -655,7 +708,8 @@
       "option_d": "沒有關係",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -667,7 +721,8 @@
       "option_d": "Theta",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -679,7 +734,8 @@
       "option_d": "買低賣低",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -691,7 +747,8 @@
       "option_d": "I. 與II. 皆不正確",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -703,7 +760,8 @@
       "option_d": "以上皆是",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -715,7 +773,8 @@
       "option_d": "交易量",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 0,
@@ -727,7 +786,8 @@
       "option_d": "1",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -739,7 +799,8 @@
       "option_d": "以上皆可",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -751,7 +812,8 @@
       "option_d": "價格預測",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -763,7 +825,8 @@
       "option_d": "以上皆是",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -775,7 +838,8 @@
       "option_d": "以上皆是",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -787,7 +851,8 @@
       "option_d": "以上皆是",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -799,7 +864,8 @@
       "option_d": "指數期貨",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -811,7 +877,8 @@
       "option_d": "永續發展",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -823,7 +890,8 @@
       "option_d": "以上皆是",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -835,7 +903,8 @@
       "option_d": "引入代理投票",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -847,7 +916,8 @@
       "option_d": "全球化",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -859,7 +929,8 @@
       "option_d": "以上皆是 二、申論題或計算題（共 3 題，每題 10 分，共 30 分）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 1,
@@ -871,7 +942,8 @@
       "option_d": "",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 1,
@@ -883,7 +955,8 @@
       "option_d": "買進 500 個期貨契約",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -895,7 +968,8 @@
       "option_d": "ρ (Rho) 風險",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -907,7 +981,8 @@
       "option_d": "0",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -919,7 +994,8 @@
       "option_d": "下跌 4 點",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -931,7 +1007,8 @@
       "option_d": "損失$28,000",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -943,7 +1020,8 @@
       "option_d": "賣出臺指買權，同時賣出等部位臺指賣權新臺幣 50 元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -955,7 +1033,8 @@
       "option_d": "43 元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -967,7 +1046,8 @@
       "option_d": "0.18",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -979,7 +1059,8 @@
       "option_d": "12 元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -991,7 +1072,8 @@
       "option_d": "25,600",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -1003,7 +1085,8 @@
       "option_d": "3.49",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -1015,7 +1098,8 @@
       "option_d": "29.322 元",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -1027,7 +1111,8 @@
       "option_d": "N(-d2)",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -1039,7 +1124,8 @@
       "option_d": "Delta，Gamma，Vega",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -1051,7 +1137,8 @@
       "option_d": "Poisson",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -1063,7 +1150,8 @@
       "option_d": "10%",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -1075,7 +1163,8 @@
       "option_d": "無窮大 在Black-Scholes-Merton 選擇權評價模型中，股價𝑆 =59，履約價X=60，無風險利率 r=0.08， 波動率=0.11，距到期年限T=0.25，平均年股息q=0.00，d1=0.0856，d2=0.0306， N(d1)=0.5341，N(d2)=0.5122，𝑒(−0.02)=0.9802，請回答 18-20 題：",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -1087,7 +1176,8 @@
       "option_d": "0.4659",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -1099,7 +1189,8 @@
       "option_d": "-0.4659",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -1111,7 +1202,8 @@
       "option_d": "1.12",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -1123,7 +1215,8 @@
       "option_d": "1.25 一名交易員建立由執行價格為$95、$100 和$105 的歐式賣權所組成的買入蝴蝶價差部位，所用 的選擇權部位共 400 個，選擇權的價值分別為$25、$28 和$35，在考慮選擇權的成本後(忽略其 他交易成本)，請回答 22-24 題：",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -1135,7 +1228,8 @@
       "option_d": "$400",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -1147,7 +1241,8 @@
       "option_d": "-$400",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -1159,7 +1254,8 @@
       "option_d": "$104",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -1171,7 +1267,8 @@
       "option_d": "17 元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -1183,7 +1280,8 @@
       "option_d": "9%",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -1195,7 +1293,8 @@
       "option_d": "USD1 = NT$30.05",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -1207,7 +1306,8 @@
       "option_d": "每桶 68.976 美元 某投資人在 12 月1 日開盤時以 25,000 點的價格買進（做多）12月到期之台指期貨 1 口。",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -1219,7 +1319,8 @@
       "option_d": "120,000 元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -1231,7 +1332,8 @@
       "option_d": "12 月5 日",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -1243,7 +1345,8 @@
       "option_d": "60,000 元",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -1255,7 +1358,8 @@
       "option_d": "當限制賣空現貨時，期貨價格無套利區間的下界愈低",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -1267,7 +1371,8 @@
       "option_d": "買方支付賣方 50,000 元 若以接近價平的履約價 23,000 點之買權以及賣權執行跨式交易，當月到期之買權價格為 550 點，賣權價格為 525 點，每一點為 50 元。請回答34-35 題：",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -1279,7 +1384,8 @@
       "option_d": "損失 38,150 元",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -1291,7 +1397,8 @@
       "option_d": "損失 46,250 元 二、申論題及計算題(共 3 題，共 30 分)",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 1,
@@ -1303,7 +1410,8 @@
       "option_d": "市場價值",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -1315,7 +1423,8 @@
       "option_d": "收益率曲線，在短期部份是正斜率，然後在長期是負斜率",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -1327,7 +1436,8 @@
       "option_d": "使得逆選擇與道德風險問題更惡化",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -1339,7 +1449,8 @@
       "option_d": "看市場供需狀況而定",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -1351,7 +1462,8 @@
       "option_d": "降低總產出，增加失業，物價下跌",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -1363,7 +1475,8 @@
       "option_d": "到期日延長",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -1375,7 +1488,8 @@
       "option_d": "本國物價上漲率高於外國",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -1387,7 +1501,8 @@
       "option_d": "總供給減少",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -1399,7 +1514,8 @@
       "option_d": "產量是充分就業的產量",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -1411,7 +1527,8 @@
       "option_d": "以上皆是",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -1423,7 +1540,8 @@
       "option_d": "新增訂單數量",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -1435,7 +1553,8 @@
       "option_d": "自發性的投資",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -1447,7 +1566,8 @@
       "option_d": "較低的現金流量現值",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -1459,7 +1579,8 @@
       "option_d": "以上皆非",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -1471,7 +1592,8 @@
       "option_d": "M1B 會增加，M2 不變動",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -1483,7 +1605,8 @@
       "option_d": "出售持有的債券",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -1495,7 +1618,8 @@
       "option_d": "25 個基點 (basis point)",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -1507,7 +1631,8 @@
       "option_d": "減少；增加；下降",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -1519,7 +1644,8 @@
       "option_d": "銀行超額準備減少",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -1531,7 +1657,8 @@
       "option_d": "政府支出乘數的大小",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -1543,7 +1670,8 @@
       "option_d": "政府存款；重貼現放款",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -1555,7 +1683,8 @@
       "option_d": "無法透過資產分散 (diversification) 而消失的風險稱為系統性風險",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -1567,7 +1696,8 @@
       "option_d": "菲力普曲線呈現通貨膨脹率和就業率的抵換關係",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -1579,7 +1709,8 @@
       "option_d": "投資者對長短期債券沒有強烈的偏好",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -1591,7 +1722,8 @@
       "option_d": "IS 愈水平且LM愈水平時",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -1603,7 +1735,8 @@
       "option_d": "外國通貨膨脹率預期將增加 2%",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -1615,7 +1748,8 @@
       "option_d": "上升；增加",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -1627,7 +1761,8 @@
       "option_d": "傅利德曼 (Milton Friedman) 的貨幣數量學說，認為利率是影響貨幣需求最重要因素",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -1639,7 +1774,8 @@
       "option_d": "降低法定準備率",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -1651,7 +1787,8 @@
       "option_d": "6.5%",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -1663,7 +1800,8 @@
       "option_d": "面額$10,000，票面利率 4%，價格為$9,500",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -1675,7 +1813,8 @@
       "option_d": "股票被視為長期的債務工具",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -1687,7 +1826,8 @@
       "option_d": "國際存託憑證 (IDR)",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -1699,7 +1839,8 @@
       "option_d": "增加；增加；上升",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -1711,7 +1852,8 @@
       "option_d": "增加；貶值 二、計算、申論題 （3 題，每題 10 分，共 30 分）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 3 次企業內部控制基本能力測驗試題",
-    "subject": "企業內部控制理論與實務(含相關法規)",
-    "year": 114,
-    "session": 3,
+    "source": "114 年第 3 次企業內部控制基本能力測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "internal_control_session01_questions",
+    "exam_name": "114 年第 3 次企業內部控制基本能力測驗試題",
     "total_questions": 80,
+    "questions_with_answer": 80,
     "bloom_distribution": {
       "remember": 56,
       "apply": 6,
@@ -18,8 +20,7 @@
       "medium": 6,
       "hard": 14
     },
-    "source_pdf": "internal_control_session01_questions.pdf",
-    "answer_pdf": "internal_control_session01_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -32,7 +33,8 @@
       "option_d": "必須衡量成本效益",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -44,7 +46,8 @@
       "option_d": "增添廠房與設備之授權規定",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -56,7 +59,8 @@
       "option_d": "應能幫助建立可容忍風險",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -68,7 +72,8 @@
       "option_d": "追查最初銷貨憑證，經由彙總至已入帳之銷貨分類帳",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -80,7 +85,8 @@
       "option_d": "部分正確，錯誤的部分，是「將企業風險管理納入內部控制的範圍」，正確的說法是擴大 內部控制的範疇成為企業風險管理",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -92,7 +98,8 @@
       "option_d": "銷貨折扣",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -104,7 +111,8 @@
       "option_d": "內部控制的執行，不需要留下檔案紀錄",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -116,7 +124,8 @@
       "option_d": "員工對企業承諾貢獻的增值能力",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -128,7 +137,8 @@
       "option_d": "組織透過制訂各項政策與程序，以建置其控制作業",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -140,7 +150,8 @@
       "option_d": "由每一位員工制定部門目標的流程",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -152,7 +163,8 @@
       "option_d": "指標必須能反映企業當期營運的績效",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -164,7 +176,8 @@
       "option_d": "2020 年1 月12 日",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -176,7 +189,8 @@
       "option_d": "幫助董事會及經理人確保其指令已被執行的控制系統",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -188,7 +202,8 @@
       "option_d": "內部控制制度的重大缺失",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -200,7 +215,8 @@
       "option_d": "應用控制適當運作，不會將正確交易列示於例外報告中",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -212,7 +228,8 @@
       "option_d": "須加以衡量和判斷風險應如何管理",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -224,7 +241,8 @@
       "option_d": "企業必須建立有效的績效制度",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -236,7 +254,8 @@
       "option_d": "人力派遣之角色",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -248,7 +267,8 @@
       "option_d": "員工學經歷之層級",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -260,7 +280,8 @@
       "option_d": "缺貨成本",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -272,7 +293,8 @@
       "option_d": "管理者從事某些高風險投資活動以獲得高報酬的意向",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -284,7 +306,8 @@
       "option_d": "磁帶",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -296,7 +319,8 @@
       "option_d": "公司不應與分析師或其他中介機關溝通，以維持客觀",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -308,7 +332,8 @@
       "option_d": "從重要資產清冊中辨別個人資料",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -320,7 +345,8 @@
       "option_d": "管理者對經營風險的態度和控制風險的方法",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -332,7 +358,8 @@
       "option_d": "確保投資獲利的資訊",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -344,7 +371,8 @@
       "option_d": "前者可降低持有存貨之必要性，後者可提升持有存貨之必要性",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -356,7 +384,8 @@
       "option_d": "將此舞弊行為記載於交付審計委員會的報告",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -368,7 +397,8 @@
       "option_d": "財務報表稽核",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -380,7 +410,8 @@
       "option_d": "資產報廢之鉅額損失",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -392,7 +423,8 @@
       "option_d": "把資訊告知企業內外部相關人員",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -404,7 +436,8 @@
       "option_d": "組織評估達成目標之風險時，考量可能發生的舞弊",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -416,7 +449,8 @@
       "option_d": "徵信收款部門",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -428,7 +462,8 @@
       "option_d": "審計委員會就財務報導過程作機動性監督",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -440,7 +475,8 @@
       "option_d": "列印超限交易明細並審核追查異常情形",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -452,7 +488,8 @@
       "option_d": "持續性溝通",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -464,7 +501,8 @@
       "option_d": "授權控制",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -476,7 +514,8 @@
       "option_d": "評估重大變化",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -488,7 +527,8 @@
       "option_d": "應收帳款",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -500,7 +540,8 @@
       "option_d": "風險接受原則",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -512,7 +553,8 @@
       "option_d": "使用控制總數、限制與合理性檢查及順序檢查",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -524,7 +566,8 @@
       "option_d": "並不表示在未來之期間亦必有效",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -536,7 +579,8 @@
       "option_d": "近期新聞報導的舞弊",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -548,7 +592,8 @@
       "option_d": "美國之監察人歸屬為其他員工",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -560,7 +605,8 @@
       "option_d": "長期投資之存在及所有權",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -572,7 +618,8 @@
       "option_d": "僅須監督控制環境與控制作業",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -584,7 +631,8 @@
       "option_d": "本期銷售商品組合變動",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -596,7 +644,8 @@
       "option_d": "價值",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -608,7 +657,8 @@
       "option_d": "控制程序能保證僱員之間的串通行為不會發生",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -620,7 +670,8 @@
       "option_d": "已開立發票的銷貨業已運出",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 51,
@@ -632,7 +683,8 @@
       "option_d": "超強度，但可能性微乎其微的風險",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 52,
@@ -644,7 +696,8 @@
       "option_d": "內部稽核人員定期觀察（監盤）廠房資產",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 53,
@@ -656,7 +709,8 @@
       "option_d": "潛伏性控制",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 54,
@@ -668,7 +722,8 @@
       "option_d": "利害關係的考量",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 55,
@@ -680,7 +735,8 @@
       "option_d": "檢查",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 56,
@@ -692,7 +748,8 @@
       "option_d": "訂單有無附帶支票",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 57,
@@ -704,7 +761,8 @@
       "option_d": "可查明入帳交易的有效性",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 58,
@@ -716,7 +774,8 @@
       "option_d": "堅持貨到付現",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 59,
@@ -728,7 +787,8 @@
       "option_d": "客戶同意生產部門所提供之樣品及交貨期限之後",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 60,
@@ -740,7 +800,8 @@
       "option_d": "計算固定資產占總資產比例並與同業相比較",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 61,
@@ -752,7 +813,8 @@
       "option_d": "至少每年",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 62,
@@ -764,7 +826,8 @@
       "option_d": "專案審查應涵蓋期間應為申報辦理公開發行之最近一會計年度",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 63,
@@ -776,7 +839,8 @@
       "option_d": "子公司如有應公告申報之事項，由公開發行公司自行決定公告申報之主體",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 64,
@@ -788,7 +852,8 @@
       "option_d": "因共同投資關係由部分出資股東對被投資公司背書保證",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 65,
@@ -800,7 +865,8 @@
       "option_d": "4 日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 66,
@@ -812,7 +878,8 @@
       "option_d": "委託會計師進行審核財務事項",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 67,
@@ -824,7 +891,8 @@
       "option_d": "風險回應",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 68,
@@ -836,7 +904,8 @@
       "option_d": "獨立董事人數應有過半數董事未兼任員工或經理人",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 69,
@@ -848,7 +917,8 @@
       "option_d": "公司或代辦股務機構其電腦軟體設計應具備自動勾稽功能，除定期作系統檢查、檔案備份 外，並須保存系統流程圖，檔案結構說明及系統操作說明，檔案備份並應異地保管",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 70,
@@ -860,7 +930,8 @@
       "option_d": "依法得受託辦理股務業務之信託業",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 71,
@@ -872,7 +943,8 @@
       "option_d": "稽核人員名冊及所受訓練",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 72,
@@ -884,7 +956,8 @@
       "option_d": "財務主管",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 73,
@@ -896,7 +969,8 @@
       "option_d": "公司設有審計委員會者，除須通知審計委員會，尚須通知總經理",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 74,
@@ -908,7 +982,8 @@
       "option_d": "不受限",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 75,
@@ -920,7 +995,8 @@
       "option_d": "對單一企業授權額度不得超過該公司最近期財務報表淨值 40%",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 76,
@@ -932,7 +1008,8 @@
       "option_d": "應建立備查簿，就從事衍生性商品交易之種類、金額、董事會通過日期及依規定應審慎評 估之事項，詳予登載於備查簿備查",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 77,
@@ -944,7 +1021,8 @@
       "option_d": "買賣附買回條件債券",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 78,
@@ -956,7 +1034,8 @@
       "option_d": "公司經理人",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 79,
@@ -968,7 +1047,8 @@
       "option_d": "監察人不得兼任公司董事、經理人或其他職員",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 80,
@@ -980,7 +1060,8 @@
       "option_d": "有出席股東會行使表決權之股東即可",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

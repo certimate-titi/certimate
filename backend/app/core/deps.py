@@ -12,10 +12,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-from app.core.config import get_settings
-
-# 預設 B2C 租戶 UUID（與 migration 038 一致）
-PUBLIC_B2C_TENANT_ID = "00000000-0000-0000-0000-000000b2cb2c"
+from app.core.config import get_settings, PUBLIC_B2C_TENANT_ID  # noqa: F401
 
 # 全域變數，由 environment.py 或應用程式啟動時設定
 _SessionLocal = None
@@ -154,11 +151,15 @@ def set_rls_tenant(db: Session, tenant_id: str) -> None:
     應在每個需要 RLS 的請求開始時呼叫。
     """
     # SET LOCAL 只在當前 transaction 有效，不會跨請求洩漏
+    # 注意：SET LOCAL 不支援 parameterized query（$1 語法），需用 literal
+    import re
+    tid = str(tenant_id)
+    if not re.match(r'^[0-9a-f-]{36}$', tid):
+        raise ValueError(f"Invalid tenant_id format: {tid}")
     db.execute(
         __import__("sqlalchemy").text(
-            "SET LOCAL app.current_tenant_id = :tid"
-        ),
-        {"tid": str(tenant_id)}
+            f"SET LOCAL app.current_tenant_id = '{tid}'"
+        )
     )
 
 

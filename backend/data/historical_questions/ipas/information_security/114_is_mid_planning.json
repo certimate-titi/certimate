@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
-    "subject": "",
-    "year": 114,
-    "session": 2,
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_mid_planning",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
     "total_questions": 40,
+    "questions_with_answer": 40,
     "bloom_distribution": {
       "remember": 19,
       "analyze": 4,
@@ -17,8 +19,7 @@
       "hard": 13,
       "medium": 8
     },
-    "source_pdf": "114_is_mid_planning.pdf",
-    "answer_pdf": null
+    "year": 114
   },
   "questions": [
     {
@@ -31,7 +32,8 @@
       "option_d": "告知個人資料使用之方式",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -43,7 +45,8 @@
       "option_d": "溝通或傳達方式",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -55,7 +58,8 @@
       "option_d": "第四級 最佳化整合指標 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -67,7 +71,8 @@
       "option_d": "公司對造成損害或影響之評估結果（如財務損失），可 能影響投資人之投資決策",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -79,7 +84,8 @@
       "option_d": "召集所有資訊人員，優先搶救被加密的電子病歷資料庫 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -91,7 +97,8 @@
       "option_d": "集中所有伺服器日誌至本地的資安訊息與事件管理系統 （SIEM）進行分析 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -103,7 +110,8 @@
       "option_d": "要求第三方軟體供應商皆簽署最高額度資安保險 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -115,7 +123,8 @@
       "option_d": "要求所有遠端工作模式，均需配置單向閘道傳輸器，以 確保作業安全",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -127,7 +136,8 @@
       "option_d": "端對端的加密通訊使得零信任架構的部署更具挑戰 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -139,7 +149,8 @@
       "option_d": "資料輸入作業由 A 員工負責，資料審核與最終送出作業 由 B 員工執行",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -151,7 +162,8 @@
       "option_d": "將風險完全轉移，僅透過購買網路安全保險來應對未來 可能的資料洩露 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -163,7 +175,8 @@
       "option_d": "針對財務、人事等敏感操作，實施職務區隔 （Segregation of Duties, SoD）與多重審批流程",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -175,7 +188,8 @@
       "option_d": "(4)(5) 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -187,7 +201,8 @@
       "option_d": "(4)(5) 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -199,7 +214,8 @@
       "option_d": "(5)(6) 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -211,7 +227,8 @@
       "option_d": "AI 系統速度（AI System Speed）",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -223,7 +240,8 @@
       "option_d": "OT 環境比較封閉可以不用更新軟體弱點 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -235,7 +253,8 @@
       "option_d": "導入增強寫入過濾器（Enhanced Write Filter, EWF）等 系統保護機制",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -247,7 +266,8 @@
       "option_d": "OT 環境中的資料流量過於龐大，難以進行深度封包檢 測（Deep Packet Inspection, DPI）",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -259,7 +279,8 @@
       "option_d": "僅依賴作業系統的內建安全功能 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -271,7 +292,8 @@
       "option_d": "生產基地透過站台對站台虛擬私人網路（Site-to-Site VPN），將流量全部導向公司總部",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -283,7 +305,8 @@
       "option_d": "選擇生產基地優先導入 ISO/IEC 27701 資訊安全管理驗 證 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -295,7 +318,8 @@
       "option_d": "宣導員工使用私人電腦進行遠端連線",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -307,7 +331,8 @@
       "option_d": "導入精簡用戶端配合雲端桌面 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -319,7 +344,8 @@
       "option_d": "1、3、4、5",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -331,7 +357,8 @@
       "option_d": "組織決策時無法完整納入利害關係人意見，因此僅須由 適當層級決議確認風險評估結果 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -343,7 +370,8 @@
       "option_d": "以竊取個人資料在暗網販售為目的的普通網路罪犯",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -355,7 +383,8 @@
       "option_d": "電子郵件系統負載平衡運作方式 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -367,7 +396,8 @@
       "option_d": "25431 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -379,7 +409,8 @@
       "option_d": "資訊安全管理需定期參考國際安全標準及銷售地之法律 法規要求，並更新公司的相關管理辨法與程序 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -391,7 +422,8 @@
       "option_d": "風險分擔（Risk Sharing） 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -403,7 +435,8 @@
       "option_d": "使用靜態程式碼分析工具檢查程式碼安全",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -415,7 +448,8 @@
       "option_d": "應考量組織可用資源來選擇風險處理選項 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -427,7 +461,8 @@
       "option_d": "需考量風險評鑑的結果，由風險擁有者於風險處理的選 項中，選擇適切之方式",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -439,7 +474,8 @@
       "option_d": "網站憑證必須要設定到期前提醒之巡查流程",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -451,7 +487,8 @@
       "option_d": "風險處理計畫之內容應包含風險當責者及核准與實施風 險處理計畫之人員 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -463,7 +500,8 @@
       "option_d": "社交工程",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -475,7 +513,8 @@
       "option_d": "風險轉移（Risk Transfer） 114 年度第 2 次 資訊安全工程師能力鑑定 中級試題 科目：I21資訊安全規劃實務 卷號：I21-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -487,7 +526,8 @@
       "option_d": "風險轉移（Risk Transfer）",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -499,7 +539,8 @@
       "option_d": "定期刪除備份檔案",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     }
   ]
 }

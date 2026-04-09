@@ -62,6 +62,9 @@ class B2BService:
             return {"error": True, "status_code": 403, "message": "此功能僅限 ULTRA 方案用戶使用"}
 
         institution = self.db.query(Institution).filter_by(admin_user_id=user_uuid).first()
+        # super_admin 可存取任意機構
+        if not institution and is_admin:
+            institution = self.db.query(Institution).first()
         if not institution:
             return {"error": True, "status_code": 404, "message": "找不到您管理的機構"}
 

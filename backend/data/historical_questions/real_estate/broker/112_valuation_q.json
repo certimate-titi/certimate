@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60150 112年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 112,
-    "session": 0,
+    "source": "代號：60150 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_valuation_q",
+    "exam_name": "代號：60150 112年專門職業及技術人員高等考試建築師、",
     "total_questions": 23,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 22,
       "analyze": 1
@@ -13,8 +15,7 @@
       "easy": 22,
       "hard": 1
     },
-    "source_pdf": "112_valuation_q.pdf",
-    "answer_pdf": null
+    "year": 112
   },
   "questions": [
     {
@@ -27,7 +28,8 @@
       "option_d": "或經紀人員之債務債權關係而為讓與、扣押、抵銷或設定負擔",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -39,7 +41,8 @@
       "option_d": "外國人經許可在中華民國充任經紀人員者，其有關業務上所為之文件、圖說，可不限以中華民",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -51,7 +54,8 @@
       "option_d": "雙方當事人簽訂租賃或買賣契約書時，經紀人應將不動產說明書交付與委託人交易之相對人",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -63,7 +67,8 @@
       "option_d": "經營代銷業務，受起造人或建築業委託代銷預售屋者，應於簽訂買賣契約之日起三十日內，將",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -75,7 +80,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -87,7 +93,8 @@
       "option_d": "報請所在地主管機關層轉中央主管機關備查",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -99,7 +106,8 @@
       "option_d": "回復原狀",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -111,7 +119,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -123,7 +132,8 @@
       "option_d": "公共基金經區分所有權人會議決議交付信託者，其運用應依區分所有權人會議之決議為之",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -135,7 +145,8 @@
       "option_d": "部分標示之詳細圖說及規約",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -147,7 +158,8 @@
       "option_d": "而為移轉，但設定負擔則可分別為之",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -159,7 +171,8 @@
       "option_d": "應經中央主管機關許可及辦理公司登記，並向中央主管機關申領登記證後，始得執業",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -171,7 +184,8 @@
       "option_d": "以脅迫、利誘或其他不正當方法，使他事業不為價格之競爭、參與結合、聯合或為垂直限制競",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -183,7 +197,8 @@
       "option_d": "不動產經紀業者未依成屋買賣定型化契約書應記載及不得記載事項製作契約書者",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -195,7 +210,8 @@
       "option_d": "無正當理由，對他事業給予差別待遇之行為",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -207,7 +223,8 @@
       "option_d": "聯合行為經許可後，因經濟情況變更者，主管機關得廢止該許可",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -219,7 +236,8 @@
       "option_d": "主管機關恢復調查者，裁處權時效自恢復調查之翌日起，重新起算",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -231,7 +249,8 @@
       "option_d": "輸入之商品或服務，應附中文標示及說明書，其內容不得較原產地之標示及說明書簡略",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -243,7 +262,8 @@
       "option_d": "契約之內容",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -255,7 +275,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -267,7 +288,8 @@
       "option_d": "當事人對該解決方案，得於送達後十日之不變期間內，提出異議；未於異議期間內提出異議者，",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -279,7 +301,8 @@
       "option_d": "應負舉證責任",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -291,7 +314,8 @@
       "option_d": "消費者保護團體為商品或服務之調查、檢驗時，請求政府予以協助時，政府不應允許",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

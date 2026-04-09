@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
-    "subject": "",
-    "year": 114,
-    "session": 0,
+    "source": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_mid_ml",
+    "exam_name": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
     "total_questions": 39,
+    "questions_with_answer": 39,
     "bloom_distribution": {
       "remember": 29,
       "analyze": 1,
@@ -18,8 +20,7 @@
       "hard": 4,
       "medium": 1
     },
-    "source_pdf": "114_ai_mid_ml.pdf",
-    "answer_pdf": null
+    "year": 114
   },
   "questions": [
     {
@@ -32,7 +33,8 @@
       "option_d": "提高學習率（Learning Rate），加速模型收斂速度 在訓練非線性模型時，若目標函數為非凸函數（Non-convex Function），",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -44,7 +46,8 @@
       "option_d": "過擬合 在執行 DBSCAN（Density-Based Spatial Clustering of Applications",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -56,7 +59,8 @@
       "option_d": "潛在點（Potential Point）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -68,7 +72,8 @@
       "option_d": "整合所有特徵並輸出最終分類結果",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -80,7 +85,8 @@
       "option_d": "CNN 捨棄激勵函數（Activation Function），以加快運算速度",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -92,7 +98,8 @@
       "option_d": "將高維度的感測器資料壓縮成低維表示 資訊增益（Information Gain）常用於衡量特徵對分類結果的不確定性貢",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -104,7 +111,8 @@
       "option_d": "透過遞迴分裂方式建立分類規則的決策樹模型 在建構以距離為基礎的機器學習模型（如 KNN、SVM）時，",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -116,7 +124,8 @@
       "option_d": "進行隨機抽樣以平衡資料筆數 下列哪一種應用情境最適合導入 AutoML，以提升模型開發效率？",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -128,7 +137,8 @@
       "option_d": "能更有效率搜尋高維參數空間 某智慧製造公司開發一套設備故障預測系統，利用感測器資料訓練深度神",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -140,7 +150,8 @@
       "option_d": "模型在訓練後產生的權重值 標籤偏差(Label Bias)通常是因為什麼原因造成？",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -152,7 +163,8 @@
       "option_d": "銀行導入AI 模型預測客戶流失率，並自動推薦留客優惠方案 在線性迴歸模型中，若 R²值為 0.85，其意義為何？",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -164,7 +176,8 @@
       "option_d": "0.750 下列哪一種優化演算法內建動量（Momentum）的設計機制？",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -176,7 +189,8 @@
       "option_d": "採用批次正規化（Batch Normalization）技術提升模型穩定性",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -188,7 +202,8 @@
       "option_d": "欠採樣多數類(Undersampling the majority class)",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -200,7 +215,8 @@
       "option_d": "對特徵進行標準化 某語音辨識系統開發團隊採用 Transformer 架構，為了讓模型能同時理解",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -212,7 +228,8 @@
       "option_d": "避免梯度消失（Gradient Vanishing）問題 某電商平台希望預測顧客是否會購買特定商品。系統蒐集顧客的瀏覽紀",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -224,7 +241,8 @@
       "option_d": "依據回饋信號（Feedback Signal）透過強化學習（Reinforcement Learning）動態調整推薦策略",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -236,7 +254,8 @@
       "option_d": "特徵選取（Feature Selection）",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -248,7 +267,8 @@
       "option_d": "殘差圖呈現隨機分佈，表示模型已完全符合所有假設",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -260,7 +280,8 @@
       "option_d": "使用樣本穩定性指標（Population Stability Index, PSI）檢驗模型 穩定性 在防止監督式學習模型過擬合（Overfitting）時，",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -272,7 +293,8 @@
       "option_d": "擴增輸入特徵變數以提升模型表達能力",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -284,7 +306,8 @@
       "option_d": "改用ReLU（Rectified Linear Unit）激活函數，以引入非線性並提升 模型表達能力",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -296,7 +319,8 @@
       "option_d": "模型未進行超參數調整，導致過擬合（Overfitting） 在工業設備故障預測專案中，模型訓練與超參數調整均依賴於一段歷史數",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -308,7 +332,8 @@
       "option_d": "採用時間序列交叉驗證（Time Series Cross Validation）或滑動視窗 驗證（Rolling Window Validation）方法，動態更新驗證資料以適應時間 演進 某情感分析模型在英文資料集上取得 macro F1-score = 0.91。當該模型",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -320,7 +345,8 @@
       "option_d": "以均方誤差（MSE）取代 F1-score 評估可獲得更準確的結果",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -332,7 +358,8 @@
       "option_d": "將所有資料重新合併後訓練至收斂，避免因資料分割導致評估波動",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -344,7 +371,8 @@
       "option_d": "採用L1正則化（Lasso），透過懲罰項使部分特徵係數縮為 0",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -356,7 +384,8 @@
       "option_d": "O(log n) — 執行時間與資料量呈對數成長關係 某醫療人工智慧團隊正在開發心臟病風險預測模型，資料量僅有 150 筆，",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -368,7 +397,8 @@
       "option_d": "分層留一法交叉驗證（Stratified Leave-One-Out Cross Validation）",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -380,7 +410,8 @@
       "option_d": "三個特徵值相差不大，顯示各主成分變異均衡，降維可能導致資訊損失",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -392,7 +423,8 @@
       "option_d": "資料在加密狀態下仍可進行數值運算，模型訓練可於未解密資料上完成",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -404,7 +436,8 @@
       "option_d": "同態加密（Homomorphic Encryption）＋ 安全多方計算（Secure Multi-party Computation, MPC）＋ 雜湊函數（Hash Function）＋ 對稱 加密（Symmetric Encryption） 附圖程式碼所計算的是哪一類型的評估指標？",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -416,7 +449,8 @@
       "option_d": "A_and_B.sum() / B.sum() VGG16是由牛津大學 Visual Geometry Group(VGG)在2014年提出的經典 卷積神經網路（Convolutional Neural Network, CNN）架構。",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -428,7 +462,8 @@
       "option_d": "池化層(MaxPool2d, AdaptiveAvgPool2d) 在神經網路中，了解各層的運算量分佈，有助於模型壓縮與硬體加速的策",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -440,7 +475,8 @@
       "option_d": "池化層(MaxPool2d, AdaptiveAvgPool2d) VGG16層數深且結構規則，由多層卷積、池化及全連接層組成。了解各層",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -452,7 +488,8 @@
       "option_d": "VGG16包含 13層卷積層（conv）與 3層全連接層（FC），總參數數目 約為 138,357,544（約138.36M） 在實務應用中，我們常使用遷移學習(transfer learning)技巧，即載入預",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -464,7 +501,8 @@
       "option_d": "在郵遞區號自動辨識的研究中，研究人員收集了一份手寫數字影像資料 集，每一張影像為 8×8的灰階圖片，共包含多個手寫數字樣本。",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -476,7 +514,8 @@
       "option_d": "程式碼D 研究人員在對digits 資料集進行分類時，決定使用 KNN並搭配交叉驗證來",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -488,7 +527,8 @@
       "option_d": "C、D、E 《以下空白》",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     }
   ]
 }

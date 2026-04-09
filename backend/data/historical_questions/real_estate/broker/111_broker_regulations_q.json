@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60130 111年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 111,
-    "session": 0,
+    "source": "代號：60130 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_broker_regulations_q",
+    "exam_name": "代號：60130 111年專門職業及技術人員高等考試建築師、",
     "total_questions": 7,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 3,
       "analyze": 2,
@@ -16,8 +18,7 @@
       "hard": 2,
       "medium": 1
     },
-    "source_pdf": "111_broker_regulations_q.pdf",
-    "answer_pdf": null
+    "year": 111
   },
   "questions": [
     {
@@ -30,7 +31,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -42,7 +44,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -54,7 +57,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -66,7 +70,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -78,7 +83,8 @@
       "option_d": "經適當市場行銷及正常交易條件形成",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -90,7 +96,8 @@
       "option_d": "其調整以差額法為原則",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -102,7 +109,8 @@
       "option_d": "合法建築物以成本法估價，違章建築物則以加速折舊方式估價",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     }
   ]
 }

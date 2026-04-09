@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
-    "subject": "",
-    "year": 114,
-    "session": 0,
+    "source": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_fundamentals_4th",
+    "exam_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
     "total_questions": 44,
+    "questions_with_answer": 44,
     "bloom_distribution": {
       "remember": 30,
       "understand": 3,
@@ -17,8 +19,7 @@
       "hard": 7,
       "medium": 4
     },
-    "source_pdf": "114_ai_fundamentals_4th.pdf",
-    "answer_pdf": null
+    "year": 114
   },
   "questions": [
     {
@@ -31,7 +32,8 @@
       "option_d": "寬深模型（Wide and Deep） 關於ETL（Extract-Transform-Load），",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -43,7 +45,8 @@
       "option_d": "如何在模型偏差與變異之間取得平衡，以避免過度擬合或欠擬合 在 Lasso 模型中，L1 正則化（Regularization）導致參數收斂為零的",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -55,7 +58,8 @@
       "option_d": "L1會轉換損失函數為非凸形 貝氏分類器（Naive Bayes Classifier）常被應用於文字分類、垃圾郵",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -67,7 +71,8 @@
       "option_d": "透過試錯學習，根據行動結果的獎勵或懲罰來優化決策策略的模型 為提升生成式 AI系統回應的語境一致性，常會結合哪類模型技術？",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -79,7 +84,8 @@
       "option_d": "AI Ethics Review Board 根據《金融機構運用人工智慧技術作業規範》，金融機構須建立內部治",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -91,7 +97,8 @@
       "option_d": "指派高階主管或委員會進行監督管理",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -103,7 +110,8 @@
       "option_d": "根據歷史股價預測未來股市的走勢",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -115,7 +123,8 @@
       "option_d": "長條圖（Bar Chart） 下列哪一項應用情境與機器學習類型搭配正確？",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -127,7 +136,8 @@
       "option_d": "透過熱圖分析廣告投放成本與訂單轉換率之間的潛在關聯性 某模型使用 K-近鄰演算法（KNN）進行分類，K設為 3。 一筆新的測",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -139,7 +149,8 @@
       "option_d": "類別A或 B，視距離遠近加權而定",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -151,7 +162,8 @@
       "option_d": "RNN只能用於分類任務，不能應用於時間序列預測",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -163,7 +175,8 @@
       "option_d": "遷移學習（Transfer Learning） 關於 Q-Learning 與Deep Q-Learning，",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -175,7 +188,8 @@
       "option_d": "KL散度（Kullback-Leibler Divergence）",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -187,7 +201,8 @@
       "option_d": "K平均演算法（K-means）",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -199,7 +214,8 @@
       "option_d": "隨機森林（Random Forest） 關於變分自編碼器（Variational Autoencoder, VAE）的運作流程，下",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -211,7 +227,8 @@
       "option_d": "編碼器利用最大邊際機率對資料進行異常點偵測",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -223,7 +240,8 @@
       "option_d": "互動性 在保持GPT-OSS模型架構不變的前提下，如果將模型參數量從 20億提",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -235,7 +253,8 @@
       "option_d": "增加參數量不影響記憶體使用，只會影響計算速度 在自然語言處理任務中，為了減少訓練語料中偏見對模型的影響，下列",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -247,7 +266,8 @@
       "option_d": "對訓練資料施加額外正則化或噪音，使模型",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -259,7 +279,8 @@
       "option_d": "模型過度適應微調的資料分佈，逐漸遺忘先前預訓練所獲得的廣泛 知識，在原有任務或廣泛領域上表現變差 在大型 Transformer 模型的效能優化過程中，常見的方法之一是「剪",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -271,7 +292,8 @@
       "option_d": "根據注意力分數動態跳過處理部分輸入 Token，以減少每次前向傳 播的計算 對非常長的輸入序列進行推理（Inference），Transformer模型推理的",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -283,7 +305,8 @@
       "option_d": "自注意力層的計算和其記憶體使用，因為注意力矩陣的大小隨序列 長度呈平方級增長 在「可解釋人工智慧（Explainable AI, XAI）」領域中，LIME（Local",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -295,7 +318,8 @@
       "option_d": "用於生成大量擬真數據來替代訓練集 在醫療診斷決策支援系統等高風險領域中，「可解釋人工智慧",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -307,7 +331,8 @@
       "option_d": "透過提供透明化的運作過程，進而減輕臨床人員負擔，並提升醫療 服務的整體效率 在金融科技公司的信貸決策系統中，導入反事實解釋（Counterfactual",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -319,7 +344,8 @@
       "option_d": "生成的反事實樣本必須滿足特徵間的因果約束和業務邏輯約束，同 時確保建議的改變在現實中具有可操作性且符合公平放貸法規 在統計推論中，若樣本來自母體但呈現明顯偏態分布，且樣本數有限，",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -331,7 +357,8 @@
       "option_d": "完全依賴樣本標準差來估計母體參數，忽略分布形態 在工業物聯網架構中，進行設備預測性維護（Predictive Maintenance）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -343,7 +370,8 @@
       "option_d": "採用基於重建誤差的自編碼器模型（Sequence-to-Sequence Autoencoder）進行異常偵測，並僅使用正常資料進行訓練 在零售業進行客戶行為分析時，資料倉儲中發現多個欄位儲存相同的",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -355,7 +383,8 @@
       "option_d": "將重複欄位視為類別欄位，進行 One-hot編碼（One-hot encoding） 後輸入模型，以避免數值誤導模型學習過程",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -367,7 +396,8 @@
       "option_d": "模型學到的決策邊界主要由多數類別主導，忽視了稀有類別，造成 該類別的召回率（Recall）大幅降低",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -379,7 +409,8 @@
       "option_d": "對不同購物路徑設定統計假設並進行雙樣本 t檢定",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -391,7 +422,8 @@
       "option_d": "在模型評估時，針對相鄰時間區段進行誤差合併，以便用整體估計 方式修正詐騙比例",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -403,7 +435,8 @@
       "option_d": "建立常見問題的標準答案集，透過快速檢索回應以降低模型負擔",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -415,7 +448,8 @@
       "option_d": "只採用單一的整體決定係數 (R²) 作為模型優劣的判斷依據 關 於 監 督 式 學 習 （ Supervised Learning ） 與 非 監 督 式 學 習",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -427,7 +461,8 @@
       "option_d": "2、3、5 一家旅遊平台希望建立模型，預測顧客下次是否會再次透過該平台訂",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -439,7 +474,8 @@
       "option_d": "One-hot 編碼（One-hot Encoding） 一家跨國醫療研究機構希望利用各地醫院的病患資料，建立一個能夠",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -451,7 +487,8 @@
       "option_d": "交叉驗證（Cross-validation）",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -463,7 +500,8 @@
       "option_d": "數值標準化（Numerical Standardization） 在機器學習中，「叢集（Clustering）」方法最典型的應用情境是下列何",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -475,7 +513,8 @@
       "option_d": "透過大量已標註影像，訓練深度學習模型來辨識照片中的物件種類",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -487,7 +526,8 @@
       "option_d": "將檢測到的離群值以 Label Encoding 編碼，轉換為序號標籤以避 免影響原始分布",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -499,7 +539,8 @@
       "option_d": "將特徵透過降維方法（如 PCA）轉換為新特徵，再用於模型訓練 在訓練神經網路時，為了提升模型收斂速度與穩定性，避免梯度消失或",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -511,7 +552,8 @@
       "option_d": "對目標變數或特徵進行標準化 若希望檢視某一連續型數據的分布情形（如集中程度、偏態或是否呈現",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -523,7 +565,8 @@
       "option_d": "檢視產品價格與月銷售量之間的關聯性，以評估是否具線性相關",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -535,7 +578,8 @@
       "option_d": "惡意與濫用可能性 某雲端服務公司計畫將大型語言模型部署於線上系統，並以批次推論",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -547,7 +591,8 @@
       "option_d": "在叢集環境中精確安排推論任務，以提升 GPU/TPU等硬體資源的利 用率 《以下空白》",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

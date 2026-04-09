@@ -34,6 +34,11 @@ class KnowledgeNode(Base):
     available_questions: Mapped[int] = mapped_column(Integer, default=0)
     exam_frequency: Mapped[str | None] = mapped_column(String(10))
     source_origin: Mapped[str] = mapped_column(String(20), server_default="document")
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

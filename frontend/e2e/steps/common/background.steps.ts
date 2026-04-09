@@ -80,6 +80,15 @@ Given('密碼欄位目前為明文顯示模式', async ({ page }) => {
   await toggleBtn.click();
 });
 
+Given('使用者尚未登入（無有效 JWT）', async ({ page }) => {
+  // Clear any stored JWT tokens
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.removeItem('certimate_jwt_token');
+    sessionStorage.removeItem('certimate_jwt_token');
+  });
+});
+
 Given('使用者在忘記密碼頁面已輸入 {string}', async ({ page }, email: string) => {
   await page.goto('/forgot-password');
   await page.getByPlaceholder('you@example.com').fill(email);

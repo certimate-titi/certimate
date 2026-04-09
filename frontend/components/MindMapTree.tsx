@@ -13,6 +13,9 @@ export interface MindMapNode {
   mastery_rate: number;
   source_page: number | null;
   children: MindMapNode[];
+  // V3 有機生長欄位
+  progress_percentage?: number;
+  status?: string;
 }
 
 interface MindMapTreeProps {
@@ -24,9 +27,15 @@ interface MindMapTreeProps {
 const MASTERY_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
   green: { dot: 'bg-emerald-500', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
   orange: { dot: 'bg-amber-500', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700' },
+  yellow: { dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-600' },
   red: { dot: 'bg-rose-500', bg: 'bg-rose-50 border-rose-200', text: 'text-rose-700' },
   gray: { dot: 'bg-slate-300', bg: 'bg-white border-slate-200', text: 'text-slate-600' },
 };
+
+// V3: 純 progress 驅動顏色
+function getNodeColor(node: MindMapNode): string {
+  return node.mastery_color || 'gray';
+}
 
 const DEPTH_STYLES = [
   'text-base font-bold text-slate-900',     // depth 0: root
@@ -53,7 +62,9 @@ function TreeNode({
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isSelected = node.id === selectedNodeId;
-  const colors = MASTERY_COLORS[node.mastery_color] || MASTERY_COLORS.gray;
+  const nodeColor = getNodeColor(node);
+  const colors = MASTERY_COLORS[nodeColor] || MASTERY_COLORS.gray;
+  const displayRate = node.mastery_rate;
   const depthStyle = DEPTH_STYLES[Math.min(node.depth, 3)];
   const isRoot = node.depth === 0;
 
@@ -118,9 +129,9 @@ function TreeNode({
           )}
 
           {/* Mastery percentage */}
-          {node.mastery_rate > 0 && (
+          {displayRate > 0 && (
             <span className={`text-[10px] font-medium shrink-0 ${colors.text}`}>
-              {node.mastery_rate}%
+              {displayRate}%
             </span>
           )}
         </button>

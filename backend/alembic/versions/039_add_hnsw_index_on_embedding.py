@@ -36,7 +36,7 @@ def upgrade() -> None:
     # m=16: 每個節點最多 16 條連結（越大召回率越高，記憶體越多）
     # ef_construction=64: 建構時的搜尋寬度（越大索引品質越高，建構越慢）
     op.execute(sa.text("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_resource_chunks_embedding_hnsw
+        CREATE INDEX IF NOT EXISTS ix_resource_chunks_embedding_hnsw
         ON resource_chunks
         USING hnsw (embedding vector_cosine_ops)
         WITH (m = 16, ef_construction = 64)
@@ -45,7 +45,7 @@ def upgrade() -> None:
     # 建立 tenant_id 複合過濾索引（先過濾租戶，再做向量搜尋 Pre-filtering）
     # 注意：HNSW 不支援複合欄位，但可用 WHERE 子句建立 Partial Index
     op.execute(sa.text("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_resource_chunks_tenant_embedding
+        CREATE INDEX IF NOT EXISTS ix_resource_chunks_tenant_embedding
         ON resource_chunks (tenant_id)
         WHERE tenant_id IS NOT NULL
     """))
@@ -60,14 +60,14 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute(sa.text(
-        "DROP INDEX CONCURRENTLY IF EXISTS ix_resource_chunks_tenant_embedding"
+        "DROP INDEX IF EXISTS ix_resource_chunks_tenant_embedding"
     ))
     op.execute(sa.text(
-        "DROP INDEX CONCURRENTLY IF EXISTS ix_resource_chunks_embedding_hnsw"
+        "DROP INDEX IF EXISTS ix_resource_chunks_embedding_hnsw"
     ))
     # 恢復 IVFFlat（需要資料存在才能建立 lists 參數，此處用保守值）
     op.execute(sa.text("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS resource_chunks_embedding_idx
+        CREATE INDEX IF NOT EXISTS resource_chunks_embedding_idx
         ON resource_chunks
         USING ivfflat (embedding vector_cosine_ops)
         WITH (lists = 100)

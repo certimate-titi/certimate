@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from app.core.deps import get_db, get_current_user_id
+from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.wrong_answer_service import WrongAnswerService
 from app.services.ai_coach_service import AICoachService
 
@@ -28,7 +28,7 @@ def _handle_result(result: dict):
 def get_advanced_coach(
     subject_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     """ULTRA 專屬進階 AI 教練 — 弱點分析 + 突破策略 + 衝刺計畫。"""
     service = AICoachService(db)
@@ -40,7 +40,7 @@ def get_advanced_coach(
 def get_learning_history(
     days: int = 30,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     """ULTRA 專屬 — 近 N 天學習歷史摘要。"""
     service = AICoachService(db)
@@ -52,7 +52,7 @@ def get_learning_history(
 def list_wrong_answers(
     subject_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerService(db)
     result = service.list_by_subject(user_id=user_id, subject_id=subject_id)
@@ -63,7 +63,7 @@ def list_wrong_answers(
 def get_coach_info_no_exam(
     question_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     """取得 AI 教練資訊（前端不帶 exam_id 的路由）。"""
     service = WrongAnswerService(db)
@@ -78,7 +78,7 @@ def ai_coach_chat_no_exam(
     question_id: str,
     body: CoachChatRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     """AI 教練聊天（前端不帶 exam_id 的路由）。"""
     service = WrongAnswerService(db)
@@ -93,7 +93,7 @@ def ai_coach_chat_no_exam(
 def get_wrong_answers_by_exam(
     exam_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerService(db)
     result = service.get_wrong_answers_by_exam(exam_id=exam_id, user_id=user_id)
@@ -105,7 +105,7 @@ def get_question_analysis(
     exam_id: str,
     question_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerService(db)
     result = service.get_analysis(
@@ -119,7 +119,7 @@ def get_coach_info(
     exam_id: str,
     question_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerService(db)
     result = service.get_coach_info(
@@ -134,7 +134,7 @@ def ai_coach_chat(
     question_id: str,
     body: CoachChatRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerService(db)
     result = service.ai_coach_chat(

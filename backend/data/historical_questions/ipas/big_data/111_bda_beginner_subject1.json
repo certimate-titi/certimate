@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "111 年度巨量資料分析師能力鑑定試題",
-    "subject": "",
-    "year": 111,
-    "session": 0,
+    "source": "111 年度巨量資料分析師能力鑑定試題",
+    "exam_code": "IPA111",
+    "category_code": "big_data",
+    "subject_code": "111_bda_beginner_subject1",
+    "exam_name": "111 年度巨量資料分析師能力鑑定試題",
     "total_questions": 43,
+    "questions_with_answer": 43,
     "bloom_distribution": {
       "analyze": 15,
       "remember": 26,
@@ -16,8 +18,7 @@
       "easy": 26,
       "medium": 1
     },
-    "source_pdf": "111_bda_beginner_subject1.pdf",
-    "answer_pdf": null
+    "year": 111
   },
   "questions": [
     {
@@ -30,7 +31,8 @@
       "option_d": "mat_a %*% mat_b 結果為 0",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -42,7 +44,8 @@
       "option_d": "執行mydata$cyl[6] <- 10的結果會將第 6筆資料由原先6取代為 10 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -54,7 +57,8 @@
       "option_d": "結構化",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -66,7 +70,8 @@
       "option_d": "4",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -78,7 +83,8 @@
       "option_d": "HBase顯示所有表格指令為 list",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -90,7 +96,8 @@
       "option_d": "於SELECT 後方加上*符號，表示查詢所有欄位的資料",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -102,7 +109,8 @@
       "option_d": "(1)(4)(3)(2)",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -114,7 +122,8 @@
       "option_d": "graph 資料庫",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -126,7 +135,8 @@
       "option_d": "建立索引會占用儲存空間，資料增、刪、修時會異動儲存空間 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -138,7 +148,8 @@
       "option_d": "(1)DELETE (2)產品編號",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -150,7 +161,8 @@
       "option_d": "不允許使用者從資料庫中快速擷取記錄 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -162,7 +174,8 @@
       "option_d": "names(df) 結 果 是 \"Sepal.Length\" \"Sepal.Width\" \"Petal.Length\" \"Petal.Width\" \"Species\"",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -174,7 +187,8 @@
       "option_d": "JPEG",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -186,7 +200,8 @@
       "option_d": "R 可以讀取外部資料，包括統計軟體、試算表軟體、網路等等資料 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -198,7 +213,8 @@
       "option_d": "在Python 語言中，可使用 open(\"file.csv\", \"w+\")讀寫.csv 檔",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -210,7 +226,8 @@
       "option_d": "欄位",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -222,7 +239,8 @@
       "option_d": "sep=\"\\\\t\" 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -234,7 +252,8 @@
       "option_d": "width = c(4, 1, 8)",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -246,7 +265,8 @@
       "option_d": "R 語言與Python 語言中的數字、字串、矩陣都是物件，但函數不是物件 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -258,7 +278,8 @@
       "option_d": "變數名稱不能使用運算符號當開頭",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -270,7 +291,8 @@
       "option_d": "x.iloc[3,3]",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -282,7 +304,8 @@
       "option_d": "48 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -294,7 +317,8 @@
       "option_d": "tapply()：可以對資料進行分組後進行摘要統計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -306,7 +330,8 @@
       "option_d": "a %*% b",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -318,7 +343,8 @@
       "option_d": "[6, 8, 10, 12] 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -330,7 +356,8 @@
       "option_d": "",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -342,7 +369,8 @@
       "option_d": "try 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -354,7 +382,8 @@
       "option_d": "720",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -366,7 +395,8 @@
       "option_d": "無輸出內容 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -378,7 +408,8 @@
       "option_d": "",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -390,7 +421,8 @@
       "option_d": "[[1,2],3,4,[5,6],7,8] 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -402,7 +434,8 @@
       "option_d": "mylist.append(x)",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -414,7 +447,8 @@
       "option_d": "Ans4 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -426,7 +460,8 @@
       "option_d": "value1的值為'Saturday'，value2的值為{'gender': 'male', 'city': 'Taipei'}",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -438,7 +473,8 @@
       "option_d": "111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -450,7 +486,8 @@
       "option_d": "如果Map階段的產出過大，則需要較多數目的 Reducer來處理，以免所有運算 最後擠在少數節點中",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -462,7 +499,8 @@
       "option_d": "探索式資料分析、資料探勘等，皆可透過 R 語言達成",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -474,7 +512,8 @@
       "option_d": "standalone",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -486,7 +525,8 @@
       "option_d": "產生警告（warnings）訊息時，可繼續執行程式 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -498,7 +538,8 @@
       "option_d": "Map只能在 JobTracker 上執行",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -510,7 +551,8 @@
       "option_d": "('MemoryError',)",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -522,7 +564,8 @@
       "option_d": "可藉由函數輔助處理例外狀況與瞭解錯誤訊息 111 年度巨量資料分析師能力鑑定試題 科目1：資料導向程式設計",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -534,7 +577,8 @@
       "option_d": "當one與two 相等時，引發錯誤，顯示 three 的內容",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     }
   ]
 }

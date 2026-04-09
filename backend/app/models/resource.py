@@ -81,6 +81,11 @@ class Resource(Base):
     implicit_consent: Mapped[bool] = mapped_column(Boolean, default=True)
     tags: Mapped[list | None] = mapped_column(JSON, server_default="[]")
     error_message: Mapped[str | None] = mapped_column(Text)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

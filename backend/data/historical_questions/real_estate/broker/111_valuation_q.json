@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60150 111年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 111,
-    "session": 0,
+    "source": "代號：60150 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_valuation_q",
+    "exam_name": "代號：60150 111年專門職業及技術人員高等考試建築師、",
     "total_questions": 17,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 15,
       "analyze": 1,
@@ -14,8 +16,7 @@
       "easy": 16,
       "hard": 1
     },
-    "source_pdf": "111_valuation_q.pdf",
-    "answer_pdf": null
+    "year": 111
   },
   "questions": [
     {
@@ -28,7 +29,8 @@
       "option_d": "續者",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -40,7 +42,8 @@
       "option_d": "未具備經紀人員資格者，於簽訂專任約後，經紀業得僱用其從事仲介或代銷業務",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -52,7 +55,8 @@
       "option_d": "依本條例所處罰鍰，經通知繳納而逾期不繳納者，移送法院強制執行",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -64,7 +68,8 @@
       "option_d": "事業所組成之同業公會視為本法所稱事業",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -76,7 +81,8 @@
       "option_d": "主管機關就事業結合之申報，得徵詢外界意見，必要時得委請學術研究機構提供產業經濟分析",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -88,7 +94,8 @@
       "option_d": "定之事項，為虛偽不實或引人錯誤之表示或表徵",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -100,7 +107,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -112,7 +120,8 @@
       "option_d": "主張其條款不構成契約之內容。但乙得主張該條款仍構成契約之內容",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -124,7 +133,8 @@
       "option_d": "企業經營者使用定型化契約者，主管機關得隨時派員查核",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -136,7 +146,8 @@
       "option_d": "利率",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -148,7 +159,8 @@
       "option_d": "以網際網路提供之廣告資訊",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -160,7 +172,8 @@
       "option_d": "公寓大廈：指構造上或使用上或在建築執照設計圖樣標有明確界線，得區分為數部分之建築物",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -172,7 +185,8 @@
       "option_d": "連通數個專有部分之走廊或樓梯，及其通往室外之通路或門廳；社區內各巷道、防火巷弄",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -184,7 +198,8 @@
       "option_d": "他住戶因維護、修繕專有部分，必須進入或使用其專有部分或約定專用部分時，不得拒絕",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -196,7 +211,8 @@
       "option_d": "故為無效。",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -208,7 +224,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -220,7 +237,8 @@
       "option_d": "經紀人員受申誡處分三次者，應廢止其經紀人員證書或證明",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 2 次證券交易相關法規與實務乙科測驗試題",
-    "subject": "證券交易相關法規與實務",
-    "year": 114,
-    "session": 2,
+    "source": "114 年第 2 次證券交易相關法規與實務乙科測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "securities_regulations_b_session02_questions",
+    "exam_name": "114 年第 2 次證券交易相關法規與實務乙科測驗試題",
     "total_questions": 50,
+    "questions_with_answer": 50,
     "bloom_distribution": {
       "remember": 44,
       "apply": 3,
@@ -16,8 +18,7 @@
       "medium": 3,
       "hard": 2
     },
-    "source_pdf": "securities_regulations_b_session02_questions.pdf",
-    "answer_pdf": "securities_regulations_b_session02_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -30,7 +31,8 @@
       "option_d": "需為持有公司已發行股份總數百分之十以上股份之股東",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -42,7 +44,8 @@
       "option_d": "全數",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -54,7 +57,8 @@
       "option_d": "甲、乙皆錯誤",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -66,7 +70,8 @@
       "option_d": "證券集中保管公司",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -78,7 +83,8 @@
       "option_d": "掛牌",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -90,7 +96,8 @@
       "option_d": "處三年以上十年以下有期徒刑，得併科新臺幣五千萬元以下罰金",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -102,7 +109,8 @@
       "option_d": "總經理之任免",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -114,7 +122,8 @@
       "option_d": "董事會議所為決議得撤銷",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -126,7 +135,8 @@
       "option_d": "申報核准；十個營業日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -138,7 +148,8 @@
       "option_d": "Z公司應於同年12 月 15 日以前，彙總向主管機關申報",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -150,7 +161,8 @@
       "option_d": "有價證券發行後，主管機關得隨時命令發行人提出財務、業務報告",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -162,7 +174,8 @@
       "option_d": "15%；1.5%",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -174,7 +187,8 @@
       "option_d": "財政部",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -186,7 +200,8 @@
       "option_d": "10%；20%",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -198,7 +213,8 @@
       "option_d": "一千萬元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -210,7 +226,8 @@
       "option_d": "委託人為專業機構投資人及高淨值投資法人，證券商於開戶前應指派業務人員說明可能風 險",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -222,7 +239,8 @@
       "option_d": "4 小時",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -234,7 +252,8 @@
       "option_d": "三年以上十年以下有期徒刑",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -246,7 +265,8 @@
       "option_d": "經濟部",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -258,7 +278,8 @@
       "option_d": "證券商業同業公會",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -270,7 +291,8 @@
       "option_d": "會員出資總額百分之五",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -282,7 +304,8 @@
       "option_d": "證券承銷商",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -294,7 +317,8 @@
       "option_d": "十日",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -306,7 +330,8 @@
       "option_d": "申請主管機關評議",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -318,7 +343,8 @@
       "option_d": "三十人；證券投資人或期貨交易人",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -330,7 +356,8 @@
       "option_d": "六個月",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -342,7 +369,8 @@
       "option_d": "未上市或未在證券商營業處所買賣之公司",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -354,7 +382,8 @@
       "option_d": "會計師獨立性報告",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -366,7 +395,8 @@
       "option_d": "有爭議或申訴之案件應至少保留紀錄五年",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -378,7 +408,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -390,7 +421,8 @@
       "option_d": "經營選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -402,7 +434,8 @@
       "option_d": "尚未開放買賣外國虛擬資產 ETF",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -414,7 +447,8 @@
       "option_d": "一百萬股",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -426,7 +460,8 @@
       "option_d": "不影響委託書效力，但須罰款",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -438,7 +473,8 @@
       "option_d": "依隨機排列之順序向應賣人收購",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -450,7 +486,8 @@
       "option_d": "股東會現場發放，或以電子檔案傳送至視訊會議平台，二者擇一",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -462,7 +499,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -474,7 +512,8 @@
       "option_d": "9:30",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -486,7 +525,8 @@
       "option_d": "外國股票原流通市場之交易單位",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -498,7 +538,8 @@
       "option_d": "500%",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -510,7 +551,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -522,7 +564,8 @@
       "option_d": "選項",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -534,7 +577,8 @@
       "option_d": "證交所或櫃買中心",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -546,7 +590,8 @@
       "option_d": "經濟部",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -558,7 +603,8 @@
       "option_d": "兼具證券自營商及經紀商者，於每次買賣時之書面文件區別自行或代客買賣",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -570,7 +616,8 @@
       "option_d": "登錄於櫃買中心「黃金現貨交易平台」之黃金",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -582,7 +629,8 @@
       "option_d": "三日內",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -594,7 +642,8 @@
       "option_d": "融券人",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -606,7 +655,8 @@
       "option_d": "無限制",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -618,7 +668,8 @@
       "option_d": "千分之二",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

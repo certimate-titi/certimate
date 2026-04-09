@@ -1,18 +1,19 @@
 {
   "import_meta": {
-    "source_name": "代號：60120 111年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 111,
-    "session": 0,
+    "source": "代號：60120 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_civil_law_q",
+    "exam_name": "代號：60120 111年專門職業及技術人員高等考試建築師、",
     "total_questions": 19,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 19
     },
     "difficulty_distribution": {
       "easy": 19
     },
-    "source_pdf": "111_civil_law_q.pdf",
-    "answer_pdf": null
+    "year": 111
   },
   "questions": [
     {
@@ -25,7 +26,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -37,7 +39,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -49,7 +52,8 @@
       "option_d": "管理人管理本人事務之報酬請求權",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -61,7 +65,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -73,7 +78,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -85,7 +91,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -97,7 +104,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -109,7 +117,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -121,7 +130,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -133,7 +143,8 @@
       "option_d": "分管契約訂定後，對於應有部分之受讓人於受讓時知悉其情事者，亦具有效力",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -145,7 +156,8 @@
       "option_d": "乙、丁、戊各150萬元，庚、辛各75萬元",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -157,7 +169,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -169,7 +182,8 @@
       "option_d": "剩餘財產差額分配請求權屬一身專屬性之權利，請求權人自法定財產制關係消滅時起，二年間",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -181,7 +195,8 @@
       "option_d": "若丙實行抵押權拍賣A地所有權時，地上權應併付拍賣之",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -193,7 +208,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -205,7 +221,8 @@
       "option_d": "故意不告知瑕疵時，請求損害賠償",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -217,7 +234,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -229,7 +247,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -241,7 +260,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

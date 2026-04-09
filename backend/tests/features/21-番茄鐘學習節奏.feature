@@ -130,7 +130,6 @@ Feature: 番茄鐘學習節奏
 
   Rule: 後置（回應）- 休息畫面應顯示舒緩內容
 
-    @ignore
     Example: 休息畫面顯示學習小知識與進度摘要
       Given 使用者 "pro@example.com" 進入番茄鐘休息時段
       When 休息畫面顯示
@@ -143,7 +142,6 @@ Feature: 番茄鐘學習節奏
 
   Rule: 後置（回應）- 番茄計時器樣式應低調不干擾
 
-    @ignore
     Example: 番茄計時器以小型圓形呈現在頁面角落
       Given 使用者 "pro@example.com" 已開始測驗 1，番茄鐘啟用中
       When 使用者作答題目

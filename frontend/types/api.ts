@@ -171,6 +171,7 @@ export interface GetKnowledgeMapResponse {
 export interface GetNodeDetailResponse {
   node: KnowledgeNode;
   citationText: string;
+  sourceText?: string;
   citationSource: {
     type: 'pdf' | 'youtube';
     documentTitle: string;

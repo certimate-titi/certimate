@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "（財）證券暨期貨市場發展基金會辦理",
-    "subject": "防制洗錢與打擊資恐法令及實務",
-    "year": 113,
-    "session": 4,
+    "source": "（財）證券暨期貨市場發展基金會辦理",
+    "exam_code": "FIN113",
+    "category_code": "anti_money_laundering",
+    "subject_code": "aml_cft_session02_questions",
+    "exam_name": "（財）證券暨期貨市場發展基金會辦理",
     "total_questions": 80,
+    "questions_with_answer": 80,
     "bloom_distribution": {
       "remember": 73,
       "apply": 3,
@@ -17,8 +19,7 @@
       "medium": 3,
       "hard": 3
     },
-    "source_pdf": "aml_cft_session02_questions.pdf",
-    "answer_pdf": "aml_cft_session02_answers.pdf"
+    "year": 113
   },
   "questions": [
     {
@@ -31,7 +32,8 @@
       "option_d": "金融機構制定洗錢與資恐相關之政策及內控程序，係為避免受金融監理機構處以罰鍰，故無需了解洗錢及資 恐相關風險",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -43,7 +45,8 @@
       "option_d": "在清查自然人或法人帳戶時，因涉及財產隱私權、個人資料保護須事先取得當事人同意",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -55,7 +58,8 @@
       "option_d": "各國應要求通匯往來銀行在該國取得執照或完成註冊登記",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -67,7 +71,8 @@
       "option_d": "擔任客戶的稅務諮詢顧問時",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -79,7 +84,8 @@
       "option_d": "對於依法指定制裁之個人實施強化審查，並申報其交易，由法務部調查局凍結其交易",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -91,7 +97,8 @@
       "option_d": "對客戶資料真實性有所懷疑時",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -103,7 +110,8 @@
       "option_d": "洗錢者能透過銀行體系的SWIFT系統，達到迅速且大量移轉資金的目的",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -115,7 +123,8 @@
       "option_d": "國際組織現任PEPs才需要直接視為高風險客戶",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -127,7 +136,8 @@
       "option_d": "設置定期經費制度，支付洗錢防制政策推行、培訓、國際合作等費用",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -139,7 +149,8 @@
       "option_d": "7年以上",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -151,7 +162,8 @@
       "option_d": "客戶以其薪資之一部分支付其所購買之人壽保單長達五年",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -163,7 +175,8 @@
       "option_d": "以風險為基礎，對高知名度政客加強客戶審查，對於政客之受益人與其家庭成員及有密切關係者，則視負面 新聞之有無評估是否強化審查",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -175,7 +188,8 @@
       "option_d": "國家安全局局長",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -187,7 +201,8 @@
       "option_d": "強化邊境金流管制",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -199,7 +214,8 @@
       "option_d": "為透明化金流軌跡，必須透過金融機構履行客戶盡職審查、交易紀錄保存、落實大額通貨交易申報及可疑交 易申報等義務，指定之非金融機構則僅著重於可疑交易申報義務即可",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -211,7 +227,8 @@
       "option_d": "保險公司",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -223,7 +240,8 @@
       "option_d": "甲、乙、丙",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -235,7 +253,8 @@
       "option_d": "五百萬元",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -247,7 +266,8 @@
       "option_d": "戶籍或居住地址",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -259,7 +279,8 @@
       "option_d": "防制洗錢專責單位人員為執行職務需要，應得即時取得客戶資料與交易紀錄，免除其業務上應保守秘密之義務",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -271,7 +292,8 @@
       "option_d": "訂定高洗錢及資恐風險區域之名單時，得依總分支據點之經驗及實際需求，選擇適合之參考依據",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -283,7 +305,8 @@
       "option_d": "高風險客戶應至少每年檢視一次、更新資料",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -295,7 +318,8 @@
       "option_d": "每年應至少參加由國外主管機關或相關單位舉辦之防制洗錢及打擊資恐教育訓練課程36小時",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -307,7 +331,8 @@
       "option_d": "應於金融監督管理委員會指定網站辦理公告申報",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -319,7 +344,8 @@
       "option_d": "降低持續性監控之等級",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -331,7 +357,8 @@
       "option_d": "被保險人從事行業或職業類別是否屬於高風險行/職業",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -343,7 +370,8 @@
       "option_d": "「資助恐怖活動罪刑化」與「資助制裁對象罪刑化」均為資恐防制法設計以達徹底遏止「資恐」之目的，前 者尤較後者易生較重之危害，因此法定刑之設計以前者較後者為高",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -355,7 +383,8 @@
       "option_d": "業務員的多年好友",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -367,7 +396,8 @@
       "option_d": "妥善且文件化的規章制度",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -379,7 +409,8 @@
       "option_d": "OIU本身即代表境外業務，透明度較低",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -391,7 +422,8 @@
       "option_d": "對理賠條款詳加詢問",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -403,7 +435,8 @@
       "option_d": "受款人不是最終受益人(Ultimate Beneficiary)時，不須再查明最終受益人的姓名、身分與所在國家",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -415,7 +448,8 @@
       "option_d": "甲、乙、丙",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -427,7 +461,8 @@
       "option_d": "待下次客戶再交易時再做確認客戶程序，及評估是否需申報疑似洗錢或資恐交易",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -439,7 +474,8 @@
       "option_d": "銀行某一支票存款戶，均固定每月月初開立一張支票經票據交換提回扣帳",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -451,7 +487,8 @@
       "option_d": "法務部調查局接獲國外對等機關對OBU帳戶相關詐騙情資時，往往只能轉介法務部尋求司法互助管道協助",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -463,7 +500,8 @@
       "option_d": "驗證主要辦公處所、電話、高階管理人員之姓名",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -475,7 +513,8 @@
       "option_d": "客戶經常存入境外之旅行支票及外幣匯票",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -487,7 +526,8 @@
       "option_d": "具保單價值準備金之投資保險商品",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -499,7 +539,8 @@
       "option_d": "應依據風險基礎方法，建立檢核政策及程序",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -511,7 +552,8 @@
       "option_d": "行政院院長",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -523,7 +565,8 @@
       "option_d": "瞭解業務關係之目的與性質",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -535,7 +578,8 @@
       "option_d": "授信類",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -547,7 +591,8 @@
       "option_d": "金融機構依賴第三方進行客戶審查，金融機構仍須負客戶審查之最終責任",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -559,7 +604,8 @@
       "option_d": "全行風險評估",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -571,7 +617,8 @@
       "option_d": "法人業務往來資訊，包括對複雜、異常交易進行詢問及取得分析資料",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -583,7 +630,8 @@
       "option_d": "洗錢防制風險評估政策建議評估期間為一年，但實際評估僅有六個月",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -595,7 +643,8 @@
       "option_d": "在重新評估客戶風險之前趕快請客戶結清帳戶",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -607,7 +656,8 @@
       "option_d": "四級",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -619,7 +669,8 @@
       "option_d": "新開戶或一定期間無交易之帳戶突然小額交易者",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 51,
@@ -631,7 +682,8 @@
       "option_d": "如有可靠獨立來源確實查證身分屬實者仍得接受開戶",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 52,
@@ -643,7 +695,8 @@
       "option_d": "資料庫比對無異常下，暫毋須作任何處理",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 53,
@@ -655,7 +708,8 @@
       "option_d": "以現金在超商繳交相對小額保費",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 54,
@@ -667,7 +721,8 @@
       "option_d": "在產品風險考量上，僅需針對保險公司內部目前有營運之產品進行風險管理，不需要盤點全公司產品或服務， 亦不需要額外給予所有產品個別的風險評級",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 55,
@@ -679,7 +734,8 @@
       "option_d": "評估時須考量該些國家是否是易涉及貪污行為的國家",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 56,
@@ -691,7 +747,8 @@
       "option_d": "與洗錢風險較高的國家和地區有關的跨境交易",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 57,
@@ -703,7 +760,8 @@
       "option_d": "開戶後立即有特定金額款項存入",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 58,
@@ -715,7 +773,8 @@
       "option_d": "客戶及介紹人均來自高風險國家或地區",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 59,
@@ -727,7 +786,8 @@
       "option_d": "客戶甲對於保障內容或給付項目完全不關心，代表客戶已完全了解商品，而無須了解投保動機 【請續背面作答】",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 60,
@@ -739,7 +799,8 @@
       "option_d": "進口國為X國，貨款由Y國與無關第三人支付 第二部分：（第 61-80題為複選題；每題至少有 2（含）個以上應選之選項，全部答對才給分）",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 61,
@@ -751,7 +812,8 @@
       "option_d": "仲達保險代理人公司",
       "correct_answer": "ACD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 62,
@@ -763,7 +825,8 @@
       "option_d": "指定制裁對象受指定後針對如保險費等管理財物所必須之費用，可先從既有的扣款戶頭中扣除，以保障債權",
       "correct_answer": "BD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 63,
@@ -775,7 +838,8 @@
       "option_d": "鼓勵金融機構跨境設分行",
       "correct_answer": "AB",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 64,
@@ -787,7 +851,8 @@
       "option_d": "不遵循FATF之40項建議可能導致不法資金流入，成為洗錢高風險國家",
       "correct_answer": "BD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 65,
@@ -799,7 +864,8 @@
       "option_d": "我國公開發行公司或其子公司",
       "correct_answer": "ABCD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 66,
@@ -811,7 +877,8 @@
       "option_d": "總經理應負責督導各單位審慎評估及檢討防制洗錢及打擊資恐內部控制制度執行情形",
       "correct_answer": "BD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 67,
@@ -823,7 +890,8 @@
       "option_d": "其他有具體事證認有洗錢及資恐高風險之國家或地區",
       "correct_answer": "BCD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 68,
@@ -835,7 +903,8 @@
       "option_d": "資金來源為犯罪不法所得，資助對象多為老人或小孩",
       "correct_answer": "AB",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 69,
@@ -847,7 +916,8 @@
       "option_d": "經申報疑似洗錢或資恐交易等，可能導致客戶風險狀況發生實質性變化的事件發生時",
       "correct_answer": "ABCD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 70,
@@ -859,7 +929,8 @@
       "option_d": "擔任國小老師的客戶，從甲國小轉到乙國小任教時",
       "correct_answer": "ABC",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 71,
@@ -871,7 +942,8 @@
       "option_d": "可以預設交易監控參數，自動產生可疑交易警示",
       "correct_answer": "BCD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 72,
@@ -883,7 +955,8 @@
       "option_d": "向當地里長探詢",
       "correct_answer": "ABC",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 73,
@@ -895,7 +968,8 @@
       "option_d": "在一定期間內，多個境內居民接受一個境外帳戶匯款，其資金的調撥和結匯均由一人或者少數人操作",
       "correct_answer": "ABD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 74,
@@ -907,7 +981,8 @@
       "option_d": "進行可疑交易申報後，要向媒體說明已進行可疑交易",
       "correct_answer": "ABC",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 75,
@@ -919,7 +994,8 @@
       "option_d": "以簡化措施強化審查頻率",
       "correct_answer": "BC",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 76,
@@ -931,7 +1007,8 @@
       "option_d": "郵寄函查",
       "correct_answer": "ABC",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 77,
@@ -943,7 +1020,8 @@
       "option_d": "於客戶身分驗證完成前，稽核單位應定期檢視與該客戶之往來關係",
       "correct_answer": "CD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 78,
@@ -955,7 +1033,8 @@
       "option_d": "對法人或法律協議具最終有效控制權之自然人",
       "correct_answer": "AD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 79,
@@ -967,7 +1046,8 @@
       "option_d": "自動理賠業務所產生對理賠對象身分、保險事件真實存在性的疑慮",
       "correct_answer": "ABD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 80,
@@ -979,7 +1059,8 @@
       "option_d": "Ｙ銀行應於開立帳戶時了解客戶社經背景、開戶原因，避免透過遊民開立人頭帳戶之情事發生",
       "correct_answer": "ACD",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

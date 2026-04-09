@@ -66,7 +66,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（互動）- 搜尋知識點可即時篩選心智圖導覽區的節點
 
-    @ignore
     Example: 搜尋知識點篩選心智圖節點
       When 使用者 "pro@example.com" 在心智圖導覽區的搜尋框輸入 "S3"
       Then 右側心智圖導覽區應僅顯示包含 "S3" 關鍵字的知識節點
@@ -76,7 +75,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（UI）- 資源面板支援摺疊與展開切換
 
-    @ignore
     Example: 摺疊與展開資源面板
       Given 使用者 "pro@example.com" 已進入知識心智圖頁面
       When 使用者點擊資源面板的摺疊按鈕
@@ -88,7 +86,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（互動）- 刪除文件需經過確認 Modal，可取消或確認
 
-    @ignore
     Example: 刪除文件確認 Modal 取消操作
       Given 使用者 "pro@example.com" 在資源面板選中一份文件
       When 使用者點擊刪除按鈕
@@ -96,7 +93,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       When 使用者在 Modal 中點擊「取消」
       Then Modal 應關閉，文件仍保留在資源列表中
 
-    @ignore
     Example: 刪除文件確認 Modal 確認刪除成功
       Given 使用者 "pro@example.com" 在資源面板選中一份文件
       When 使用者點擊刪除按鈕
@@ -110,7 +106,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（互動）- YouTube 嵌入播放器可跳轉至引用時間點播放
 
-    @ignore
     Example: YouTube 嵌入播放器播放引用時間點
       Given 使用者 "pro@example.com" 點擊了一個來源為 YouTube 的知識節點
       And 該節點的影片時間戳為 "00:08:32"
@@ -122,7 +117,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（互動）- AI 聊天區提供快速提問 Chips 方便使用者一鍵填入
 
-    @ignore
     Example: AI 聊天快速提問 Chips 填入輸入框
       Given 使用者 "proplus@example.com" 已點擊一個知識節點進入 AI 教練面板
       When 使用者點擊快速提問 Chip「用簡單的話解釋這個概念」
@@ -133,7 +127,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（回應）- 傳送聊天訊息後應取得 AI 教練的即時回應
 
-    @ignore
     Example: 傳送聊天訊息並取得回應
       When 使用者 "proplus@example.com" 在 AI 教練對話框輸入「什麼是 VPC？」並按下傳送
       Then 操作成功
@@ -144,7 +137,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（UI）- FREE 使用者應看到剩餘免費查詢次數的計數器
 
-    @ignore
     Example: FREE 使用者查看免費查詢次數計數器
       When 使用者 "alice@example.com" 進入知識心智圖頁面
       Then 操作成功
@@ -155,8 +147,34 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Rule: 後置（商業漏斗）- PRO_199 使用者嘗試使用進階功能時看到升級提示
 
-    @ignore
     Example: PRO_199 使用者看到付費牆升級提示
       When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
       Then 該對話框應立即呈現毛玻璃效果被鎖住
       And 面板應顯示升級提示，引導使用者升級至 PRO_PLUS 方案以解鎖完整 AI 教練功能
+
+  # ========== V3 有機生長動態圖譜 ==========
+
+  Rule: 後置（視覺）- 知識圖譜應以力導向動態拓撲圖呈現
+
+    Example: 知識節點以 D3.js 力導向圖呈現，支援 Zoom/Pan/Drag
+      Given 使用者 "pro@example.com" 已上傳資源並生成知識節點
+      When 使用者進入知識庫頁面
+      Then 知識圖譜應以力導向動態拓撲圖呈現
+      And 根節點（章）應比子節點（考點）更大
+      And 節點顏色應反映掌握度（綠=精熟、黃=部分、紅=弱、灰=未測）
+
+  Rule: 後置（即時）- 練習作答即時更新知識圖譜進度
+
+    Example: 練習答對一題後節點進度即時上升
+      Given 使用者 "pro@example.com" 的節點 "EC2 運算服務" 掌握度為 50%
+      When 使用者在練習模式回答 "EC2 運算服務" 的題目並答對
+      Then 節點 "EC2 運算服務" 的掌握度應上升
+      And 父節點的掌握度應連動更新（向上傳播）
+
+  Rule: 後置（稀釋）- 考綱擴展時進度應平滑調降
+
+    Example: 新增知識節點後進度自動稀釋
+      Given 使用者 "pro@example.com" 的根節點掌握度為 80%
+      When 系統為該考科新增 3 個新知識節點
+      Then 根節點掌握度應因分母變大而下降
+      And 前端應顯示 Toast 通知「知識庫已擴充」

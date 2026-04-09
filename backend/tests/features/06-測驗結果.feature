@@ -80,7 +80,6 @@ Feature: 測驗結果
       When 使用者 "alice@example.com" 查看測驗 2 的知識點分析
       Then 節點 "EC2 運算" 的顏色標示應為 "綠色"
 
-  @ignore
   Rule: 後置（回應）- 測驗結果頁應根據成績走向觸發不同的情感化互動與 AI 總評
 
     Example: 成績進步時觸發慶祝動畫與稱讚
@@ -92,14 +91,12 @@ Feature: 測驗結果
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       Then 操作成功
 
-  @ignore
   Rule: 後置（回應）- 支援產生與分享個人化成績卡片 (Score Card)
 
     Example: 測驗結果可產生包含品牌浮水印與鼓勵文案的個人成績卡片
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       Then 系統應提供「產生與分享成績卡片」的功能按鈕
 
-  @ignore
   Rule: 後置（狀態）- 測驗結果頁面應顯示免責聲明
 
     Example: 確保使用者了解成績不保證真實考試通過率
@@ -110,7 +107,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態
 
-    @ignore
     Example: 點擊分享到 LinkedIn 按鈕顯示即將推出提示
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
@@ -118,7 +114,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 下載成績卡片按鈕應顯示為 placeholder 未實作狀態
 
-    @ignore
     Example: 點擊下載成績卡片按鈕顯示即將推出提示
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
@@ -126,7 +121,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
 
-    @ignore
     Example: 點擊 AI 教練介入卡片導航至錯題複習
       Given 使用者 "bob@example.com" 查看測驗 3 的結果
       And 測驗 3 的知識點分析中存在答對率低於 60% 的節點
@@ -136,7 +130,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 領域分析進度條應顯示各知識節點的正確百分比
 
-    @ignore
     Example: 領域分析區塊顯示各節點進度條與正確百分比
       When 使用者 "alice@example.com" 查看測驗 2 的知識點分析
       Then 操作成功
@@ -146,3 +139,20 @@ Feature: 測驗結果
         | IAM 身分 | 40%          | 紅色     |
         | S3 儲存  | 80%          | 綠色     |
         | VPC 網路 | 50%          | 紅色     |
+
+  # ========== 知識圖譜進度變化 ==========
+
+  Rule: 後置（視覺）- 測驗結果頁應顯示完整知識圖譜
+
+    Example: 測驗結果頁顯示力導向知識圖譜
+      Given 使用者 "pro@example.com" 已完成一場測驗
+      When 使用者查看測驗結果頁
+      Then 應顯示完整知識圖譜（ForceGraph）
+      And 本次考試涉及的節點應以對應顏色標示（紅=需加強、黃=部分、綠=精通）
+      And 未涉及的節點應保持灰色
+
+    Example: 弱點分析應使用知識節點名稱
+      Given 使用者 "pro@example.com" 已完成考古題模擬考
+      When 使用者查看測驗結果的弱點分析
+      Then 弱點分析應顯示知識節點名稱（如「機器學習基礎」「深度學習架構」）
+      And 不應顯示考試名稱（如「114年第四次AI應用規劃師」）

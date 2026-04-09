@@ -483,7 +483,8 @@ Ref: exams.subject_id > subjects.id
 
 Table questions {
   id uuid [pk, default: `gen_random_uuid()`]
-  exam_id uuid [not null]
+  exam_id uuid [note: 'NULL for historical questions（使用者考試 FK）']
+  historical_exam_id uuid [note: '爬蟲匯入考古題 FK（與 exam_id 互斥）']
   node_id uuid
   question_number integer [not null]
   type question_type [default: 'single_choice']
@@ -818,7 +819,7 @@ Table feature_flags {
   updated_at timestamptz [default: `now()`]
 }
 
-Table promo_codes {
+Table coupons {  // ORM: Coupon（原名 promo_codes，已更名對齊 ORM）
   id uuid [pk, default: `gen_random_uuid()`]
   code varchar(50) [unique, not null]
   discount_type discount_type [not null]
@@ -834,9 +835,9 @@ Table promo_codes {
   created_at timestamptz [default: `now()`]
 }
 
-Ref: promo_codes.created_by > users.id
+Ref: coupons.created_by > users.id
 
-Table refund_requests {
+Table refunds {  // ORM: Refund（原名 refund_requests，已更名對齊 ORM）
   id uuid [pk, default: `gen_random_uuid()`]
   user_id uuid [not null]
   invoice_id uuid [not null]
@@ -849,9 +850,9 @@ Table refund_requests {
   created_at timestamptz [default: `now()`]
 }
 
-Ref: refund_requests.user_id > users.id
-Ref: refund_requests.invoice_id > invoices.id
-Ref: refund_requests.reviewed_by > users.id
+Ref: refunds.user_id > users.id
+Ref: refunds.invoice_id > invoices.id
+Ref: refunds.reviewed_by > users.id
 
 Table content_reports {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -1153,3 +1154,101 @@ Table prompt_ab_tests {
 
 Ref: prompt_ab_tests.template_id > prompt_templates.id [delete: cascade]
 Ref: prompt_ab_tests.created_by > users.id
+
+// ── ORM 新增表（Migration 036-040）─────────────────────────────────
+
+Table merge_conflicts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_node_id uuid [not null]
+  target_node_id uuid [not null]
+  conflict_type varchar(50) [not null, note: 'name_mismatch / hierarchy_conflict / duplicate']
+  resolution varchar(50) [note: 'merged / kept_source / kept_target / manual']
+  resolved_by uuid
+  resolved_at timestamptz
+  metadata_json jsonb
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: merge_conflicts.source_node_id > knowledge_nodes.id
+Ref: merge_conflicts.target_node_id > knowledge_nodes.id
+Ref: merge_conflicts.resolved_by > users.id
+
+Table merge_histories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_node_id uuid [not null]
+  target_node_id uuid [not null]
+  merge_type varchar(50) [not null]
+  merged_by uuid [not null]
+  rollback_data jsonb [note: '合併前的快照，供 undo 使用']
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: merge_histories.source_node_id > knowledge_nodes.id
+Ref: merge_histories.target_node_id > knowledge_nodes.id
+Ref: merge_histories.merged_by > users.id
+
+Table prompt_templates_v2 {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [unique, not null, note: '模板唯一名稱，如 stage_1_planning']
+  category varchar(50) [not null, note: 'exam_gen / coach / classification']
+  description text
+  system_prompt text [not null]
+  user_prompt text [not null]
+  model_name varchar(50) [default: 'claude-3-haiku']
+  temperature decimal(3,2) [default: 0.7]
+  max_tokens integer [default: 4096]
+  is_active boolean [default: true]
+  current_version integer [default: 1]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table prompt_template_versions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  template_id uuid [not null]
+  version integer [not null]
+  system_prompt text [not null]
+  user_prompt text [not null]
+  change_note text
+  created_by uuid
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: prompt_template_versions.template_id > prompt_templates_v2.id [delete: cascade]
+
+Table prompt_template_history {
+  id uuid [pk, default: `gen_random_uuid()`]
+  template_id uuid [not null]
+  version integer [not null]
+  content text [not null]
+  changed_by uuid
+  created_at timestamptz [default: `now()`]
+}
+
+Ref: prompt_template_history.template_id > prompt_templates.id [delete: cascade]
+
+Table historical_exams {
+  id uuid [pk, default: `gen_random_uuid()`]
+  exam_code varchar(50) [not null, note: '考試代碼，如 114010 或 FIN114']
+  category_code varchar(100) [note: '類科代碼，如 501 或 securities']
+  subject_code varchar(100) [note: '科目代碼，如 0101']
+  exam_name varchar(255) [note: '考試名稱']
+  category_name varchar(255) [note: '類科名稱']
+  subject_name varchar(255) [note: '科目名稱']
+  source varchar(255) [default: '考選部考畢試題查詢平臺']
+  total_questions integer
+  year integer [note: '民國年']
+  tenant_id uuid
+  created_at timestamptz [default: `now()`]
+
+  indexes {
+    (exam_code, category_code, subject_code) [unique, name: 'uq_historical_exam_identity']
+    tenant_id
+    exam_code
+    year
+  }
+
+  Note: '考古題考試目錄 — 爬蟲匯入的考試元資料'
+}
+
+Ref: questions.historical_exam_id > historical_exams.id [delete: cascade]

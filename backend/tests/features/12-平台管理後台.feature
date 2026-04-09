@@ -252,7 +252,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
 
   # ========== UI 互動情境 ==========
 
-  @ignore
   Rule: 後置（回應）- 匯出使用者 CSV 應觸發檔案下載
 
     Example: 匯出使用者 CSV 下載成功
@@ -261,7 +260,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       And 瀏覽器應觸發 CSV 檔案下載
       And 下載檔案名稱應包含 "users" 與當日日期
 
-  @ignore
   Rule: 後置（狀態）- 新增使用者應透過 prompt 輸入 Email 與密碼
 
     Example: 新增使用者透過 prompt 輸入 email 與密碼成功
@@ -273,7 +271,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | 欄位     | 值                   |
         | action   | create_user          |
 
-  @ignore
   Rule: 後置（狀態）- 發送通知需在輸入框輸入訊息後送出
 
     Example: 發送通知給使用者輸入訊息成功
@@ -286,7 +283,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
         | action   | notify_user          |
         | target   | 使用者 5              |
 
-  @ignore
   Rule: 後置（狀態）- 停權使用者需確認原因後才可執行
 
     Example: 停權使用者需確認原因
@@ -296,7 +292,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       Then 操作成功
       And 使用者 5 的狀態應為 "suspended"
 
-  @ignore
   Rule: 後置（狀態）- 刪除使用者帳號需確認輸入使用者名稱
 
     Example: 刪除使用者帳號需確認名稱
@@ -306,7 +301,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       Then 操作成功
       And 使用者 5 的狀態應為 "deleted"
 
-  @ignore
   Rule: 後置（狀態）- 調整訂閱等級需透過 Modal 選擇方案與日期
 
     Example: 調整訂閱等級 Modal 選擇方案與日期
@@ -317,7 +311,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       Then 操作成功
       And 使用者 5 的訂閱方案應為 "PRO_199"
 
-  @ignore
   Rule: 後置（回應）- 使用者搜尋應依 Email 即時過濾結果
 
     Example: 使用者搜尋依 email 即時過濾
@@ -326,7 +319,6 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       And 列表中應包含 "alice@example.com"
       And 列表中不應包含 "bob@example.com"
 
-  @ignore
   Rule: 後置（回應）- 使用者列表應支援分頁導航
 
     Example: 使用者分頁導航上一頁與下一頁

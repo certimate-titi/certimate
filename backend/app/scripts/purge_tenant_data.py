@@ -25,9 +25,22 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
+import re
+
 import sqlalchemy as sa
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
+
+# SQL identifier / expression 白名單驗證
+# 允許：字母、數字、底線、點、等號、空格、冒號（bind param）
+_SAFE_IDENT = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.=:\s]*$")
+
+
+def _safe_ident(name: str) -> str:
+    """驗證 SQL identifier 是否安全（防止 SQL injection）。"""
+    if not _SAFE_IDENT.match(name):
+        raise ValueError(f"Unsafe SQL identifier: {name!r}")
+    return name
 
 from app.core.config import get_settings
 
@@ -66,19 +79,27 @@ INDIRECT_PURGE_PLAN = [
 def count_tenant_data(db: Session, tenant_id: str) -> dict[str, int]:
     """計算各表中屬於該租戶的資料筆數。"""
     counts = {}
-    for table, col, _ in PURGE_PLAN:
+    for table_name, col_name, _ in PURGE_PLAN:
+        tbl = sa.table(_safe_ident(table_name), sa.column(_safe_ident(col_name)))
         result = db.execute(
-            text(f"SELECT COUNT(*) FROM {table} WHERE {col} = :tid"),
+            sa.select(sa.func.count()).select_from(tbl).where(
+                tbl.c[col_name] == sa.bindparam("tid", type_=sa.String)
+            ),
             {"tid": tenant_id},
         ).scalar()
-        counts[table] = result or 0
+        counts[table_name] = result or 0
 
     for spec in INDIRECT_PURGE_PLAN:
+        # 間接關聯表使用驗證過的 identifier 組合 SQL
+        t_main = _safe_ident(spec["table"])
+        t_via = _safe_ident(spec["via"])
+        join_cond = _safe_ident(spec["join"])
+        filter_cond = _safe_ident(spec["filter"])
         result = db.execute(
             text(
-                f"SELECT COUNT(*) FROM {spec['table']} "
-                f"JOIN {spec['via']} ON {spec['join']} "
-                f"WHERE {spec['filter']}"
+                f"SELECT COUNT(*) FROM {t_main} "
+                f"JOIN {t_via} ON {join_cond} "
+                f"WHERE {filter_cond}"
             ),
             {"tenant_id": tenant_id},
         ).scalar()
@@ -200,28 +221,34 @@ def purge_tenant(
 
         # 間接關聯表先刪
         for spec in INDIRECT_PURGE_PLAN:
+            t_main = _safe_ident(spec["table"])
+            t_via = _safe_ident(spec["via"])
+            filter_cond = _safe_ident(spec["filter"])
             r = db.execute(
                 text(
-                    f"DELETE FROM {spec['table']} "
-                    f"WHERE {spec['table'].split('_')[0]}_id IN ("
-                    f"  SELECT id FROM {spec['via']} WHERE {spec['filter']}"
+                    f"DELETE FROM {t_main} "
+                    f"WHERE session_id IN ("
+                    f"  SELECT id FROM {t_via} WHERE {filter_cond}"
                     f")"
                 ),
                 {"tenant_id": tenant_id},
             )
             deleted = r.rowcount
             result["rows_deleted"] += deleted
-            logger.info(f"  ✓ {spec['table']}: 刪除 {deleted:,} 筆")
+            logger.info(f"  ✓ {t_main}: 刪除 {deleted:,} 筆")
 
         # 直接含 tenant_id 的表
-        for table, col, _ in PURGE_PLAN:
+        for table_name, col_name, _ in PURGE_PLAN:
+            tbl = sa.table(_safe_ident(table_name), sa.column(_safe_ident(col_name)))
             r = db.execute(
-                text(f"DELETE FROM {table} WHERE {col} = :tid"),
+                sa.delete(tbl).where(
+                    tbl.c[col_name] == sa.bindparam("tid", type_=sa.String)
+                ),
                 {"tid": tenant_id},
             )
             deleted = r.rowcount
             result["rows_deleted"] += deleted
-            logger.info(f"  ✓ {table}: 刪除 {deleted:,} 筆")
+            logger.info(f"  ✓ {table_name}: 刪除 {deleted:,} 筆")
 
         # 5. 停用租戶（不刪除租戶記錄本身，保留稽核軌跡）
         db.execute(

@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60140 107年 專 門 職 業 及 技 術 人 員 高 等 考 試",
-    "subject": "",
-    "year": 107,
-    "session": 0,
+    "source": "代號：60140 107年 專 門 職 業 及 技 術 人 員 高 等 考 試",
+    "exam_code": "REA107",
+    "category_code": "broker",
+    "subject_code": "107_broker_regulations_q",
+    "exam_name": "代號：60140 107年 專 門 職 業 及 技 術 人 員 高 等 考 試",
     "total_questions": 13,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 10,
       "apply": 1,
@@ -16,8 +18,7 @@
       "medium": 1,
       "hard": 1
     },
-    "source_pdf": "107_broker_regulations_q.pdf",
-    "answer_pdf": "107_broker_regulations_a.pdf"
+    "year": 107
   },
   "questions": [
     {
@@ -30,7 +31,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -42,7 +44,8 @@
       "option_d": "準用土地法第59條第2項規定之調處程序處理之",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -54,7 +57,8 @@
       "option_d": "逾期未出售或未建築使用者，得予照價收買",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -66,7 +70,8 @@
       "option_d": "相當一年租金",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -78,7 +83,8 @@
       "option_d": "特定農業區經行政院核定為重大建設須辦理徵收者，若有爭議，應依行政程序法舉行聽證",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -90,7 +96,8 @@
       "option_d": "因徵用而請求徵收土地或土地改良物所有權者，必要時所有權人得申請收回其土地或土地改良物",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -102,7 +109,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -114,7 +122,8 @@
       "option_d": "直轄市、縣（市）政府受理開發申請案後，除情形特殊者外，應於六十日內報請各該區域計畫",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -126,7 +135,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -138,7 +148,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -150,7 +161,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -162,7 +174,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -174,7 +187,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

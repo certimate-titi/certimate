@@ -8,6 +8,7 @@ import { examService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { GetExamResultsResponse } from '@/types';
 import Confetti from '@/components/Confetti';
+import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 
 export default function ExamResultsPageWrapper() {
   return (
@@ -25,6 +26,7 @@ function ExamResultsPage() {
 
   const [data, setData] = useState<GetExamResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -34,12 +36,32 @@ function ExamResultsPage() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
-    examService.getResults(examId).then(res => {
+    examService.getResults(examId).then(async (res) => {
       setData(res);
       setLoading(false);
       if (res.exam.score !== null && res.exam.score >= 80) {
         setTimeout(() => setShowConfetti(true), 300);
       }
+
+      // 載入完整知識圖譜
+      try {
+        const { apiClient } = await import('@/lib/api/client');
+        const { subjectService } = await import('@/lib/api/services');
+        const subjectsRes = await subjectService.getUserSubjects();
+        if (subjectsRes.subjects.length > 0) {
+          const subjectId = subjectsRes.subjects[0].subjectId || subjectsRes.subjects[0].id;
+          const mapRes = await apiClient.get<{ nodes?: Array<{ id: string; name: string; depth: number; parent_id: string | null; mastery_rate: number; color: string; children?: Array<{ id: string; name: string; depth: number; parent_id: string | null; mastery_rate: number; color: string; available_questions?: number }> }> }>(`/knowledge-map/subjects/${subjectId}/nodes`);
+          const flat: GraphNode[] = [];
+          const flattenNodes = (nodes: typeof mapRes.nodes) => {
+            for (const n of (nodes || [])) {
+              flat.push({ id: n.id, name: n.name, depth: n.depth, progress: n.mastery_rate || 0, color: n.color || 'gray', parentId: n.parent_id, status: 'UNSEEN', availableQuestions: 0 });
+              if (n.children) flattenNodes(n.children);
+            }
+          };
+          flattenNodes(mapRes.nodes);
+          setGraphNodes(flat);
+        }
+      } catch { /* knowledge map optional */ }
     }).catch(() => setLoading(false));
   }, [examId]);
 
@@ -83,8 +105,22 @@ function ExamResultsPage() {
   const showAiCoachIntervention = extData.consecutiveDeclines ? extData.consecutiveDeclines >= 2 : false;
 
   // Completion stats (from API data when available)
-  const totalTimeMinutes = extData.totalTimeMinutes ?? Math.round(questions.length * 0.8);
-  const avgTimePerQuestion = Math.round((totalTimeMinutes * 60) / questions.length);
+  // 計算真實作答時間
+  const calcTime = (() => {
+    // 優先用後端計算的 time_spent_seconds
+    const timeSpent = (data as unknown as Record<string, unknown>).time_spent_seconds || (data as unknown as Record<string, unknown>).timeSpentSeconds;
+    if (timeSpent && Number(timeSpent) > 0) return Math.round(Number(timeSpent) / 60);
+    // 其次用 started_at / submitted_at
+    const started = (data as unknown as Record<string, unknown>).started_at || (data as unknown as Record<string, unknown>).startedAt;
+    const submitted = (data as unknown as Record<string, unknown>).submitted_at || (data as unknown as Record<string, unknown>).submittedAt;
+    if (started && submitted) {
+      const diffMs = new Date(submitted as string).getTime() - new Date(started as string).getTime();
+      if (diffMs > 0) return Math.round(diffMs / 60000);
+    }
+    return null;
+  })();
+  const totalTimeMinutes = calcTime ?? 0;
+  const avgTimePerQuestion = questions.length > 0 && totalTimeMinutes > 0 ? Math.round((totalTimeMinutes * 60) / questions.length) : 0;
   const markedQuestions = userAnswers.filter(a => a.isMarkedForReview);
   const markedCorrectRate = markedQuestions.length > 0
     ? Math.round((markedQuestions.filter(a => a.isCorrect).length / markedQuestions.length) * 100)
@@ -96,7 +132,7 @@ function ExamResultsPage() {
 
       <div className="text-center mb-12">
         <h1 className="text-4xl font-extrabold text-slate-900 mb-4">測驗結果分析</h1>
-        <p className="text-lg text-slate-600">{exam.title} • {new Date(exam.createdAt).toLocaleDateString('zh-TW')}</p>
+        <p className="text-lg text-slate-600">{exam.title} • {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('zh-TW') : new Date().toLocaleDateString('zh-TW')}</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -240,6 +276,56 @@ function ExamResultsPage() {
               })}
             </div>
           </div>
+
+          {/* 知識圖譜 */}
+          {graphNodes.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <BrainCircuit className="h-6 w-6 text-emerald-500" /> 知識圖譜
+              </h3>
+              <ForceGraph
+                nodes={graphNodes.map(n => {
+                  // 標示本次考試涉及的節點
+                  const examDomain = domainAnalysis.find(d => d.domain === n.name);
+                  if (examDomain) {
+                    return {
+                      ...n,
+                      progress: examDomain.percentage,
+                      color: examDomain.percentage < 60 ? 'red' : examDomain.percentage >= 80 ? 'green' : 'yellow',
+                    };
+                  }
+                  return n;
+                })}
+                onNodeClick={() => {}}
+                width={700}
+                height={400}
+              />
+              <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-400 justify-center">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />本次精通</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />本次部分</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" />本次需加強</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300" />未涉及</span>
+              </div>
+            </div>
+          )}
+          {graphNodes.length === 0 && domainAnalysis.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <BrainCircuit className="h-6 w-6 text-emerald-500" /> 弱點圖譜
+              </h3>
+              <ForceGraph
+                nodes={domainAnalysis.map((d, i) => ({
+                  id: `domain-${i}`, name: d.domain, depth: 1,
+                  progress: d.percentage,
+                  color: d.percentage < 60 ? 'red' : d.percentage >= 80 ? 'green' : 'yellow',
+                  parentId: null, status: 'UNSEEN', availableQuestions: d.total,
+                }))}
+                onNodeClick={() => {}}
+                width={700}
+                height={300}
+              />
+            </div>
+          )}
 
           {/* Question Grid */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">

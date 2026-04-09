@@ -47,7 +47,26 @@ function getAuthHeaders(): Record<string, string> {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '');
-    throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
+
+    // 401 = token 過期或未登入 — 清除 token 並導向登入
+    if (response.status === 401) {
+      clearStoredToken();
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login?expired=1';
+      }
+      throw new Error('登入已過期，請重新登入');
+    }
+
+    // 解析後端錯誤訊息
+    let message = response.statusText;
+    try {
+      const parsed = JSON.parse(errorBody);
+      message = parsed?.detail?.message || parsed?.detail || parsed?.message || message;
+    } catch {
+      message = errorBody || message;
+    }
+
+    throw new Error(message);
   }
   return response.json() as Promise<T>;
 }
@@ -55,8 +74,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
 async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Promise<Response> {
   for (let i = 0; i <= retries; i++) {
     try {
-      return await fetch(url, init);
+      const resp = await fetch(url, init);
+      return resp;
     } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[API] fetch failed (attempt ${i + 1}/${retries + 1}): ${init.method || 'GET'} ${url}`, err);
+      }
       if (i === retries) throw err;
       await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
@@ -64,7 +87,20 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Prom
   throw new Error('Failed to fetch');
 }
 
-export const apiClient = {
+// ── API Client Interface ───────────────────────────────────────────
+
+export interface ApiClient {
+  get<T>(path: string): Promise<T>;
+  post<T>(path: string, body?: unknown): Promise<T>;
+  put<T>(path: string, body?: unknown): Promise<T>;
+  patch<T>(path: string, body?: unknown): Promise<T>;
+  delete<T>(path: string): Promise<T>;
+  upload<T>(path: string, formData: FormData): Promise<T>;
+}
+
+// ── Real API Client ────────────────────────────────────────────────
+
+const realApiClient: ApiClient = {
   async get<T>(path: string): Promise<T> {
     const headers = getAuthHeaders();
     const response = await fetchWithRetry(`${BASE_URL}${path}`, { headers });
@@ -125,3 +161,17 @@ export const apiClient = {
     return handleResponse<T>(response);
   },
 };
+
+// ── Mock 模式切換 ──────────────────────────────────────────────────
+// .env.local 設定 NEXT_PUBLIC_API_MODE=mock 啟用離線開發模式
+// 離線時前端可完整運作，不需後端 API
+
+function loadMockClient(): ApiClient {
+  // Dynamic import 避免 production build 包含 mock 程式碼
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('./mock-client').mockApiClient as ApiClient;
+}
+
+export const apiClient: ApiClient = process.env.NEXT_PUBLIC_API_MODE === 'mock'
+  ? loadMockClient()
+  : realApiClient;

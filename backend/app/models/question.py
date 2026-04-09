@@ -47,8 +47,13 @@ class Question(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    exam_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("exams.id", ondelete="CASCADE"), nullable=False
+    exam_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("exams.id", ondelete="CASCADE"), nullable=True,
+        comment="使用者考試 FK（AI 生成題 / 模擬考）",
+    )
+    historical_exam_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("historical_exams.id", ondelete="CASCADE"), nullable=True,
+        comment="歷史考試目錄 FK（爬蟲匯入的考古題）",
     )
     node_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
@@ -88,4 +93,9 @@ class Question(Base):
     retention_reason: Mapped[str | None] = mapped_column(String(50))
     suggested_node_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+    )
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
+        index=True,
     )

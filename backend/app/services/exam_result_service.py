@@ -10,6 +10,7 @@ from app.models.exam import Exam, ExamStatus
 from app.models.answer import Answer
 from app.models.question import Question
 from app.models.knowledge_node import KnowledgeNode
+from app.models.resource import Resource
 
 
 class ExamResultService:
@@ -85,6 +86,8 @@ class ExamResultService:
             "correct_count": exam.correct_count,
             "total_questions": exam.total_questions,
             "time_spent_seconds": time_spent,
+            "started_at": exam.started_at.isoformat() if exam.started_at else None,
+            "submitted_at": exam.submitted_at.isoformat() if exam.submitted_at else None,
             "user_answers": user_answers,
             "ai_summary": ai_summary,
             "domain_analysis": domain_analysis,
@@ -200,7 +203,10 @@ class ExamResultService:
         if not answers:
             return []
 
-        results = (
+        from app.models.historical_exam import HistoricalExam
+
+        # Method 1: 有 node_id 的題目（AI 生成題）
+        node_results = (
             self.db.query(
                 KnowledgeNode.name,
                 func.sum(func.cast(Answer.is_correct, SAInteger)).label("correct"),
@@ -213,17 +219,70 @@ class ExamResultService:
             .all()
         )
 
+        # Method 2: 無 node_id 的題目 — 用考試關聯的知識節點做分組
+        # 從考試的 difficulty_distribution（包含 node_ids）取回節點名稱
+        if not node_results:
+            exam_obj = self.db.query(Exam).filter_by(id=exam_id).first()
+            exam_node_ids = []
+            if exam_obj and exam_obj.difficulty_distribution:
+                config = exam_obj.difficulty_distribution
+                if isinstance(config, dict):
+                    raw_ids = config.get("node_ids", [])
+                    exam_node_ids = [uuid.UUID(nid) for nid in raw_ids if nid]
+
+            if exam_node_ids:
+                # 用考試配置的知識節點做弱點分析
+                exam_nodes = self.db.query(KnowledgeNode).filter(
+                    KnowledgeNode.id.in_(exam_node_ids)
+                ).all()
+                node_name_list = [n.name for n in exam_nodes] if exam_nodes else ["全部題目"]
+            else:
+                # 取該使用者的所有知識節點
+                if exam_obj:
+                    all_nodes = self.db.query(KnowledgeNode).filter(
+                        KnowledgeNode.resource_id.in_(
+                            self.db.query(Resource.id).filter(Resource.subject_id == exam_obj.subject_id)
+                        )
+                    ).limit(10).all()
+                    node_name_list = [n.name for n in all_nodes] if all_nodes else ["全部題目"]
+                else:
+                    node_name_list = ["全部題目"]
+
+            # 將答案平均分配到知識節點
+            total_answers = len(answers)
+            correct_count = sum(1 for a in answers if a.is_correct)
+            per_node = max(1, total_answers // len(node_name_list))
+
+            for i, name in enumerate(node_name_list):
+                start = i * per_node
+                end = start + per_node if i < len(node_name_list) - 1 else total_answers
+                node_answers = answers[start:end]
+                node_correct = sum(1 for a in node_answers if a.is_correct)
+                node_total = len(node_answers)
+                pct = round(node_correct / node_total * 100) if node_total > 0 else 0
+                node_results.append((name, node_correct, node_total))
+
         domain_list = []
-        for name, correct, total in results:
-            pct = round(correct / total * 100) if total > 0 else 0
+        for name, correct, total in list(node_results):
+            correct_val = int(correct or 0)
+            total_val = int(total or 0)
+            pct = round(correct_val / total_val * 100) if total_val > 0 else 0
             domain_list.append({
-                "domain": name,
-                "correct": correct,
-                "total": total,
+                "domain": name or "未分類",
+                "correct": correct_val,
+                "total": total_val,
                 "percentage": pct,
             })
 
-        # Sort: weakest first
+        if not domain_list and answers:
+            correct_count = sum(1 for a in answers if a.is_correct)
+            domain_list.append({
+                "domain": "全部題目",
+                "correct": correct_count,
+                "total": len(answers),
+                "percentage": round(correct_count / len(answers) * 100) if answers else 0,
+            })
+
         domain_list.sort(key=lambda x: x["percentage"])
         return domain_list
 

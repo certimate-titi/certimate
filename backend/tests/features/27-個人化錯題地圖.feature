@@ -156,7 +156,6 @@ Feature: 個人化錯題地圖
 
   Rule: 後置（建議）- 系統應根據錯題地圖生成學習建議
 
-    @ignore
     Example: AI 根據弱點節點生成個人化學習路徑建議
       Given 使用者 "pro@example.com" 的錯題地圖中有 3 個紅色節點
       When 使用者 "pro@example.com" 請求 AI 學習建議

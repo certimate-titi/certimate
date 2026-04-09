@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60130 112年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 112,
-    "session": 0,
+    "source": "代號：60130 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_broker_regulations_q",
+    "exam_name": "代號：60130 112年專門職業及技術人員高等考試建築師、",
     "total_questions": 7,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "apply": 1,
       "remember": 4,
@@ -15,8 +17,7 @@
       "easy": 4,
       "hard": 2
     },
-    "source_pdf": "112_broker_regulations_q.pdf",
-    "answer_pdf": null
+    "year": 112
   },
   "questions": [
     {
@@ -29,7 +30,8 @@
       "option_d": "共25題，每題2分，須用2B鉛筆在試卡上依題號清楚劃記，於本試題或申論試卷上作答者，不予計分。",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -41,7 +43,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -53,7 +56,8 @@
       "option_d": "計量模型分析採迴歸分析者，其調整後判定係數不得低於零點七",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -65,7 +69,8 @@
       "option_d": "續訂租約之租金估計得以勘估標的價格乘以租金收益率，以估計淨收益，再加計必要費用",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -77,7 +82,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -89,7 +95,8 @@
       "option_d": "（甲）為百分之十五，（乙）為百分之三十",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -101,7 +108,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

@@ -55,7 +55,6 @@ Feature: 模擬機考
       And 測驗 1 的狀態應更新為 "IN_PROGRESS"
       And 測驗 1 應記錄開始時間
 
-  @ignore
   Rule: 後置（回應）- AI 教練在開始測驗時提供專屬的打氣訊息
 
     Example: 開始測驗前 AI 基於使用者狀態動態生成打氣語句
@@ -78,7 +77,6 @@ Feature: 模擬機考
       When 使用者 "alice@example.com" 將題目 102 標記為待複查
       Then 題目 102 的標記複查狀態應為 "已標記"
 
-  @ignore
   Rule: 後置（狀態）- 倒數計時器在剩餘 5 分鐘時觸發紅色警示樣式
 
     Example: 剩餘時間低於 5 分鐘時計時器顯示樣式切換為紅色警示
@@ -108,7 +106,6 @@ Feature: 模擬機考
       Then 操作成功
       And 題目 301 的已選答案應為 "C"
 
-  @ignore
   Rule: 後置（狀態）- 使用者嘗試離開頁面時應觸發 beforeunload 警告
 
     Example: 測驗中關閉分頁前出現確認提示
@@ -117,7 +114,6 @@ Feature: 模擬機考
       Then 系統應觸發 beforeunload 警告訊息
       And 警告訊息應為 "確定要離開測驗嗎？您的進度已暫存"
 
-  @ignore
   Rule: 後置（回應）- 含 KaTeX 數學公式的題目應以渲染後的數學符號呈現
 
     Example: 顯示含 KaTeX 公式的單選題時題目區與選項區均完成數學符號渲染
@@ -142,7 +138,6 @@ Feature: 模擬機考
       When 使用者 "bob@example.com" 在題目 202 的填空欄輸入 "10"
       Then 測驗 5 中題目 202 的暫存作答應為 "10"
 
-    @ignore
     Example: 填空題未作答時題號導覽網格顯示為灰色未答狀態
       Given 使用者 "bob@example.com" 已開始測驗 5
       When 使用者 "bob@example.com" 瀏覽題目 202 但未輸入任何內容
@@ -152,7 +147,6 @@ Feature: 模擬機考
 
   Rule: 後置（狀態）- 暫停考試後恢復作答時計時器應繼續倒數
 
-    @ignore
     Example: 暫停考試後恢復作答計時器繼續倒數
       Given 使用者 "alice@example.com" 已開始測驗 1，剩餘時間為 20 分鐘
       When 使用者 "alice@example.com" 暫停測驗 1
@@ -162,7 +156,6 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 總覽格 Modal 應顯示所有題目的作答狀態
 
-    @ignore
     Example: 開啟總覽格 Modal 顯示所有題目狀態
       Given 使用者 "alice@example.com" 已開始測驗 1
       And 使用者 "alice@example.com" 在題目 101 選擇答案 "C"
@@ -174,7 +167,6 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 題目導航格點擊應跳轉至指定題目
 
-    @ignore
     Example: 點擊題目導航格中的題號跳轉至該題目
       Given 使用者 "alice@example.com" 已開始測驗 1
       And 使用者 "alice@example.com" 目前瀏覽題目 101
@@ -184,14 +176,12 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 上一題與下一題按鈕在邊界題目時應正確停用
 
-    @ignore
     Example: 第一題時上一題按鈕應停用
       Given 使用者 "alice@example.com" 已開始測驗 1
       When 使用者 "alice@example.com" 瀏覽題目 101
       Then 上一題按鈕應為停用狀態
       And 下一題按鈕應為啟用狀態
 
-    @ignore
     Example: 最後一題時下一題按鈕應停用
       Given 使用者 "alice@example.com" 已開始測驗 1
       When 使用者 "alice@example.com" 瀏覽題目 102

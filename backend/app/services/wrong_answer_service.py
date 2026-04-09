@@ -21,8 +21,7 @@ class WrongAnswerService:
         self.db = db
         # Prompt template service for DB-based prompts
         from app.services.prompt_template_service import PromptTemplateService
-        from app.repositories.prompt_template_repository import PromptTemplateRepository
-        self._prompt_svc = PromptTemplateService(db, PromptTemplateRepository(db))
+        self._prompt_svc = PromptTemplateService(db)
 
     def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
         """Load prompt template from DB with fallback."""

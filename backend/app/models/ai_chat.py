@@ -23,6 +23,11 @@ class AiChatSession(Base):
     context_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     model_used: Mapped[str | None] = mapped_column(String(50))
     message_count: Mapped[int] = mapped_column(Integer, default=0)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

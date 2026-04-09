@@ -1,4 +1,4 @@
-@ignore @query
+@query
 Feature: 錯題複習與 AI 教練
 
   Background:
@@ -390,7 +390,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（互動）- 點擊錯題側邊列表中的題目可切換右側顯示內容
 
-    @ignore
     Example: 錯題側邊列表點擊切換顯示題目
       Given 使用者 "free@example.com" 已進入測驗 1 的錯題複習頁面
       And 側邊列表顯示題目 101 與題目 102
@@ -402,7 +401,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（UI）- 錯題解析應同時顯示使用者錯誤答案與正確答案的對比
 
-    @ignore
     Example: 使用者錯誤答案與正確答案對比顯示
       When 使用者 "free@example.com" 查看測驗 1 題目 101 的解析
       Then 操作成功
@@ -413,7 +411,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（互動）- PRO_PLUS 以上使用者可切換查看解析的引用來源
 
-    @ignore
     Example: PRO_PLUS 使用者查看引用來源切換
       Given 使用者 "ultra@example.com" 查看測驗 3 的錯題解析
       When 使用者點擊「查看引用來源」切換按鈕
@@ -426,7 +423,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（UI）- FREE 使用者的深度解說區應以毛玻璃遮罩遮擋內容
 
-    @ignore
     Example: FREE 使用者解說區毛玻璃遮罩遮擋內容
       When 使用者 "free@example.com" 查看測驗 1 題目 101 的解析
       Then 操作成功
@@ -437,7 +433,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（商業漏斗）- PRO_199 使用者可使用基礎 AI 教練（20 次/月），額度用盡後提示升級
 
-    @ignore
     Example: PRO_199 使用者月配額用盡後提示升級
       Given 使用者 "pro@example.com" 本月基礎教練已使用 20 次
       When 使用者 "pro@example.com" 在錯題複習頁面嘗試開啟 AI 教練聊天
@@ -448,7 +443,6 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（UI）- 當使用者無任何錯題時應顯示空狀態與回到儀表板連結
 
-    @ignore
     Example: 無錯題時顯示回到儀表板連結
       Given 使用者 "ultra@example.com" 的所有測驗均無錯題記錄
       When 使用者 "ultra@example.com" 進入錯題複習頁面
@@ -456,3 +450,14 @@ Feature: 錯題複習與 AI 教練
       And 頁面應顯示「回到儀表板」連結按鈕
       When 使用者點擊「回到儀表板」連結
       Then 頁面應導航至儀表板頁面
+
+  # ========== V3 練習模式即時更新 ==========
+
+  Rule: 後置（即時）- 練習模式答題即時更新知識圖譜
+
+    Example: 練習答題後即時更新節點掌握度
+      Given 使用者 "pro@example.com" 的節點掌握度為 40%
+      When 使用者在練習模式答對一題
+      Then 節點掌握度應上升（練習權重 0.5）
+      And API 應回傳正確答案與詳解
+      And API 應回傳更新後的 progress 數值

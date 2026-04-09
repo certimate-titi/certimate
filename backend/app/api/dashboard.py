@@ -169,3 +169,56 @@ def export_data(
         media_type="application/json",
         headers={"Content-Disposition": f"attachment; filename=certimate_export_{user_id}.json"},
     )
+
+
+# ── 信心度校準 (Feature 20) ──────────────────────────────────────────
+
+@router.get("/confidence-calibration")
+def get_confidence_calibration(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """儀表板信心校準區塊 — 近 5 場測驗的校準率趨勢。"""
+    import uuid as uuid_mod
+    from app.models.answer import Answer
+    from app.models.exam import Exam, ExamStatus
+
+    user_uuid = uuid_mod.UUID(user_id)
+
+    # 取最近 5 場已完成且有信心度標記的測驗
+    recent_exams = (
+        db.query(Exam)
+        .filter(Exam.user_id == user_uuid, Exam.status == ExamStatus.SUBMITTED)
+        .order_by(Exam.submitted_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    trend = []
+    for exam in recent_exams:
+        answers = db.query(Answer).filter(
+            Answer.exam_id == exam.id, Answer.user_id == user_uuid
+        ).all()
+
+        confident_answers = [a for a in answers if a.confidence == "confident"]
+        if confident_answers:
+            correct = sum(1 for a in confident_answers if a.is_correct)
+            rate = correct / len(confident_answers)
+        else:
+            rate = 0
+
+        trend.append({
+            "exam_id": str(exam.id),
+            "submitted_at": exam.submitted_at.isoformat() if exam.submitted_at else None,
+            "calibration_rate": round(rate, 2),
+        })
+
+    overall_rate = sum(t["calibration_rate"] for t in trend) / max(1, len(trend))
+    status = "校準良好" if overall_rate >= 0.8 else "需要改善" if overall_rate >= 0.5 else "偏差較大"
+
+    return {
+        "calibration_rate": round(overall_rate, 2),
+        "status": status,
+        "trend": trend,
+        "exam_count": len(trend),
+    }

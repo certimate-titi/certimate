@@ -155,7 +155,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
 
   # ========== UI 互動情境 ==========
 
-  @ignore
   Rule: 後置（狀態）- AI 模型路由設定應透過表單儲存
 
     Example: AI 模型路由設定儲存成功
@@ -166,7 +165,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And FREE 方案 basic 任務的主要模型應為 "llama-3.1-8b"
       And 頁面應顯示「設定已儲存」提示訊息
 
-  @ignore
   Rule: 後置（狀態）- 方案配額表格應支援行內編輯與儲存
 
     Example: 方案配額表格編輯儲存成功
@@ -176,7 +174,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And FREE 方案的每月上傳數限額應為 8
       And 頁面應顯示「配額已更新」提示訊息
 
-  @ignore
   Rule: 後置（狀態）- Feature Flag 應支援切換開關操作
 
     Example: 功能旗標切換開關
@@ -185,7 +182,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And Feature Flag "enable_socratic_tutor_v2" 應為啟用狀態
       And 頁面應顯示該 Flag 狀態為「已啟用」
 
-  @ignore
   Rule: 後置（回應）- 管理員帳號表格應顯示所有管理員資訊
 
     Example: 管理員帳號表格顯示
@@ -194,7 +190,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And 表格應包含以下欄位：Email、角色、建立日期、狀態
       And 表格中應包含 "super@certimate.com" 與 "ops@certimate.com"
 
-  @ignore
   Rule: 後置（回應）- 稽核日誌應支援匯出 CSV
 
     Example: 稽核日誌匯出 CSV
@@ -203,7 +198,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And 瀏覽器應觸發 CSV 檔案下載
       And 下載檔案應包含欄位：timestamp、admin_id、action、target_type、target_id、details
 
-  @ignore
   Rule: 後置（回應）- 稽核日誌應支援日期範圍篩選
 
     Example: 稽核日誌日期範圍篩選
@@ -212,7 +206,6 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       Then 操作成功
       And 稽核日誌列表應僅顯示 2026-03-01 至 2026-03-31 範圍內的紀錄
 
-  @ignore
   Rule: 後置（回應）- 稽核日誌應支援分頁導航
 
     Example: 稽核日誌分頁導航

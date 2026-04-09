@@ -23,10 +23,13 @@ def step_impl(context, exam_id):
         q_id_int = int(row["題目 ID"])
         q_number = int(row["題號"])
         content = row["題目內容"]
-        option_a = row["選項A"]
-        option_b = row["選項B"]
-        option_c = row["選項C"]
-        option_d = row["選項D"]
+        # 選項欄位為 optional — Feature 20 等不提供選項
+        headings = context.table.headings
+        option_a = row["選項A"] if "選項A" in headings else "選項A"
+        option_b = row["選項B"] if "選項B" in headings else "選項B"
+        option_c = row["選項C"] if "選項C" in headings else "選項C"
+        option_d = row["選項D"] if "選項D" in headings else "選項D"
+        correct = row["正確答案"] if "正確答案" in headings else "A"
 
         q = Question(
             id=uuid.UUID(int=q_id_int),
@@ -38,7 +41,7 @@ def step_impl(context, exam_id):
             option_b=option_b,
             option_c=option_c,
             option_d=option_d,
-            correct_answer="A",
+            correct_answer=correct,
         )
         db.add(q)
 

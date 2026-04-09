@@ -30,6 +30,11 @@ class ResourceChunk(Base):
     source_page_end: Mapped[int | None] = mapped_column(Integer)
     metadata_json: Mapped[dict | None] = mapped_column(JSON)
     embedding = mapped_column(Vector(1024))
+    tenant_id = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）— RLS 強制啟用",
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

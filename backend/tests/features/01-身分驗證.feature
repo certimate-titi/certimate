@@ -239,7 +239,6 @@ Feature: 身分驗證
 
   # ========== UI 互動行為 ==========
 
-  @ignore
   Rule: 前置（UI）- 登入頁「記住我」勾選框應保留登入狀態
 
     Example: 勾選「記住我」後成功登入，關閉瀏覽器後重新開啟仍保持登入狀態
@@ -249,7 +248,6 @@ Feature: 身分驗證
       And 系統應將登入狀態持久化至本地儲存
       And 使用者關閉瀏覽器後重新開啟應仍為登入狀態
 
-  @ignore
   Rule: 前置（UI）- 登入頁密碼欄位可切換顯示/隱藏
 
     Example: 點擊密碼可見性切換按鈕後密碼以明文顯示
@@ -263,7 +261,6 @@ Feature: 身分驗證
       When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
       Then 密碼欄位應從明文顯示模式切換為遮蔽模式
 
-  @ignore
   Rule: 前置（UI）- 註冊頁密碼欄位可切換顯示/隱藏
 
     Example: 註冊頁點擊密碼可見性切換按鈕後密碼以明文顯示
@@ -271,7 +268,6 @@ Feature: 身分驗證
       When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
       Then 密碼欄位應從遮蔽模式切換為明文顯示模式
 
-  @ignore
   Rule: 前置（UI）- 註冊頁密碼強度指示條依密碼強度顯示對應等級
 
     Scenario Outline: 密碼強度指示條依輸入的密碼顯示對應等級
@@ -284,7 +280,6 @@ Feature: 身分驗證
         | password1      | 中   |
         | CertiMate#2024 | 強   |
 
-  @ignore
   Rule: 前置（UI）- 註冊頁服務條款彈窗可開啟與關閉
 
     Example: 點擊「服務條款」連結開啟服務條款彈窗
@@ -298,7 +293,6 @@ Feature: 身分驗證
       Then 服務條款彈窗應關閉
       And 使用者應回到註冊頁面
 
-  @ignore
   Rule: 前置（UI）- 註冊頁隱私權政策彈窗可開啟與關閉
 
     Example: 點擊「隱私權政策」連結開啟隱私權政策彈窗
@@ -312,7 +306,6 @@ Feature: 身分驗證
       Then 隱私權政策彈窗應關閉
       And 使用者應回到註冊頁面
 
-  @ignore
   Rule: 前置（參數）- 忘記密碼頁面 Email 為空時不可送出
 
     Example: 忘記密碼頁面未輸入 Email 時送出按鈕應為停用狀態
@@ -324,7 +317,6 @@ Feature: 身分驗證
       When 使用者清空 Email 欄位
       Then 送出按鈕應為停用狀態，無法點擊
 
-  @ignore
   Rule: 後置（UI）- 忘記密碼成功送出後顯示確認資訊
 
     Example: 忘記密碼成功送出後頁面顯示寄送確認訊息與輸入的 Email
@@ -334,7 +326,6 @@ Feature: 身分驗證
       And 確認訊息中應包含使用者輸入的 Email "alice@example.com"
       And 頁面應提供返回登入頁面的連結
 
-  @ignore
   Rule: 後置（UI）- 驗證信寄出頁面重寄按鈕有 60 秒冷卻倒數
 
     Example: 驗證信寄出後重寄按鈕進入 60 秒冷卻倒數
@@ -348,7 +339,6 @@ Feature: 身分驗證
       Given 使用者已點擊「重新寄送驗證信」且冷卻倒數已結束
       Then 重寄按鈕應恢復為可點擊狀態
 
-  @ignore
   Rule: 後置（狀態）- 登入頁支援 Google SSO 一鍵登入流程
 
     Example: 使用者點擊 Google 登入按鈕後導向 Google OAuth 授權頁面

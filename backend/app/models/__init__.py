@@ -49,6 +49,9 @@ from app.models.early_warning_rule import EarlyWarningRule  # noqa: F401, E402
 from app.models.reverse_engineering_task import ReverseEngineeringTask  # noqa: F401, E402
 from app.models.merge_conflict import MergeConflict  # noqa: F401, E402
 from app.models.merge_history import MergeHistory  # noqa: F401, E402
+from app.models.tenant import Tenant  # noqa: F401, E402
+from app.models.historical_exam import HistoricalExam  # noqa: F401, E402
+from app.models.syllabus_topic import SyllabusTopic  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -95,4 +98,7 @@ __all__ = [
     "ReverseEngineeringTask",
     "MergeConflict",
     "MergeHistory",
+    "Tenant",
+    "HistoricalExam",
+    "SyllabusTopic",
 ]

@@ -129,8 +129,18 @@ class KnowledgeNavService:
 
         # Build flat node list with full info
         flat_nodes = {}
+        # V3 有機生長：直接用 progress_percentage（無衰退）
         for node in nodes:
             m = mastery_map.get(str(node.id))
+
+            progress = float(m.mastery_rate or 0) / 100.0 if m else 0.0
+            display_color = m.color if m and m.color else (
+                "green" if progress >= 0.7 else
+                "yellow" if progress >= 0.4 else
+                "red" if progress > 0 else "gray"
+            )
+            status = m.status if m and m.status else "UNSEEN"
+
             flat_nodes[str(node.id)] = {
                 "id": str(node.id),
                 "name": node.name,
@@ -140,8 +150,10 @@ class KnowledgeNavService:
                 "sort_order": node.sort_order or 0,
                 "source_page": node.source_page_number,
                 "available_questions": node.available_questions or 0,
-                "mastery_rate": int(m.mastery_rate) if m else 0,
-                "color": m.color if m else "gray",
+                "mastery_rate": int(progress * 100),
+                "color": display_color,
+                "status": status,
+                "progress_percentage": round(progress, 4),
                 "children": [],
             }
 

@@ -13,6 +13,7 @@ from .common_then import failure_with_error  # noqa: F401
 
 # Auth — aggregate_given
 from .auth.aggregate_given import users  # noqa: F401
+from .auth.aggregate_given import auth_ui_state  # noqa: F401
 from .auth.aggregate_given import user_auth_provider  # noqa: F401
 from .auth.aggregate_given import user_has_journey  # noqa: F401
 from .auth.aggregate_given import user_no_journey  # noqa: F401
@@ -25,6 +26,7 @@ from .auth.aggregate_given import user_google_sso  # noqa: F401
 
 # Auth — commands
 from .auth.commands import check_password_strength  # noqa: F401
+from .auth.commands import auth_ui_actions  # noqa: F401
 from .auth.commands import forgot_password  # noqa: F401
 from .auth.commands import google_sso  # noqa: F401
 from .auth.commands import login  # noqa: F401
@@ -55,6 +57,7 @@ from .auth.aggregate_then import account_status_unchanged  # noqa: F401
 
 # Auth — readmodel_then
 from .auth.readmodel_then import jwt_token  # noqa: F401
+from .auth.readmodel_then import auth_ui  # noqa: F401
 from .auth.readmodel_then import login_no_error  # noqa: F401
 from .auth.readmodel_then import navbar_not_shows  # noqa: F401
 from .auth.readmodel_then import navbar_shows  # noqa: F401
@@ -91,6 +94,7 @@ from .resource.readmodel_then import resource_file_size  # noqa: F401
 
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
+from .knowledge_map.aggregate_given import knowledge_map_ui_state  # noqa: F401
 from .knowledge_map.aggregate_given import node_initial_mastery  # noqa: F401
 from .knowledge_map.aggregate_given import subject_library  # noqa: F401
 from .knowledge_map.aggregate_given import user_logged_in_multi_subject  # noqa: F401
@@ -104,9 +108,11 @@ from .knowledge_map.aggregate_given import subject_knowledge_nodes  # noqa: F401
 from .knowledge_map.aggregate_given import user_single_subject  # noqa: F401
 from .knowledge_map.aggregate_given import user_node_followup_count  # noqa: F401
 from .knowledge_map.aggregate_given import user_coach_quota  # noqa: F401
+from .knowledge_map.aggregate_given import basic_coach_quota  # noqa: F401
 
 # Knowledge Map — commands
 from .knowledge_map.commands import ai_coach_input  # noqa: F401
+from .knowledge_map.commands import knowledge_map_ui_actions  # noqa: F401
 from .knowledge_map.commands import ai_coach_input_locked  # noqa: F401
 from .knowledge_map.commands import answer_questions_correctly  # noqa: F401
 from .knowledge_map.commands import click_knowledge_node  # noqa: F401
@@ -121,6 +127,7 @@ from .knowledge_map.commands import view_node_source  # noqa: F401
 from .knowledge_map.commands import click_node  # noqa: F401
 from .knowledge_map.commands import coach_followup  # noqa: F401
 from .knowledge_map.commands import coach_input  # noqa: F401
+from .knowledge_map.commands import long_input  # noqa: F401
 
 # Knowledge Map — aggregate_then
 from .knowledge_map.aggregate_then import knowledge_tree_created  # noqa: F401
@@ -129,9 +136,11 @@ from .knowledge_map.aggregate_then import resource_status_updated  # noqa: F401
 from .knowledge_map.aggregate_then import tree_hierarchy  # noqa: F401
 from .knowledge_map.aggregate_then import leaf_node_source  # noqa: F401
 from .knowledge_map.aggregate_then import coach_quota_remaining  # noqa: F401
+from .knowledge_map.aggregate_then import basic_quota_remaining  # noqa: F401
 
 # Knowledge Map — readmodel_then
 from .knowledge_map.readmodel_then import achievement_animation  # noqa: F401
+from .knowledge_map.readmodel_then import knowledge_map_ui  # noqa: F401
 from .knowledge_map.readmodel_then import coach_response_rendered  # noqa: F401
 from .knowledge_map.readmodel_then import knowledge_tree_displayed  # noqa: F401
 from .knowledge_map.readmodel_then import main_panel_layout  # noqa: F401
@@ -156,6 +165,9 @@ from .knowledge_map.readmodel_then import streaming_response  # noqa: F401
 from .knowledge_map.readmodel_then import model_indicator  # noqa: F401
 from .knowledge_map.readmodel_then import mastery_colors  # noqa: F401
 from .knowledge_map.readmodel_then import color_rules  # noqa: F401
+from .knowledge_map.readmodel_then import basic_coach_response  # noqa: F401
+from .knowledge_map.readmodel_then import safety_classification  # noqa: F401
+from .knowledge_map.readmodel_then import ai_coach_reply  # noqa: F401
 
 # Exam — aggregate_given
 from .exam.aggregate_given import resources  # noqa: F401
@@ -236,6 +248,7 @@ from .mock_exam.aggregate_given import exams  # noqa: F401
 from .mock_exam.aggregate_given import questions  # noqa: F401
 from .mock_exam.aggregate_given import saved_answers  # noqa: F401
 from .mock_exam.aggregate_given import exam_started  # noqa: F401
+from .mock_exam.aggregate_given import exam_ready  # noqa: F401
 
 # Mock Exam — commands
 from .mock_exam.commands import start_exam  # noqa: F401
@@ -244,6 +257,7 @@ from .mock_exam.commands import mark_review  # noqa: F401
 from .mock_exam.commands import submit_exam  # noqa: F401
 from .mock_exam.commands import resume_exam  # noqa: F401
 from .mock_exam.commands import fill_in_answer  # noqa: F401
+from .mock_exam.commands import exam_ui_actions  # noqa: F401
 
 # Mock Exam — aggregate_then
 from .mock_exam.aggregate_then import exam_status  # noqa: F401
@@ -253,18 +267,22 @@ from .mock_exam.aggregate_then import review_marked  # noqa: F401
 
 # Mock Exam — readmodel_then
 from .mock_exam.readmodel_then import resume_answer  # noqa: F401
+from .mock_exam.readmodel_then import exam_ui  # noqa: F401
 
 # Exam Result — aggregate_given
 from .exam_result.aggregate_given import history_exams  # noqa: F401
 from .exam_result.aggregate_given import node_stats  # noqa: F401
+from .exam_result.aggregate_given import score_history  # noqa: F401
 
 # Exam Result — commands
 from .exam_result.commands import view_result  # noqa: F401
 from .exam_result.commands import view_node_analysis  # noqa: F401
+from .exam_result.commands import result_ui_actions  # noqa: F401
 
 # Exam Result — readmodel_then
 from .exam_result.readmodel_then import result_fields  # noqa: F401
 from .exam_result.readmodel_then import node_analysis  # noqa: F401
+from .exam_result.readmodel_then import result_ui  # noqa: F401
 
 # Wrong Answer — aggregate_given
 from .wrong_answer.aggregate_given import exam_wrong_records  # noqa: F401
@@ -272,6 +290,7 @@ from .wrong_answer.aggregate_given import user_profile  # noqa: F401
 from .wrong_answer.aggregate_given import historical_wrong  # noqa: F401
 from .wrong_answer.aggregate_given import cooldown_history  # noqa: F401
 from .wrong_answer.aggregate_given import learning_history  # noqa: F401
+from .wrong_answer.aggregate_given import review_page_state  # noqa: F401
 
 # Wrong Answer — commands
 from .wrong_answer.commands import filter_by_subject  # noqa: F401
@@ -279,6 +298,7 @@ from .wrong_answer.commands import view_wrong_answers  # noqa: F401
 from .wrong_answer.commands import ai_coach  # noqa: F401
 from .wrong_answer.commands import ai_coach_generic  # noqa: F401
 from .wrong_answer.commands import advanced_coach  # noqa: F401
+from .wrong_answer.commands import review_ui_actions  # noqa: F401
 
 # Wrong Answer — readmodel_then
 from .wrong_answer.readmodel_then import subject_filter  # noqa: F401
@@ -297,6 +317,7 @@ from .wrong_answer.readmodel_then import ai_coach_reply_contains  # noqa: F401
 from .wrong_answer.readmodel_then import ai_coach_cooldown  # noqa: F401
 from .wrong_answer.readmodel_then import disclaimer  # noqa: F401
 from .wrong_answer.readmodel_then import advanced_coach_analysis  # noqa: F401
+from .wrong_answer.readmodel_then import review_ui  # noqa: F401
 
 # Subscription — aggregate_given
 from .subscription.aggregate_given import invoices  # noqa: F401
@@ -374,6 +395,7 @@ from .b2b.commands import view_remediation_defaults  # noqa: F401
 from .b2b.commands import delete_group  # noqa: F401
 from .b2b.commands import batch_remove_students  # noqa: F401
 from .b2b.commands import remove_student  # noqa: F401
+from .b2b.commands import b2b_ui_actions  # noqa: F401
 
 # B2B — aggregate_then
 from .b2b.aggregate_then import new_student_accounts  # noqa: F401
@@ -407,6 +429,7 @@ from .b2b.readmodel_then import exam_history  # noqa: F401
 from .b2b.readmodel_then import remediation_result  # noqa: F401
 from .b2b.readmodel_then import remediation_defaults_check  # noqa: F401
 from .b2b.readmodel_then import ai_suggestions_advanced  # noqa: F401
+from .b2b.readmodel_then import b2b_ui  # noqa: F401
 
 # Resource Library — aggregate_given
 from .resource_lib.aggregate_given import resources as rl_resources  # noqa: F401
@@ -440,6 +463,8 @@ from .onboarding.aggregate_given import at_profile_page  # noqa: F401
 from .onboarding.aggregate_given import archived_journey  # noqa: F401
 from .onboarding.aggregate_given import parent_child_subjects  # noqa: F401
 from .onboarding.aggregate_given import subject_in_category  # noqa: F401
+from .onboarding.aggregate_given import subject_with_level  # noqa: F401
+from .onboarding.aggregate_given import current_category  # noqa: F401
 
 # Onboarding — commands
 from .onboarding.commands import view_status  # noqa: F401
@@ -465,6 +490,10 @@ from .onboarding.commands import query_available_subjects  # noqa: F401
 from .onboarding.commands import add_subject_table  # noqa: F401
 from .onboarding.commands import remove_and_confirm  # noqa: F401
 from .onboarding.commands import query_subject_list  # noqa: F401
+from .onboarding.commands import add_custom_subject  # noqa: F401
+from .onboarding.commands import switch_subject_level  # noqa: F401
+from .onboarding.commands import click_edit_section  # noqa: F401
+from .onboarding.commands import switch_category  # noqa: F401
 
 # Onboarding — aggregate_then
 from .onboarding.aggregate_then import journeys_created  # noqa: F401
@@ -509,11 +538,17 @@ from .onboarding.readmodel_then import available_subjects_include  # noqa: F401
 from .onboarding.readmodel_then import subject_list_contains  # noqa: F401
 from .onboarding.readmodel_then import category_contains_subject  # noqa: F401
 from .onboarding.readmodel_then import subject_question_count  # noqa: F401
+from .onboarding.readmodel_then import custom_subject_added  # noqa: F401
+from .onboarding.readmodel_then import subject_date_badge  # noqa: F401
+from .onboarding.readmodel_then import subject_level_updated  # noqa: F401
+from .onboarding.readmodel_then import navigate_to_step  # noqa: F401
+from .onboarding.readmodel_then import category_filter  # noqa: F401
 
 # Admin — aggregate_given
 from .admin.aggregate_given import admin_roles_doc  # noqa: F401
 from .admin.aggregate_given import user_status_suspended  # noqa: F401
 from .admin.aggregate_given import worker_failure_rate  # noqa: F401
+from .admin.aggregate_given import many_users  # noqa: F401
 
 # Admin — commands
 from .admin.commands import access_admin  # noqa: F401
@@ -537,7 +572,11 @@ from .admin.commands import view_ai_cost  # noqa: F401
 from .admin.commands import view_trend_charts  # noqa: F401
 from .admin.commands import detect_alerts  # noqa: F401
 
+# Admin — commands
+from .admin.commands import admin_ui_actions  # noqa: F401
+
 # Admin — readmodel_then
+from .admin.readmodel_then import admin_ui  # noqa: F401
 from .admin.readmodel_then import show_dashboard  # noqa: F401
 from .admin.readmodel_then import no_settings_menu  # noqa: F401
 from .admin.readmodel_then import kpi_fields  # noqa: F401
@@ -568,6 +607,8 @@ from .admin_finance.commands import view_transactions  # noqa: F401
 from .admin_finance.commands import approve_refund  # noqa: F401
 from .admin_finance.commands import reject_refund  # noqa: F401
 from .admin_finance.commands import create_coupon  # noqa: F401
+from .admin_finance.commands import approve_refund_otp  # noqa: F401
+from .admin_finance.commands import finance_ui_actions  # noqa: F401
 
 # Admin Finance — aggregate_then
 from .admin_finance.aggregate_then import refund_status  # noqa: F401
@@ -581,6 +622,10 @@ from .admin_finance.readmodel_then import transaction_list  # noqa: F401
 from .admin_finance.readmodel_then import transaction_fields  # noqa: F401
 from .admin_finance.readmodel_then import mrr_trend  # noqa: F401
 from .admin_finance.readmodel_then import plan_distribution  # noqa: F401
+from .admin_finance.readmodel_then import export_finance  # noqa: F401
+from .admin_finance.readmodel_then import transaction_filter  # noqa: F401
+from .admin_finance.readmodel_then import transaction_detail  # noqa: F401
+from .admin_finance.readmodel_then import mrr_chart  # noqa: F401
 
 # Admin Moderation — aggregate_given
 from .admin_moderation.aggregate_given import ai_cooldowns  # noqa: F401
@@ -591,6 +636,9 @@ from .admin_moderation.commands import view_ai_abuse  # noqa: F401
 from .admin_moderation.commands import unlock_cooldown  # noqa: F401
 from .admin_moderation.commands import view_report_queue  # noqa: F401
 from .admin_moderation.commands import resolve_report  # noqa: F401
+from .admin_moderation.commands import click_report_action  # noqa: F401
+from .admin_moderation.commands import click_confirm_buttons  # noqa: F401
+from .admin_moderation.commands import system_ops_panel  # noqa: F401
 
 # Admin Moderation — aggregate_then
 from .admin_moderation.aggregate_then import cooldown_unlocked  # noqa: F401
@@ -602,6 +650,8 @@ from .admin_moderation.aggregate_then import warn_notification_sent  # noqa: F40
 # Admin Moderation — readmodel_then
 from .admin_moderation.readmodel_then import cooldown_users  # noqa: F401
 from .admin_moderation.readmodel_then import report_count  # noqa: F401
+from .admin_moderation.readmodel_then import confirm_dialog  # noqa: F401
+from .admin_moderation.readmodel_then import filtered_reports  # noqa: F401
 
 # Admin Settings — aggregate_given
 from .admin_settings.aggregate_given import ai_model_routings  # noqa: F401
@@ -611,6 +661,7 @@ from .admin_settings.aggregate_given import announcement_active_with_id  # noqa:
 from .admin_settings.aggregate_given import announcement_active_display  # noqa: F401
 from .admin_settings.aggregate_given import announcement_inactive  # noqa: F401
 from .admin_settings.aggregate_given import announcement_with_id  # noqa: F401
+from .admin_settings.aggregate_given import many_audit_logs  # noqa: F401
 
 # Admin Settings — commands
 from .admin_settings.commands import update_model_routing  # noqa: F401
@@ -624,6 +675,7 @@ from .admin_settings.commands import delete_announcement  # noqa: F401
 from .admin_settings.commands import create_admin_user  # noqa: F401
 from .admin_settings.commands import clear_cache  # noqa: F401
 from .admin_settings.commands import reset_ai_limits  # noqa: F401
+from .admin_settings.commands import settings_ui_actions  # noqa: F401
 
 # Admin Settings — aggregate_then
 from .admin_settings.aggregate_then import model_routing_updated  # noqa: F401
@@ -638,20 +690,27 @@ from .admin_settings.aggregate_then import activation_email_sent  # noqa: F401
 from .admin_settings.readmodel_then import audit_log_fields  # noqa: F401
 from .admin_settings.readmodel_then import response_contains_announcement  # noqa: F401
 from .admin_settings.readmodel_then import response_not_contains_announcement  # noqa: F401
+from .admin_settings.readmodel_then import settings_page_hints  # noqa: F401
+from .admin_settings.readmodel_then import admin_table  # noqa: F401
+from .admin_settings.readmodel_then import audit_log_ui  # noqa: F401
 
 # Dashboard — aggregate_given
 from .dashboard.aggregate_given import user_subjects  # noqa: F401
+from .dashboard.aggregate_given import dashboard_ui_state  # noqa: F401
 
 # Dashboard — commands
 from .dashboard.commands import view_dashboard  # noqa: F401
 from .dashboard.commands import switch_subject  # noqa: F401
 from .dashboard.commands import update_profile  # noqa: F401
+from .dashboard.commands import dashboard_ui_actions  # noqa: F401
 
 # Dashboard — aggregate_then
 from .dashboard.aggregate_then import display_name  # noqa: F401
+from .dashboard.aggregate_then import dashboard_state  # noqa: F401
 
 # Dashboard — readmodel_then
 from .dashboard.readmodel_then import guidance_prompt  # noqa: F401
+from .dashboard.readmodel_then import dashboard_ui  # noqa: F401
 from .dashboard.readmodel_then import subject_switcher  # noqa: F401
 from .dashboard.readmodel_then import countdown  # noqa: F401
 from .dashboard.readmodel_then import components  # noqa: F401
@@ -987,9 +1046,11 @@ from .wrong_answer_map.aggregate_given import node_answer_records  # noqa: F401
 from .wrong_answer_map.aggregate_given import bulk_node_mastery  # noqa: F401
 from .wrong_answer_map.aggregate_given import multiple_exams_mastery  # noqa: F401
 from .wrong_answer_map.aggregate_given import node_wrong_answers  # noqa: F401
+from .wrong_answer_map.aggregate_given import red_nodes_setup  # noqa: F401
 
 # Wrong Answer Map — commands
 from .wrong_answer_map.commands import update_node_mastery  # noqa: F401
+from .wrong_answer_map.commands import request_ai_suggestion  # noqa: F401
 
 # Wrong Answer Map — query
 from .wrong_answer_map.query import query_wrong_answer_map  # noqa: F401
@@ -1006,6 +1067,7 @@ from .wrong_answer_map.readmodel_then import wrong_answer_details  # noqa: F401
 from .wrong_answer_map.readmodel_then import time_filter  # noqa: F401
 from .wrong_answer_map.readmodel_then import markdown_mastery  # noqa: F401
 from .wrong_answer_map.readmodel_then import free_plan_locked  # noqa: F401
+from .wrong_answer_map.readmodel_then import ai_suggestion_response  # noqa: F401
 
 # Difficulty Progression — aggregate_given
 from .difficulty_progression.aggregate_given import knowledge_tree_with_difficulty  # noqa: F401
@@ -1078,3 +1140,80 @@ from .prompt_template.aggregate_then import ab_test_state  # noqa: F401
 # Prompt Template — readmodel_then
 from .prompt_template.readmodel_then import template_response  # noqa: F401
 from .prompt_template.readmodel_then import internal_api_response  # noqa: F401
+
+# AI Gen Service (Feature 04a) — 所有 step 已合併至 exam 子領域。
+# ai_gen 子領域保留但不再 import（避免 AmbiguousStep 衝突）。
+from .exam.readmodel_then import historical_mode  # noqa: F401
+
+# Tenant Security (Feature 31) — aggregate_given
+from .tenant_security.aggregate_given import active_tenants  # noqa: F401
+from .tenant_security.aggregate_given import tenant_student  # noqa: F401
+from .tenant_security.aggregate_given import tenant_logged_in  # noqa: F401
+from .tenant_security.aggregate_given import b2c_logged_in  # noqa: F401
+from .tenant_security.aggregate_given import tenant_chunks  # noqa: F401
+from .tenant_security.aggregate_given import tenant_exam_answers  # noqa: F401
+from .tenant_security.aggregate_given import old_jwt  # noqa: F401
+from .tenant_security.aggregate_given import logged_in_user  # noqa: F401
+from .tenant_security.aggregate_given import tenant_decommissioned  # noqa: F401
+from .tenant_security.aggregate_given import test_resources  # noqa: F401
+
+# Tenant Security (Feature 31) — commands
+from .tenant_security.commands import upload_resource  # noqa: F401
+from .tenant_security.commands import query_resource_chunks  # noqa: F401
+from .tenant_security.commands import query_answers  # noqa: F401
+from .tenant_security.commands import login_tenant  # noqa: F401
+from .tenant_security.commands import access_resources_legacy  # noqa: F401
+from .tenant_security.commands import submit_url  # noqa: F401
+from .tenant_security.commands import purge_tenant_script  # noqa: F401
+from .tenant_security.commands import purge_target_public_b2c  # noqa: F401
+from .tenant_security.commands import bdd_env_check  # noqa: F401
+from .tenant_security.commands import after_scenario_truncate  # noqa: F401
+
+# Tenant Security (Feature 31) — aggregate_then
+from .tenant_security.aggregate_then import tenant_id_in_resources  # noqa: F401
+from .tenant_security.aggregate_then import tenant_id_in_chunks  # noqa: F401
+from .tenant_security.aggregate_then import chunk_isolation  # noqa: F401
+from .tenant_security.aggregate_then import answer_isolation  # noqa: F401
+from .tenant_security.aggregate_then import purge_dry_run  # noqa: F401
+
+# Tenant Security (Feature 31) — readmodel_then
+from .tenant_security.readmodel_then import jwt_tenant_id  # noqa: F401
+from .tenant_security.readmodel_then import legacy_compat  # noqa: F401
+from .tenant_security.readmodel_then import ssrf_rejection  # noqa: F401
+from .tenant_security.readmodel_then import bdd_env_isolation  # noqa: F401
+
+# Confidence Calibration (Feature 20) — aggregate_given
+from .confidence_calibration.aggregate_given import exam_with_answers  # noqa: F401
+
+# Confidence Calibration (Feature 20) — commands
+from .confidence_calibration.commands import answer_with_confidence  # noqa: F401
+
+# Confidence Calibration (Feature 20) — aggregate_then
+from .confidence_calibration.aggregate_then import answer_state  # noqa: F401
+
+# Confidence Calibration (Feature 20) — readmodel_then
+from .confidence_calibration.readmodel_then import confidence_analysis  # noqa: F401
+
+# Pomodoro (Feature 21) — aggregate_given
+from .pomodoro.aggregate_given import pomodoro_state  # noqa: F401
+
+# Pomodoro (Feature 21) — commands
+from .pomodoro.commands import pomodoro_actions  # noqa: F401
+
+# Pomodoro (Feature 21) — aggregate_then
+from .pomodoro.aggregate_then import pomodoro_state as pomodoro_then_state  # noqa: F401
+
+# Pomodoro (Feature 21) — readmodel_then
+from .pomodoro.readmodel_then import pomodoro_response  # noqa: F401
+
+# Account Settings (Feature 22) — aggregate_given
+from .account_settings.aggregate_given import user_setup  # noqa: F401
+
+# Account Settings (Feature 22) — commands
+from .account_settings.commands import account_actions  # noqa: F401
+
+# Account Settings (Feature 22) — aggregate_then
+from .account_settings.aggregate_then import account_state  # noqa: F401
+
+# Account Settings (Feature 22) — readmodel_then
+from .account_settings.readmodel_then import account_response  # noqa: F401

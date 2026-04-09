@@ -329,6 +329,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* V3: 有機生長 — 無 decay 提醒，改用進度稀釋 Toast（由 WebSocket 觸發） */}
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
@@ -420,30 +422,7 @@ export default function DashboardPage() {
                       </>
                     )}
                   </div>
-                  {/* Image upload — Pro Plus only */}
-                  {isProPlus ? (
-                    <button
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = '.png,.jpg,.jpeg,.webp';
-                        input.onchange = e => handleFileUpload((e.target as HTMLInputElement).files);
-                        input.click();
-                      }}
-                      disabled={uploading}
-                      className="w-full flex items-center gap-2 justify-center border border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl px-4 py-2 text-sm font-medium text-purple-700 transition-colors disabled:opacity-50"
-                    >
-                      <ImageIcon className="h-4 w-4" /> 上傳圖片（Vision OCR）
-                    </button>
-                  ) : (
-                    <div className="group relative w-full flex items-center gap-2 justify-center border border-slate-200 bg-slate-50 rounded-xl px-4 py-2 text-sm text-slate-400 cursor-default">
-                      <Lock className="h-3.5 w-3.5" />
-                      <span>圖片上傳需 PRO+ 以上方案</span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                        手寫/圖片辨識需要多模態算力，升級 PRO+ 解鎖 Vision OCR
-                      </div>
-                    </div>
-                  )}
+                  {/* Vision OCR 已移除 — 實體檔案上傳即可 */}
                 </div>
 
                 {/* YouTube Import */}

@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
-    "subject": "",
-    "year": 114,
-    "session": 2,
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_beginner_management",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
     "total_questions": 50,
+    "questions_with_answer": 50,
     "bloom_distribution": {
       "remember": 37,
       "apply": 2,
@@ -18,8 +20,7 @@
       "medium": 2,
       "hard": 7
     },
-    "source_pdf": "114_is_beginner_management.pdf",
-    "answer_pdf": null
+    "year": 114
   },
   "questions": [
     {
@@ -32,7 +33,8 @@
       "option_d": "新增資料洩漏預防要求",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -44,7 +46,8 @@
       "option_d": "ISO 27018",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -56,7 +59,8 @@
       "option_d": "雲端服務的防護模型",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -68,7 +72,8 @@
       "option_d": "確保該管理系統內部控制的有效性 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -80,7 +85,8 @@
       "option_d": "組織之公開資訊對外公布時，資料的完整性需審查後 再開放",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -92,7 +98,8 @@
       "option_d": "資通安全事件通報及應變辦法",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -104,7 +111,8 @@
       "option_d": "甲於首次行銷時，應提供乙表示拒絕接受行銷之方 式，並支付所需費用",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -116,7 +124,8 @@
       "option_d": "管制資訊流通速度 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -128,7 +137,8 @@
       "option_d": "公司統一編號",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -140,7 +150,8 @@
       "option_d": "應查核有無曾受到大陸地區、香港或澳門政府之利 誘、脅迫，從事不利國家安全或重大利益情事",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -152,7 +163,8 @@
       "option_d": "知悉重大資通安全事件時，主管機關或中央目的事業 主管機關於適當時機得公告與事件相關之必要內容及 因應措施，並得提供相關協助 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -164,7 +176,8 @@
       "option_d": "個人資料的更正權",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -176,7 +189,8 @@
       "option_d": "5、6、7",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -188,7 +202,8 @@
       "option_d": "機密性",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -200,7 +215,8 @@
       "option_d": "對資產負有管理責任的人或部門 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -212,7 +228,8 @@
       "option_d": "降低資產保護等級，但仍需定期進行風險評估與監控",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -224,7 +241,8 @@
       "option_d": "2、4、5",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -236,7 +254,8 @@
       "option_d": "公司員工帳號 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -248,7 +267,8 @@
       "option_d": "內部資產及外部資產",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -260,7 +280,8 @@
       "option_d": "資訊資產盤點應確認資產的可用性",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -272,7 +293,8 @@
       "option_d": "風險拒絕（Risk Reject）",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -284,7 +306,8 @@
       "option_d": "風險避免（Risk Avoidance）是指組織採取措施主動減少 風險的可能性和影響，例如通過技術改進或政策更新 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -296,7 +319,8 @@
       "option_d": "滿腹牢騷的員工所造成蓄意破壞的威脅",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -308,7 +332,8 @@
       "option_d": "召開資產盤點會議",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -320,7 +345,8 @@
       "option_d": "駭客（惡意攻擊者）",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -332,7 +358,8 @@
       "option_d": "使用者可以在終端裝置上透過指紋辨識、聲音辨識、 輸入個人識別碼 PIN 等方式進行線上登入 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -344,7 +371,8 @@
       "option_d": "具有效盤點且可唯一識別（如 TPM 等）納管設備機 制，並對其安全要求（如病毒碼、作業系統狀態等） 之判斷及應處機制；對未納管設備具有即時偵測及風 險控管（如強制隔離）機制",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -356,7 +384,8 @@
       "option_d": "非所有流量都是不安全的前提下進行零信任設計 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -368,7 +397,8 @@
       "option_d": "個人密碼（Password）",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -380,7 +410,8 @@
       "option_d": "僅授予使用者完成其工作所必需的最低權限",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -392,7 +423,8 @@
       "option_d": "只有被列入黑名單的使用者才被拒絕存取",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -404,7 +436,8 @@
       "option_d": "每半年定期檢視管理者及使用者權限是否異常 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -416,7 +449,8 @@
       "option_d": "定義操作情境的環境條件，如：時間、地點",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -428,7 +462,8 @@
       "option_d": "可由使用者自行選擇是否執行，以兼顧便利與安全性",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -440,7 +475,8 @@
       "option_d": "2、3、5 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -452,7 +488,8 @@
       "option_d": "Blowfish",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -464,7 +501,8 @@
       "option_d": "因為金鑰有使用期限的設定，超過有效期限之金鑰可 以不需要替換",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -476,7 +514,8 @@
       "option_d": "金鑰應備份，並妥適保管，以確保其可用性",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -488,7 +527,8 @@
       "option_d": "訊息摘要 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -500,7 +540,8 @@
       "option_d": "在加密過程中隨機化明文",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -512,7 +553,8 @@
       "option_d": "依據事件鑑識人員的現場判斷",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -524,7 +566,8 @@
       "option_d": "存錄事故管理活動",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -536,7 +579,8 @@
       "option_d": "1、4、5、7",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -548,7 +592,8 @@
       "option_d": "將所有資安工作外包給第三方廠商",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -560,7 +605,8 @@
       "option_d": "優先套用廠商最新修補（Patch）以移除可能弱點",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -572,7 +618,8 @@
       "option_d": "減少數據中心的外圍安全措施 114 年度第 2 次 資訊安全工程師能力鑑定 初級試題 科目：I11 資訊安全管理概論 卷號：I11-4201",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -584,7 +631,8 @@
       "option_d": "營運持續管理應適時調整、更新",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -596,7 +644,8 @@
       "option_d": "強化社群媒體行銷",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -608,7 +657,8 @@
       "option_d": "確認業務功能與資源復原的先後順序",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -620,7 +670,8 @@
       "option_d": "降低營運成本，減少儲存需求",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     }
   ]
 }

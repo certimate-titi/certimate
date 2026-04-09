@@ -233,7 +233,6 @@ Feature: 測驗設定
 
   Rule: 前置（參數）- 題型切換應支援選擇多種題型
 
-    @ignore
     Example: 選擇多種題型成功提交測驗設定
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，題型為 "單選" 和 "多選" 和 "填空"
       Then 操作成功
@@ -241,7 +240,6 @@ Feature: 測驗設定
 
   Rule: 前置（參數）- 難度滑桿應支援調整至最高難度
 
-    @ignore
     Example: 難度滑桿調整至最高難度後成功提交
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，難易度分配為 Easy:0% Medium:0% Hard:100%
       Then 操作成功
@@ -249,7 +247,6 @@ Feature: 測驗設定
 
   Rule: 前置（參數）- PRO_PLUS 方案每次測驗題數上限為 100 題
 
-    @ignore
     Example: PRO_PLUS 用戶要求 100 題成功
       Given 系統中有以下使用者帳號：
         | 使用者 ID | Email                | 訂閱方案  |
@@ -265,7 +262,6 @@ Feature: 測驗設定
 
   Rule: 前置（狀態）- 文件未處理完成時無法選擇作為測驗範圍
 
-    @ignore
     Example: 文件狀態為 PROCESSING 時無法選擇
       Given 系統中有以下資源：
         | 資源 ID | 使用者 ID | 名稱              | 狀態       |
@@ -273,3 +269,37 @@ Feature: 測驗設定
       When 使用者 "free@example.com" 嘗試在測驗設定中選擇資源 5
       Then 操作失敗
       And 錯誤訊息應為 "該文件尚未處理完成，無法用於出題"
+
+  # ========== 考古題模擬考模式 ==========
+
+  Rule: 前置（模式）- 考古題模擬考模式應從歷史題庫抽取真實題目
+
+    Example: 選擇考古題模擬考模式時 100% 從題庫抽取
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email              | 訂閱方案    |
+        | 1        | ultra@example.com  | ULTRA_1599 |
+      And 系統中有相關科目的考古題
+      When 使用者 "ultra@example.com" 選擇考古題模擬考模式並設定 10 題
+      Then 操作成功
+      And 考試狀態應為 "READY"
+      And 所有題目應來自 historical_exams 題庫
+
+    Example: 考古題模式下題數不受方案限制
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email             | 訂閱方案 |
+        | 1        | free@example.com  | FREE    |
+      When 使用者 "free@example.com" 選擇考古題模擬考模式
+      Then 10 題、20 題、50 題、100 題選項應全部可選
+
+    Example: 考古題模擬考模式下題庫不足時自動調整題數
+      Given 系統中僅有 5 題相關考古題
+      When 使用者選擇考古題模擬考模式並設定 10 題
+      Then 操作成功
+      And 實際出題數應為 5 題
+      And 回應應包含提示「此範圍考古題僅 5 題，已自動調整」
+
+    Example: 考古題應匹配使用者選擇的考科
+      Given 使用者選擇「AI 應用規劃師（初級）」考科
+      When 使用者以考古題模擬考模式生成考卷
+      Then 所有題目應屬於 AI 應用規劃師相關考試
+      And 不應出現其他考科的題目（如民航法、金融法規）

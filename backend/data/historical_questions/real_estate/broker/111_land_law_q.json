@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "代號：60140 111年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 111,
-    "session": 0,
+    "source": "代號：60140 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_land_law_q",
+    "exam_name": "代號：60140 111年專門職業及技術人員高等考試建築師、",
     "total_questions": 14,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 13,
       "evaluate": 1
@@ -13,8 +15,7 @@
       "easy": 13,
       "hard": 1
     },
-    "source_pdf": "111_land_law_q.pdf",
-    "answer_pdf": null
+    "year": 111
   },
   "questions": [
     {
@@ -27,7 +28,8 @@
       "option_d": "築改良物租賃期間未超過五年者，於標售後以五年為限",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -39,7 +41,8 @@
       "option_d": "共有人對共有土地或建築改良物的處分、變更及設定地上權、農育權、不動產役權或典權，對",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -51,7 +54,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -63,7 +67,8 @@
       "option_d": "信託關係存續中受託人變更時，原受託人與新受託人間",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -75,7 +80,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -87,7 +93,8 @@
       "option_d": "撤銷或廢止徵收，由該管直轄市或縣（市）主管機關單獨向中央主管機關申請之",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -99,7 +106,8 @@
       "option_d": "二年內完成細部計畫，細部計畫發布後五年內完成公共設施建設",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -111,7 +119,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -123,7 +132,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -135,7 +145,8 @@
       "option_d": "可供建築土地依規定標租時，其期限不得逾二十五年",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -147,7 +158,8 @@
       "option_d": "稅率為百分之四十五 稅率為百分之三十五",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -159,7 +171,8 @@
       "option_d": "經法院拍賣之土地，以拍定日當期之公告土地現值為準",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -171,7 +184,8 @@
       "option_d": "原國有地、學產地、直轄市縣（市）有地、鄉鎮（市）有地",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -183,7 +197,8 @@
       "option_d": "向買受人收受定金所訂立之書面契據，得轉售予第三人",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

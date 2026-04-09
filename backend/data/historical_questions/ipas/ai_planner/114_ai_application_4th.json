@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
-    "subject": "",
-    "year": 114,
-    "session": 0,
+    "source": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_application_4th",
+    "exam_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
     "total_questions": 48,
+    "questions_with_answer": 48,
     "bloom_distribution": {
       "remember": 28,
       "create": 6,
@@ -18,8 +20,7 @@
       "hard": 14,
       "medium": 2
     },
-    "source_pdf": "114_ai_application_4th.pdf",
-    "answer_pdf": null
+    "year": 114
   },
   "questions": [
     {
@@ -32,7 +33,8 @@
       "option_d": "聯邦學習（Federated Learning）",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -44,7 +46,8 @@
       "option_d": "依靠使用者回饋與正式上線後的監控資料，作為修正依據 某社交平台嘗試結合自動提示工程（Automatic Prompt Engineer,",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -56,7 +59,8 @@
       "option_d": "Graph Prompting 僅能處理線性路徑，限制多分支探索 在超長上下文任務中使用自動提示工程（Automatic Prompt Engineer,",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -68,7 +72,8 @@
       "option_d": "回饋機制通常僅針對局部片段，難以全面評估最終輸出品質",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -80,7 +85,8 @@
       "option_d": "在 No Code 平台中完全依賴生成式 AI 自動產生所有應用功能與流 程，不經人工設計或驗證",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -92,7 +98,8 @@
       "option_d": "AI Host→MCP Server→MCP Client→資料查詢→結果回傳 AI Host 在Agent-to-Agent（A2A）架構中，不同代理人之間會分工合作。一般",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -104,7 +111,8 @@
       "option_d": "Client Agent與Remote Agent同時處理任務並同步處理結果 在導入生成式 AI的應用規劃中，上下文工程（Context Engineering）",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -116,7 +124,8 @@
       "option_d": "優化Fine-tuning正確率",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -128,7 +137,8 @@
       "option_d": "自動判斷並只選擇正確的資訊 Agentic AI 在解決方案圖譜（Solution Graph）上尋找最佳解決路徑",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -140,7 +150,8 @@
       "option_d": "完全依靠 LLM一次性推斷最優完整路徑",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -152,7 +163,8 @@
       "option_d": "以上皆是 關於GitHub Copilot，",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -164,7 +176,8 @@
       "option_d": "任務規劃器（Task Planner）＋溫度參數（Temperature）設定 某客服自動回應系統希望根據不同客戶群體調整回覆風格。在兼顧即",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -176,7 +189,8 @@
       "option_d": "採用規則式替換方法，替換回覆詞彙以符合不同風格要求。 在建置多代理大型語言模型（Multi-agent LLMs）系統時，如果沒有清",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -188,7 +202,8 @@
       "option_d": "多個代理重複做同樣的任務，造成效率低落",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -200,7 +215,8 @@
       "option_d": "保留語氣相關 Fine-tuning，僅透過檢索系統更新文件內容，不頻 繁改動模型 某客服系統在回覆「訂單取消政策」時，即使生成溫度固定為 0.6，回",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -212,7 +228,8 @@
       "option_d": "提升檢索系統品質，確保取得的政策內容正確且最新",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -224,7 +241,8 @@
       "option_d": "LLM 未經醫療領域微調，難以正確理解專業性詞彙",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -236,7 +254,8 @@
       "option_d": "模型可能生成與實際影像不符的診斷結論，導致誤判並引發醫療與 法律風險",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -248,7 +267,8 @@
       "option_d": "3 → 1 → 2 → 4 一家顧問公司使用生成式 AI協助撰寫數據分析報告。雖然模型在測試",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -260,7 +280,8 @@
       "option_d": "模型因無法正確辨識報告中的頁碼與標題層級，才出現樣板化的結 果 在應用零樣本提示（Zero-Shot Prompting）時，",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -272,7 +293,8 @@
       "option_d": "要求模型從表格中擷取所有城市的最高氣溫",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -284,7 +306,8 @@
       "option_d": "投入資源自訓並私有化部署 LLM，並同步建立自動化風控機制",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -296,7 +319,8 @@
       "option_d": "專注於文字序列上下文的建模，只提升文字間的連貫性 某電商平台希望生成的商品描述在風格與用詞上保持一致性，但不需",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -308,7 +332,8 @@
       "option_d": "使用全連接神經網路對生成結果後期篩選",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -320,7 +345,8 @@
       "option_d": "將所有語音內容儲存為完整紀錄，提供事後人工摘要比對用",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -332,7 +358,8 @@
       "option_d": "「請以正式的語氣回覆顧客的提問」",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -344,7 +371,8 @@
       "option_d": "增加訓練資料中模擬的金融危機與市場異常案例，以提升 AI 在特 殊情境下的表現能力",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -356,7 +384,8 @@
       "option_d": "1 → 4 → 3 → 2 某跨國電商企業導入生成式 AI，協助處理顧客服務請求，並根據顧客",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -368,7 +397,8 @@
       "option_d": "設定 AI 的角色與回覆範圍，讓其專注於客服相關內容，避免回答 其他敏感議題",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -380,7 +410,8 @@
       "option_d": "具備根據歷史案例生成合規解釋的能力，協助新進員工快速理解法 規在實務上的應用 在企業導入 MLOps（Machine Learning Operations）的過程中，除了",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -392,7 +423,8 @@
       "option_d": "提供進階特徵工程能力，優化高維度數據的處理效率",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -404,7 +436,8 @@
       "option_d": "系統回應時間的穩定性，以支援醫療場域中可能的即時需求 在即時客服系統的效能測試中，若針對延遲測試（Latency Testing）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -416,7 +449,8 @@
       "option_d": "AI產生回答時用詞的多樣性與表達創意程度",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -428,7 +462,8 @@
       "option_d": "擴充與更新航班與票務資料來源，以提升模型的知識正確性與覆蓋 率 在機器學習模型的實務應用中，常會出現數據漂移（Data Drift）的情",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -440,7 +475,8 @@
       "option_d": "後端資料庫因欄位定義或結構調整，導致特徵提取流程與原始設計 不一致",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -452,7 +488,8 @@
       "option_d": "減少訓練樣本數量，降低偏見被放大的可能性 在提示工程（Prompt Engineering）的應用中，Chain-of-Thought（CoT）",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -464,7 +501,8 @@
       "option_d": "情境一與情境二都適合 ToT 在生成式AI 的提示工程中，Graph Prompting 在處理複雜關係資料時，",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -476,7 +514,8 @@
       "option_d": "Graph Prompting 能捕捉非線性結構與上下文關聯，適合處理網絡 化資訊 在少樣本提示（Few-shot Prompting）僅能提供 1–2 個範例的情況",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -488,7 +527,8 @@
       "option_d": "範例資訊過於稀缺，模型缺乏應對不同輸入情境的能力",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -500,7 +540,8 @@
       "option_d": "僅能依賴特定 API 供應商才能使用，無法在自建模型中實現 在評估大型語言模型，例如 7B、13B、175B參數規模時，模型規模對基",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -512,7 +553,8 @@
       "option_d": "模型越大，Benchmark 結果可能提升，但幅度取決於訓練數據品質 與資源配置 在AI應用設計中，Model Context Protocol（MCP）與檢索增強生成",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -524,7 +566,8 @@
       "option_d": "RAG透過統一協議，提升回答相關性",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -536,7 +579,8 @@
       "option_d": "C-Eval 某智慧工廠導入生成式 AI，協助產線工程師即時產生維修指引與操作",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -548,7 +592,8 @@
       "option_d": "完整重建並追蹤 AI 模型的全部推理過程",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -560,7 +605,8 @@
       "option_d": "使模型在生成回覆時更具創造性與多樣化",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -572,7 +618,8 @@
       "option_d": "透過調整生成階段的溫度參數，使模型在回覆時更穩定一致 在Agentic AI的架構中，解決方案圖譜（Solution Graph）常被用來",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -584,7 +631,8 @@
       "option_d": "作為代理在執行過程中的參考框架，用於組織決策步驟並支援任務 推理 小明想開發一個部落格寫作工具，讓用戶輸入文章開頭後，系統自動幫",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -596,7 +644,8 @@
       "option_d": "文本分類（Text Classification），針對輸入文本判斷情感、主題 或標籤 《以下空白》",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

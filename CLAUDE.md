@@ -11,7 +11,7 @@ CertiMate 是一個 AI 驅動的證照考試備考 SaaS 平台，前端使用 Ne
 - `frontend/` — Next.js 前端應用 (UI)
 - `backend/` — FastAPI 後端 (API + BDD E2E 測試)
 - `project/` — 商業規劃文件、市場分析與 BDD `.feature` 規格
-  - `project/specs/entity/erm.dbml` — 資料庫結構的**唯一真實來源 (SSOT)**（DBML 格式，42 張表）
+  - `project/specs/entity/erm.dbml` — 資料庫結構的**唯一真實來源 (SSOT)**（DBML 格式，43+ 張表）
   - `project/features/` — 定義產品需求的 Gherkin `.feature` 檔案
 
 ## 開發指令
@@ -33,12 +33,13 @@ npm run clean        # 清除 Next.js 快取
 
 ```bash
 cd backend
-pip install -r requirements.txt    # 安裝 Python 依賴
-python -m behave tests/features/   # 執行所有 BDD E2E 測試
-python -m behave tests/features/ --tags=~@ignore   # 僅執行已完成的 features
-python -m behave tests/features/01-身分驗證.feature  # 執行特定 feature
-python -m uvicorn app.main:app --reload             # 啟動開發用 API 伺服器
+.venv/bin/python -m behave tests/features/          # 執行所有 BDD E2E 測試
+.venv/bin/python -m behave tests/features/ --tags=~@ignore  # 僅執行已完成的 features
+.venv/bin/python -m behave tests/features/01-身分驗證.feature  # 執行特定 feature
+.venv/bin/python -m uvicorn app.main:app --reload   # 啟動開發用 API 伺服器
 ```
+
+**重要**：必須使用 `.venv/bin/python`（Python 3.13），系統 `python3` 是 3.9 不相容。
 
 需要 Docker 來執行 Testcontainers (PostgreSQL)。測試不需要 `.env` — Testcontainers 會自動啟動 PostgreSQL 容器。
 
@@ -82,19 +83,23 @@ python -m uvicorn app.main:app --reload             # 啟動開發用 API 伺服
 
 | 路徑 | 說明 |
 |------|------|
-| `app/main.py` | FastAPI 應用程式進入點 |
+| `app/main.py` | FastAPI 應用程式進入點（31 個 router） |
 | `app/core/config.py` | 設定、路徑、JWT 組態 |
-| `app/core/deps.py` | 依賴注入（DB session、JWT 認證） |
-| `app/models/` | SQLAlchemy ORM 模型（衍生自 `erm.dbml`） |
-| `app/repositories/` | Repository 類別（SQLAlchemy 資料庫存取） |
-| `app/services/` | 業務邏輯服務 |
-| `app/api/` | FastAPI 路由（API endpoints） |
+| `app/core/deps.py` | 依賴注入（DB session、JWT 認證、多租戶 RLS） |
+| `app/core/security.py` | SSRF 防護、URL 白名單 |
+| `app/models/` | 40 個 SQLAlchemy ORM 模型（衍生自 `erm.dbml`） |
+| `app/repositories/` | 15 個 Repository 類別（SQLAlchemy 資料庫存取） |
+| `app/services/` | 48 個業務邏輯服務 |
+| `app/api/` | 31 個 FastAPI 路由（API endpoints） |
 | `app/schemas/` | Pydantic 請求/回應 schemas |
-| `alembic/` | 資料庫遷移 |
-| `tests/features/` | Behave BDD feature 檔案 + step definitions |
+| `app/scripts/` | CLI 工具（考古題匯入、租戶清除、Prompt seed） |
+| `scripts/crawlers/` | 高普考爬蟲工具（moex_simple, auto_catalog_generator） |
+| `data/historical_questions/` | 爬蟲產出 JSON（7,992 題） + PDF |
+| `alembic/` | 資料庫遷移（001-040） |
+| `tests/features/` | 43 個 Behave BDD feature 檔案 + step definitions |
 | `tests/features/environment.py` | Testcontainers 生命週期（PostgreSQL + context 初始化） |
 | `tests/features/helpers/` | JWT helper、測試工具 |
-| `tests/features/steps/` | 按子領域組織的 step definitions |
+| `tests/features/steps/` | 37 個子領域 step definitions |
 | `tests/features/steps/common_then/` | 共用 Then 步驟（操作成功/失敗/錯誤訊息） |
 
 ### 後端 Step Definition 組織
@@ -110,7 +115,7 @@ tests/features/steps/{subdomain}/
 
 每個 step 獨立一個檔案（一檔一 step 模式）。所有 step 模組必須在 `tests/features/steps/__init__.py` 中明確 import。
 
-目前的子領域：`admin`、`admin_finance`、`admin_moderation`、`admin_settings`、`ai_gen`、`anomaly`、`auth`、`b2b`、`community`、`dashboard`、`ecpay`、`exam`、`exam_result`、`feedback`、`knowledge_map`、`mock_exam`、`onboarding`、`resource`、`resource_lib`、`schedule`、`subscription`、`subscription_upgrade`、`wrong_answer`。共用步驟放在 `common_then/`。
+目前的子領域（37 個）：`account_settings`、`admin`、`admin_finance`、`admin_moderation`、`admin_settings`、`ai_gen`、`anomaly`、`auth`、`b2b`、`community`、`confidence_calibration`、`dashboard`、`difficulty_progression`、`ecpay`、`edu_plan`、`exam`、`exam_result`、`feedback`、`fup`、`knowledge_map`、`knowledge_merge`、`mock_exam`、`onboarding`、`pomodoro`、`pricing`、`prompt_template`、`question_retirement`、`resource`、`resource_lib`、`reverse_engineering`、`schedule`、`subscription`、`subscription_trial`、`subscription_upgrade`、`tenant_security`、`wrong_answer`、`wrong_answer_map`。共用步驟放在 `common_then/`。
 
 ### 頁面結構
 - **公開頁面**: 首頁 (`/`)、登入、註冊、忘記密碼
@@ -140,22 +145,22 @@ tests/features/steps/{subdomain}/
 - **API 前綴**: `/api/v1` — 所有端點都在此前綴下
 - **JSON 欄位命名**: 所有 API 請求/回應欄位使用 snake_case
 - **紅燈階段不實作後端 API** — 測試應以 HTTP 404 失敗；API 端點僅在綠燈階段新增
-- **Alembic migrations** 位於 `backend/alembic/versions/`，使用遞增編號（001–016）。建立新 migration 時使用 `--rev-id` 指定下一個編號
+- **Alembic migrations** 位於 `backend/alembic/versions/`，使用遞增編號（001–040）。建立新 migration 時使用 `--rev-id` 指定下一個編號（下一個 = 041）
 
 ## 功能規格
 
-25 個 BDD `.feature` 檔案定義產品需求，涵蓋：
+43 個 BDD `.feature` 檔案定義產品需求，涵蓋：
 
 | # | 功能 | 說明 |
 |---|------|------|
-| 01 | 身分驗證 | 註冊、登入、Email 驗證、角色管理 |
-| 02 | 資源上傳 | PDF、Markdown、YouTube、手寫圖片上傳 |
-| 03/03a/03b | 知識心智圖 | 心智圖生成 + 導航 |
-| 04/04a | 測驗設定 | 考試設定 + AI 考題生成 |
-| 05 | 模擬機考 | 模擬考試情境 |
+| 01 | 身分驗證 | 註冊、登入、Email 驗證、角色管理、EDU 邀請 |
+| 02 | 資源上傳 | PDF、Markdown、YouTube、手寫圖片上傳、SSRF 防護 |
+| 03/03a/03b | 知識心智圖 | 心智圖生成 + 導航 + AI 教練 |
+| 04/04a | 測驗設定 | 考試設定 + AI 四階段考題生成 Pipeline |
+| 05 | 模擬機考 | 模擬考試情境、KaTeX 公式支援 |
 | 06 | 測驗結果 | 考試結果與分析 |
-| 07 | 錯題複習與AI教練 | 錯題複習 + AI 教練指導 |
-| 08/08a/08b | 訂閱管理 | 訂閱方案 + 綠界金流 + 付款後權限更新 |
+| 07 | 錯題複習與AI教練 | 錯題複習 + AI 教練指導 + 配額管理 |
+| 08/08a/08b | 訂閱管理 | 訂閱方案 + 綠界金流 + 付款後權限更新 + EDU 衝突處理 |
 | 09 | 學習記憶排程 | 艾賓浩斯遺忘曲線排程 |
 | 10 | B2B機構管理後台 | 教育機構管理控制台 |
 | 11 | 資源庫管理 | 共享資源庫管理 |
@@ -165,6 +170,21 @@ tests/features/steps/{subdomain}/
 | 15 | 首次登入引導 | 引導流程與學習歷程建立 |
 | 16 | 異常維修管理 | 異常追蹤與維修排程管理 |
 | 17 | 意見反饋 | 使用者意見回饋收集 |
+| 18 | 題目分類與考試趨勢 | Bloom 認知層次分類 + 趨勢分析 |
+| 18(定價) | 定價與升級引導 | 付費牆 + 升級流程 |
+| 19 | 交錯練習 | 混合科目練習模式 |
+| 20 | 信心度校準 | 作答信心度標註與校準 |
+| 21 | 番茄鐘學習節奏 | 時間管理 + 專注模式 |
+| 22 | 帳號設定與個人偏好 | 個人資料 + 學習偏好 |
+| 23 | 考古題題庫管理 | 歷史考題匯入 + 信度標示 |
+| 24 | 系統公告管理 | 平台通知與公告 |
+| 25 | AI考題退場與放榜 | 題目過期管理 + 成績發布 |
+| 26 | 考綱逆向工程 | 考試大綱分析與知識點對應 |
+| 27 | 個人化錯題地圖 | 弱點可視化 + AI 建議 |
+| 28 | 階層式難度遞進 | 漸進式難度調整 |
+| 29 | 知識樹合併對齊 | 多資源知識節點合併 |
+| 30 | Prompt模板管理 | 版本控制 + A/B 測試 |
+| 31 | 多租戶安全與資料隔離 | RLS + SSRF + 租戶資料清除 |
 
 Feature 檔案存放於 `project/features/`（規格）與 `backend/tests/features/`（測試執行）。
 

@@ -61,7 +61,8 @@ def upgrade() -> None:
             "INSERT INTO tenants (id, slug, name, plan_tier, is_active) "
             "VALUES (:id, 'public_b2c', '公開 B2C 平台', 'b2c', true) "
             "ON CONFLICT (slug) DO NOTHING"
-        ).bindparams(id=PUBLIC_B2C_TENANT_ID)
+        ).bindparams(sa.bindparam("id", type_=sa.UUID)
+        ).params(id=PUBLIC_B2C_TENANT_ID)
     )
 
     # ── 3. 在業務表新增 tenant_id 欄位（可為 NULL，允許漸進式遷移）──────
@@ -91,7 +92,8 @@ def upgrade() -> None:
         op.execute(
             sa.text(
                 f"UPDATE {table} SET tenant_id = :tid WHERE tenant_id IS NULL"
-            ).bindparams(tid=PUBLIC_B2C_TENANT_ID)
+            ).bindparams(sa.bindparam("tid", type_=sa.UUID)
+            ).params(tid=PUBLIC_B2C_TENANT_ID)
         )
 
     # ── 5. 啟用 PostgreSQL RLS（Row Level Security）──────────────────────

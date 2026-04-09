@@ -1,18 +1,19 @@
 {
   "import_meta": {
-    "source_name": "代號：60140 112年專門職業及技術人員高等考試建築師、",
-    "subject": "",
-    "year": 112,
-    "session": 0,
+    "source": "代號：60140 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_land_law_q",
+    "exam_name": "代號：60140 112年專門職業及技術人員高等考試建築師、",
     "total_questions": 18,
+    "questions_with_answer": 0,
     "bloom_distribution": {
       "remember": 18
     },
     "difficulty_distribution": {
       "easy": 18
     },
-    "source_pdf": "112_land_law_q.pdf",
-    "answer_pdf": null
+    "year": 112
   },
   "questions": [
     {
@@ -25,7 +26,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -37,7 +39,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -49,7 +52,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -61,7 +65,8 @@
       "option_d": "分課徵千分之十五",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -73,7 +78,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -85,7 +91,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -97,7 +104,8 @@
       "option_d": "機關將該土地清冊移請財政部國有財產署公開標售",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -109,7 +117,8 @@
       "option_d": "配偶、直系血親或二親等內旁系姻親間之讓與或轉售",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -121,7 +130,8 @@
       "option_d": "應於簽訂買賣契約之日起四十五日內申報",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -133,7 +143,8 @@
       "option_d": "以其應分配權利面積，按重劃後分配位置之評定重劃後地價予以計算補償",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -145,7 +156,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -157,7 +169,8 @@
       "option_d": "登記之權利人、義務人或其與申請登記之法律關係有關之權利關係人間有爭執",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -169,7 +182,8 @@
       "option_d": "他共有人於接到出賣通知後二十日內不表示者，其優先購買權視為放棄",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -181,7 +195,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -193,7 +208,8 @@
       "option_d": "賠償責任，撥歸登記儲金",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -205,7 +221,8 @@
       "option_d": "之五十者，直轄市或縣（市）政府不予核發建築執照",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -217,7 +234,8 @@
       "option_d": "因財政部公告之調職、非自願離職或其他非自願性因素，交易持有期間在五年以下之房屋、土",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -229,7 +247,8 @@
       "option_d": "",
       "correct_answer": "",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

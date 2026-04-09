@@ -61,6 +61,11 @@ class Exam(Base):
     ai_summary: Mapped[str | None] = mapped_column(Text)
     custom_bloom_ratio: Mapped[dict | None] = mapped_column(JSON)
     historical_priority: Mapped[bool] = mapped_column(Boolean, default=False)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True,
+        comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

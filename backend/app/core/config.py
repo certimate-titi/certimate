@@ -53,7 +53,9 @@ class Settings:
             "JWT_SECRET_KEY",
             "certimate-api-test-secret-key-do-not-use-in-production"
         )
-        self.JWT_ALGORITHM: str = "HS256"
+        self.JWT_ALGORITHM: str = "HS256"  # 安全限制：僅允許 HS256/RS256/ES256
+        assert self.JWT_ALGORITHM in ("HS256", "RS256", "ES256"), \
+            f"Unsafe JWT algorithm: {self.JWT_ALGORITHM}"
         self.JWT_EXPIRE_HOURS: int = 1
 
         # API 設定
@@ -101,6 +103,9 @@ class Settings:
 
 # 單例實例
 paths = Paths()
+
+# 預設 B2C 租戶 UUID（所有模組共用此常數，不要在其他地方重複定義）
+PUBLIC_B2C_TENANT_ID = "00000000-0000-0000-0000-000000b2cb2c"
 
 
 @lru_cache()

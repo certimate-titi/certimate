@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 2 次期貨商業務員資格測驗試題",
-    "subject": "期貨交易法規",
-    "year": 114,
-    "session": 2,
+    "source": "114 年第 2 次期貨商業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_salesperson_session02_questions",
+    "exam_name": "114 年第 2 次期貨商業務員資格測驗試題",
     "total_questions": 100,
+    "questions_with_answer": 100,
     "bloom_distribution": {
       "remember": 91,
       "create": 1,
@@ -16,8 +18,7 @@
       "hard": 1,
       "medium": 7
     },
-    "source_pdf": "futures_salesperson_session02_questions.pdf",
-    "answer_pdf": "futures_salesperson_session02_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -30,7 +31,8 @@
       "option_d": "選擇權賣方於買方要求履約時有依約履行之義務",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -42,7 +44,8 @@
       "option_d": "主管機關派員監理期貨結算機構的監理辦法",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -54,7 +57,8 @@
       "option_d": "期貨選擇權契約指當事人約定，選擇權買方支付權利金，取得購入或售出之權利，得於特 定期間內，依特定價格數量等交易條件買賣期貨契約；選擇權賣方，於買方要求履約時， 有依選擇權約定履行義務；或雙方同意於到期前或到期時結算差價之契約",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -66,7 +70,8 @@
       "option_d": "期貨業務創新實驗僅能由期貨業申請辦理",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -78,7 +83,8 @@
       "option_d": "期貨行政管理工作經驗 3 年以上，並曾任簡任以上職務",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -90,7 +96,8 @@
       "option_d": "經濟部",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -102,7 +109,8 @@
       "option_d": "四十億元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -114,7 +122,8 @@
       "option_d": "5 日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -126,7 +135,8 @@
       "option_d": "甲、丙",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -138,7 +148,8 @@
       "option_d": "每半年編製一次，並於交易所揭示處公告，同時送主管機關備查",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -150,7 +161,8 @@
       "option_d": "其他維護市場秩序或保護期貨交易人之必要措施",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -162,7 +174,8 @@
       "option_d": "僅提董事會報告",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -174,7 +187,8 @@
       "option_d": "處五年以下有期徒刑、拘役或併科新臺幣一百二十萬元以下罰金",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -186,7 +200,8 @@
       "option_d": "年",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -198,7 +213,8 @@
       "option_d": "甲、乙、丙、丁、戊",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -210,7 +226,8 @@
       "option_d": "結算會員於被指定代為了結他結算會員之結算、交割事務時，有依約履行之義務",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -222,7 +239,8 @@
       "option_d": "他業兼營國內股價指數期貨契約經紀業務者，須繳存新臺幣五百萬元之營業保證金",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -234,7 +252,8 @@
       "option_d": "有價證券抵繳之折扣比率",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -246,7 +265,8 @@
       "option_d": "期貨商對於客戶之開戶資料應於公告欄內公告",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -258,7 +278,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -270,7 +291,8 @@
       "option_d": "12 人",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -282,7 +304,8 @@
       "option_d": "買賣報告書之記載事項由主管機關定之",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -294,7 +317,8 @@
       "option_d": "報期貨交易所審查合格轉報主管機關備查",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -306,7 +330,8 @@
       "option_d": "甲、乙、丁",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -318,7 +343,8 @@
       "option_d": "如果經總經理批准，則可以辦理登記範圍以外之業務",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -330,7 +356,8 @@
       "option_d": "三年",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -342,7 +369,8 @@
       "option_d": "為期貨交易人支付全權委託期貨交易之經理費",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -354,7 +382,8 @@
       "option_d": "延展期限不得超過六個月",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -366,7 +395,8 @@
       "option_d": "相關資料應由期貨交易人簽名或蓋章並加註日期存執",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -378,7 +408,8 @@
       "option_d": "新臺幣七億元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -390,7 +421,8 @@
       "option_d": "新臺幣七千五百萬元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -402,7 +434,8 @@
       "option_d": "五日",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -414,7 +447,8 @@
       "option_d": "對不特定人募集者，自成立日滿四十五日，受益人始得申請買回",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -426,7 +460,8 @@
       "option_d": "公司獲利是否符合股東預期",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -438,7 +473,8 @@
       "option_d": "契約中應約定簽約後可要求解約之事由及期限",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -450,7 +486,8 @@
       "option_d": "基金保管機構之更換",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -462,7 +499,8 @@
       "option_d": "向不特定人募集之組合型期貨信託基金投資標的可為私募證券投資信託基金、期貨信託基 金及外國期貨基金",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -474,7 +512,8 @@
       "option_d": "向不特定人募集期貨信託基金之基金經理人不得兼任證券全權委託投資經理人",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -486,7 +525,8 @@
       "option_d": "期貨交易風險預告書",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -498,7 +538,8 @@
       "option_d": "證券商申請經營者，以證券商同業公會核准之期貨業務為限",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -510,7 +551,8 @@
       "option_d": "無時間限制，可依情節自行決定",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -522,7 +564,8 @@
       "option_d": "無需工作經驗",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -534,7 +577,8 @@
       "option_d": "六個月",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -546,7 +590,8 @@
       "option_d": "二個月",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -558,7 +603,8 @@
       "option_d": "得以命令調整保證金額度",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -570,7 +616,8 @@
       "option_d": "期貨信託基金淨資產價值及受益權單位淨資產價值之計算",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -582,7 +629,8 @@
       "option_d": "負責人因業務上關係發生訴訟",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -594,7 +642,8 @@
       "option_d": "期貨經紀商",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -606,7 +655,8 @@
       "option_d": "乙、丙、丁",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -618,7 +668,8 @@
       "option_d": "可予命令為停止一年以內全部或一部之營業 一個正確或最適當的答案",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 1,
@@ -630,7 +681,8 @@
       "option_d": "公式計算決定",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -642,7 +694,8 @@
       "option_d": "契約大小",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -654,7 +707,8 @@
       "option_d": "附條件委託",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -666,7 +720,8 @@
       "option_d": "未平倉之買單量或未回補之賣單量",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -678,7 +733,8 @@
       "option_d": "選項",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -690,7 +746,8 @@
       "option_d": "金管會、期交所、結算所、期貨公會的監督管理",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -702,7 +759,8 @@
       "option_d": "選項",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -714,7 +772,8 @@
       "option_d": "未規定",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -726,7 +785,8 @@
       "option_d": "停損限價買單",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -738,7 +798,8 @@
       "option_d": "長期美國公債期貨",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -750,7 +811,8 @@
       "option_d": "選項",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -762,7 +824,8 @@
       "option_d": "6.7633",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -774,7 +837,8 @@
       "option_d": "CRB",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -786,7 +850,8 @@
       "option_d": "僅以自結算會員接獲通知之日起生效",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -798,7 +863,8 @@
       "option_d": "木材投資者",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -810,7 +876,8 @@
       "option_d": "買黃豆油期貨，賣黃豆粉期貨",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -822,7 +889,8 @@
       "option_d": "匯率風險",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -834,7 +902,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -846,7 +915,8 @@
       "option_d": "無避險效果",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -858,7 +928,8 @@
       "option_d": "建立黃豆期貨多頭部位",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -870,7 +941,8 @@
       "option_d": "7",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -882,7 +954,8 @@
       "option_d": "保證金較少",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -894,7 +967,8 @@
       "option_d": "同時買進期貨合約，買進現貨",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -906,7 +980,8 @@
       "option_d": "1.3",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -918,7 +993,8 @@
       "option_d": "泰德價差交易（Ted Spread）",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -930,7 +1006,8 @@
       "option_d": "獲利5 美分",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -942,7 +1019,8 @@
       "option_d": "是一種較複雜的投資策略",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -954,7 +1032,8 @@
       "option_d": "甲、乙、丙、丁",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -966,7 +1045,8 @@
       "option_d": "130 口",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -978,7 +1058,8 @@
       "option_d": "400 元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -990,7 +1071,8 @@
       "option_d": "如同降低持有現貨之成本",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -1002,7 +1084,8 @@
       "option_d": "獲利40",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -1014,7 +1097,8 @@
       "option_d": "取得現金",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -1026,7 +1110,8 @@
       "option_d": "呈加速遞減",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -1038,7 +1123,8 @@
       "option_d": "選項",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -1050,7 +1136,8 @@
       "option_d": "是否持有現貨部位",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -1062,7 +1149,8 @@
       "option_d": "F",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -1074,7 +1162,8 @@
       "option_d": "黃豆期貨選擇權合約",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -1086,7 +1175,8 @@
       "option_d": "787,500 元",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -1098,7 +1188,8 @@
       "option_d": "$660",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -1110,7 +1201,8 @@
       "option_d": "臺灣指數公司臺灣全市場半導體精選 30指數",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -1122,7 +1214,8 @@
       "option_d": "英鎊",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -1134,7 +1227,8 @@
       "option_d": "6 萬元",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "apply"
+      "bloom_category": "apply",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -1146,7 +1240,8 @@
       "option_d": "遠期合約交易",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -1158,7 +1253,8 @@
       "option_d": "下午4:15 收盤商品，盤後交易時段之交易時間為營業日下午 5:00~次日上午 5:00",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -1170,7 +1266,8 @@
       "option_d": "選項",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -1182,7 +1279,8 @@
       "option_d": "營業部門經理",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -1194,7 +1292,8 @@
       "option_d": "業務員之異動應依「期貨商負責人及業務員管理規則」之規定辦理登記",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -1206,7 +1305,8 @@
       "option_d": "持續符合臺灣期貨交易所規定之結算會員資格條件",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -1218,7 +1318,8 @@
       "option_d": "先輸入的限價單必須全部成交，後輸入的才會成交",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }

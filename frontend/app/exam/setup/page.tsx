@@ -111,18 +111,21 @@ function ExamSetupPage() {
       );
       setDocuments(filteredDocs);
 
-      // If no user documents, load system knowledge nodes (historical exam bank)
-      if (filteredDocs.length === 0) {
-        try {
-          interface KnNode { id: string; name: string; depth: number; children?: KnNode[]; available_questions?: number }
-          const mapRes = await apiClient.get<{ nodes?: KnNode[] }>(
-            `/knowledge-map/subjects/${targetSubjectId}/nodes`
-          );
-          // API returns nested structure: root nodes with children[]
-          // Flatten to get depth=1 child nodes
-          const childNodes: SystemNode[] = [];
-          for (const root of (mapRes.nodes || [])) {
-            for (const child of (root.children || [])) {
+      // Always load system knowledge nodes (historical exam bank)
+      try {
+        interface KnNode { id: string; name: string; depth: number; children?: KnNode[]; available_questions?: number }
+        const mapRes = await apiClient.get<{ nodes?: KnNode[] }>(
+          `/knowledge-map/subjects/${targetSubjectId}/nodes`
+        );
+        const childNodes: SystemNode[] = [];
+        for (const root of (mapRes.nodes || [])) {
+          // Include root if it has questions directly
+          if ((root.available_questions || 0) > 0 && (!root.children || root.children.length === 0)) {
+            childNodes.push({ id: root.id, name: root.name, availableQuestions: root.available_questions || 0 });
+          }
+          for (const child of (root.children || [])) {
+            // Only include nodes that actually have questions
+            if ((child.available_questions || 0) > 0) {
               childNodes.push({
                 id: child.id,
                 name: child.name,
@@ -130,16 +133,14 @@ function ExamSetupPage() {
               });
             }
           }
-          setSystemNodes(childNodes);
-          if (childNodes.length > 0) {
-            setSelectedNodeIds(new Set(childNodes.map(n => n.id)));
-          }
-        } catch {
-          setSystemNodes([]);
         }
-      } else {
+        setSystemNodes(childNodes);
+        // Auto-select all historical nodes if in historical_only mode
+        if (childNodes.length > 0 && filteredDocs.length === 0) {
+          setSelectedNodeIds(new Set(childNodes.map(n => n.id)));
+        }
+      } catch {
         setSystemNodes([]);
-        setSelectedNodeIds(new Set());
       }
 
       setLoadingDocs(false);
@@ -235,12 +236,15 @@ function ExamSetupPage() {
       setGeneratedExamId(examId);
       // Navigate immediately after API completes
       router.push(`/exam/workspace?examId=${examId}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Exam generation failed:', e);
-      // Extract error detail from API response
-      const msg = e?.message || '';
-      const detailMatch = msg.match(/"detail"\s*:\s*"([^"]+)"/);
-      setValidationError(detailMatch ? detailMatch[1] : '測驗生成失敗，請稍後再試');
+      const msg = e instanceof Error ? e.message : '';
+      // If we already have an exam_id from Step 1, navigate anyway (Step 2 might have failed but exam exists)
+      if (generatedExamIdRef.current) {
+        router.push(`/exam/workspace?examId=${generatedExamIdRef.current}`);
+        return;
+      }
+      setValidationError(msg || '測驗生成失敗，請稍後再試');
       setIsGenerating(false);
     }
   }, [selectedDocIds, selectedNodeIds, questionCount, difficulty, questionTypes, examMode, router]);
@@ -306,7 +310,7 @@ function ExamSetupPage() {
                   <div key={i} className="h-20 bg-slate-200 rounded-2xl animate-pulse" />
                 ))}
               </div>
-            ) : documents.length > 0 ? (
+            ) : documents.length > 0 && examMode !== 'historical_only' ? (
               <div className="space-y-4">
                 {documents.map(doc => {
                   const isSelected = selectedDocIds.has(doc.id);
@@ -343,9 +347,14 @@ function ExamSetupPage() {
                   );
                 })}
               </div>
-            ) : systemNodes.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-xs text-slate-500 mb-2">考古題題庫（系統內建）</p>
+            ) : null}
+
+            {/* 考古題題庫 — 始終顯示（有系統節點時） */}
+            {systemNodes.length > 0 ? (
+              <div className="space-y-4 mt-4">
+                <p className="text-xs text-slate-500 mb-2 font-medium">
+                  📚 考古題題庫（系統內建 · {systemNodes.reduce((sum, n) => sum + n.availableQuestions, 0)} 題可用）
+                </p>
                 {systemNodes.map(node => {
                   const isSelected = selectedNodeIds.has(node.id);
                   return (
@@ -379,12 +388,12 @@ function ExamSetupPage() {
                   );
                 })}
               </div>
-            ) : (
+            ) : documents.length === 0 ? (
               <div className="text-center text-slate-400 py-8">
                 <p className="text-sm">尚無可用的測驗範圍</p>
                 <p className="text-xs mt-1">上傳文件後即可生成考題</p>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Right Column: Parameters */}
@@ -401,7 +410,10 @@ function ExamSetupPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-3">出題模式</label>
                 <div className="grid grid-cols-2 gap-2 mb-6">
                   <button
-                    onClick={() => setExamMode('hybrid')}
+                    onClick={() => {
+                      setExamMode('hybrid');
+                      setSelectedNodeIds(new Set());
+                    }}
                     className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors border-2 ${
                       examMode === 'hybrid'
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
@@ -412,7 +424,14 @@ function ExamSetupPage() {
                     <span className="text-xs opacity-75">20% 考古 + 80% AI</span>
                   </button>
                   <button
-                    onClick={() => setExamMode('historical_only')}
+                    onClick={() => {
+                      setExamMode('historical_only');
+                      // Auto-select all historical nodes, deselect documents
+                      setSelectedDocIds(new Set());
+                      if (systemNodes.length > 0) {
+                        setSelectedNodeIds(new Set(systemNodes.map(n => n.id)));
+                      }
+                    }}
                     className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors border-2 ${
                       examMode === 'historical_only'
                         ? 'border-amber-500 bg-amber-50 text-amber-700'
@@ -427,7 +446,8 @@ function ExamSetupPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-3">題數選擇</label>
                 <div className="grid grid-cols-4 gap-2">
                   {QUESTION_COUNTS.map(count => {
-                    const isLocked = count > tierLimit.max;
+                    // 考古題模式不消耗 AI API，解鎖所有題數
+                    const isLocked = examMode === 'historical_only' ? false : count > tierLimit.max;
                     return (
                       <button
                         key={count}
@@ -447,7 +467,7 @@ function ExamSetupPage() {
                     );
                   })}
                 </div>
-                {tierLimit.upgradeMessage && (
+                {examMode !== 'historical_only' && tierLimit.upgradeMessage && (
                   <p className="text-xs text-amber-600 mt-2">{tierLimit.upgradeMessage}</p>
                 )}
               </div>

@@ -99,15 +99,18 @@ def validate_url_for_ssrf(url: str, *, require_https: bool = False) -> str:
     if hostname in _BLOCKED_HOSTNAMES:
         raise SSRFError(f"URL 指向受保護的內部服務: {hostname!r}")
 
-    # 白名單模式：若啟用白名單且域名不在白名單中，拒絕
+    # 始終檢查 resolved IP（防止 DNS rebinding 攻擊）
+    _check_host_ip(hostname)
+
+    # 白名單模式：若啟用白名單，非白名單域名直接拒絕
     if _ALLOWED_DOMAINS_WHITELIST:
         normalized_host = hostname.removeprefix("www.")
         if normalized_host not in _ALLOWED_DOMAINS_WHITELIST and \
            hostname not in _ALLOWED_DOMAINS_WHITELIST:
-            # 非白名單域名需通過 IP 檢查
-            _check_host_ip(hostname)
-    else:
-        _check_host_ip(hostname)
+            raise SSRFError(
+                f"域名 {hostname!r} 不在允許的白名單中。"
+                f"允許的域名: {_ALLOWED_DOMAINS_WHITELIST}"
+            )
 
     return url
 

@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 3 次投信投顧相關法規(含自律規範)乙科資格測驗試題",
-    "subject": "投信投顧相關法規（含自律規範）",
-    "year": 114,
-    "session": 3,
+    "source": "114 年第 3 次投信投顧相關法規(含自律規範)乙科資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "financial_planning",
+    "subject_code": "investment_regulations_b_session01_questions",
+    "exam_name": "114 年第 3 次投信投顧相關法規(含自律規範)乙科資格測驗試題",
     "total_questions": 50,
+    "questions_with_answer": 50,
     "bloom_distribution": {
       "analyze": 4,
       "remember": 43,
@@ -15,8 +17,7 @@
       "hard": 5,
       "easy": 45
     },
-    "source_pdf": "investment_regulations_b_session01_questions.pdf",
-    "answer_pdf": "investment_regulations_b_session01_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -29,7 +30,8 @@
       "option_d": "基金保管業務",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -41,7 +43,8 @@
       "option_d": "新臺幣 1 億1,000萬元",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -53,7 +56,8 @@
       "option_d": "投信事業不得指示基金保管機構處分資產",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -65,7 +69,8 @@
       "option_d": "信託契約終止日前六個月",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -77,7 +82,8 @@
       "option_d": "70%",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -89,7 +95,8 @@
       "option_d": "甲、乙、丙皆是",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -101,7 +108,8 @@
       "option_d": "運用募集所得價款購入之資產",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -113,7 +121,8 @@
       "option_d": "可用過去之業績表現作為預期未來績效",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -125,7 +134,8 @@
       "option_d": "基金保管機構應依法及證券投資信託契約之規定混合保管基金",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -137,7 +147,8 @@
       "option_d": "甲、乙、丙、丁皆可",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -149,7 +160,8 @@
       "option_d": "銷售機構終止辦理境外基金之募集及銷售業務者，應即通知總代理人",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -161,7 +173,8 @@
       "option_d": "投信投顧公會得對投信契約擬訂定型化契約報經金管會核定",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -173,7 +186,8 @@
       "option_d": "甲、乙、丙、丁",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -185,7 +199,8 @@
       "option_d": "受任人、全權委託保管機構、證券經紀商",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -197,7 +212,8 @@
       "option_d": "每季",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -209,7 +225,8 @@
       "option_d": "30%",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -221,7 +238,8 @@
       "option_d": "子基金間不得有自動轉換機制，子基金間之轉換須由投資人申請方得辦理",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -233,7 +251,8 @@
       "option_d": "業務人員及內部稽核人員之資格條件與人數應符合「境外基金管理辦法」之規定",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -245,7 +264,8 @@
       "option_d": "金融監督管理委員會",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -257,7 +277,8 @@
       "option_d": "原則上不可複委任他人履行",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -269,7 +290,8 @@
       "option_d": "每單位淨資產價值減損比率不得另以契約約定調整",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -281,7 +303,8 @@
       "option_d": "保全公司",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -293,7 +316,8 @@
       "option_d": "甲、乙、丙皆是",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -305,7 +329,8 @@
       "option_d": "全權委託專責部門中從事研究分析之業務人員，不得與從事投資決策之業務人員相互兼任",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -317,7 +342,8 @@
       "option_d": "甲、乙、丙皆須分離",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -329,7 +355,8 @@
       "option_d": "全權委託投資紛爭調解處理辦法由同業公會擬訂，報金管會核定",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -341,7 +368,8 @@
       "option_d": "客戶與新任全權委託保管機構所簽訂之委任契約，應與新任全權委託保管機構個別簽訂",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -353,7 +381,8 @@
       "option_d": "由證券投資人及期貨交易人保護中心訂定紛爭調解處理辦法",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -365,7 +394,8 @@
       "option_d": "客戶如自行指定本事業為證券經紀商，應明確告知客戶相關風險、利益衝突及控管措施， 並以契約以外之書面取得客戶同意",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -377,7 +407,8 @@
       "option_d": "100%",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -389,7 +420,8 @@
       "option_d": "投資研究人員",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -401,7 +433,8 @@
       "option_d": "違反證券交易法或投信投顧法規定，經有罪判決確定，尚未執行完畢，或執行完畢、緩刑 期滿或赦免後尚未逾三年",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -413,7 +446,8 @@
       "option_d": "四個月",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "understand"
+      "bloom_category": "understand",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -425,7 +459,8 @@
       "option_d": "在證券交易所或櫃檯買賣中心交易時間及其開盤前與收盤後一小時以外之時段，在廣播或 電視傳播媒體，根據合理分析基礎及依據對不特定人就個別有價證券進行推介行為",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -437,7 +472,8 @@
       "option_d": "選項",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -449,7 +485,8 @@
       "option_d": "內部稽核",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -461,7 +498,8 @@
       "option_d": "5 年",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -473,7 +511,8 @@
       "option_d": "甲、乙、丙皆正確",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -485,7 +524,8 @@
       "option_d": "製發之書面文件列出其與同業間之投資服務績效優劣",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -497,7 +537,8 @@
       "option_d": "開業滿一年",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -509,7 +550,8 @@
       "option_d": "新臺幣 7,000 萬元",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -521,7 +563,8 @@
       "option_d": "甲、乙、丙皆應考慮",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "evaluate"
+      "bloom_category": "evaluate",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -533,7 +576,8 @@
       "option_d": "於現場發送之文件中，標明已備有公開說明書或投資人須知可供查閱之方式",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -545,7 +589,8 @@
       "option_d": "甲、丙、丁",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -557,7 +602,8 @@
       "option_d": "以上皆是",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -569,7 +615,8 @@
       "option_d": "除籍",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -581,7 +628,8 @@
       "option_d": "甲、乙皆不是",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -593,7 +641,8 @@
       "option_d": "選項",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -605,7 +654,8 @@
       "option_d": "甲、乙、丙、丁",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -617,7 +667,8 @@
       "option_d": "三年",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     }
   ]
 }

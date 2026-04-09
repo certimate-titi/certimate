@@ -66,3 +66,10 @@ Then('系統應導向至 {string}', async ({ page }, destination: string) => {
     timeout: 10_000,
   });
 });
+
+// ── Protected page access ──
+
+When('使用者嘗試直接存取 {string}', async ({ page }, path: string) => {
+  await page.goto(path);
+  await page.waitForLoadState('domcontentloaded');
+});

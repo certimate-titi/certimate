@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db, get_current_user_id
+from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.wrong_answer_map_service import WrongAnswerMapService
 
 router = APIRouter(prefix="/wrong-answer-map")
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/wrong-answer-map")
 def update_mastery(
     subject_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerMapService(db)
     return service.update_mastery(user_id, subject_id)
@@ -31,7 +31,7 @@ def get_map(
     subject_id: str,
     time_range: Optional[str] = Query(None),
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerMapService(db)
     return service.get_map(user_id, subject_id, time_range=time_range)
@@ -43,7 +43,7 @@ def get_map(
 def get_node_wrong_answers(
     node_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerMapService(db)
     return service.get_node_wrong_answers(user_id, node_id)
@@ -55,7 +55,7 @@ def get_node_wrong_answers(
 def export_markdown(
     subject_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
     service = WrongAnswerMapService(db)
     content = service.export_markdown(user_id, subject_id)

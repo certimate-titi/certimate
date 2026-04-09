@@ -167,14 +167,26 @@ export const examService = {
       question_types: req.config?.questionTypes,
       exam_mode: req.config?.examMode || 'hybrid',
     });
-    // Step 2: Generate questions
-    const genRes = await apiClient.post<Record<string, unknown>>(`/exams/${configRes.exam_id}/generate`);
-    // Normalize response: ensure exam.id is available
-    return {
-      ...genRes,
-      exam: { id: configRes.exam_id, ...(genRes.exam as Record<string, unknown> || {}) },
-      exam_id: configRes.exam_id,
-    } as unknown as CreateExamResponse;
+
+    const examId = (configRes as Record<string, unknown>).exam_id as string;
+    const status = (configRes as Record<string, unknown>).status as string;
+
+    // 考古題模式：config 已建好題目（READY），跳過 AI 生成
+    if (status === 'READY') {
+      return { exam: { id: examId }, exam_id: examId, examId } as unknown as CreateExamResponse;
+    }
+
+    // Step 2: AI 生成題目（hybrid 或 AI 模式）
+    try {
+      const genRes = await apiClient.post<Record<string, unknown>>(`/exams/${examId}/generate`);
+      return {
+        ...genRes,
+        exam: { id: examId, ...(genRes.exam as Record<string, unknown> || {}) },
+        exam_id: examId,
+      } as unknown as CreateExamResponse;
+    } catch {
+      return { exam: { id: examId }, exam_id: examId, examId } as unknown as CreateExamResponse;
+    }
   },
 
   async getExam(examId: string): Promise<CreateExamResponse> {

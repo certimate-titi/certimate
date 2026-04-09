@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from app.core.deps import get_db, get_current_user_id
+from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.knowledge_nav_service import KnowledgeNavService
 
 router = APIRouter(prefix="/knowledge-map")
@@ -36,7 +36,7 @@ def _handle_result(result: dict):
 def get_nodes_by_subject(
     subject_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.get_nodes_by_subject(subject_id, user_id)
@@ -47,7 +47,7 @@ def get_nodes_by_subject(
 def get_node_detail(
     node_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.get_node_detail(node_id, user_id)
@@ -58,7 +58,7 @@ def get_node_detail(
 def get_node_source(
     node_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.get_node_source(node_id, user_id)
@@ -68,7 +68,7 @@ def get_node_source(
 @router.get("/layout")
 def get_layout(
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.get_layout(user_id)
@@ -79,7 +79,7 @@ def get_layout(
 def send_coach_message(
     body: CoachMessageRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.send_coach_message(body.node_id, body.message, user_id)
@@ -90,7 +90,7 @@ def send_coach_message(
 def ai_coach_chat(
     body: CoachMessageRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.send_coach_message(body.node_id, body.message, user_id)
@@ -106,7 +106,7 @@ def node_chat(
     node_id: str,
     body: NodeChatRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     """節點聊天（前端 knowledge page 使用）。"""
     service = KnowledgeNavService(db)
@@ -119,7 +119,7 @@ def submit_answers(
     node_id: str,
     body: SubmitAnswersRequest,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
     service = KnowledgeNavService(db)
     result = service.submit_answers(node_id, user_id, body.correct_count, body.total_count)

@@ -113,7 +113,6 @@ Feature: 信心度校準
 
   Rule: 後置（回應）- 信心度標記 UI 應簡潔不干擾作答節奏
 
-    @ignore
     Example: 信心度標記以三個小圖示呈現在答案選項下方
       Given 使用者 "pro@example.com" 已開始測驗 1
       When 使用者 "pro@example.com" 在題目 101 選擇答案 "C"
@@ -123,7 +122,6 @@ Feature: 信心度校準
 
   Rule: 後置（回應）- 題號導覽網格應以不同底色標示信心度
 
-    @ignore
     Example: 題號導覽網格顯示信心度顏色
       Given 使用者 "pro@example.com" 已開始測驗 1
       And 使用者已作答題目 101（confident）和題目 102（guessing）

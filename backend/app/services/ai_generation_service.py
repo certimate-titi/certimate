@@ -54,8 +54,7 @@ class AiGenerationService:
 
         # Prompt template service for DB-based prompts
         from app.services.prompt_template_service import PromptTemplateService
-        from app.repositories.prompt_template_repository import PromptTemplateRepository
-        self._prompt_svc = PromptTemplateService(db, PromptTemplateRepository(db))
+        self._prompt_svc = PromptTemplateService(db)
 
     # ------------------------------------------------------------------ #
     # Helper: load prompt from DB with fallback
@@ -77,7 +76,7 @@ class AiGenerationService:
                 result["user_prompt"] = render(result["user_prompt"], variables)
             return result
         except Exception as e:
-            logger.warning("Failed to load prompt template '%s': %s", name, e)
+            logger.error("Failed to load prompt template '%s': %s", name, e, exc_info=True)
             return None
 
     # ------------------------------------------------------------------ #
@@ -208,7 +207,7 @@ class AiGenerationService:
                     chunks = self._retrieval.retrieve(query, resource_ids)
                     rag_context = self._retrieval.build_context_string(chunks)
                 except Exception as e:
-                    logger.warning("RAG retrieval failed, falling back to mock: %s", e)
+                    logger.warning("RAG retrieval failed, falling back to mock: %s", e, exc_info=True)
 
         # Execute 4 stages
         progress_events = []
@@ -286,20 +285,11 @@ class AiGenerationService:
     def _stage1_exam_point_analysis(self, nodes, total_q, difficulty_dist):
         """Analyse nodes and produce exam points with ratios."""
         if not nodes:
-            nodes_data = [{"name": f"考點_{i+1}", "id": str(uuid.uuid4())} for i in range(5)]
-        else:
-            nodes_data = [{"name": n.name, "id": str(n.id)} for n in nodes]
+            # 無節點時回傳空，不再產生 mock 「考點_N」
+            return {"exam_points": [], "point_ratio": {}, "difficulty_map": {}}
 
-        # Use actual number of nodes as exam points (min 2, max 10)
-        num_points = min(max(len(nodes_data), 2), 10)
-
-        # If we have fewer nodes than num_points, generate additional sub-points
-        while len(nodes_data) < num_points:
-            base = nodes_data[len(nodes_data) % len(nodes_data)]
-            nodes_data.append({
-                "name": f"{base['name']}_子考點_{len(nodes_data)+1}",
-                "id": str(uuid.uuid4()),
-            })
+        nodes_data = [{"name": n.name, "id": str(n.id)} for n in nodes]
+        num_points = min(max(len(nodes_data), 1), 10)
 
         exam_points = []
         # Distribute ratio evenly then adjust
@@ -352,55 +342,43 @@ class AiGenerationService:
             try:
                 return self._stage2_claude(points, difficulty_dist, user_context, total_q, rag_context or "")
             except Exception as e:
-                logger.warning("Stage 2 AI call failed, falling back to mock: %s", e)
+                logger.error("Stage 2 AI call failed, falling back to mock: %s", e, exc_info=True)
 
-        # Fallback: generate questions from node source_text (no LLM needed)
-        questions = []
-        easy_count = round(total_q * difficulty_dist.get("easy", 30) / 100)
-        hard_count = round(total_q * difficulty_dist.get("hard", 20) / 100)
-        medium_count = total_q - easy_count - hard_count
+        # Fallback: 從考古題庫抽取真實題目（不再產生 mock stub）
+        from app.models.question import Question as QModel
+        from sqlalchemy import func as sa_func
 
-        difficulty_pool = (
-            ["easy"] * easy_count +
-            ["medium"] * medium_count +
-            ["hard"] * hard_count
+        historical_pool = (
+            self.db.query(QModel)
+            .filter(QModel.historical_exam_id.isnot(None))
+            .filter(QModel.correct_answer.isnot(None))
+            .filter(QModel.correct_answer != '')
+            .order_by(sa_func.random())
+            .limit(total_q)
+            .all()
         )
-        random.shuffle(difficulty_pool)
 
-        # Gather source texts from knowledge nodes for question content
-        node_texts = {}
-        for p in points:
-            nid = p.get("node_id")
-            if nid:
-                node = self.db.query(KnowledgeNode).filter_by(id=uuid.UUID(nid)).first()
-                if node and node.source_text:
-                    node_texts[p["name"]] = node.source_text[:200]
+        if historical_pool:
+            questions = []
+            for i, hq in enumerate(historical_pool):
+                point = points[i % len(points)] if points else {"name": "general"}
+                questions.append({
+                    "question_text": hq.content,
+                    "correct_answer": hq.correct_answer,
+                    "option_a": hq.option_a or "",
+                    "option_b": hq.option_b or "",
+                    "option_c": hq.option_c or "",
+                    "option_d": hq.option_d or "",
+                    "difficulty": "medium",
+                    "exam_point": point["name"],
+                    "source_type": "historical",
+                    "historical_question_id": str(hq.id),
+                })
+            return {"questions": questions, "total": len(questions)}
 
-        for i in range(total_q):
-            point = points[i % len(points)]
-            diff = difficulty_pool[i] if i < len(difficulty_pool) else "medium"
-            point_name = point["name"]
-            source = node_texts.get(point_name, "")
-
-            if source:
-                # Generate question from source text
-                snippet = source[:100].strip()
-                q = {
-                    "question_text": f"關於「{point_name}」，以下敘述何者正確？\n\n「{snippet}...」",
-                    "correct_answer": f"根據教材，{snippet[:50]}",
-                    "difficulty": diff,
-                    "exam_point": point_name,
-                }
-            else:
-                q = {
-                    "question_text": f"關於「{point_name}」的核心概念，以下何者正確？",
-                    "correct_answer": f"{point_name}的基本定義與應用",
-                    "difficulty": diff,
-                    "exam_point": point_name,
-                }
-            questions.append(q)
-
-        return {"questions": questions, "total": len(questions)}
+        # 最後 fallback：真的沒有任何題目，回傳錯誤而非 mock
+        logger.error("No historical questions available and AI API not configured")
+        return {"questions": [], "total": 0, "error": "無可用題目，請先匯入考古題或設定 AI API Key"}
 
     def _stage2_claude(self, points, difficulty_dist, user_context, total_q, rag_context):
         """Use Claude to generate questions from RAG context.
@@ -524,47 +502,38 @@ class AiGenerationService:
             try:
                 return self._stage3_claude(questions, user_context, rag_context)
             except Exception as e:
-                logger.warning("Stage 3 Claude call failed, falling back to mock: %s", e)
+                logger.error("Stage 3 Claude call failed, falling back to mock: %s", e, exc_info=True)
 
-        # Fallback: generate distractors from other exam points
-        all_point_names = list({q.get("exam_point", "") for q in questions if q.get("exam_point")})
+        # Fallback: 如果題目已有 option_a~d（考古題），直接使用
         result = []
         for i, q in enumerate(questions):
-            correct = q["correct_answer"]
-            point_name = q.get("exam_point", "")
-
-            # Use other point names as distractors (more realistic than placeholder)
-            other_points = [p for p in all_point_names if p != point_name]
-            random.shuffle(other_points)
-            distractors = []
-            for j in range(3):
-                if j < len(other_points):
-                    distractors.append(f"與「{other_points[j]}」的概念混淆")
-                else:
-                    distractors.append(f"此為常見誤解，實際上並非如此")
-
-            options = distractors.copy()
-            correct_idx = random.randint(0, 3)
-            options.insert(correct_idx, correct)
-
-            distractor_reasons = {}
-            d_idx = 0
-            for opt_idx in range(4):
-                if opt_idx != correct_idx:
-                    distractor_reasons[str(opt_idx)] = (
-                        f"此選項錯誤，{distractors[d_idx]}"
-                    )
-                    d_idx += 1
-
-            result.append({
-                "question_text": q["question_text"],
-                "difficulty": q["difficulty"],
-                "exam_point": q.get("exam_point", ""),
-                "options": options,
-                "correct_index": correct_idx,
-                "explanation": f"本題考察{q.get('exam_point', '')}，正確答案為{correct}。",
-                "distractor_reasons": distractor_reasons,
-            })
+            # 考古題已有完整選項
+            if q.get("option_a") and q.get("option_b"):
+                options = [q["option_a"], q["option_b"], q.get("option_c", ""), q.get("option_d", "")]
+                correct = q["correct_answer"]
+                answer_map = {"A": 0, "B": 1, "C": 2, "D": 3}
+                correct_idx = answer_map.get(correct, 0)
+                result.append({
+                    "question_text": q["question_text"],
+                    "difficulty": q.get("difficulty", "medium"),
+                    "exam_point": q.get("exam_point", ""),
+                    "options": options,
+                    "correct_index": correct_idx,
+                    "explanation": q.get("explanation", ""),
+                    "distractor_reasons": {},
+                    "source_type": q.get("source_type", "historical"),
+                })
+            else:
+                # AI 生成的題目但沒有選項 — 保持原樣
+                result.append({
+                    "question_text": q["question_text"],
+                    "difficulty": q.get("difficulty", "medium"),
+                    "exam_point": q.get("exam_point", ""),
+                    "options": [q.get("correct_answer", ""), "選項待生成", "選項待生成", "選項待生成"],
+                    "correct_index": 0,
+                    "explanation": "",
+                    "distractor_reasons": {},
+                })
 
         return {"questions": result, "total": len(result)}
 

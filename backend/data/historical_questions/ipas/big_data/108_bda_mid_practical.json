@@ -1,14 +1,15 @@
 {
   "import_meta": {
-    "source_name": "中級術科考題",
-    "subject": "",
-    "year": 0,
-    "session": 0,
+    "source": "中級術科考題",
+    "exam_code": "IPA108",
+    "category_code": "big_data",
+    "subject_code": "108_bda_mid_practical",
+    "exam_name": "中級術科考題",
     "total_questions": 0,
+    "questions_with_answer": 0,
     "bloom_distribution": {},
     "difficulty_distribution": {},
-    "source_pdf": "108_bda_mid_practical.pdf",
-    "answer_pdf": null
+    "year": 108
   },
   "questions": []
 }

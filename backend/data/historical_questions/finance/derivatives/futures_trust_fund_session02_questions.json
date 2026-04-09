@@ -1,10 +1,12 @@
 {
   "import_meta": {
-    "source_name": "114 年第 2 次期貨信託基金銷售機構銷售人員資格測驗試題",
-    "subject": "期貨信託法規及自律規範",
-    "year": 114,
-    "session": 2,
+    "source": "114 年第 2 次期貨信託基金銷售機構銷售人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_trust_fund_session02_questions",
+    "exam_name": "114 年第 2 次期貨信託基金銷售機構銷售人員資格測驗試題",
     "total_questions": 50,
+    "questions_with_answer": 50,
     "bloom_distribution": {
       "analyze": 1,
       "remember": 48,
@@ -14,8 +16,7 @@
       "hard": 2,
       "easy": 48
     },
-    "source_pdf": "futures_trust_fund_session02_questions.pdf",
-    "answer_pdf": "futures_trust_fund_session02_answers.pdf"
+    "year": 114
   },
   "questions": [
     {
@@ -28,7 +29,8 @@
       "option_d": "董事為負責人之企業",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "analyze"
+      "bloom_category": "analyze",
+      "source_type": "historical"
     },
     {
       "question_number": 2,
@@ -40,7 +42,8 @@
       "option_d": "應同時申請由改制之期貨信託事業兼營期貨經理事業，以維護期貨經理事業原有客戶之權益",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 3,
@@ -52,7 +55,8 @@
       "option_d": "公司董事、監察人及其二親等之關係人資料",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 4,
@@ -64,7 +68,8 @@
       "option_d": "期貨信託事業應將辦理配售作業之完整流程紀錄及相關資料保存二年備查",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 5,
@@ -76,7 +81,8 @@
       "option_d": "公司得於新聞稿發稿前依期貨公會指定申報方式向公會辦理申報",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 6,
@@ -88,7 +94,8 @@
       "option_d": "以交付公開說明書為原則，毋需辦理公告",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 7,
@@ -100,7 +107,8 @@
       "option_d": "五億元",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 8,
@@ -112,7 +120,8 @@
       "option_d": "百分之二十五",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 9,
@@ -124,7 +133,8 @@
       "option_d": "得購買商業票據或其他經核定之短期票券",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 10,
@@ -136,7 +146,8 @@
       "option_d": "應向申購人告知期貨信託基金之性質及可能之風險",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 11,
@@ -148,7 +159,8 @@
       "option_d": "每季",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 12,
@@ -160,7 +172,8 @@
       "option_d": "百分之八十",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 13,
@@ -172,7 +185,8 @@
       "option_d": "有其他學經歷足資證明其具備期貨專業知識、經營經驗及領導能力者",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 14,
@@ -184,7 +198,8 @@
       "option_d": "他業兼營期貨信託事業之內部稽核人員，如具期貨信託事業內部稽核資格，得由他業登記之 內部稽核人員兼任",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 15,
@@ -196,7 +211,8 @@
       "option_d": "期貨公會",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 16,
@@ -208,7 +224,8 @@
       "option_d": "期貨信託基金之淨資產價值低於基金成立時之淨資產價值時，得計收績效報酬",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 17,
@@ -220,7 +237,8 @@
       "option_d": "基金成立滿三年以上者，應至少揭露三年之績效",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 18,
@@ -232,7 +250,8 @@
       "option_d": "追加募集期貨信託基金者，應刊印該基金成立時及歷次追加發行之情形",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 19,
@@ -244,7 +263,8 @@
       "option_d": "保護型期貨信託基金不得使用保證、安全、無風險等類似文字",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 20,
@@ -256,7 +276,8 @@
       "option_d": "產險業",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 21,
@@ -268,7 +289,8 @@
       "option_d": "百分之五十",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 22,
@@ -280,7 +302,8 @@
       "option_d": "追加募集期貨信託基金之公開說明書或按季更新之公開說明書，除法令另有規定外，應依規 定記載期貨信託基金運用狀況之事項",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 23,
@@ -292,7 +315,8 @@
       "option_d": "交易時取得公平合理價格，並通知基金保管機構",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 24,
@@ -304,7 +328,8 @@
       "option_d": "甲、乙、丙、丁",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 25,
@@ -316,7 +341,8 @@
       "option_d": "投信投顧公會",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 26,
@@ -328,7 +354,8 @@
       "option_d": "九十九人",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 27,
@@ -340,7 +367,8 @@
       "option_d": "單次申購金額達新臺幣二百五十萬元之自然人",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 28,
@@ -352,7 +380,8 @@
       "option_d": "期貨信託基金應於募集之核准函送達日起六個月內開始募集",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 29,
@@ -364,7 +393,8 @@
       "option_d": "百分之二十",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 30,
@@ -376,7 +406,8 @@
       "option_d": "傘型期貨信託基金",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 31,
@@ -388,7 +419,8 @@
       "option_d": "期貨信託基金之存續期間依期貨信託事業指定",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 32,
@@ -400,7 +432,8 @@
       "option_d": "百分之二十",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 33,
@@ -412,7 +445,8 @@
       "option_d": "期貨信託事業於國外募集期貨信託基金從事國外期貨交易與投資期貨相關現貨商品之種類及 範圍，悉依募集地法令規定辦理",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 34,
@@ -424,7 +458,8 @@
       "option_d": "百分之十",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "create"
+      "bloom_category": "create",
+      "source_type": "historical"
     },
     {
       "question_number": 35,
@@ -436,7 +471,8 @@
       "option_d": "甲、乙、丙、丁",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 36,
@@ -448,7 +484,8 @@
       "option_d": "基金保管機構執行期貨信託基金保管業務，遇有依規定請求期貨信託事業履行義務而不履 行，致損害受益人權益之情事，得直接報請主管機關核准後，召開受益人會議更換期貨信託 事業",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 37,
@@ -460,7 +497,8 @@
       "option_d": "期貨公會",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 38,
@@ -472,7 +510,8 @@
       "option_d": "應保證基金之收益",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 39,
@@ -484,7 +523,8 @@
       "option_d": "支付予專業機構之費用總數及各專業機構之基本投資方針及範圍",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 40,
@@ -496,7 +536,8 @@
       "option_d": "十五日",
       "correct_answer": "A",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 41,
@@ -508,7 +549,8 @@
       "option_d": "期貨信託事業運用每一期貨信託基金於每月終了後十日內編具之月報，應送期貨公會申報彙 送主管機關",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 42,
@@ -520,7 +562,8 @@
       "option_d": "期貨信託基金之會計年度，除期貨信託契約另有約定者外，為每年一月一日起至十二月三十 一日止",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 43,
@@ -532,7 +575,8 @@
       "option_d": "選項",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 44,
@@ -544,7 +588,8 @@
       "option_d": "買回手續費",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 45,
@@ -556,7 +601,8 @@
       "option_d": "所繳存標的為分割債券時，其計價方法按分割債券到期面額之百分之八十五計算",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 46,
@@ -568,7 +614,8 @@
       "option_d": "應製作工作底稿後完成稽核報告，並保存三年期間",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 47,
@@ -580,7 +627,8 @@
       "option_d": "銷售機構之收入",
       "correct_answer": "B",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 48,
@@ -592,7 +640,8 @@
       "option_d": "期貨信託事業投資外國期貨事業，應以該期貨信託事業所營業務為限",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 49,
@@ -604,7 +653,8 @@
       "option_d": "應強化其行銷與契約文件可閱讀性，包括字體加大、文字淺顯易懂等",
       "correct_answer": "C",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     },
     {
       "question_number": 50,
@@ -616,7 +666,8 @@
       "option_d": "甲、乙、丙",
       "correct_answer": "D",
       "explanation": "",
-      "bloom_category": "remember"
+      "bloom_category": "remember",
+      "source_type": "historical"
     }
   ]
 }
