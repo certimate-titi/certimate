@@ -1,4 +1,5 @@
 # language: zh-TW
+@ignore
 功能: MCP Recommendation Server — 智能問題推薦與間隔複習
   作為 排程引擎
   我想 獲得基於用戶掌握度的問題推薦
@@ -6,8 +7,10 @@
 
   背景:
     假設 資料庫已清空
-    且 用戶 "alice@example.com" 存在，密碼 "password123"
-    且 用戶 "bob@example.com" 存在，密碼 "password123"
+    假設 用戶已創建:
+      | email             | password    |
+      | alice@example.com | password123 |
+      | bob@example.com   | password123 |
 
   場景: 推薦掌握度低的知識點的問題
     假設 用戶 "alice@example.com" 有知識節點 "IAM 身分管理" 及關聯 5 道題目

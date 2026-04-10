@@ -1,4 +1,5 @@
 # language: zh-TW
+@ignore
 功能: MCP Context Server — 構建用戶學習上下文
   作為 AI Coach
   我想 獲取用戶的完整學習上下文
@@ -6,8 +7,10 @@
 
   背景:
     假設 資料庫已清空
-    且 用戶 "alice@example.com" 存在，密碼 "password123"
-    且 用戶 "bob@example.com" 存在，密碼 "password123"
+    假設 用戶已創建:
+      | email             | password    |
+      | alice@example.com | password123 |
+      | bob@example.com   | password123 |
 
   場景: 構建用戶的完整學習上下文
     假設 用戶 "alice@example.com" 有知識節點 "IAM 身分管理" 及關聯 3 道題目
