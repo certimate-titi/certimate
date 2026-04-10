@@ -1217,3 +1217,21 @@ from .account_settings.aggregate_then import account_state  # noqa: F401
 
 # Account Settings (Feature 22) — readmodel_then
 from .account_settings.readmodel_then import account_response  # noqa: F401
+
+# MCP Context Server (Feature 30) — aggregate_given
+from .mcp_context.aggregate_given import setup_knowledge_nodes  # noqa: F401
+
+# MCP Context Server (Feature 30) — commands
+from .mcp_context.commands import call_context_server  # noqa: F401
+
+# MCP Context Server (Feature 30) — readmodel_then
+from .mcp_context.readmodel_then import verify_context_response  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — aggregate_given
+from .mcp_recommendation.aggregate_given import setup_mastery_data  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — commands
+from .mcp_recommendation.commands import call_recommendation_server  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — readmodel_then
+from .mcp_recommendation.readmodel_then import verify_recommendation_response  # noqa: F401
