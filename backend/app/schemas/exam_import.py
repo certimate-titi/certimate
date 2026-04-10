@@ -92,7 +92,7 @@ class ExamPaperData(BaseModel):
 class AnswerKeyData(BaseModel):
     """Answer key mapping from answer PDF."""
     question_number: int = Field(..., description="Question number")
-    correct_answer: str = Field(..., description="Correct answer (A/B/C/D)", regex="^[A-D]$")
+    correct_answer: str = Field(..., description="Correct answer (A/B/C/D)", pattern="^[A-D]$")
 
     class Config:
         use_enum_values = True
