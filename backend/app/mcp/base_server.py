@@ -97,6 +97,15 @@ class MCPServerFactory:
         return cls._instances[key]
 
     @classmethod
+    def get_datafetch_server(cls, db: Session) -> "BaseMCPServer":
+        """获取 Data Fetching Server 实例（单例）"""
+        key = "datafetch_server"
+        if key not in cls._instances:
+            from app.mcp.datafetch_server import DataFetchServer
+            cls._instances[key] = DataFetchServer(db)
+        return cls._instances[key]
+
+    @classmethod
     def reset(cls) -> None:
         """重置所有实例（用于测试）"""
         cls._instances.clear()
