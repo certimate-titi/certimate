@@ -20,9 +20,11 @@ Thumbs.db
 
 # Logs
 *.log
+pretty.output
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Coverage
 coverage/
@@ -34,6 +36,8 @@ coverage/
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+venv/
 
 # Uploaded files (local dev)
 backend/uploads/
