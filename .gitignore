@@ -20,9 +20,11 @@ Thumbs.db
 
 # Logs
 *.log
+pretty.output
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Coverage
 coverage/
