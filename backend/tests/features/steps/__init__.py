@@ -1217,3 +1217,30 @@ from .account_settings.aggregate_then import account_state  # noqa: F401
 
 # Account Settings (Feature 22) — readmodel_then
 from .account_settings.readmodel_then import account_response  # noqa: F401
+
+# MCP Context Server (Feature 30)
+from .mcp_context.context_server_steps import step_user_answered_questions_in_subject  # noqa: F401
+from .mcp_context.context_server_steps import step_user_correct_answers  # noqa: F401
+from .mcp_context.context_server_steps import step_user_has_errors_with_confidence  # noqa: F401
+from .mcp_context.context_server_steps import step_user_attempted_today  # noqa: F401
+from .mcp_context.context_server_steps import step_user_attempted_yesterday  # noqa: F401
+from .mcp_context.context_server_steps import step_user_attempted_2_days_ago  # noqa: F401
+from .mcp_context.context_server_steps import step_user_no_attempt_3_days_ago  # noqa: F401
+from .mcp_context.context_server_steps import step_build_context  # noqa: F401
+from .mcp_context.context_server_steps import step_fetch_weak_area  # noqa: F401
+from .mcp_context.context_server_steps import step_fetch_recent_errors  # noqa: F401
+from .mcp_context.context_server_steps import step_context_has_user_id  # noqa: F401
+from .mcp_context.context_server_steps import step_context_mastery_score  # noqa: F401
+from .mcp_context.context_server_steps import step_context_weak_area  # noqa: F401
+from .mcp_context.context_server_steps import step_context_no_weak_area  # noqa: F401
+from .mcp_context.context_server_steps import step_context_has_recent_errors  # noqa: F401
+from .mcp_context.context_server_steps import step_context_has_total_count  # noqa: F401
+from .mcp_context.context_server_steps import step_context_has_avg_confidence  # noqa: F401
+from .mcp_context.context_server_steps import step_context_streak  # noqa: F401
+from .mcp_context.context_server_steps import step_weak_area_topic  # noqa: F401
+from .mcp_context.context_server_steps import step_error_rate  # noqa: F401
+from .mcp_context.context_server_steps import step_error_count  # noqa: F401
+from .mcp_context.context_server_steps import step_total_attempts  # noqa: F401
+from .mcp_context.context_server_steps import step_response_has_error  # noqa: F401
+from .mcp_context.context_server_steps import step_error_type  # noqa: F401
+from .mcp_context.context_server_steps import step_error_message  # noqa: F401
