@@ -1,6 +1,7 @@
 """進階 AI 教練 Service — ULTRA 方案專屬。
 
 提供弱點分析、突破策略、7天衝刺計畫。
+MCP 整合：使用 Context Server 提供結構化的用戶學習上下文。
 """
 
 import uuid
@@ -15,6 +16,8 @@ from app.models.user import User, SubscriptionPlan
 from app.models.answer import Answer
 from app.models.question import Question
 from app.models.knowledge_node import KnowledgeNode
+from app.mcp.context_server import ContextServer
+from app.mcp.base_server import MCPServerFactory
 
 logger = logging.getLogger("certimate.ai_coach")
 
@@ -55,15 +58,128 @@ class AICoachService:
         return user
 
     def get_advanced_analysis(self, user_id: str, subject_id: str | None = None) -> dict:
-        """取得進階弱點分析 + 突破策略 + 衝刺計畫。"""
+        """取得進階弱點分析 + 突破策略 + 衝刺計畫。
+
+        使用 MCP Context Server 獲取結構化的用戶學習上下文。
+        """
         result = self._validate_ultra(user_id)
         if isinstance(result, dict):
             return result
         user = result
 
+        # 使用 MCP Context Server 構建用戶學習上下文
+        try:
+            mcp_context = MCPServerFactory.get_context_server(self.db)
+            context_response = mcp_context.build_context_for_coach(user_id)
+
+            if context_response.get("error"):
+                # 降級：使用舊方法
+                logger.warning(f"MCP Context Server failed: {context_response.get('message')}, using fallback")
+                return self._get_advanced_analysis_fallback(user_id, user)
+
+            context_data = context_response.get("data", {})
+            display_name = context_data.get("display_name", user.display_name or user.email.split("@")[0])
+            daily_minutes = context_data.get("daily_study_minutes", 30)
+            learning_style = context_data.get("learning_style", "hybrid")
+            weak_areas = context_data.get("weak_areas", [])
+
+            # 從 MCP 響應構建弱點分析
+            if weak_areas:
+                weakness_analysis = []
+                for i, area in enumerate(weak_areas):
+                    weakness_analysis.append({
+                        "topic": area.get("topic"),
+                        "mastery": area.get("mastery", 0.5),
+                        "error_pattern": f"{area.get('topic')} 相關題目答錯 {area.get('error_count')} 次",
+                        "priority": i + 1,
+                    })
+            else:
+                weakness_analysis = []
+        except Exception as e:
+            logger.error(f"Error using MCP Context Server: {str(e)}", exc_info=True)
+            return self._get_advanced_analysis_fallback(user_id, user)
+
+        # Build breakthrough strategies based on actual weak topics
+        strategy_templates = [
+            ("使用角色扮演法：模擬不同角色的場景", "情境題 + 比較表", 3, "精緻化編碼"),
+            ("視覺化練習：畫出架構圖或流程圖", "計算題 + 架構設計題", 2, "雙重編碼理論"),
+            ("比較表整理：將各特性列表對照", "比較選擇題", 1.5, "交錯練習"),
+        ]
+        breakthrough_strategies = []
+        for i, wa in enumerate(weakness_analysis):
+            tpl = strategy_templates[i % len(strategy_templates)]
+            breakthrough_strategies.append({
+                "topic": wa["topic"],
+                "method": tpl[0],
+                "practice_type": tpl[1],
+                "estimated_hours": tpl[2],
+                "principle": tpl[3],
+            })
+
+        # Build sprint plan using the weak topics
+        topics = [wa["topic"] for wa in weakness_analysis]
+        sprint_plan = []
+        for day in range(1, 8):
+            if day <= 2:
+                topic = topics[0] if topics else "綜合複習"
+                practice_count = 15
+            elif day <= 4:
+                topic = topics[1] if len(topics) > 1 else topics[0] if topics else "綜合複習"
+                practice_count = 12
+            elif day <= 5:
+                topic = topics[2] if len(topics) > 2 else topics[0] if topics else "綜合複習"
+                practice_count = 10
+            else:
+                topic = "綜合複習"
+                practice_count = 20
+
+            review_items = []
+            if day >= 3 and topics:
+                review_items.append(f"{topics[0]} (間隔複習)")
+            if day >= 5 and len(topics) > 1:
+                review_items.append(f"{topics[1]} (間隔複習)")
+
+            sprint_plan.append({
+                "day": day,
+                "topic": topic,
+                "study_minutes": min(daily_minutes, 60),
+                "practice_count": practice_count,
+                "review_items": review_items,
+            })
+
+        return {
+            "student_name": display_name,
+            "daily_study_minutes": daily_minutes,
+            "learning_style": learning_style,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "weakness_analysis": weakness_analysis,
+            "breakthrough_strategies": breakthrough_strategies,
+            "sprint_plan": sprint_plan,
+        }
+
+    def get_learning_history_summary(self, user_id: str, days: int = 30) -> dict:
+        """取得用戶近 N 天的學習歷史摘要。"""
+        result = self._validate_ultra(user_id)
+        if isinstance(result, dict):
+            return result
+        user = result
+
+        # TODO: 整合真實學習統計
+        return {
+            "user_id": user_id,
+            "period_days": days,
+            "total_exams": 0,
+            "total_questions_answered": 0,
+            "average_accuracy": None,
+            "study_days": 0,
+            "daily_average_minutes": 0,
+        }
+
+    def _get_advanced_analysis_fallback(self, user_id: str, user: User) -> dict:
+        """當 MCP Context Server 不可用時的降級方法。使用舊的直接查詢方式。"""
         display_name = user.display_name or user.email.split("@")[0]
-        daily_minutes = user.daily_study_minutes if hasattr(user, 'daily_study_minutes') and user.daily_study_minutes else 30
-        learning_style = user.learning_style if hasattr(user, 'learning_style') and user.learning_style else "hybrid"
+        daily_minutes = getattr(user, 'daily_study_minutes', 30)
+        learning_style = getattr(user, 'learning_style', "hybrid")
 
         # Query actual weak topics from DB
         user_uuid = uuid.UUID(user_id)
@@ -144,22 +260,4 @@ class AICoachService:
             "weakness_analysis": weakness_analysis,
             "breakthrough_strategies": breakthrough_strategies,
             "sprint_plan": sprint_plan,
-        }
-
-    def get_learning_history_summary(self, user_id: str, days: int = 30) -> dict:
-        """取得用戶近 N 天的學習歷史摘要。"""
-        result = self._validate_ultra(user_id)
-        if isinstance(result, dict):
-            return result
-        user = result
-
-        # TODO: 整合真實學習統計
-        return {
-            "user_id": user_id,
-            "period_days": days,
-            "total_exams": 0,
-            "total_questions_answered": 0,
-            "average_accuracy": None,
-            "study_days": 0,
-            "daily_average_minutes": 0,
         }
