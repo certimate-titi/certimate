@@ -7,7 +7,17 @@
 
 import { apiClient } from './client';
 
-import type { DocumentSourceType, DocumentStatus } from '@/types/models';
+import type {
+  DocumentSourceType,
+  DocumentStatus,
+  ImportTask,
+  ImportDashboardStats,
+  RecentJob,
+  FailedJob,
+  JobDetails,
+  ImportPerformanceMetrics,
+  StatusBreakdown,
+} from '@/types/models';
 import type {
   AuthResponse,
   LoginRequest,
@@ -845,3 +855,171 @@ export const promptTemplateService = {
     return apiClient.get('/admin/prompt-templates/ab-tests');
   },
 };
+
+// ===========================
+// Exam Import Service (Phase 3)
+// ===========================
+
+export const importService = {
+  // --- Task Submission ---
+
+  async submitAsync(data: {
+    questionPdfPath: string;
+    answerPdfPath: string;
+    examCode: string;
+    categoryCode: string;
+    subjectCode: string;
+    skipExisting?: boolean;
+  }): Promise<{ task_id: string; status: string; message: string }> {
+    const formData = new FormData();
+    formData.append('question_pdf', data.questionPdfPath);
+    formData.append('answer_pdf', data.answerPdfPath);
+    formData.append('exam_code', data.examCode);
+    formData.append('category_code', data.categoryCode);
+    formData.append('subject_code', data.subjectCode);
+    if (data.skipExisting !== undefined) {
+      formData.append('skip_existing', String(data.skipExisting));
+    }
+    return apiClient.upload<{ task_id: string; status: string; message: string }>(
+      '/exam-import/async',
+      formData
+    );
+  },
+
+  // --- Task Tracking ---
+
+  async getTaskStatus(taskId: string): Promise<ImportTask | null> {
+    try {
+      const response = await apiClient.get<Record<string, unknown>>(
+        `/exam-import/tasks/${taskId}`
+      );
+      return normalizeImportTask(response);
+    } catch {
+      return null;
+    }
+  },
+
+  async listTasks(filters?: { status?: string; limit?: number }): Promise<ImportTask[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.limit) params.append('limit', String(filters.limit));
+
+      const response = await apiClient.get<{ tasks: Array<Record<string, unknown>> }>(
+        `/exam-import/tasks${params.size > 0 ? '?' + params.toString() : ''}`
+      );
+      return (response.tasks || []).map(normalizeImportTask);
+    } catch {
+      return [];
+    }
+  },
+
+  async cancelTask(taskId: string): Promise<{ status: string; message: string }> {
+    return apiClient.post(`/exam-import/tasks/${taskId}/cancel`, {});
+  },
+
+  // --- Monitoring Dashboard ---
+
+  async getDashboardStats(): Promise<ImportDashboardStats | null> {
+    try {
+      return await apiClient.get<ImportDashboardStats>('/exam-import/dashboard/stats');
+    } catch {
+      return null;
+    }
+  },
+
+  async getRecentJobs(limit: number = 20): Promise<RecentJob[]> {
+    try {
+      const response = await apiClient.get<{ recent_jobs: Array<Record<string, unknown>> }>(
+        `/exam-import/dashboard/recent-jobs?limit=${limit}`
+      );
+      return (response.recent_jobs || []).map((job) => ({
+        taskId: (job.task_id as string) || '',
+        exam: (job.exam as string) || '',
+        status: (job.status as string) || '',
+        progressPercent: ((job.progress_percent as number) || 0),
+        questionsImported: ((job.questions_imported as number) || 0),
+        totalQuestions: ((job.total_questions as number) || 0),
+        createdAt: (job.created_at as string) || new Date().toISOString(),
+        completedAt: (job.completed_at as string | null) || null,
+        error: (job.error as string | null) || null,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  async getFailedJobs(limit: number = 20): Promise<FailedJob[]> {
+    try {
+      const response = await apiClient.get<{ failed_jobs: Array<Record<string, unknown>> }>(
+        `/exam-import/dashboard/failed-jobs?limit=${limit}`
+      );
+      return (response.failed_jobs || []).map((job) => ({
+        taskId: (job.task_id as string) || '',
+        exam: (job.exam as string) || '',
+        errorMessage: (job.error_message as string | null) || null,
+        retryCount: ((job.retry_count as number) || 0),
+        failedAt: (job.failed_at as string) || new Date().toISOString(),
+        canRetry: ((job.can_retry as boolean) || false),
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  async getStatusBreakdown(): Promise<StatusBreakdown | null> {
+    try {
+      return await apiClient.get<StatusBreakdown>('/exam-import/dashboard/status-breakdown');
+    } catch {
+      return null;
+    }
+  },
+
+  async getPerformanceMetrics(days: number = 7): Promise<ImportPerformanceMetrics | null> {
+    try {
+      return await apiClient.get<ImportPerformanceMetrics>(
+        `/exam-import/dashboard/performance-metrics?days=${days}`
+      );
+    } catch {
+      return null;
+    }
+  },
+
+  async getJobDetails(taskId: string): Promise<JobDetails | null> {
+    try {
+      return await apiClient.get<JobDetails>(`/exam-import/dashboard/job-details/${taskId}`);
+    } catch {
+      return null;
+    }
+  },
+};
+
+// --- Normalization Helper ---
+
+function normalizeImportTask(data: Record<string, unknown>): ImportTask {
+  return {
+    id: (data.id as string) || '',
+    taskId: (data.task_id as string) || '',
+    userId: (data.user_id as string) || '',
+    examCode: (data.exam_code as string) || '',
+    categoryCode: (data.category_code as string) || '',
+    subjectCode: (data.subject_code as string) || '',
+    status: (data.status as any) || 'pending',
+    progressPercent: ((data.progress_percent as number) || 0),
+    questionsProcessed: ((data.questions_processed as number) || 0),
+    questionsValid: ((data.questions_valid as number) || 0),
+    questionsInvalid: ((data.questions_invalid as number) || 0),
+    questionsImported: ((data.questions_imported as number) || 0),
+    totalQuestions: ((data.total_questions as number) || 0),
+    startedAt: (data.started_at as string | null) || null,
+    completedAt: (data.completed_at as string | null) || null,
+    createdAt: (data.created_at as string) || new Date().toISOString(),
+    updatedAt: (data.updated_at as string) || new Date().toISOString(),
+    errorMessage: (data.error_message as string | null) || null,
+    validationErrors: (data.validation_errors as string[] | null) || null,
+    importErrors: (data.import_errors as string[] | null) || null,
+    requiresManualReview: ((data.requires_manual_review as boolean) || false),
+    qualityGatesPassed: ((data.quality_gates_passed as boolean) || false),
+    retryCount: ((data.retry_count as number) || 0),
+  };
+}

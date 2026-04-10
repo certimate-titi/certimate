@@ -306,3 +306,166 @@ export interface FeatureFlag {
   isEnabled: boolean;
   rolloutPercentage: number;
 }
+
+// --- Exam Import Types (Phase 3) ---
+
+export type ImportTaskStatus = 'pending' | 'processing' | 'validating' | 'importing' | 'completed' | 'failed' | 'cancelled';
+
+export type ImportAuditAction =
+  | 'task_created'
+  | 'task_started'
+  | 'extraction_started'
+  | 'extraction_complete'
+  | 'validation_complete'
+  | 'import_complete'
+  | 'task_completed'
+  | 'task_failed'
+  | 'task_cancelled';
+
+export interface ImportTask {
+  id: string;
+  taskId: string; // UUID string for user display
+  userId: string;
+  examCode: string;
+  categoryCode: string;
+  subjectCode: string;
+  status: ImportTaskStatus;
+  progressPercent: number;
+  questionsProcessed: number;
+  questionsValid: number;
+  questionsInvalid: number;
+  questionsImported: number;
+  totalQuestions: number;
+  startedAt: string | null; // ISO timestamp
+  completedAt: string | null; // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  errorMessage: string | null;
+  validationErrors: string[] | null;
+  importErrors: string[] | null;
+  requiresManualReview: boolean;
+  qualityGatesPassed: boolean;
+  retryCount: number;
+}
+
+export interface ImportAuditLog {
+  id: string;
+  taskId: string;
+  userId: string;
+  action: ImportAuditAction;
+  status: ImportTaskStatus;
+  details: Record<string, any> | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  createdAt: string; // ISO timestamp
+}
+
+export interface ImportDashboardStats {
+  timestamp: string;
+  jobQueue: {
+    totalJobs: number;
+    inProgress: number;
+    pending: number;
+    processing: number;
+    validating: number;
+    importing: number;
+    completed: number;
+    failed: number;
+    cancelled: number;
+  };
+  successMetrics: {
+    successRate: number;
+    successfulJobs: number;
+    failedJobs: number;
+    averageDurationSeconds: number;
+  };
+  importVolume: {
+    totalQuestionsImported: number;
+    averageQuestionsPerJob: number;
+  };
+}
+
+export interface RecentJob {
+  taskId: string;
+  exam: string; // e.g. "P/01/0101"
+  status: ImportTaskStatus;
+  progressPercent: number;
+  questionsImported: number;
+  totalQuestions: number;
+  createdAt: string;
+  completedAt: string | null;
+  error: string | null;
+}
+
+export interface FailedJob {
+  taskId: string;
+  exam: string;
+  errorMessage: string | null;
+  retryCount: number;
+  failedAt: string;
+  canRetry: boolean;
+}
+
+export interface JobStatistics {
+  totalQuestions: number;
+  processed: number;
+  valid: number;
+  invalid: number;
+  imported: number;
+}
+
+export interface JobTimeline {
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  durationSeconds: number | null;
+}
+
+export interface JobQuality {
+  qualityGatesPassed: boolean;
+  requiresManualReview: boolean;
+  retryCount: number;
+}
+
+export interface JobError {
+  errorMessage: string | null;
+  validationErrors: string[] | null;
+  importErrors: string[] | null;
+}
+
+export interface JobDetails {
+  task: {
+    taskId: string;
+    exam: string;
+    status: ImportTaskStatus;
+    progressPercent: number;
+  };
+  statistics: JobStatistics;
+  timeline: JobTimeline;
+  quality: JobQuality;
+  error: JobError;
+  auditTrail: ImportAuditLog[];
+}
+
+export interface ImportPerformanceMetrics {
+  periodDays: number;
+  periodEnd: string;
+  metrics: {
+    totalJobs: number;
+    successful: number;
+    failed: number;
+    successRate: number;
+    averageDurationSeconds: number;
+    totalQuestionsImported: number;
+  };
+}
+
+export interface StatusBreakdown {
+  totalJobs: number;
+  breakdown: {
+    [status in ImportTaskStatus]: {
+      count: number;
+      percentage: number;
+    };
+  };
+}

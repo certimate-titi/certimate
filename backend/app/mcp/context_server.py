@@ -1,476 +1,325 @@
-"""Context Server MCP — Provides structured user context for AI Coach and other services."""
+"""
+Context Server - 提供用户学习上下文给AI Coach
+"""
 
-from typing import Optional, Dict, List, Any
-from datetime import datetime, timedelta
+import logging
+import uuid
+from datetime import datetime, timedelta, timezone
+from uuid import UUID
+
+from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
 
-from app.mcp.base_server import BaseMCPServer
-from app.mcp.types import (
-    CoachContext,
-    WeakAreaDetail,
-    LearningStyle,
-    MCPResponse,
-    MCPErrorType,
-)
-
-# Import models
 from app.models.user import User
 from app.models.answer import Answer
 from app.models.question import Question
-from app.models.exam import Exam
-from app.models.subject import Subject
 from app.models.knowledge_node import KnowledgeNode
-from app.models.node_mastery import NodeMastery
+from app.mcp.base_server import BaseMCPServer
+from app.mcp.types import WeakArea, UserContext, LearningStyle
+
+logger = logging.getLogger("certimate.mcp.context")
 
 
 class ContextServer(BaseMCPServer):
-    """MCP Server for building structured user context.
+    """Context Server - 构建和提供用户学习上下文"""
 
-    Provides functions for:
-    - Building coach context (weak areas, mastery scores)
-    - Fetching detailed weak area analysis
-    - Getting user learning style
-    - Retrieving recent errors with context
-    """
+    def _register_functions(self) -> None:
+        """注册 Context Server 的所有函数"""
+        self._register("BuildContextForCoach", self.build_context_for_coach)
+        self._register("FetchWeakAreaDetails", self.fetch_weak_area_details)
+        self._register("GetUserLearningStyle", self.get_user_learning_style)
+        self._register("FetchRecentErrors", self.fetch_recent_errors)
 
-    def build_context_for_coach(
-        self,
-        user_id: str,
-        session_history: Optional[List[str]] = None
-    ) -> MCPResponse:
+    async def build_context_for_coach(self, user_id: str) -> dict:
         """
-        Build structured learning context for AI Coach.
+        为AI Coach构建完整的用户学习上下文
 
-        Aggregates user's mastery scores, weak areas, recent errors, and learning streak.
-
-        Args:
-            user_id: UUID of the user
-            session_history: Optional list of previous chat messages
-
-        Returns:
-            MCPResponse with CoachContext data
+        返回:
+            {
+                "user_id": str,
+                "display_name": str,
+                "weak_areas": [{"topic": str, "mastery": float, "error_count": int}],
+                "learning_style": str,
+                "daily_study_minutes": int,
+                "total_questions_answered": int,
+                "average_accuracy": float,
+                "error": bool (如果有错误)
+            }
         """
-        function_name = "build_context_for_coach"
-        self.log_function_call(function_name, user_id=user_id)
-
         try:
-            # Get user
-            user = self.db.query(User).filter(User.id == user_id).first()
+            user_uuid = UUID(user_id)
+            user = self.db.query(User).filter_by(id=user_uuid).first()
+
             if not user:
-                return self.error(
-                    f"User {user_id} not found",
-                    MCPErrorType.NOT_FOUND,
-                    {"user_id": user_id}
-                )
+                return self.error(f"User not found: {user_id}")
 
-            # Calculate mastery scores by subject
-            mastery_scores = self._calculate_mastery_scores(user_id)
+            # 获取用户的弱点领域（最弱的3个）
+            weak_areas = self._get_weak_topics(user_uuid, top_n=3)
 
-            # Identify weak areas (low mastery, high error rate)
-            weak_areas = self._identify_weak_areas(user_id, mastery_scores)
-
-            # Get recent errors
-            recent_errors = self._fetch_recent_errors(user_id, limit=10)
-
-            # Get learning style (if exists)
-            learning_style = self._get_user_learning_style(user_id)
-
-            # Calculate learning streak
-            learning_streak = self._calculate_learning_streak(user_id)
-
-            # Count total questions attempted
-            total_questions = self.db.query(func.count(Answer.id)).filter(
-                Answer.user_id == user_id
+            # 计算用户的总答题数和平均准确率
+            total_answers = self.db.query(func.count(Answer.id)).filter(
+                Answer.user_id == user_uuid
             ).scalar() or 0
 
-            # Calculate average confidence
-            avg_confidence_result = self.db.query(func.avg(
-                func.nullif(Answer.confidence, None)
-            )).filter(Answer.user_id == user_id).scalar()
+            correct_answers = self.db.query(func.count(Answer.id)).filter(
+                Answer.user_id == user_uuid,
+                Answer.is_correct == True
+            ).scalar() or 0
 
-            # Map confidence string to float (high=0.8, medium=0.5, low=0.2)
-            avg_confidence = self._average_confidence_string_to_float(avg_confidence_result)
+            average_accuracy = (correct_answers / total_answers * 100) if total_answers > 0 else 0.0
 
-            context = CoachContext(
-                user_id=user_id,
-                weak_areas=weak_areas,
-                mastery_scores=mastery_scores,
-                recent_errors=recent_errors,
-                learning_style=learning_style,
-                learning_streak=learning_streak,
-                total_questions_attempted=int(total_questions),
-                average_confidence=avg_confidence
-            )
-
-            elapsed_ms = 0  # Will be set by decorator
-            self.log_function_result(function_name, elapsed_ms, True, user_id=user_id)
-
-            return self.ok(context.to_dict())
-
-        except Exception as e:
-            return self.error(
-                f"Failed to build context: {str(e)}",
-                MCPErrorType.INTERNAL_ERROR,
-                {"user_id": user_id, "error": str(e)}
-            )
-
-    def fetch_weak_area_details(
-        self,
-        user_id: str,
-        topic: str
-    ) -> MCPResponse:
-        """
-        Fetch detailed analysis of a weak area.
-
-        Returns error patterns, misconceptions, and recommendations.
-
-        Args:
-            user_id: UUID of the user
-            topic: Topic name (e.g., "代數")
-
-        Returns:
-            MCPResponse with WeakAreaDetail
-        """
-        function_name = "fetch_weak_area_details"
-        self.log_function_call(function_name, user_id=user_id, topic=topic)
-
-        try:
-            # Get all wrong answers for this user in this subject
-            wrong_answers = self.db.query(Answer).join(
-                Question, Answer.question_id == Question.id
-            ).join(
-                Exam, Answer.exam_id == Exam.id
-            ).join(
-                Subject, Exam.subject_id == Subject.id
-            ).filter(
-                and_(
-                    Answer.user_id == user_id,
-                    Answer.is_correct == False,
-                    Subject.name.ilike(f"%{topic}%")
-                )
-            ).all()
-
-            if not wrong_answers:
-                return self.ok(WeakAreaDetail(
-                    topic=topic,
-                    error_rate=0.0,
-                    total_attempts=0,
-                    error_count=0,
-                    misconceptions=[],
-                    common_wrong_answers=[]
-                ).to_dict())
-
-            # Get all attempts (correct and incorrect) for this subject
-            all_attempts = self.db.query(Answer).join(
-                Question, Answer.question_id == Question.id
-            ).join(
-                Exam, Answer.exam_id == Exam.id
-            ).join(
-                Subject, Exam.subject_id == Subject.id
-            ).filter(
-                and_(
-                    Answer.user_id == user_id,
-                    Subject.name.ilike(f"%{topic}%")
-                )
-            ).all()
-
-            error_rate = len(wrong_answers) / len(all_attempts) if all_attempts else 0.0
-            error_count = len(wrong_answers)
-            total_attempts = len(all_attempts)
-
-            # Extract common wrong answers
-            wrong_answer_options = {}
-            for answer in wrong_answers:
-                question = self.db.query(Question).filter(
-                    Question.id == answer.question_id
-                ).first()
-                if question and answer.selected_answer:
-                    key = answer.selected_answer
-                    wrong_answer_options[key] = wrong_answer_options.get(key, 0) + 1
-
-            common_wrong_answers = [
-                {
-                    "answer": option,
-                    "frequency": count,
-                    "percentage": round(count / error_count * 100, 1)
+            return self.success(
+                data={
+                    "user_id": str(user_uuid),
+                    "display_name": user.display_name or user.email.split("@")[0],
+                    "weak_areas": weak_areas,
+                    "learning_style": getattr(user, "learning_style", "hybrid"),
+                    "daily_study_minutes": getattr(user, "daily_study_minutes", 30),
+                    "total_questions_answered": total_answers,
+                    "average_accuracy": round(average_accuracy, 2),
                 }
-                for option, count in sorted(
-                    wrong_answer_options.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )[:5]
-            ]
-
-            # Get last attempt date
-            last_attempt = max(
-                (a.answered_at for a in all_attempts if a.answered_at),
-                default=None
             )
-
-            # Calculate confidence gap (if user is confident but gets it wrong)
-            high_confidence_errors = sum(
-                1 for a in wrong_answers if a.confidence == "high"
-            )
-            confidence_gap = high_confidence_errors / error_count if error_count > 0 else 0.0
-
-            detail = WeakAreaDetail(
-                topic=topic,
-                error_rate=round(error_rate, 3),
-                total_attempts=total_attempts,
-                error_count=error_count,
-                misconceptions=[],  # TODO: Extract from question explanations
-                common_wrong_answers=common_wrong_answers,
-                last_attempt_date=last_attempt.isoformat() if last_attempt else None,
-                confidence_gap=round(confidence_gap, 3)
-            )
-
-            return self.ok(detail.to_dict())
-
+        except ValueError as e:
+            return self.error(f"Invalid user_id format: {str(e)}")
         except Exception as e:
-            return self.error(
-                f"Failed to fetch weak area details: {str(e)}",
-                MCPErrorType.INTERNAL_ERROR,
-                {"user_id": user_id, "topic": topic}
-            )
+            logger.error(f"Error building context for coach: {str(e)}", exc_info=True)
+            return self.error(f"Internal error: {str(e)}")
 
-    def get_user_learning_style(self, user_id: str) -> MCPResponse:
+    async def fetch_weak_area_details(self, user_id: str, area_name: str) -> dict:
         """
-        Get user's learning style preferences.
+        获取特定弱点领域的详细错误模式和频率
 
-        Args:
-            user_id: UUID of the user
+        参数:
+            user_id: 用户 UUID
+            area_name: 知识点名称
 
-        Returns:
-            MCPResponse with LearningStyle
+        返回:
+            {
+                "topic": str,
+                "error_count": int,
+                "error_patterns": [str],
+                "last_error_at": str (ISO 8601),
+                "mastery_score": float (0.0-1.0)
+            }
         """
-        function_name = "get_user_learning_style"
-        self.log_function_call(function_name, user_id=user_id)
-
         try:
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if not user:
-                return self.error(
-                    f"User {user_id} not found",
-                    MCPErrorType.NOT_FOUND,
-                    {"user_id": user_id}
+            user_uuid = UUID(user_id)
+
+            # 查询该用户在该知识点上的所有错误
+            rows = (
+                self.db.query(
+                    KnowledgeNode.name,
+                    func.count(Answer.id).label("error_count"),
+                    func.max(Answer.created_at).label("last_error_at"),
                 )
-
-            # TODO: Load from user_preferences table once it's populated
-            # For now, return defaults based on answer patterns
-            learning_style = LearningStyle(
-                preferred_modality="visual",  # Default
-                optimal_spacing_days=3,
-                preferred_explanation_style="example-driven",
-                learning_pace="medium"
+                .join(Question, Question.node_id == KnowledgeNode.id)
+                .join(Answer, Answer.question_id == Question.id)
+                .filter(Answer.user_id == user_uuid)
+                .filter(Answer.is_correct == False)
+                .filter(KnowledgeNode.name == area_name)
+                .group_by(KnowledgeNode.name)
+                .first()
             )
 
-            return self.ok(learning_style.to_dict())
+            if not rows:
+                return self.error(f"No error history found for area: {area_name}")
 
+            error_count = rows[1]
+            last_error_at = rows[2]
+            mastery_score = max(0.1, 0.6 - 0.1 * min(error_count, 5))
+
+            # 获取最近的5个错误的具体信息来分析错误模式
+            error_patterns = self._analyze_error_patterns(user_uuid, area_name, limit=5)
+
+            return self.success(
+                data={
+                    "topic": area_name,
+                    "error_count": error_count,
+                    "error_patterns": error_patterns,
+                    "last_error_at": last_error_at.isoformat() if last_error_at else None,
+                    "mastery_score": round(mastery_score, 3),
+                }
+            )
+        except ValueError as e:
+            return self.error(f"Invalid user_id format: {str(e)}")
         except Exception as e:
-            return self.error(
-                f"Failed to get learning style: {str(e)}",
-                MCPErrorType.INTERNAL_ERROR,
-                {"user_id": user_id}
-            )
+            logger.error(f"Error fetching weak area details: {str(e)}", exc_info=True)
+            return self.error(f"Internal error: {str(e)}")
 
-    def fetch_recent_errors(
-        self,
-        user_id: str,
-        limit: int = 10
-    ) -> MCPResponse:
+    async def get_user_learning_style(self, user_id: str) -> dict:
         """
-        Fetch recent wrong answers with full context.
+        获取用户的学习风格和最优间隔复习参数
 
-        Args:
-            user_id: UUID of the user
-            limit: Maximum number of errors to return
-
-        Returns:
-            MCPResponse with list of error details
+        返回:
+            {
+                "visual_preference": float (0.0-1.0),
+                "kinesthetic_preference": float (0.0-1.0),
+                "analytical_preference": float (0.0-1.0),
+                "optimal_spacing_interval": int (天),
+                "preferred_explanation_type": str
+            }
         """
-        function_name = "fetch_recent_errors"
-        self.log_function_call(function_name, user_id=user_id, limit=limit)
-
         try:
-            errors = self._fetch_recent_errors(user_id, limit)
-            return self.ok(errors)
+            user_uuid = UUID(user_id)
+            user = self.db.query(User).filter_by(id=user_uuid).first()
 
+            if not user:
+                return self.error(f"User not found: {user_id}")
+
+            # 基于用户的学习习惯推断学习风格
+            # 这是一个简化版本；实际应用中可能有专门的学习风格评估
+            learning_style = getattr(user, "learning_style", "hybrid")
+
+            # 根据学习风格设置偏好
+            style_preferences = {
+                "visual": {"visual_preference": 0.8, "kinesthetic_preference": 0.3, "analytical_preference": 0.3},
+                "kinesthetic": {"visual_preference": 0.3, "kinesthetic_preference": 0.8, "analytical_preference": 0.3},
+                "analytical": {"visual_preference": 0.3, "kinesthetic_preference": 0.3, "analytical_preference": 0.8},
+                "hybrid": {"visual_preference": 0.5, "kinesthetic_preference": 0.5, "analytical_preference": 0.5},
+            }
+
+            prefs = style_preferences.get(learning_style, style_preferences["hybrid"])
+
+            # 艾宾浩斯遗忘曲线：2^n - 1 天
+            # 基础间隔：1 天，3 天，7 天，15 天
+            optimal_spacing = 3  # 默认3天
+
+            return self.success(
+                data={
+                    "visual_preference": prefs["visual_preference"],
+                    "kinesthetic_preference": prefs["kinesthetic_preference"],
+                    "analytical_preference": prefs["analytical_preference"],
+                    "optimal_spacing_interval": optimal_spacing,
+                    "preferred_explanation_type": "with_examples",
+                }
+            )
+        except ValueError as e:
+            return self.error(f"Invalid user_id format: {str(e)}")
         except Exception as e:
-            return self.error(
-                f"Failed to fetch recent errors: {str(e)}",
-                MCPErrorType.INTERNAL_ERROR,
-                {"user_id": user_id}
+            logger.error(f"Error getting user learning style: {str(e)}", exc_info=True)
+            return self.error(f"Internal error: {str(e)}")
+
+    async def fetch_recent_errors(self, user_id: str, limit: int = 10) -> dict:
+        """
+        获取用户最近的错误记录
+
+        参数:
+            user_id: 用户 UUID
+            limit: 返回记录数量
+
+        返回:
+            {
+                "errors": [
+                    {
+                        "question_id": str,
+                        "topic": str,
+                        "error_at": str,
+                        "user_answer": str,
+                        "correct_answer": str
+                    }
+                ]
+            }
+        """
+        try:
+            user_uuid = UUID(user_id)
+
+            # 获取最近的N个错误
+            recent_errors = (
+                self.db.query(
+                    Answer.id,
+                    Answer.question_id,
+                    Answer.created_at,
+                    Answer.selected_answer,
+                    Question.correct_answer,
+                    KnowledgeNode.name,
+                )
+                .join(Question, Answer.question_id == Question.id)
+                .join(KnowledgeNode, Question.node_id == KnowledgeNode.id)
+                .filter(Answer.user_id == user_uuid)
+                .filter(Answer.is_correct == False)
+                .order_by(desc(Answer.created_at))
+                .limit(limit)
+                .all()
             )
 
-    # ======================== Helper Methods ========================
-
-    def _calculate_mastery_scores(self, user_id: str) -> Dict[str, float]:
-        """Calculate user mastery score for each subject."""
-        mastery = {}
-
-        # Get all attempts by subject
-        subject_attempts = self.db.query(
-            Subject.name,
-            func.count(Answer.id).label("total"),
-            func.sum(func.cast(Answer.is_correct, type_=int)).label("correct")
-        ).join(
-            Exam, Answer.exam_id == Exam.id
-        ).join(
-            Subject, Exam.subject_id == Subject.id
-        ).filter(
-            Answer.user_id == user_id
-        ).group_by(
-            Subject.name
-        ).all()
-
-        for subject_name, total, correct in subject_attempts:
-            correct_count = correct or 0
-            mastery_score = correct_count / total if total > 0 else 0.0
-            mastery[subject_name] = round(mastery_score, 2)
-
-        return mastery
-
-    def _identify_weak_areas(
-        self,
-        user_id: str,
-        mastery_scores: Dict[str, float],
-        threshold: float = 0.6
-    ) -> List[Dict[str, Any]]:
-        """Identify topics where user is struggling (mastery below threshold)."""
-        weak_areas = []
-
-        for topic, score in mastery_scores.items():
-            if score < threshold:
-                # Get error count for this topic
-                error_count = self.db.query(func.count(Answer.id)).join(
-                    Question, Answer.question_id == Question.id
-                ).join(
-                    Exam, Answer.exam_id == Exam.id
-                ).join(
-                    Subject, Exam.subject_id == Subject.id
-                ).filter(
-                    and_(
-                        Answer.user_id == user_id,
-                        Answer.is_correct == False,
-                        Subject.name == topic
-                    )
-                ).scalar() or 0
-
-                # Get total attempts for this topic
-                total_count = self.db.query(func.count(Answer.id)).join(
-                    Question, Answer.question_id == Question.id
-                ).join(
-                    Exam, Answer.exam_id == Exam.id
-                ).join(
-                    Subject, Exam.subject_id == Subject.id
-                ).filter(
-                    and_(
-                        Answer.user_id == user_id,
-                        Subject.name == topic
-                    )
-                ).scalar() or 0
-
-                error_rate = error_count / total_count if total_count > 0 else 0.0
-
-                weak_areas.append({
-                    "topic": topic,
-                    "mastery": round(score, 2),
-                    "error_rate": round(error_rate, 2),
-                    "count": int(error_count)
+            errors_list = []
+            for error in recent_errors:
+                errors_list.append({
+                    "question_id": str(error[1]),
+                    "topic": error[5],
+                    "error_at": error[2].isoformat() if error[2] else None,
+                    "user_answer": error[3] or "Not recorded",
+                    "correct_answer": error[4] or "Not recorded",
                 })
 
-        return sorted(weak_areas, key=lambda x: x["mastery"])
-
-    def _fetch_recent_errors(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Fetch recent wrong answers with context."""
-        recent_errors = []
-
-        wrong_answers = self.db.query(Answer).filter(
-            and_(
-                Answer.user_id == user_id,
-                Answer.is_correct == False
+            return self.success(
+                data={"errors": errors_list}
             )
-        ).order_by(
-            Answer.answered_at.desc()
-        ).limit(limit).all()
+        except ValueError as e:
+            return self.error(f"Invalid user_id format: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error fetching recent errors: {str(e)}", exc_info=True)
+            return self.error(f"Internal error: {str(e)}")
 
-        for answer in wrong_answers:
-            question = self.db.query(Question).filter(
-                Question.id == answer.question_id
-            ).first()
+    # === Helper Methods ===
 
-            exam = self.db.query(Exam).filter(
-                Exam.id == answer.exam_id
-            ).first()
+    def _get_weak_topics(self, user_id: UUID, top_n: int = 3) -> list[dict]:
+        """从数据库查询用户最弱的知识点"""
+        rows = (
+            self.db.query(
+                KnowledgeNode.name,
+                func.count(Answer.id).label("error_count"),
+            )
+            .join(Question, Question.node_id == KnowledgeNode.id)
+            .join(Answer, Answer.question_id == Question.id)
+            .filter(Answer.user_id == user_id)
+            .filter(Answer.is_correct == False)
+            .group_by(KnowledgeNode.name)
+            .order_by(func.count(Answer.id).desc())
+            .limit(top_n)
+            .all()
+        )
 
-            subject = None
-            if exam:
-                subject = self.db.query(Subject).filter(
-                    Subject.id == exam.subject_id
-                ).first()
-
-            recent_errors.append({
-                "question_id": str(answer.question_id),
-                "topic": subject.name if subject else "Unknown",
-                "difficulty": question.difficulty if question else "unknown",
-                "user_selected": answer.selected_answer or "No answer",
-                "correct_answer": question.correct_answer if question else "Unknown",
-                "user_confidence": answer.confidence or "not_set",
-                "answered_at": answer.answered_at.isoformat() if answer.answered_at else None
+        weak_areas = []
+        for i, row in enumerate(rows):
+            topic_name, error_count = row
+            # 掌握度计算：错误越多，掌握度越低
+            mastery = max(0.1, 0.6 - 0.1 * min(error_count, 5))
+            weak_areas.append({
+                "topic": topic_name,
+                "mastery": round(mastery, 3),
+                "error_count": error_count,
             })
 
-        return recent_errors
+        return weak_areas
 
-    def _calculate_learning_streak(self, user_id: str) -> int:
-        """Calculate current learning streak (consecutive days with attempts)."""
-        # Get all attempt dates
-        attempt_dates = self.db.query(
-            func.date(Answer.answered_at)
-        ).filter(
-            and_(
-                Answer.user_id == user_id,
-                Answer.answered_at.isnot(None)
+    def _analyze_error_patterns(self, user_id: UUID, area_name: str, limit: int = 5) -> list[str]:
+        """分析用户在特定领域的错误模式"""
+        # 这是一个简化版本，实际应用中可能有更复杂的NLP分析
+        patterns = []
+
+        recent_errors = (
+            self.db.query(
+                Answer.selected_answer,
+                Question.correct_answer,
+                Question.text,
             )
-        ).distinct().order_by(
-            func.date(Answer.answered_at).desc()
-        ).all()
+            .join(Question, Answer.question_id == Question.id)
+            .join(KnowledgeNode, Question.node_id == KnowledgeNode.id)
+            .filter(Answer.user_id == user_id)
+            .filter(Answer.is_correct == False)
+            .filter(KnowledgeNode.name == area_name)
+            .order_by(desc(Answer.created_at))
+            .limit(limit)
+            .all()
+        )
 
-        if not attempt_dates:
-            return 0
+        # 简单的模式检测：选择错误的特定答案
+        for error in recent_errors:
+            user_answer = error[0] or "empty"
+            correct_answer = error[1] or "unknown"
+            pattern = f"常选 {user_answer} 而非 {correct_answer}"
+            if pattern not in patterns:
+                patterns.append(pattern)
 
-        streak = 1
-        today = datetime.now().date()
-        last_date = attempt_dates[0][0]
-
-        # If last attempt wasn't today, streak is broken
-        if last_date != today:
-            if (today - last_date).days > 1:
-                return 0
-            streak = 1
-
-        # Count consecutive days backwards
-        for i in range(1, len(attempt_dates)):
-            current_date = attempt_dates[i][0]
-            previous_date = attempt_dates[i - 1][0]
-
-            if (previous_date - current_date).days == 1:
-                streak += 1
-            else:
-                break
-
-        return streak
-
-    def _get_user_learning_style(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get user learning style preferences."""
-        # TODO: Implement once user_preferences table is populated
-        return None
-
-    def _average_confidence_string_to_float(self, avg_str: Optional[str]) -> float:
-        """Convert average confidence string to float."""
-        if not avg_str:
-            return 0.5
-
-        # Map confidence to float
-        confidence_map = {"high": 0.8, "medium": 0.5, "low": 0.2}
-        return confidence_map.get(str(avg_str).lower(), 0.5)
+        return patterns[:3]  # 返回前3个模式

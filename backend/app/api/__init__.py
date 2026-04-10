@@ -37,6 +37,9 @@ from app.api.prompt_template import internal_router as prompt_template_internal_
 from app.api.account import router as account_router
 from app.api.refresh_quiz import router as refresh_quiz_router
 from app.api.practice import router as practice_router
+from app.api.exam_import import router as exam_import_router
+from app.api.exam_import_async import router as exam_import_async_router
+from app.api.exam_import_monitoring import router as exam_import_monitoring_router
 
 router = APIRouter()
 
@@ -75,3 +78,6 @@ router.include_router(prompt_template_internal_router, tags=["prompt-templates-i
 router.include_router(account_router, tags=["account"])
 router.include_router(refresh_quiz_router, tags=["refresh-quiz"])
 router.include_router(practice_router, tags=["practice"])
+router.include_router(exam_import_router, tags=["exam-import"])
+router.include_router(exam_import_async_router, tags=["exam-import-async"])
+router.include_router(exam_import_monitoring_router, tags=["exam-import-monitoring"])

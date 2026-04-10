@@ -1,243 +1,121 @@
-"""MCP Server request/response types and base definitions."""
+"""
+MCP (Model Context Protocol) 的类型定义
+"""
 
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional, Union
-from enum import Enum
-import json
+from dataclasses import dataclass, field
+from typing import Any, Optional
+from uuid import UUID
 
 
-class MCPErrorType(str, Enum):
-    """MCP error types."""
-    INVALID_REQUEST = "invalid_request"
-    NOT_FOUND = "not_found"
-    VALIDATION_ERROR = "validation_error"
-    INTERNAL_ERROR = "internal_error"
-    UNAUTHORIZED = "unauthorized"
+@dataclass
+class MCPRequest:
+    """MCP 请求基类"""
+    function: str
+    params: dict[str, Any]
+    user_id: Optional[UUID] = None
 
 
 @dataclass
 class MCPResponse:
-    """Standardized MCP response format."""
-    success: bool
-    data: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
+    """MCP 响应基类"""
+    status: str  # "success" | "error"
+    data: Any = None
+    error: Optional[str] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        result = {"success": self.success}
-        if self.data is not None:
-            result["data"] = self.data
-        if self.error is not None:
-            result["error"] = self.error
-        return result
 
-    def to_json(self) -> str:
-        """Convert to JSON string."""
-        return json.dumps(self.to_dict())
-
+# Context Server 相关类型
 
 @dataclass
-class MCPError:
-    """MCP error representation."""
-    error_type: MCPErrorType
-    message: str
-    details: Optional[Dict[str, Any]] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        result = {
-            "type": self.error_type.value,
-            "message": self.message
-        }
-        if self.details:
-            result["details"] = self.details
-        return result
-
-
-# ============================================================================
-# Context Server Request/Response Types
-# ============================================================================
-
-@dataclass
-class CoachContext:
-    """Structured learning context for AI Coach."""
-    user_id: str
-    weak_areas: List[Dict[str, Any]]  # [{"topic": "代數", "error_rate": 0.45, "count": 12}, ...]
-    mastery_scores: Dict[str, float]  # {"代數": 0.55, "幾何": 0.72, ...}
-    recent_errors: List[Dict[str, Any]] = field(default_factory=list)  # Last N errors with context
-    learning_style: Optional[Dict[str, Any]] = None  # Visual/kinesthetic/analytical preference
-    learning_streak: int = 0
-    total_questions_attempted: int = 0
-    average_confidence: float = 0.5
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return asdict(self)
-
-
-@dataclass
-class WeakAreaDetail:
-    """Detailed weak area analysis."""
+class WeakArea:
+    """弱点分析 - 单个知识点的掌握情况"""
     topic: str
-    error_rate: float
-    total_attempts: int
+    mastery: float  # 0.0 - 1.0
     error_count: int
-    misconceptions: List[str] = field(default_factory=list)
-    common_wrong_answers: List[Dict[str, Any]] = field(default_factory=list)
-    last_attempt_date: Optional[str] = None
-    confidence_gap: float = 0.0  # Gap between confidence and actual correctness
+    error_patterns: list[str] = field(default_factory=list)
+
+
+@dataclass
+class UserContext:
+    """用户学习上下文 - 用于AI Coach"""
+    user_id: UUID
+    display_name: str
+    weak_areas: list[WeakArea]  # 最弱的3个知识点
+    recent_errors: list[dict] = field(default_factory=list)  # 最近的错误
+    learning_style: str = "hybrid"  # visual, kinesthetic, analytical, hybrid
+    daily_study_minutes: int = 30
+    total_questions_answered: int = 0
+    average_accuracy: float = 0.0
 
 
 @dataclass
 class LearningStyle:
-    """User learning style preferences."""
-    preferred_modality: str  # "visual", "kinesthetic", "analytical", "auditory"
-    optimal_spacing_days: int  # Ebbinghaus curve: 1, 3, 7, 14, 30...
-    preferred_explanation_style: str  # "detailed", "concise", "example-driven"
-    learning_pace: str  # "slow", "medium", "fast"
+    """学习风格"""
+    visual_preference: float  # 0.0 - 1.0
+    kinesthetic_preference: float  # 0.0 - 1.0
+    analytical_preference: float  # 0.0 - 1.0
+    optimal_spacing_interval: int  # 天数，基于艾宾浩斯遗忘曲线
+    preferred_explanation_type: str  # "brief", "detailed", "with_examples"
 
 
-# ============================================================================
-# Recommendation Server Request/Response Types
-# ============================================================================
+# Recommendation Server 相关类型
 
 @dataclass
-class RecommendedQuestion:
-    """Recommended question with reasoning."""
-    question_id: str
+class Question:
+    """推荐的问题"""
+    id: UUID
+    text: str
+    difficulty: float  # 0.0 - 1.0
     topic: str
-    difficulty_level: int  # 1-10 scale
-    bloom_level: str  # remember, understand, apply, analyze, evaluate, create
-    reason: str  # Why this is recommended
-    mastery_score: float  # 0-1, user's current mastery
-    spacing_days: int  # Days since last attempt (Ebbinghaus)
-    prerequisite_ready: bool  # Are prerequisites mastered?
-    confidence_calibration_ready: bool  # Should user calibrate confidence?
+    bloom_level: int  # 1-6，Bloom分类学
+    mastery_required: float  # 前置条件掌握度
+    last_answered_at: Optional[str] = None
+    user_accuracy: float = 0.0
 
 
 @dataclass
-class SpacingCalculation:
-    """Spaced repetition calculation result."""
-    next_review_date: str  # ISO 8601 date
-    days_from_today: int
-    ebbinghaus_interval: int  # 1, 3, 7, 14, 30, 60...
-    reasoning: str  # Why this interval
-    confidence_factor: float  # Adjusted interval based on confidence
+class RecommendedQuestions:
+    """问题推荐结果"""
+    user_id: UUID
+    questions: list[Question]
+    reasoning: str  # 推荐理由
 
 
 @dataclass
-class LearningPathItem:
-    """Item in a learning path."""
-    topic: str
-    concept_id: str
-    prerequisites: List[str] = field(default_factory=list)
-    difficulty: int = 5
-    estimated_hours: float = 1.0
-    is_prerequisite_met: bool = False
-    mastery_progress: float = 0.0
+class SpacedRepetitionTiming:
+    """艾宾浩斯间隔复习时间"""
+    question_id: UUID
+    next_review_at: str  # ISO 8601 时间戳
+    days_interval: int  # 距离现在的天数
+    repetition_count: int  # 已复习次数
 
 
 @dataclass
 class NodeQualityValidation:
-    """Knowledge node quality validation result."""
+    """知识节点质量验证结果"""
+    node_id: UUID
     is_valid: bool
-    issues: List[Dict[str, Any]] = field(default_factory=list)  # [{"type": "missing_examples", "severity": "high"}, ...]
-    score: float = 1.0  # 0-1 quality score
-    recommendations: List[str] = field(default_factory=list)
+    issues: list[str] = field(default_factory=list)  # 质量问题列表
+    score: float = 1.0  # 0.0 - 1.0
 
 
-# ============================================================================
-# Data Fetching Server Request/Response Types
-# ============================================================================
+# Data Fetching Server 相关类型
 
 @dataclass
 class DocumentChunk:
-    """Document chunk with source tracking."""
-    chunk_id: str
-    content: str
-    source_doc_id: str
-    page_number: Optional[int] = None
-    section_title: Optional[str] = None
-    relevance_score: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class StructuredKnowledgeNode:
-    """Structured knowledge node extracted from document."""
-    concept_name: str
-    definition: str
-    examples: List[str] = field(default_factory=list)
-    related_concepts: List[str] = field(default_factory=list)
-    prerequisite_concepts: List[str] = field(default_factory=list)
-    bloom_level: str = "understand"  # remember, understand, apply...
-    source_doc_id: str = ""
+    """文档块 - 用于RAG"""
+    document_id: UUID
+    chunk_index: int
+    text: str
     source_page: Optional[int] = None
+    source_section: Optional[str] = None
 
 
 @dataclass
-class UserDataBatch:
-    """Batch of user data."""
-    user_id: str
-    mastery_scores: Dict[str, float]
-    recent_answers: List[Dict[str, Any]] = field(default_factory=list)
-    learning_preferences: Optional[Dict[str, Any]] = None
-    subscription_info: Optional[Dict[str, Any]] = None
-
-
-@dataclass
-class CompressedChatHistory:
-    """Compressed chat history."""
-    session_id: str
-    original_message_count: int
-    compressed_message_count: int
-    context_summary: str  # High-level summary of conversation
-    last_messages: List[Dict[str, Any]] = field(default_factory=list)  # Last N messages in full
-
-
-@dataclass
-class RelationshipGraph:
-    """Knowledge concept relationship graph."""
-    concept_id: str
-    concept_name: str
-    prerequisites: List[Dict[str, Any]] = field(default_factory=list)  # [{"id": "...", "name": "..."}, ...]
-    reinforces: List[Dict[str, Any]] = field(default_factory=list)  # Related concepts
-    prerequisites_mastery: Dict[str, float] = field(default_factory=dict)  # concept_id -> mastery_score
-
-
-# ============================================================================
-# Caching types
-# ============================================================================
-
-@dataclass
-class CacheEntry:
-    """Cache entry with TTL."""
-    key: str
-    value: Any
-    ttl_seconds: int
-    created_at: str  # ISO 8601 timestamp
-
-
-# ============================================================================
-# Common error responses
-# ============================================================================
-
-def error_response(
-    error_type: MCPErrorType,
-    message: str,
-    details: Optional[Dict[str, Any]] = None
-) -> MCPResponse:
-    """Create a standardized error response."""
-    return MCPResponse(
-        success=False,
-        error={
-            "type": error_type.value,
-            "message": message,
-            "details": details or {}
-        }
-    )
-
-
-def success_response(data: Any) -> MCPResponse:
-    """Create a standardized success response."""
-    return MCPResponse(success=True, data=data)
+class KnowledgeNodeData:
+    """知识节点数据"""
+    concept: str
+    definition: str
+    examples: list[str] = field(default_factory=list)
+    prerequisites: list[str] = field(default_factory=list)
+    relationships: list[dict] = field(default_factory=list)  # {concept, relation_type}

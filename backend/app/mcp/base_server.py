@@ -1,223 +1,111 @@
-"""Base MCP Server class with common functionality."""
+"""
+MCP 服务器基类 - 提供通用的服务器框架
+"""
 
-import time
 import logging
-from typing import Any, Callable, Dict, Optional
-from functools import wraps
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Optional
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
-from app.mcp.types import MCPResponse, MCPErrorType, error_response, success_response
+from app.mcp.types import MCPRequest, MCPResponse
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("certimate.mcp")
 
 
-class BaseMCPServer:
-    """Base class for all MCP servers providing common functionality."""
+class BaseMCPServer(ABC):
+    """MCP 服务器基类"""
 
-    def __init__(self, db: Session, enable_caching: bool = True):
-        """
-        Initialize MCP server.
-
-        Args:
-            db: SQLAlchemy session for database access
-            enable_caching: Whether to enable function-level caching
-        """
+    def __init__(self, db: Session):
         self.db = db
-        self.enable_caching = enable_caching
-        self._cache: Dict[str, Any] = {}
-        self._cache_timestamps: Dict[str, float] = {}
-        self.name = self.__class__.__name__
+        self._functions: dict[str, Callable] = {}
+        self._register_functions()
 
-    def log_function_call(self, function_name: str, user_id: Optional[str] = None, **kwargs) -> None:
-        """Log an MCP function call for observability."""
-        logger.info(
-            f"MCP[{self.name}].{function_name} called",
-            extra={
-                "mcp_server": self.name,
-                "mcp_function": function_name,
-                "user_id": user_id,
-                "params": str(kwargs)[:200]  # Truncate for logging
-            }
-        )
+    def _register_functions(self) -> None:
+        """注册所有 MCP 函数（由子类实现）"""
+        pass
 
-    def log_function_result(
-        self,
-        function_name: str,
-        elapsed_ms: float,
-        success: bool,
-        user_id: Optional[str] = None
-    ) -> None:
-        """Log MCP function result for observability."""
-        logger.info(
-            f"MCP[{self.name}].{function_name} completed",
-            extra={
-                "mcp_server": self.name,
-                "mcp_function": function_name,
-                "user_id": user_id,
-                "elapsed_ms": elapsed_ms,
-                "success": success
-            }
-        )
+    def _register(self, name: str, func: Callable) -> None:
+        """注册一个 MCP 函数"""
+        self._functions[name] = func
+        logger.debug(f"Registered MCP function: {name}")
 
-    def with_observability(self, function_name: str):
-        """Decorator for adding observability to MCP functions."""
-        def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            def wrapper(*args, **kwargs) -> Any:
-                start_time = time.time()
-                user_id = kwargs.get("user_id")
+    async def call(self, request: MCPRequest) -> MCPResponse:
+        """调用 MCP 函数"""
+        try:
+            if request.function not in self._functions:
+                return MCPResponse(
+                    status="error",
+                    error=f"Unknown function: {request.function}",
+                )
 
-                try:
-                    self.log_function_call(function_name, user_id=user_id, **kwargs)
-                    result = func(*args, **kwargs)
-                    elapsed_ms = (time.time() - start_time) * 1000
-                    self.log_function_result(function_name, elapsed_ms, True, user_id=user_id)
-                    return result
-                except Exception as e:
-                    elapsed_ms = (time.time() - start_time) * 1000
-                    self.log_function_result(function_name, elapsed_ms, False, user_id=user_id)
-                    logger.error(
-                        f"MCP[{self.name}].{function_name} error: {str(e)}",
-                        exc_info=True
-                    )
-                    raise
+            func = self._functions[request.function]
+            result = await func(**request.params) if hasattr(func, "__await__") else func(**request.params)
 
-            return wrapper
-        return decorator
+            return MCPResponse(
+                status="success",
+                data=result,
+            )
+        except ValueError as e:
+            return MCPResponse(
+                status="error",
+                error=f"Invalid parameters: {str(e)}",
+            )
+        except Exception as e:
+            logger.error(f"Error calling {request.function}: {str(e)}", exc_info=True)
+            return MCPResponse(
+                status="error",
+                error=f"Internal server error: {str(e)}",
+            )
 
-    def with_caching(self, ttl_seconds: int = 300):
-        """
-        Decorator for adding caching to MCP functions.
+    def success(self, data: Any = None, **kwargs) -> dict:
+        """生成成功响应"""
+        return {"error": False, "data": data, **kwargs}
 
-        Cache key is generated from function name + all kwargs.
-        """
-        def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            def wrapper(*args, **kwargs) -> Any:
-                if not self.enable_caching:
-                    return func(*args, **kwargs)
+    def error(self, message: str, status_code: int = 400, **kwargs) -> dict:
+        """生成错误响应"""
+        return {"error": True, "message": message, "status_code": status_code, **kwargs}
 
-                # Generate cache key
-                cache_key = f"{func.__name__}:{str(kwargs)}"
-
-                # Check cache
-                if cache_key in self._cache:
-                    cache_time = self._cache_timestamps.get(cache_key, 0)
-                    if time.time() - cache_time < ttl_seconds:
-                        logger.debug(f"Cache HIT: {cache_key}")
-                        return self._cache[cache_key]
-                    else:
-                        # Expired
-                        del self._cache[cache_key]
-                        del self._cache_timestamps[cache_key]
-
-                # Cache miss - call function
-                result = func(*args, **kwargs)
-                self._cache[cache_key] = result
-                self._cache_timestamps[cache_key] = time.time()
-                logger.debug(f"Cache MISS: {cache_key} (ttl={ttl_seconds}s)")
-                return result
-
-            return wrapper
-        return decorator
-
-    def clear_cache(self, pattern: Optional[str] = None) -> int:
-        """
-        Clear cache entries.
-
-        Args:
-            pattern: Optional regex pattern to match keys. If None, clears all.
-
-        Returns:
-            Number of entries cleared.
-        """
-        if pattern is None:
-            count = len(self._cache)
-            self._cache.clear()
-            self._cache_timestamps.clear()
-            return count
-
-        import re
-        compiled_pattern = re.compile(pattern)
-        keys_to_delete = [k for k in self._cache.keys() if compiled_pattern.match(k)]
-        count = len(keys_to_delete)
-
-        for key in keys_to_delete:
-            del self._cache[key]
-            del self._cache_timestamps[key]
-
-        return count
-
-    def get_cache_stats(self) -> Dict[str, Any]:
-        """Get cache statistics."""
-        total_entries = len(self._cache)
-        expired_entries = sum(
-            1 for ts in self._cache_timestamps.values()
-            if time.time() - ts > 3600  # Count entries older than 1 hour
-        )
-        return {
-            "total_entries": total_entries,
-            "expired_entries": expired_entries,
-            "cache_size_approx_kb": sum(
-                len(str(v)) for v in self._cache.values()
-            ) / 1024
-        }
-
-    def ok(self, data: Any = None) -> MCPResponse:
-        """Create a success response."""
-        return success_response(data)
-
-    def error(
-        self,
-        message: str,
-        error_type: MCPErrorType = MCPErrorType.INTERNAL_ERROR,
-        details: Optional[Dict[str, Any]] = None
-    ) -> MCPResponse:
-        """Create an error response."""
-        return error_response(error_type, message, details)
-
-    def close(self) -> None:
-        """Cleanup and close the server."""
-        self.db.close()
-        self._cache.clear()
-        self._cache_timestamps.clear()
-        logger.info(f"MCP[{self.name}] closed")
+    @abstractmethod
+    async def _register_functions(self) -> None:
+        """子类必须实现此方法来注册自己的函数"""
+        pass
 
 
 class MCPServerFactory:
-    """Factory for creating MCP server instances with dependency injection."""
+    """MCP 服务器工厂 - 创建和管理 MCP 服务器实例"""
 
-    _servers: Dict[str, type] = {}
-
-    @classmethod
-    def register(cls, name: str, server_class: type) -> None:
-        """Register an MCP server class."""
-        cls._servers[name] = server_class
-        logger.info(f"Registered MCP server: {name}")
+    _instances: dict[str, BaseMCPServer] = {}
 
     @classmethod
-    def create(cls, name: str, db: Session, enable_caching: bool = True) -> BaseMCPServer:
-        """
-        Create an MCP server instance.
-
-        Args:
-            name: Server name (must be registered)
-            db: SQLAlchemy session
-            enable_caching: Whether to enable caching
-
-        Returns:
-            MCP server instance
-
-        Raises:
-            ValueError: If server name not registered
-        """
-        if name not in cls._servers:
-            raise ValueError(f"Unknown MCP server: {name}. Registered: {list(cls._servers.keys())}")
-
-        server_class = cls._servers[name]
-        return server_class(db, enable_caching=enable_caching)
+    def get_context_server(cls, db: Session) -> "BaseMCPServer":
+        """获取 Context Server 实例（单例）"""
+        key = "context_server"
+        if key not in cls._instances:
+            from app.mcp.context_server import ContextServer
+            cls._instances[key] = ContextServer(db)
+        return cls._instances[key]
 
     @classmethod
-    def get_registered_servers(cls) -> Dict[str, type]:
-        """Get all registered servers."""
-        return cls._servers.copy()
+    def get_recommendation_server(cls, db: Session) -> "BaseMCPServer":
+        """获取 Recommendation Server 实例（单例）"""
+        key = "recommendation_server"
+        if key not in cls._instances:
+            from app.mcp.recommendation_server import RecommendationServer
+            cls._instances[key] = RecommendationServer(db)
+        return cls._instances[key]
+
+    @classmethod
+    def get_datafetch_server(cls, db: Session) -> "BaseMCPServer":
+        """获取 Data Fetching Server 实例（单例）"""
+        key = "datafetch_server"
+        if key not in cls._instances:
+            from app.mcp.datafetch_server import DataFetchServer
+            cls._instances[key] = DataFetchServer(db)
+        return cls._instances[key]
+
+    @classmethod
+    def reset(cls) -> None:
+        """重置所有实例（用于测试）"""
+        cls._instances.clear()

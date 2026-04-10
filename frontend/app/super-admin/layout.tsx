@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
+import {
   LayoutDashboard,
   Users,
   CreditCard,
@@ -15,7 +15,8 @@ import {
   Bell,
   Search,
   History,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -32,6 +33,7 @@ const sidebarItems = [
   { name: '用戶管理', href: '/super-admin/users', icon: Users },
   { name: '財務與訂閱', href: '/super-admin/finance', icon: CreditCard },
   { name: '內容與安全', href: '/super-admin/moderation', icon: ShieldAlert },
+  { name: '考古題匯入', href: '/super-admin/exam-import', icon: Upload },
   { name: '系統設定', href: '/super-admin/settings', icon: Settings },
   { name: '審計日誌', href: '/super-admin/audit-logs', icon: History },
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },

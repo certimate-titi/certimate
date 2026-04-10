@@ -1218,29 +1218,41 @@ from .account_settings.aggregate_then import account_state  # noqa: F401
 # Account Settings (Feature 22) — readmodel_then
 from .account_settings.readmodel_then import account_response  # noqa: F401
 
-# MCP Context Server (Feature 30)
-from .mcp_context.context_server_steps import step_user_answered_questions_in_subject  # noqa: F401
-from .mcp_context.context_server_steps import step_user_correct_answers  # noqa: F401
-from .mcp_context.context_server_steps import step_user_has_errors_with_confidence  # noqa: F401
-from .mcp_context.context_server_steps import step_user_attempted_today  # noqa: F401
-from .mcp_context.context_server_steps import step_user_attempted_yesterday  # noqa: F401
-from .mcp_context.context_server_steps import step_user_attempted_2_days_ago  # noqa: F401
-from .mcp_context.context_server_steps import step_user_no_attempt_3_days_ago  # noqa: F401
-from .mcp_context.context_server_steps import step_build_context  # noqa: F401
-from .mcp_context.context_server_steps import step_fetch_weak_area  # noqa: F401
-from .mcp_context.context_server_steps import step_fetch_recent_errors  # noqa: F401
-from .mcp_context.context_server_steps import step_context_has_user_id  # noqa: F401
-from .mcp_context.context_server_steps import step_context_mastery_score  # noqa: F401
-from .mcp_context.context_server_steps import step_context_weak_area  # noqa: F401
-from .mcp_context.context_server_steps import step_context_no_weak_area  # noqa: F401
-from .mcp_context.context_server_steps import step_context_has_recent_errors  # noqa: F401
-from .mcp_context.context_server_steps import step_context_has_total_count  # noqa: F401
-from .mcp_context.context_server_steps import step_context_has_avg_confidence  # noqa: F401
-from .mcp_context.context_server_steps import step_context_streak  # noqa: F401
-from .mcp_context.context_server_steps import step_weak_area_topic  # noqa: F401
-from .mcp_context.context_server_steps import step_error_rate  # noqa: F401
-from .mcp_context.context_server_steps import step_error_count  # noqa: F401
-from .mcp_context.context_server_steps import step_total_attempts  # noqa: F401
-from .mcp_context.context_server_steps import step_response_has_error  # noqa: F401
-from .mcp_context.context_server_steps import step_error_type  # noqa: F401
-from .mcp_context.context_server_steps import step_error_message  # noqa: F401
+# MCP Context Server (Feature 30) — aggregate_given
+from .mcp_context.aggregate_given import setup_knowledge_nodes  # noqa: F401
+
+# MCP Context Server (Feature 30) — commands
+from .mcp_context.commands import call_context_server  # noqa: F401
+
+# MCP Context Server (Feature 30) — readmodel_then
+from .mcp_context.readmodel_then import verify_context_response  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — aggregate_given
+from .mcp_recommendation.aggregate_given import setup_mastery_data  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — commands
+from .mcp_recommendation.commands import call_recommendation_server  # noqa: F401
+
+# MCP Recommendation Server (Feature 31) — readmodel_then
+from .mcp_recommendation.readmodel_then import verify_recommendation_response  # noqa: F401
+
+# Exam Import — Database Integration (Feature 32 Phase 2)
+from .exam_import.database_import import step_clear_historical_data  # noqa: F401
+from .exam_import.database_import import step_existing_import  # noqa: F401
+from .exam_import.database_import import step_import_questions  # noqa: F401
+from .exam_import.database_import import step_call_import_api  # noqa: F401
+from .exam_import.database_import import step_reimport_exam  # noqa: F401
+from .exam_import.database_import import step_verify_exam_count  # noqa: F401
+from .exam_import.database_import import step_verify_question_count  # noqa: F401
+from .exam_import.database_import import step_verify_foreign_keys  # noqa: F401
+from .exam_import.database_import import step_verify_question_content  # noqa: F401
+from .exam_import.database_import import step_verify_import_success  # noqa: F401
+from .exam_import.database_import import step_verify_duplicate_handling  # noqa: F401
+from .exam_import.database_import import step_verify_skip_duplicate  # noqa: F401
+from .exam_import.database_import import step_verify_query_endpoint  # noqa: F401
+from .exam_import.database_import import step_verify_questions_endpoint  # noqa: F401
+from .exam_import.database_import import step_verify_validation_endpoint  # noqa: F401
+from .exam_import.database_import import step_verify_timestamp  # noqa: F401
+from .exam_import.database_import import step_verify_validation_model  # noqa: F401
+from .exam_import.database_import import step_verify_bulk_performance  # noqa: F401
+from .exam_import.database_import import step_verify_acid_compliance  # noqa: F401
