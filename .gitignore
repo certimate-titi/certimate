@@ -34,6 +34,8 @@ coverage/
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+venv/
 
 # Uploaded files (local dev)
 backend/uploads/
