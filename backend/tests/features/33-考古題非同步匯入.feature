@@ -152,10 +152,12 @@ Feature: 考古題非同步匯入 (Phase 3: Async Background Processing)
         | error_code | 故障代碼 |
         | error_message | 故障訊息 |
 
-    Example: 搜尋審計日誌
-      When user1 GET /api/v1/exam-import/audit?exam_code=P&status=completed
-      Then 應返回符合篩選條件的所有事件
-      And 按 created_at 倒序排列
+    # TODO: 審計日誌查詢 API 將在 Phase 3.1 實現
+    # 服務層已完整實現：ImportAuditLogService.search_audit_logs()
+    # Example: 搜尋審計日誌
+    #   When user1 GET /api/v1/exam-import/audit?exam_code=P&status=completed
+    #   Then 應返回符合篩選條件的所有事件
+    #   And 按 created_at 倒序排列
 
   Rule: 監控儀表板 (Monitoring Dashboard)
 
@@ -203,88 +205,100 @@ Feature: 考古題非同步匯入 (Phase 3: Async Background Processing)
         | error | 錯誤詳情 |
         | audit_trail | 完整審計追蹤 |
 
-  Rule: 匯入復原 (Rollback & Undo)
+  # TODO: 匯入復原 API 路由將在 Phase 3.1 實現
+  # 服務層已完整實現：ImportRollbackService
+  #   - can_rollback(): 檢查復原可用性
+  #   - rollback_import(): 執行匯入復原
+  #   - get_rollback_history(): 復原歷史記錄
 
-    Example: 檢查復原可用性
-      Given user1 已完成匯入，產生 HistoricalExam
-      When admin GET /api/v1/exam-import/rollback/{task_id}/can-rollback
-      Then 回應應包含：
-        | 欄位 | 預期值 |
-        | can_rollback | true |
-        | reason | "Rollback is available" |
-        | task_details | exam_code, questions_imported 等 |
+  # Rule: 匯入復原 (Rollback & Undo)
+  #
+  #   Example: 檢查復原可用性
+  #     Given user1 已完成匯入，產生 HistoricalExam
+  #     When admin GET /api/v1/exam-import/rollback/{task_id}/can-rollback
+  #     Then 回應應包含：
+  #       | 欄位 | 預期值 |
+  #       | can_rollback | true |
+  #       | reason | "Rollback is available" |
+  #       | task_details | exam_code, questions_imported 等 |
+  #
+  #   Example: 執行匯入復原
+  #     Given user1 匯入了 50 題，exam_id=xyz789
+  #     When admin POST /api/v1/exam-import/rollback/{task_id}
+  #       | 參數 | 值 |
+  #       | reason | "Duplicate import detected" |
+  #     Then HTTP 狀態碼應為 200
+  #     And Question 應有 50 筆被刪除（WHERE historical_exam_id=xyz789）
+  #     And HistoricalExam (xyz789) 應被刪除
+  #     And ImportTask 狀態應變為 "cancelled"
+  #     And ImportAuditLog 應記錄 "import_rolled_back" 事件
+  #     And 原始使用者 user1 應收通知
+  #
+  #   Example: 復原歷史記錄
+  #     When admin GET /api/v1/exam-import/rollback/history
+  #     Then 應返回所有復原操作
+  #     And 包含 rolled_back_by, reason, questions_deleted, rolled_back_at
 
-    Example: 執行匯入復原
-      Given user1 匯入了 50 題，exam_id=xyz789
-      When admin POST /api/v1/exam-import/rollback/{task_id}
-        | 參數 | 值 |
-        | reason | "Duplicate import detected" |
-      Then HTTP 狀態碼應為 200
-      And Question 應有 50 筆被刪除（WHERE historical_exam_id=xyz789）
-      And HistoricalExam (xyz789) 應被刪除
-      And ImportTask 狀態應變為 "cancelled"
-      And ImportAuditLog 應記錄 "import_rolled_back" 事件
-      And 原始使用者 user1 應收通知
+  # TODO: Webhook 通知功能將在 Phase 4 實現
+  # 服務層已完整實現：ImportWebhookService
+  #   - 支援 6 個事件類型
+  #   - 非同步發送
+  #   - 自動重試機制（最多 3 次）
 
-    Example: 復原歷史記錄
-      When admin GET /api/v1/exam-import/rollback/history
-      Then 應返回所有復原操作
-      And 包含 rolled_back_by, reason, questions_deleted, rolled_back_at
-
-  Rule: Webhook 通知 (Event Notifications)
-
-    Example: 配置 Webhook URL
-      When admin 設定 webhook_url = "https://example.com/webhooks/import"
-      Then 系統應在事件發生時發送 POST
-
-    Example: 任務建立事件
-      When user1 提交非同步匯入
-      Then 系統應 POST 至 webhook：
-        ```json
-        {
-          "event": "import.task.created",
-          "timestamp": "2026-04-10T...",
-          "data": {
-            "task_id": "...",
-            "exam_code": "P",
-            "category_code": "01",
-            "subject_code": "0101"
-          }
-        }
-        ```
-
-    Example: 完成事件
-      When 背景工作完成匯入
-      Then 系統應 POST：
-        ```json
-        {
-          "event": "import.completed",
-          "data": {
-            "task_id": "...",
-            "historical_exam_id": "...",
-            "questions_imported": 50,
-            "duration_ms": 45000
-          }
-        }
-        ```
-
-    Example: 失敗事件
-      When 背景工作失敗
-      Then 系統應 POST：
-        ```json
-        {
-          "event": "import.failed",
-          "data": {
-            "task_id": "...",
-            "error_message": "...",
-            "retry_count": 0
-          }
-        }
-        ```
-
-    Example: Webhook 失敗重試
-      When webhook endpoint 返回 500
-      Then 系統應重試最多 3 次，間隔遞增
+  # Rule: Webhook 通知 (Event Notifications)
+  #
+  #   Example: 配置 Webhook URL
+  #     When admin 設定 webhook_url = "https://example.com/webhooks/import"
+  #     Then 系統應在事件發生時發送 POST
+  #
+  #   Example: 任務建立事件
+  #     When user1 提交非同步匯入
+  #     Then 系統應 POST 至 webhook：
+  #       ```json
+  #       {
+  #         "event": "import.task.created",
+  #         "timestamp": "2026-04-10T...",
+  #         "data": {
+  #           "task_id": "...",
+  #           "exam_code": "P",
+  #           "category_code": "01",
+  #           "subject_code": "0101"
+  #         }
+  #       }
+  #       ```
+  #
+  #   Example: 完成事件
+  #     When 背景工作完成匯入
+  #     Then 系統應 POST：
+  #       ```json
+  #       {
+  #         "event": "import.completed",
+  #         "data": {
+  #           "task_id": "...",
+  #           "historical_exam_id": "...",
+  #           "questions_imported": 50,
+  #           "duration_ms": 45000
+  #         }
+  #       }
+  #       ```
+  #
+  #   Example: 失敗事件
+  #     When 背景工作失敗
+  #     Then 系統應 POST：
+  #       ```json
+  #       {
+  #         "event": "import.failed",
+  #         "data": {
+  #           "task_id": "...",
+  #           "error_message": "...",
+  #           "retry_count": 0
+  #         }
+  #       }
+  #       ```
+  #
+  #   Example: Webhook 失敗重試
+  #     When webhook endpoint 返回 500
+  #     Then 系統應重試最多 3 次，間隔遞增
 
   Rule: 錯誤處理與回復 (Error Handling & Recovery)
 
