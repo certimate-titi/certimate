@@ -58,3 +58,38 @@ def calculate_mode(
         user_id=user_id, subject_id=body.subject_id, today_str=body.today
     )
     return _handle_result(result)
+
+
+class RecommendedQuestionsRequest(BaseModel):
+    count: int = 10
+
+
+@router.get("/recommended-questions")
+def get_recommended_questions(
+    count: int = 10,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """獲取基於掌握度的推薦問題 (使用 MCP Recommendation Server)。"""
+    service = ScheduleService(db)
+    result = service.get_recommended_questions(user_id=user_id, count=count)
+    # 推薦問題可能是空的，但不算錯誤
+    return result
+
+
+class SpacedRepetitionRequest(BaseModel):
+    question_id: str
+
+
+@router.post("/spaced-repetition")
+def get_spaced_repetition_schedule(
+    body: SpacedRepetitionRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """計算艾賓浩斯間隔複習時間 (使用 MCP Recommendation Server)。"""
+    service = ScheduleService(db)
+    result = service.get_spaced_repetition_schedule(
+        user_id=user_id, question_id=body.question_id
+    )
+    return _handle_result(result)
