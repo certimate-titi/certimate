@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user_id
 from app.services.exam_pdf_extraction_service import ExamPDFExtractionService
+from app.services.historical_exam_import_service import HistoricalExamImportService
 from app.schemas.exam_import import ValidationReport
 
 log = logging.getLogger(__name__)
@@ -230,18 +231,38 @@ async def import_exam_paper(
         # Convert to legacy format and save
         legacy_output = service.convert_to_legacy_format(exam_paper, answer_sheet)
 
-        # TODO: Implement database import logic
-        # This would insert into the questions table with historical_exam_id reference
-        # For now, return the prepared data structure
+        # Database import (Phase 2)
+        import_service = HistoricalExamImportService(db)
+        db_result = import_service.import_exam_paper(
+            legacy_output=legacy_output,
+            exam_code=exam_code,
+            category_code=category_code,
+            subject_code=subject_code,
+            exam_name=exam_name or exam_paper.exam_name,
+            tenant_id=None,  # TODO: Extract from user context
+            skip_existing=False,
+        )
+
+        if db_result.get("error"):
+            log.error(f"Database import failed: {db_result.get('message')}")
+            return {
+                "error": True,
+                "import_success": False,
+                "status_code": db_result.get("status_code", 500),
+                "message": db_result.get("message"),
+                "validation": validation.dict(),
+            }
+
         log.info(
-            f"✓ Ready to import {len(legacy_output.questions)} questions "
-            f"({exam_code}/{category_code}/{subject_code})"
+            f"✓ Successfully imported {db_result['questions_imported']} questions "
+            f"({exam_code}/{category_code}/{subject_code}) "
+            f"with exam_id={db_result['exam_id']}"
         )
 
         return {
             "error": False,
             "import_success": True,
-            "message": f"Successfully imported {len(legacy_output.questions)} questions",
+            "message": db_result.get("message"),
             "exam_info": {
                 "exam_code": exam_code,
                 "category_code": category_code,
@@ -249,9 +270,10 @@ async def import_exam_paper(
                 "exam_name": exam_name or exam_paper.exam_name,
                 "total_questions": len(legacy_output.questions),
                 "questions_with_answer": sum(1 for q in legacy_output.questions if q.correct_answer),
+                "questions_imported": db_result.get("questions_imported"),
             },
+            "exam_id": db_result.get("exam_id"),
             "validation": validation.dict(),
-            "import_data": legacy_output.dict(),  # This would be saved to DB in production
         }
 
     except HTTPException:
@@ -329,3 +351,96 @@ async def get_validation_schema(
             "handling": "Options not present in PDF are set to null, not empty string",
         },
     }
+
+
+# ─────────────────────────────────────────────────────────────
+# Phase 2: Database Management Endpoints
+# ─────────────────────────────────────────────────────────────
+
+
+@router.get("/exams")
+async def list_historical_exams(
+    limit: int = 50,
+    offset: int = 0,
+    exam_code: str | None = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    List imported historical exams with pagination.
+
+    Returns paginated list of exams that have been imported to database.
+    """
+    service = HistoricalExamImportService(db)
+    result = service.list_historical_exams(
+        limit=limit,
+        offset=offset,
+        exam_code=exam_code,
+    )
+    return result
+
+
+@router.get("/exams/{exam_code}/{category_code}/{subject_code}")
+async def get_exam_status(
+    exam_code: str,
+    category_code: str,
+    subject_code: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Get import status and details for a specific exam.
+
+    Returns metadata about an imported exam including question count and import date.
+    """
+    service = HistoricalExamImportService(db)
+    result = service.get_import_status(exam_code, category_code, subject_code)
+    return result
+
+
+@router.get("/exams/{exam_code}/{category_code}/{subject_code}/questions")
+async def get_exam_questions(
+    exam_code: str,
+    category_code: str,
+    subject_code: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Get questions from a specific imported exam.
+
+    Returns paginated list of questions from the exam with all details
+    (content, options, answers, explanations).
+    """
+    service = HistoricalExamImportService(db)
+    result = service.get_exam_questions(
+        exam_code, category_code, subject_code,
+        limit=limit,
+        offset=offset,
+    )
+    return result
+
+
+@router.post("/exams/{exam_code}/{category_code}/{subject_code}/validate")
+async def validate_imported_exam(
+    exam_code: str,
+    category_code: str,
+    subject_code: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Validate imported exam data for consistency.
+
+    Runs post-import validation checks:
+    - All questions have content
+    - Correct answers are valid (A-D)
+    - At least one non-empty option per question
+    - Question numbers are sequential
+    - Answers point to non-empty options
+    """
+    service = HistoricalExamImportService(db)
+    result = service.validate_import(exam_code, category_code, subject_code)
+    return result
