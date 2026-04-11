@@ -475,6 +475,8 @@ Table exams {
   correct_count integer
   started_at timestamptz
   submitted_at timestamptz
+  custom_point_ratio json [note: '教師自訂節點出題比例']
+  custom_bloom_ratio json [note: '教師自訂 Bloom 配比']
   created_at timestamptz [default: `now()`]
 }
 
