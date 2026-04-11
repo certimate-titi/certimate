@@ -555,3 +555,43 @@ def seed_exam_codes(
             updated += 1
     db.commit()
     return {"message": f"Updated {updated} subjects with exam_subject_codes"}
+
+
+@router.post("/import-historical-questions")
+def import_historical_questions(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Import historical questions from JSON files inside the container."""
+    from pathlib import Path
+    from app.scripts.import_exam_questions import QuestionImporter
+
+    json_dir = Path("/app/data/historical_questions")
+    if not json_dir.exists():
+        # Try local path
+        json_dir = Path(__file__).parent.parent.parent / "data" / "historical_questions"
+    if not json_dir.exists():
+        raise HTTPException(status_code=404, detail={"message": f"JSON dir not found: {json_dir}"})
+
+    importer = QuestionImporter(db, dry_run=False)
+
+    imported = 0
+    errors = []
+    for json_file in sorted(json_dir.rglob("*.json")):
+        if json_file.name.startswith("_") or "backup" in str(json_file):
+            continue
+        try:
+            import json as json_mod
+            data = json_mod.loads(json_file.read_text(encoding="utf-8"))
+            meta = data.get("import_meta", {})
+            if not meta.get("exam_code"):
+                continue
+            importer.import_from_json_file(json_file)
+            imported += 1
+        except Exception as e:
+            errors.append(f"{json_file.name}: {str(e)}")
+
+    return {
+        "message": f"Imported {imported} files, {importer.imported_count} questions added, {importer.skipped_count} skipped",
+        "errors": errors[:10] if errors else [],
+    }
