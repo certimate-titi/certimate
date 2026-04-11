@@ -1,10 +1,10 @@
-"""V3 有機生長進度引擎 — 取代 V4 的 SM-2 衰退引擎.
+"""V3+SM2 混合進度引擎 — 有機生長 + SM-2 記憶衰退.
 
 核心邏輯：
-- 練習/考試答題 → 即時更新 progress_percentage
+- 練習/考試答題 → 即時更新 progress + SM-2 參數（base_mastery, ease_factor, next_review_at）
 - 向上傳播（Upward Propagation）→ 父節點 = Σ(子.progress × 子.weight) / Σ(子.weight)
 - 進度稀釋（Dilution）→ 考綱新增節點時，分母變大，進度自然下降
-- 樂觀鎖（version）→ 防止併發覆寫
+- 記憶衰退 → 超過 next_review_at 後，有效進度 = base_mastery × retention（指數衰退）
 """
 
 import logging
@@ -16,8 +16,11 @@ from sqlalchemy.orm import Session
 
 from app.models.node_mastery import NodeMastery
 from app.models.knowledge_node import KnowledgeNode
+from app.services.sm2_engine import SM2Engine, TopicState
 
 logger = logging.getLogger(__name__)
+
+_sm2 = SM2Engine()
 
 
 class OrganicProgressEngine:
@@ -35,11 +38,11 @@ class OrganicProgressEngine:
         is_correct: bool,
         weight: float = 1.0,
     ) -> dict:
-        """答題後即時更新節點 progress。
+        """答題後即時更新節點 progress + SM-2 記憶參數。
 
-        公式：EMA (Exponential Moving Average)
-          new_progress = old_progress × (1 - α) + answer_score × α
-          α = 0.2（學習率，可依題目難度調整）
+        同時更新：
+        1. mastery_rate（EMA 即時進度，用於向上傳播）
+        2. SM-2 欄位（base_mastery, ease_factor, next_review_at — 用於記憶衰退）
 
         Returns:
             {"node_id", "old_progress", "new_progress", "status"}
@@ -65,12 +68,28 @@ class OrganicProgressEngine:
         new_progress = old_progress * (1 - alpha) + answer_score * alpha
         new_progress = round(min(1.0, max(0.0, new_progress)), 4)
 
-        # 更新
+        # 更新 EMA 進度
         mastery.mastery_rate = round(new_progress * 100, 2)
         mastery.correct_count = (mastery.correct_count or 0) + (1 if is_correct else 0)
         mastery.total_count = (mastery.total_count or 0) + 1
-        mastery.color = self._progress_to_color(new_progress)
-        mastery.status = self._progress_to_status(new_progress)
+
+        # 更新 SM-2 記憶參數
+        current_state = TopicState(
+            base_mastery=mastery.base_mastery or 0.0,
+            ease_factor=mastery.ease_factor or SM2Engine.DEFAULT_EASE_FACTOR,
+            last_tested_at=mastery.last_tested_at,
+            next_review_at=mastery.next_review_at,
+            status=mastery.status or "UNSEEN",
+        )
+        new_state = _sm2.process_answer(current_state, is_correct)
+        mastery.base_mastery = new_state.base_mastery
+        mastery.ease_factor = new_state.ease_factor
+        mastery.last_tested_at = new_state.last_tested_at
+        mastery.next_review_at = new_state.next_review_at
+
+        # 狀態和顏色用 SM-2 的 base_mastery 決定
+        mastery.color = self._progress_to_color(new_state.base_mastery)
+        mastery.status = new_state.status
 
         return {
             "node_id": node_id,

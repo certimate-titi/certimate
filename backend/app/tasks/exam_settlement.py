@@ -44,10 +44,25 @@ def _settle_exam_sync(exam_id: str, user_id: str, answers: list[dict]):
         uid = uuid.UUID(user_id)
         eid = uuid.UUID(exam_id)
 
+        # 取得考試科目的知識節點（用於 fallback 分配）
+        exam_obj = db.query(Exam).filter(Exam.id == eid).first()
+        fallback_nodes = []
+        if exam_obj and exam_obj.subject_id:
+            from app.models.knowledge_node import KnowledgeNode
+            fallback_nodes = db.query(KnowledgeNode).filter(
+                KnowledgeNode.subject_id == exam_obj.subject_id,
+                KnowledgeNode.depth == 2,  # 只取葉節點
+            ).all()
+
         # 1. 逐題更新 progress（考試權重 1.0）
         updated_nodes = set()
+        fallback_idx = 0
         for ans in answers:
             nid = ans.get("node_id")
+            # 無 node_id 時，用考試科目的葉節點輪流分配
+            if not nid and fallback_nodes:
+                nid = str(fallback_nodes[fallback_idx % len(fallback_nodes)].id)
+                fallback_idx += 1
             if not nid:
                 continue
             progress_engine.update_on_answer(

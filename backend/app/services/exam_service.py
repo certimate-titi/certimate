@@ -119,14 +119,26 @@ class ExamService:
                 subjects_for_match = self.db.query(Subject).filter(
                     Subject.id.in_(selected_subject_ids)
                 ).all()
-                # 用 subject name 做模糊匹配（考古題的 exam_name 可能包含科目名）
-                subject_names = [s.name for s in subjects_for_match]
-                if subject_names:
-                    from sqlalchemy import or_
-                    name_filters = [HistoricalExam.exam_name.ilike(f'%{name[:6]}%') for name in subject_names if name]
-                    name_filters += [HistoricalExam.subject_name.ilike(f'%{name[:6]}%') for name in subject_names if name]
+                # 科目隔離規則：用 exam_subject_codes 精確匹配，不用模糊名稱
+                from sqlalchemy import or_, and_
+                code_filters = []
+                for s in subjects_for_match:
+                    if s.exam_subject_codes:
+                        for code in s.exam_subject_codes:
+                            parts = code.split(":", 1)
+                            if len(parts) == 2:
+                                code_filters.append(and_(
+                                    HistoricalExam.exam_code == parts[0],
+                                    HistoricalExam.subject_code == parts[1],
+                                ))
+                # Fallback: 用完整 subject_name 精確匹配（不截斷）
+                if not code_filters:
+                    subject_names = [s.name for s in subjects_for_match]
+                    name_filters = [HistoricalExam.subject_name == name for name in subject_names if name]
                     if name_filters:
                         he_query = he_query.filter(or_(*name_filters))
+                else:
+                    he_query = he_query.filter(or_(*code_filters))
 
             matching_he_ids = [row[0] for row in he_query.all()]
 
@@ -148,19 +160,8 @@ class ExamService:
                 .all()
             )
 
-            # Fallback: 如果匹配不到，從全部考古題隨機抽（但標記警告）
-            if not historical_questions:
-                historical_questions = (
-                    self.db.query(QuestionModel)
-                    .filter(QuestionModel.historical_exam_id.isnot(None))
-                    .filter(QuestionModel.correct_answer.isnot(None))
-                    .filter(QuestionModel.correct_answer != '')
-                    .order_by(sa_func.random())
-                    .limit(question_count)
-                    .all()
-                )
-                if historical_questions:
-                    hint = "未找到完全匹配的考古題，已從全題庫隨機抽取"
+            # 科目隔離規則：禁止全域 fallback，無匹配考古題時回傳錯誤
+            # （已移除舊的全題庫隨機抽取 fallback）
 
             actual_count = len(historical_questions)
             hint = ""
@@ -169,20 +170,19 @@ class ExamService:
             if actual_count == 0:
                 return {"error": True, "status_code": 400, "message": "找不到可用的考古題"}
 
-            # Get subject_id
-            resource = self.db.query(Resource).filter_by(id=nodes[0].resource_id).first() if nodes and nodes[0].resource_id else None
-            subject_id = resource.subject_id if resource and resource.subject_id else None
+            # Get subject_id — 從節點的 subject_id 直接取，不 fallback 到隨機科目
+            subject_id = None
+            for n in nodes:
+                if n.subject_id:
+                    subject_id = n.subject_id
+                    break
+                if n.resource_id:
+                    res = self.db.query(Resource).filter_by(id=n.resource_id).first()
+                    if res and res.subject_id:
+                        subject_id = res.subject_id
+                        break
             if not subject_id:
-                subject = self.db.query(Subject).first()
-                subject_id = subject.id if subject else None
-                if not subject_id:
-                    return {"error": True, "status_code": 400, "message": "系統中沒有可用的科目"}
-
-            # Validate subject exists
-            valid_subject = self.db.query(Subject).filter_by(id=subject_id).first()
-            if not valid_subject:
-                subject = self.db.query(Subject).first()
-                subject_id = subject.id if subject else None
+                return {"error": True, "status_code": 400, "message": "無法判斷考試科目，請重新選擇知識範圍"}
 
             exam = Exam(
                 user_id=uid,
@@ -197,12 +197,19 @@ class ExamService:
             self.db.flush()
 
             # 將考古題複製到此考試（更新 exam_id）
+            # 科目隔離：node_id 必須指向考試科目的節點，不能跨科目
+            exam_node_ids = {
+                str(kn.id) for kn in
+                self.db.query(KnowledgeNode).filter(KnowledgeNode.subject_id == subject_id).all()
+            }
             for i, hq in enumerate(historical_questions):
+                # 驗證 node_id 屬於考試科目，否則清空
+                safe_node_id = hq.node_id if (hq.node_id and str(hq.node_id) in exam_node_ids) else None
                 new_q = QuestionModel(
                     id=uuid.uuid4(),
                     exam_id=exam.id,
                     historical_exam_id=hq.historical_exam_id,
-                    node_id=hq.node_id,
+                    node_id=safe_node_id,
                     question_number=i + 1,
                     type=hq.type,
                     difficulty=hq.difficulty,
@@ -261,28 +268,19 @@ class ExamService:
             msg = upgrade_msgs.get(plan_val, f"方案限制每次最多 {limit} 題")
             return {"error": True, "status_code": 400, "message": msg}
 
-        # --- Determine subject_id ---
-        resource = self.db.query(Resource).filter_by(id=nodes[0].resource_id).first() if nodes and nodes[0].resource_id else None
-        subject_id = resource.subject_id if resource and resource.subject_id else None
-
-        # Validate subject_id exists in subjects table
-        if subject_id:
-            valid_subject = self.db.query(Subject).filter_by(id=subject_id).first()
-            if not valid_subject:
-                subject_id = None
-
-        # Fallback: use first available subject for this user
+        # --- Determine subject_id — 從節點的 subject_id 直接取，不 fallback 到隨機科目 ---
+        subject_id = None
+        for n in nodes:
+            if n.subject_id:
+                subject_id = n.subject_id
+                break
+            if n.resource_id:
+                res = self.db.query(Resource).filter_by(id=n.resource_id).first()
+                if res and res.subject_id:
+                    subject_id = res.subject_id
+                    break
         if not subject_id:
-            from app.models.learning_journey import LearningJourney
-            journey = self.db.query(LearningJourney).filter_by(user_id=uid).first()
-            if journey:
-                subject_id = journey.subject_id
-            else:
-                # Last resort: use any existing subject
-                any_subject = self.db.query(Subject).first()
-                subject_id = any_subject.id if any_subject else None
-                if not subject_id:
-                    return {"error": True, "status_code": 400, "message": "系統中沒有可用的科目"}
+            return {"error": True, "status_code": 400, "message": "無法判斷考試科目，請重新選擇知識範圍"}
 
         # --- Auto-detect bloom_source (if not already set by custom bloom) ---
         if bloom_source == "default" and not custom_bloom_ratio:

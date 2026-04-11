@@ -203,6 +203,52 @@ return {"error": True, "status_code": 400, "message": "錯誤訊息"}
 
 ---
 
+## 科目隔離規則（不可違反）
+
+**知識節點必須嚴格隔離到所屬科目，禁止跨科目混入。**
+
+- 查詢知識節點時，只用當前科目的 `subject_id`，**絕對不可**向上查父科目或用名稱前綴匹配拉入其他科目的節點
+- 例：「AI 應用規劃師（初級）」只能顯示初級自己的知識節點，不能混入「AI 應用規劃師」（父科目）的節點
+- 考古題映射 `node_id` 時，只能映射到該科目自己的知識節點
+- Seed 知識節點時，每個子科目（初級/中級）各自獨立建立節點樹，不共享父科目的節點
+
+- **禁止 `Subject.first()` fallback** — 建立考試時，subject_id 必須從節點的 `subject_id` 取得，不得 fallback 到「DB 中第一個科目」
+
+**已知違規模式（禁止使用）：**
+```python
+# ❌ 禁止：用名稱前綴匹配拉入父科目
+base_name = subject.name.split("（")[0].strip()
+parent = db.query(Subject).filter(Subject.name == base_name).first()
+subject_ids.append(parent.id)
+
+# ❌ 禁止：用 parent_subject_id 拉入父科目節點
+if subject.parent_subject_id:
+    subject_ids.append(subject.parent_subject_id)
+
+# ✅ 正確：只查自己
+subject_ids = [sid]
+```
+
+**考古題出題規則：**
+```python
+# ❌ 禁止：用 name[:6] 模糊匹配（會跨級抽題）
+name_filters = [HistoricalExam.exam_name.ilike(f'%{name[:6]}%')]
+
+# ❌ 禁止：全域 fallback（無科目過濾從全題庫隨機抽）
+historical_questions = db.query(Question).filter(historical_exam_id.isnot(None)).all()
+
+# ✅ 正確：用 exam_subject_codes 精確匹配
+codes = subject.exam_subject_codes  # e.g. ["IPA114:114_ai_fundamentals_4th"]
+```
+
+**受影響的 Service（已修正，修改時需再次驗證）：**
+- `knowledge_nav_service.py` — `get_nodes_by_subject()`
+- `dashboard_service.py` — `_build_domain_strengths()`
+- `exam_result_service.py` — `_build_domain_analysis()`
+- `exam_service.py` — `submit_config()` 考古題抽題邏輯
+
+**例外**：`ai_generation_service.py` 的 `_get_exam_subject_codes()` 允許查父科目的 `exam_subject_codes`，因為出題需要從父科目找考古題映射代碼，這不涉及知識節點顯示。
+
 ## 注意事項
 
 - **Python 環境**：使用 `.venv/bin/python`（Python 3.13），**不要用系統 python3**（3.9 不相容）

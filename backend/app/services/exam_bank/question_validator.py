@@ -83,11 +83,29 @@ def validate_question(q: dict) -> ValidationResult:
 
 # ── Layer 2：Cross-LLM 交叉驗證 ──────────────────────────
 
-VALIDATION_SYSTEM_PROMPT = """你是考題品質審查員。你的工作是獨立判斷以下選擇題的正確性。
+_FALLBACK_VALIDATION_PROMPT = """你是考題品質審查員。你的工作是獨立判斷以下選擇題的正確性。
 不要假設提供的答案是對的——你必須自己推理出正確答案。
 
 只回傳純 JSON，不要 markdown code block：
 {"your_answer": "A/B/C/D", "confidence": "high/medium/low", "reasoning": "簡短推理", "issues": ["問題1"]}"""
+
+# Legacy alias
+VALIDATION_SYSTEM_PROMPT = _FALLBACK_VALIDATION_PROMPT
+
+
+def _load_validation_prompt(db=None) -> str:
+    """嘗試從 DB 載入 cross_llm_validation 模板，fallback 到 hardcoded。"""
+    if not db:
+        return _FALLBACK_VALIDATION_PROMPT
+    try:
+        from app.services.prompt_template_service import PromptTemplateService
+        svc = PromptTemplateService(db)
+        result = svc.get_prompt_for_ai("cross_llm_validation")
+        if not result.get("error") and result.get("system_prompt"):
+            return result["system_prompt"]
+    except Exception:
+        pass
+    return _FALLBACK_VALIDATION_PROMPT
 
 
 def build_validation_prompt(q: dict) -> str:

@@ -12,6 +12,8 @@ from app.models.learning_journey import LearningJourney, SelfAssessedLevel
 from app.models.resource import Resource, ResourceType, ResourceStatus
 from app.models.knowledge_node import KnowledgeNode
 from app.models.question import Question
+from app.models.exam import Exam
+from app.models.answer import Answer
 
 logger = logging.getLogger("certimate.onboarding")
 
@@ -389,7 +391,7 @@ class OnboardingService:
                     "availableQuestions": s.available_questions or 0,
                 }
                 for s in subjects
-                if s.id not in parent_ids
+                if s.id not in parent_ids and (s.available_questions or 0) > 0
             ]
         }
 
@@ -532,15 +534,50 @@ class OnboardingService:
             ).first()
             if existing:
                 if existing.is_archived:
-                    # 重新啟用已封存的學習歷程
+                    # 重新啟用已封存的學習歷程，清除舊考試資料
                     existing.is_archived = False
                     exam_date_str = data.get("exam_date")
                     if exam_date_str:
                         existing.exam_date = date.fromisoformat(exam_date_str)
                     level = LEVEL_MAP.get(data.get("self_assessed_level", "beginner"), SelfAssessedLevel.BEGINNER)
                     existing.self_assessed_level = level
+
+                    # 清除舊的考試和答題紀錄
+                    old_exams = self.db.query(Exam).filter_by(
+                        user_id=user_uuid, subject_id=subject.id
+                    ).all()
+                    old_exam_ids = [e.id for e in old_exams]
+                    if old_exam_ids:
+                        self.db.query(Answer).filter(
+                            Answer.user_id == user_uuid,
+                            Answer.question_id.in_(
+                                self.db.query(Question.id).filter(
+                                    Question.exam_id.in_(old_exam_ids)
+                                )
+                            ),
+                        ).delete(synchronize_session=False)
+                        self.db.query(Question).filter(
+                            Question.exam_id.in_(old_exam_ids),
+                            Question.historical_exam_id.is_(None),  # 只刪 AI 生成題，保留考古題引用
+                        ).delete(synchronize_session=False)
+                        self.db.query(Exam).filter(
+                            Exam.id.in_(old_exam_ids)
+                        ).delete(synchronize_session=False)
+
+                    # 清除 node_mastery
+                    from app.models.node_mastery import NodeMastery
+                    from app.models.knowledge_node import KnowledgeNode
+                    node_ids = [n.id for n in self.db.query(KnowledgeNode.id).filter(
+                        KnowledgeNode.subject_id == subject.id
+                    ).all()]
+                    if node_ids:
+                        self.db.query(NodeMastery).filter(
+                            NodeMastery.user_id == user_uuid,
+                            NodeMastery.node_id.in_(node_ids),
+                        ).delete(synchronize_session=False)
+
                     self.db.commit()
-                    return {"message": f"已重新啟用備考科目 {subj_name}"}
+                    return {"message": f"已重新啟用備考科目 {subj_name}，學習紀錄已重置"}
                 return {"error": True, "status_code": 409, "message": f"已在備考 {subj_name}，無需重複新增"}
 
         self._create_journey(user_uuid, data)

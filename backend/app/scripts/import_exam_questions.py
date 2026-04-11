@@ -184,7 +184,7 @@ class QuestionImporter:
         log.info(f"掃描目錄：{json_dir}")
 
         # 掃描所有包含 JSON 的子目錄（排除 _pdf, _catalog 等系統目錄）
-        SKIP_DIRS = {"_pdf", "_catalog", "__pycache__"}
+        SKIP_DIRS = {"_pdf", "_catalog", "_backup_before_cleanup", "__pycache__"}
         exam_dirs = []
         for d in sorted(json_dir.iterdir()):
             if d.is_dir() and d.name not in SKIP_DIRS and not d.name.startswith("."):

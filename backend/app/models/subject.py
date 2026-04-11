@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from sqlalchemy import DateTime, Integer, String, Text, Boolean, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
 
@@ -38,6 +38,7 @@ class Subject(Base):
     )
     is_popular: Mapped[bool] = mapped_column(Boolean, default=False)
     available_questions: Mapped[int] = mapped_column(Integer, server_default="0")
+    exam_subject_codes: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
