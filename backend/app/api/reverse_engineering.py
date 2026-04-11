@@ -32,9 +32,14 @@ def extract_unified_knowledge_tree(
     db: Session = Depends(get_db),
 ):
     """統一萃取知識樹（合併考古題 + 用戶資源 chunks）。"""
-    service = UnifiedKnowledgeExtractionService(db)
-    result = service.extract(subject_id)
-    return _handle_result(result)
+    import logging
+    try:
+        service = UnifiedKnowledgeExtractionService(db)
+        result = service.extract(subject_id)
+        return _handle_result(result)
+    except Exception as e:
+        logging.getLogger("extraction").exception("Extraction error: %s", e)
+        raise HTTPException(status_code=500, detail={"message": f"Extraction error: {str(e)}"})
 
 
 # ========== Trigger (Legacy) ==========
