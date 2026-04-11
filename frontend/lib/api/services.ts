@@ -338,8 +338,9 @@ export const announcementService = {
 // ===========================
 
 export const dashboardService = {
-  async get(): Promise<GetDashboardResponse> {
-    return apiClient.get<GetDashboardResponse>('/dashboard');
+  async get(subjectId?: string): Promise<GetDashboardResponse> {
+    const params = subjectId ? `?subject_id=${subjectId}` : '';
+    return apiClient.get<GetDashboardResponse>(`/dashboard${params}`);
   },
 
   async completeDailyQuest(req: CompleteDailyQuestRequest): Promise<void> {
@@ -361,6 +362,10 @@ export const knowledgeService = {
 
   async getNodeDetail(nodeId: string): Promise<GetNodeDetailResponse> {
     return apiClient.get<GetNodeDetailResponse>(`/knowledge-map/nodes/${nodeId}`);
+  },
+
+  async extractKnowledgeTree(subjectId: string): Promise<Record<string, unknown>> {
+    return apiClient.post<Record<string, unknown>>(`/reverse-engineering/subjects/${subjectId}/extract`, {});
   },
 };
 

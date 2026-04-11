@@ -25,11 +25,12 @@ def _handle_result(result: dict):
 @router.get("")
 def get_dashboard(
     subject: str | None = None,
+    subject_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
     service = DashboardService(db)
-    result = service.get_dashboard(user_id=user_id, subject_name=subject)
+    result = service.get_dashboard(user_id=user_id, subject_name=subject, subject_id=subject_id)
     return _handle_result(result)
 
 
