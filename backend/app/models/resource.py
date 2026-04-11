@@ -27,6 +27,32 @@ class ResourceType(str, enum.Enum):
     TXT = "txt"
     IMAGE = "image"
     YOUTUBE = "youtube"
+    DOCX = "docx"
+    PPTX = "pptx"
+    XLSX = "xlsx"
+    DOC = "doc"
+    PPT = "ppt"
+    XLS = "xls"
+    AUDIO = "audio"
+    VIDEO = "video"
+
+
+# 檔案大小限制（bytes）
+FILE_SIZE_LIMITS = {
+    "pdf": 50 * 1024 * 1024,       # 50MB
+    "docx": 50 * 1024 * 1024,      # 50MB
+    "pptx": 50 * 1024 * 1024,      # 50MB
+    "xlsx": 50 * 1024 * 1024,      # 50MB
+    "doc": 50 * 1024 * 1024,       # 50MB
+    "ppt": 50 * 1024 * 1024,       # 50MB
+    "xls": 50 * 1024 * 1024,       # 50MB
+    "markdown": 50 * 1024 * 1024,  # 50MB
+    "txt": 50 * 1024 * 1024,       # 50MB
+    "image": 20 * 1024 * 1024,     # 20MB
+    "youtube": 0,                   # URL only, no file
+    "audio": 100 * 1024 * 1024,    # 100MB
+    "video": 500 * 1024 * 1024,    # 500MB
+}
 
 
 class ResourceStatus(str, enum.Enum):
