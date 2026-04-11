@@ -29,9 +29,14 @@ def get_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    service = DashboardService(db)
-    result = service.get_dashboard(user_id=user_id, subject_name=subject, subject_id=subject_id)
-    return _handle_result(result)
+    import logging
+    try:
+        service = DashboardService(db)
+        result = service.get_dashboard(user_id=user_id, subject_name=subject, subject_id=subject_id)
+        return _handle_result(result)
+    except Exception as e:
+        logging.getLogger("dashboard").exception("Dashboard error: %s", e)
+        raise HTTPException(status_code=500, detail={"message": f"Dashboard error: {str(e)}"})
 
 
 @router.get("/profile")
