@@ -15,7 +15,8 @@ import uuid
 import logging
 from datetime import datetime, timezone
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -25,8 +26,9 @@ from app.models.knowledge_node import KnowledgeNode  # noqa: F401
 log = logging.getLogger(__name__)
 
 settings = get_settings()
+_gemini_client = None
 if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -367,13 +369,16 @@ class UnifiedKnowledgeExtractionService:
 
     def _call_gemini(self, prompt: str) -> dict:
         """呼叫 Gemini API 並解析 JSON 回應。"""
-        model = genai.GenerativeModel(GEMINI_MODEL)
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.2,
-                response_mime_type="application/json",
-            ),
+        if not _gemini_client:
+            raise RuntimeError("GEMINI_API_KEY not configured")
+
+        response = _gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config={
+                "temperature": 0.2,
+                "response_mime_type": "application/json",
+            },
         )
 
         raw = response.text.strip()
