@@ -288,34 +288,40 @@ class UnifiedKnowledgeExtractionService:
 
     def _collect_exam_summaries(self, sid: uuid.UUID, subject_name: str) -> list[str]:
         """從 questions + historical_exams 收集考古題摘要。"""
-        # 方法 1: 透過 subject_name 匹配
-        rows = self.db.execute(text('''
-            SELECT q.content, q.option_a, q.option_b, q.option_c, q.option_d,
-                   q.correct_answer, q.bloom_category
-            FROM questions q
-            JOIN historical_exams he ON q.historical_exam_id = he.id
-            WHERE he.subject_name = :name
-            ORDER BY q.question_number
-        '''), {'name': subject_name}).fetchall()
+        rows = []
 
-        # 方法 2: 透過 exam_subject_codes 匹配
+        # 方法 1: 透過 exam_subject_codes 匹配（優先）
+        codes = self.db.execute(
+            text('SELECT exam_subject_codes FROM subjects WHERE id = :sid'),
+            {'sid': sid}
+        ).scalar()
+        log.info(f"[萃取] subject={subject_name}, exam_subject_codes={codes}")
+
+        if codes:
+            for code in codes:
+                parts = code.split(':', 1)
+                if len(parts) == 2:
+                    more = self.db.execute(text('''
+                        SELECT q.content, q.option_a, q.option_b, q.option_c, q.option_d,
+                               q.correct_answer, q.bloom_category
+                        FROM questions q
+                        JOIN historical_exams he ON q.historical_exam_id = he.id
+                        WHERE he.exam_code = :ec AND he.subject_code = :sc
+                    '''), {'ec': parts[0], 'sc': parts[1]}).fetchall()
+                    log.info(f"[萃取] code={code}, found={len(more)} questions")
+                    rows = list(rows) + list(more)
+
+        # 方法 2: 透過 subject_name fallback
         if not rows:
-            codes = self.db.execute(
-                text('SELECT exam_subject_codes FROM subjects WHERE id = :sid'),
-                {'sid': sid}
-            ).scalar()
-            if codes:
-                for code in (codes or []):
-                    parts = code.split(':', 1)
-                    if len(parts) == 2:
-                        more = self.db.execute(text('''
-                            SELECT q.content, q.option_a, q.option_b, q.option_c, q.option_d,
-                                   q.correct_answer, q.bloom_category
-                            FROM questions q
-                            JOIN historical_exams he ON q.historical_exam_id = he.id
-                            WHERE he.exam_code = :ec AND he.subject_code = :sc
-                        '''), {'ec': parts[0], 'sc': parts[1]}).fetchall()
-                        rows = list(rows) + list(more)
+            rows = self.db.execute(text('''
+                SELECT q.content, q.option_a, q.option_b, q.option_c, q.option_d,
+                       q.correct_answer, q.bloom_category
+                FROM questions q
+                JOIN historical_exams he ON q.historical_exam_id = he.id
+                WHERE he.subject_name = :name
+                ORDER BY q.question_number
+            '''), {'name': subject_name}).fetchall()
+            log.info(f"[萃取] subject_name fallback found={len(rows)} questions")
 
         summaries = []
         for i, r in enumerate(rows[:MAX_EXAM_QUESTIONS]):
