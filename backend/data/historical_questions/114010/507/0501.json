@@ -5,7 +5,11 @@
     "category_code": "507",
     "subject_code": "0501",
     "total_questions": 20,
-    "questions_with_answer": 20
+    "questions_with_answer": 20,
+    "exam_name": "114年初等考試",
+    "subject_name": "土地法大意",
+    "year": 114,
+    "category_name": "會計"
   },
   "questions": [
     {

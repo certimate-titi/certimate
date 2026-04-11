@@ -5,7 +5,10 @@
     "category_code": "405",
     "subject_code": "0507",
     "total_questions": 23,
-    "questions_with_answer": 23
+    "questions_with_answer": 23,
+    "exam_name": "114年高等考試三級考試暨普通考試",
+    "subject_name": "資料處理概要",
+    "year": 114
   },
   "questions": [
     {

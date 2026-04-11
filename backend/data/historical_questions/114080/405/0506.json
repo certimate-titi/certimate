@@ -5,7 +5,10 @@
     "category_code": "405",
     "subject_code": "0506",
     "total_questions": 15,
-    "questions_with_answer": 15
+    "questions_with_answer": 15,
+    "exam_name": "114年高等考試三級考試暨普通考試",
+    "subject_name": "電子計算機概要",
+    "year": 114
   },
   "questions": [
     {

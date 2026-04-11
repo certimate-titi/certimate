@@ -5,7 +5,10 @@
     "category_code": "401",
     "subject_code": "0302",
     "total_questions": 20,
-    "questions_with_answer": 20
+    "questions_with_answer": 20,
+    "exam_name": "114年高等考試三級考試暨普通考試",
+    "subject_name": "政治學概要",
+    "year": 114
   },
   "questions": [
     {

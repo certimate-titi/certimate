@@ -5,7 +5,11 @@
     "category_code": "501",
     "subject_code": "0302",
     "total_questions": 30,
-    "questions_with_answer": 30
+    "questions_with_answer": 30,
+    "exam_name": "114年初等考試",
+    "subject_name": "人事行政大意",
+    "year": 114,
+    "category_name": "一般行政"
   },
   "questions": [
     {
