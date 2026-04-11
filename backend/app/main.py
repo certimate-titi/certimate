@@ -161,6 +161,14 @@ except Exception as _e:
     import logging as _logging
     _logging.getLogger(__name__).warning(f"限流 Middleware 載入失敗（已跳過）: {_e}")
 
+# LLM 防火牆例外處理（Prompt Injection / Jailbreak）
+try:
+    from app.core.llm_firewall import PromptInjectionError, prompt_injection_exception_handler
+    app.add_exception_handler(PromptInjectionError, prompt_injection_exception_handler)
+except Exception as _e:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(f"LLM 防火牆例外處理器載入失敗（已跳過）: {_e}")
+
 # Pydantic validation error → 中文錯誤訊息
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

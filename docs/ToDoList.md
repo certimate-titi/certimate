@@ -3,13 +3,13 @@
 ## 待辦事項
 
 ### 階段二（未完成項目）
-* **[ ] LLM 防火牆配置：** 導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。（需外部 LLM inference 服務）
+* **[x] LLM 防火牆配置：** ~~導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。~~  → **程式碼已完成（2026-04-11）：雙層防護（規則引擎 + Llama Guard 客戶端），待部署 LLAMA_GUARD_URL 推理服務端點**
 * **[x] 欄位級加密：** ~~針對 `Student_Answers` 表中的成績與個資實作應用層加密。（需選定 KMS 方案）~~ → **程式碼已完成，待部署 KMS 金鑰（2026-04-09）**
 
 ### 階段三（需外部基礎設施）
 * **[x] 語意快取 (Semantic Cache)：** ~~建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取~~  → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
 * **[x] 多租戶限流 (Rate Limiting)：** ~~實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制~~ → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
-* **[ ] 任務佇列隔離 (Queue Prioritization)：** 設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。
+* **[x] 任務佇列隔離 (Queue Prioritization)：** ~~設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。~~ → **程式碼已完成（2026-04-11）：paid_priority / standard / background 三層佇列，待 Redis/Celery Worker 基礎設施**
 
 ### 階段四（未完成項目）
 * **[x] 全鏈路追蹤：** ~~導入 OpenTelemetry~~ → **程式碼已完成，待 OTLP Collector / Grafana Tempo 部署（2026-04-09）**
@@ -17,6 +17,29 @@
 ---
 
 ## 完成事項
+
+### ✅ 10. LLM 防火牆 + 任務佇列隔離 — 完成於 2026-04-11
+
+**完成範圍**（階段二 1/1、階段三 1/1 剩餘項目）：
+
+**新增/修改檔案：**
+- `backend/app/core/llm_firewall.py`：LLM 防火牆（雙層防護：規則引擎 + Llama Guard 客戶端；多租戶感知；OTel 整合；FastAPI exception handler）
+- `backend/app/worker.py`：Celery 優先權佇列配置（paid_priority / standard / background / celery 四佇列；task_routes 路由規則；kombu Queue 定義）
+- `backend/app/tasks/document_processing.py`：文件解析非同步任務（parse_document_task / ocr_image_task / transcribe_audio_task；方案 → 佇列映射 helper）
+- `backend/app/tasks/__init__.py`：新增 document_processing 模組 import
+- `backend/app/main.py`：註冊 PromptInjectionError 例外處理器
+
+**待手動執行：**
+- LLM 防火牆：設定環境變數 `LLAMA_GUARD_URL`（Llama Guard 推理服務）、`LLAMA_GUARD_API_KEY`
+- 佇列隔離：啟動各佇列專屬 Worker（`celery -A app.worker worker -Q paid_priority -c 4`）
+
+**功能說明：**
+- LLM 防火牆：規則引擎（即時，零延遲）偵測 Prompt Injection / Jailbreak / 跨租戶攻擊 / PII 萃取；Llama Guard（語意層）可選接入；熔斷器防止服務不穩定；OTel span 記錄威脅事件
+- 佇列隔離：B2B + ULTRA_1599 → `paid_priority`；PRO → `standard`；FREE → `background`；方案 → 佇列映射由 `dispatch_*()` helper 自動處理
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-11T09-00-00.md`*
+
+---
 
 ### ✅ 9. 基礎設施安全層：欄位加密 + OTel + 限流 + 語意快取 — 完成於 2026-04-09
 
