@@ -364,8 +364,15 @@ function MockExamWorkspacePage() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-3xl p-10 max-w-sm w-full shadow-2xl text-center">
             <h2 className="text-xl font-bold text-slate-900 mb-4">確認交卷</h2>
+            {markedForReview.size > 0 && (
+              <p className="text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-3 text-sm font-medium">
+                你有 {markedForReview.size} 題標記為「待複習」尚未回頭檢查
+              </p>
+            )}
             <p className="text-slate-600 mb-8">
-              你還有 {questions.filter(q => !answers[q.id]).length} 題未作答，確定要交卷嗎？
+              {questions.filter(q => !answers[q.id]).length > 0
+                ? `你還有 ${questions.filter(q => !answers[q.id]).length} 題未作答，確定要交卷嗎？`
+                : '所有題目已作答完畢，確定要交卷嗎？'}
             </p>
             <div className="flex gap-3">
               <button

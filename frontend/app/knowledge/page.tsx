@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen } from 'lucide-react';
+import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw } from 'lucide-react';
 import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -34,8 +34,17 @@ export default function KnowledgeBasePage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [freeQueriesLeft, setFreeQueriesLeft] = useState(isPro199 ? 0 : 3);
+  const [freeQueriesLeft, setFreeQueriesLeft] = useState(() => {
+    if (isPro199) return 0;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('certimate_ai_coach_free_queries');
+      if (saved !== null) return Math.max(0, parseInt(saved, 10));
+    }
+    return 3;
+  });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractResult, setExtractResult] = useState<string | null>(null);
   const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -82,7 +91,7 @@ export default function KnowledgeBasePage() {
     setLoadingDetail(false);
     setSelectedNodeDetail(null);
     setChatMessages([]);
-    setFreeQueriesLeft(isPro199 ? 0 : 3);
+    // 不重置 freeQueriesLeft — 切換科目不應消耗免費次數
     setDeleteConfirmId(null);
 
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
@@ -165,7 +174,11 @@ export default function KnowledgeBasePage() {
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
     setChatLoading(true);
-    if (!isProPlus) setFreeQueriesLeft(q => q - 1);
+    if (!isProPlus) setFreeQueriesLeft(q => {
+      const next = q - 1;
+      localStorage.setItem('certimate_ai_coach_free_queries', String(next));
+      return next;
+    });
     try {
       const { apiClient } = await import('@/lib/api/client');
       const res = await apiClient.post<{ message: string }>(`/knowledge-map/nodes/${selectedNodeDetail?.node.id}/chat`, { message: text });
@@ -296,6 +309,42 @@ export default function KnowledgeBasePage() {
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />弱</span>
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300" />未測</span>
                   </div>
+                  <button
+                    onClick={async () => {
+                      if (extracting || !activeSubjectId) return;
+                      const activeSubject = subjects.find(s => s.id === activeSubjectId);
+                      const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+                      setExtracting(true);
+                      setExtractResult(null);
+                      try {
+                        const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
+                        const created = (res as Record<string, number>).nodes_created || 0;
+                        setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                        // 重新載入知識圖譜
+                        const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
+                        setNodes((mapRes.nodes || []) as KnowledgeNode[]);
+                        setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
+                      } catch {
+                        setExtractResult('❌ 萃取失敗，請稍後再試');
+                      } finally {
+                        setExtracting(false);
+                        setTimeout(() => setExtractResult(null), 5000);
+                      }
+                    }}
+                    disabled={extracting || !activeSubjectId}
+                    className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded font-medium ml-2 transition-colors ${
+                      extracting
+                        ? 'bg-blue-100 text-blue-500 cursor-wait'
+                        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                    title="重新分析：合併考古題與上傳教材，AI 統一萃取知識樹"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${extracting ? 'animate-spin' : ''}`} />
+                    {extracting ? '分析中...' : '重新分析'}
+                  </button>
+                  {extractResult && (
+                    <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
+                  )}
                 </div>
                 <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                   {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
