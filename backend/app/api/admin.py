@@ -557,6 +557,58 @@ def seed_exam_codes(
     return {"message": f"Updated {updated} subjects with exam_subject_codes"}
 
 
+@router.get("/debug-subject/{subject_id}")
+def debug_subject(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Debug: check subject data for extraction."""
+    from app.models.subject import Subject
+    from app.models.historical_exam import HistoricalExam
+    from app.models.question import Question
+    import uuid as uuid_mod
+    from sqlalchemy import text, func
+
+    sid = uuid_mod.UUID(subject_id)
+    subject = db.query(Subject).filter_by(id=sid).first()
+    if not subject:
+        return {"error": f"Subject {subject_id} not found"}
+
+    codes = subject.exam_subject_codes or []
+
+    # Check historical_exams for each code
+    code_results = []
+    for code in codes:
+        parts = code.split(':', 1)
+        if len(parts) == 2:
+            count = db.execute(text('''
+                SELECT COUNT(*) FROM questions q
+                JOIN historical_exams he ON q.historical_exam_id = he.id
+                WHERE he.exam_code = :ec AND he.subject_code = :sc
+            '''), {'ec': parts[0], 'sc': parts[1]}).scalar()
+            code_results.append({"code": code, "questions": count})
+
+    # Check by subject_name
+    name_count = db.execute(text('''
+        SELECT COUNT(*) FROM questions q
+        JOIN historical_exams he ON q.historical_exam_id = he.id
+        WHERE he.subject_name = :name
+    '''), {'name': subject.name}).scalar()
+
+    # Check all historical_exams
+    he_count = db.query(func.count(HistoricalExam.id)).scalar()
+
+    return {
+        "subject_id": subject_id,
+        "name": subject.name,
+        "exam_subject_codes": codes,
+        "code_results": code_results,
+        "name_match_count": name_count,
+        "total_historical_exams": he_count,
+    }
+
+
 @router.post("/import-historical-questions")
 def import_historical_questions(
     user_id: str = Depends(get_current_user_id),
