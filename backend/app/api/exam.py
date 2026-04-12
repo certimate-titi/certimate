@@ -135,51 +135,60 @@ def submit_exam(
     db: Session = Depends(get_db_with_tenant),
 ):
     """考試交卷 — 回傳 202 Accepted，非同步結算 SM-2。"""
+    import logging
     from fastapi.responses import JSONResponse
     from app.models.answer import Answer
     from app.models.question import Question
     import uuid as uuid_mod
 
-    service = MockExamService(db)
-    result = service.submit_exam(exam_id=exam_id, user_id=user_id)
+    try:
+        service = MockExamService(db)
+        result = service.submit_exam(exam_id=exam_id, user_id=user_id)
 
-    if result.get("error"):
-        return _handle_result(result)
+        if result.get("error"):
+            return _handle_result(result)
 
-    # 收集答案用於 SM-2 結算
-    answers_for_settlement = []
-    answers = db.query(Answer).filter(
-        Answer.exam_id == uuid_mod.UUID(exam_id),
-        Answer.user_id == uuid_mod.UUID(user_id),
-    ).all()
+        # 收集答案用於 SM-2 結算
+        answers_for_settlement = []
+        answers = db.query(Answer).filter(
+            Answer.exam_id == uuid_mod.UUID(exam_id),
+            Answer.user_id == uuid_mod.UUID(user_id),
+        ).all()
 
-    for a in answers:
-        q = db.query(Question).filter(Question.id == a.question_id).first()
-        if q and q.node_id:
-            answers_for_settlement.append({
-                "question_id": str(a.question_id),
-                "node_id": str(q.node_id),
-                "is_correct": bool(a.is_correct),
-            })
+        for a in answers:
+            q = db.query(Question).filter(Question.id == a.question_id).first()
+            if q and q.node_id:
+                answers_for_settlement.append({
+                    "question_id": str(a.question_id),
+                    "node_id": str(q.node_id),
+                    "is_correct": bool(a.is_correct),
+                })
 
-    # 非同步結算（Celery），失敗則同步 fallback
-    settlement_mode = "none"
-    if answers_for_settlement:
-        try:
-            from app.tasks.exam_settlement import settle_exam
-            task = settle_exam.delay(exam_id, user_id, answers_for_settlement)
-            settlement_mode = "async"
-            result["task_id"] = task.id
-        except Exception:
-            from app.tasks.exam_settlement import _settle_exam_sync
-            _settle_exam_sync(exam_id, user_id, answers_for_settlement)
-            settlement_mode = "sync_fallback"
+        # 非同步結算（Celery），失敗則同步 fallback
+        settlement_mode = "none"
+        if answers_for_settlement:
+            try:
+                from app.tasks.exam_settlement import settle_exam
+                task = settle_exam.delay(exam_id, user_id, answers_for_settlement)
+                settlement_mode = "async"
+                result["task_id"] = task.id
+            except Exception:
+                try:
+                    from app.tasks.exam_settlement import _settle_exam_sync
+                    _settle_exam_sync(exam_id, user_id, answers_for_settlement)
+                    settlement_mode = "sync_fallback"
+                except Exception as se:
+                    logging.getLogger("exam").warning("Settlement failed: %s", se)
+                    settlement_mode = "settlement_failed"
 
-    result["settlement"] = settlement_mode
+        result["settlement"] = settlement_mode
 
-    # 非同步時回傳 202，同步時回傳 200
-    status_code = 202 if settlement_mode == "async" else 200
-    return JSONResponse(status_code=status_code, content=result)
+        # 非同步時回傳 202，同步時回傳 200
+        status_code = 202 if settlement_mode == "async" else 200
+        return JSONResponse(status_code=status_code, content=result)
+    except Exception as e:
+        logging.getLogger("exam").exception("Submit exam error: %s", e)
+        raise HTTPException(status_code=500, detail={"message": f"Submit error: {str(e)}"})
 
 
 @router.get("/{exam_id}/settlement-status")
