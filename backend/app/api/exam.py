@@ -237,9 +237,14 @@ def resume_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),
 ):
-    service = MockExamService(db)
-    result = service.resume_exam(exam_id=exam_id, user_id=user_id)
-    return _handle_result(result)
+    import logging
+    try:
+        service = MockExamService(db)
+        result = service.resume_exam(exam_id=exam_id, user_id=user_id)
+        return _handle_result(result)
+    except Exception as e:
+        logging.getLogger("exam").exception("Resume exam error: %s", e)
+        raise HTTPException(status_code=500, detail={"message": f"Resume error: {str(e)}"})
 
 
 @router.get("/{exam_id}/result")
