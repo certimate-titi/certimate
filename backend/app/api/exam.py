@@ -235,7 +235,7 @@ def get_settlement_status(
 def resume_exam(
     exam_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),
 ):
     service = MockExamService(db)
     result = service.resume_exam(exam_id=exam_id, user_id=user_id)
@@ -246,7 +246,7 @@ def resume_exam(
 def get_exam_result(
     exam_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),
 ):
     service = ExamResultService(db)
     result = service.get_result(exam_id=exam_id, user_id=user_id)
@@ -257,7 +257,7 @@ def get_exam_result(
 def get_exam_node_analysis(
     exam_id: str,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),
 ):
     service = ExamResultService(db)
     result = service.get_node_analysis(exam_id=exam_id, user_id=user_id)

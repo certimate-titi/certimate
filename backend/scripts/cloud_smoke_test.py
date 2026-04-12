@@ -96,8 +96,8 @@ def main():
 
     # --- Test 1: 考科設定 ---
     print("\n[1] 考科設定")
-    code, data = api_get(base, "/subjects/available", token)
-    check("考科列表 API", code == 200, f"status={code}")
+    code, data = api_get(base, "/onboarding/subjects", token)
+    check("考科列表 API (browse)", code == 200, f"status={code}")
     subjects = []
     if code == 200:
         subjects = data.get("subjects", [])
@@ -106,8 +106,8 @@ def main():
         ai_basic = next((s for s in subjects if "初級" in s.get("name", "") and "AI" in s.get("name", "")), None)
         if ai_basic:
             check("AI初級 available_questions > 0",
-                  (ai_basic.get("available_questions", 0) or 0) > 0,
-                  f"available={ai_basic.get('available_questions')}")
+                  (ai_basic.get("availableQuestions", 0) or 0) > 0,
+                  f"available={ai_basic.get('availableQuestions')}")
 
     # --- Test 1b: Debug subject (exam_subject_codes) ---
     if subjects:

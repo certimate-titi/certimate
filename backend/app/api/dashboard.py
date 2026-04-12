@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db, get_current_user_id
+from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.dashboard_service import DashboardService
 
 router = APIRouter(prefix="/dashboard")
@@ -27,7 +27,7 @@ def get_dashboard(
     subject: str | None = None,
     subject_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_with_tenant),
 ):
     import logging
     try:
