@@ -31,6 +31,11 @@ def get_dashboard(
 ):
     import logging
     try:
+        # Guard against empty string from frontend query params
+        if subject_id is not None and not subject_id.strip():
+            subject_id = None
+        if subject is not None and not subject.strip():
+            subject = None
         service = DashboardService(db)
         result = service.get_dashboard(user_id=user_id, subject_name=subject, subject_id=subject_id)
         return _handle_result(result)

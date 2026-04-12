@@ -333,13 +333,21 @@ class UnifiedKnowledgeExtractionService:
 
     def _collect_chunk_summaries(self, sid: uuid.UUID) -> list[str]:
         """從 resource_chunks 收集教材文本摘要。"""
-        rows = self.db.execute(text('''
-            SELECT rc.content, rc.metadata_json, r.name as resource_name
-            FROM resource_chunks rc
-            JOIN resources r ON rc.resource_id = r.id
-            WHERE r.subject_id = :sid
-            ORDER BY r.created_at, rc.chunk_index
-        '''), {'sid': sid}).fetchall()
+        self.db.execute(text("SAVEPOINT before_chunks_read"))
+        try:
+            rows = self.db.execute(text('''
+                SELECT rc.content, rc.metadata_json, r.name as resource_name
+                FROM resource_chunks rc
+                JOIN resources r ON rc.resource_id = r.id
+                WHERE r.subject_id = :sid
+                ORDER BY r.created_at, rc.chunk_index
+            '''), {'sid': sid}).fetchall()
+        except Exception as e:
+            # RLS policy on resource_chunks may fail without tenant context;
+            # gracefully skip — extraction can proceed with exam summaries only
+            log.warning(f"[萃取] 無法讀取 resource_chunks (RLS): {e}")
+            self.db.execute(text("ROLLBACK TO SAVEPOINT before_chunks_read"))
+            return []
 
         if not rows:
             return []
@@ -436,7 +444,12 @@ class UnifiedKnowledgeExtractionService:
         node_subq = 'SELECT id FROM knowledge_nodes WHERE subject_id = :sid'
         self.db.execute(text(f'UPDATE questions SET node_id = NULL WHERE node_id IN ({node_subq})'), {'sid': sid})
         self.db.execute(text(f'UPDATE questions SET suggested_node_id = NULL WHERE suggested_node_id IN ({node_subq})'), {'sid': sid})
-        self.db.execute(text(f'UPDATE resource_chunks SET node_id = NULL WHERE node_id IN ({node_subq})'), {'sid': sid})
+        # resource_chunks has RLS policy; use savepoint to avoid rolling back prior work
+        self.db.execute(text("SAVEPOINT before_chunks"))
+        try:
+            self.db.execute(text(f'UPDATE resource_chunks SET node_id = NULL WHERE node_id IN ({node_subq})'), {'sid': sid})
+        except Exception:
+            self.db.execute(text("ROLLBACK TO SAVEPOINT before_chunks"))
         self.db.execute(text(f'DELETE FROM node_mastery WHERE node_id IN ({node_subq})'), {'sid': sid})
         self.db.execute(text(f'DELETE FROM question_stats WHERE node_id IN ({node_subq})'), {'sid': sid})
         self.db.execute(text(f'DELETE FROM merge_conflicts WHERE existing_node_id IN ({node_subq})'), {'sid': sid})
