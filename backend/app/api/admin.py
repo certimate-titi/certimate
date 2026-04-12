@@ -599,6 +599,27 @@ def debug_subject(
     # Check all historical_exams
     he_count = db.query(func.count(HistoricalExam.id)).scalar()
 
+    # Check knowledge nodes for this subject
+    from app.models.knowledge_node import KnowledgeNode
+    nodes = db.query(KnowledgeNode).filter_by(subject_id=sid).order_by(
+        KnowledgeNode.depth, KnowledgeNode.sort_order
+    ).all()
+    node_data = [
+        {"name": n.name, "depth": n.depth, "available_questions": n.available_questions or 0}
+        for n in nodes
+    ]
+
+    # Count mapped historical questions (node_id points to this subject's nodes)
+    node_ids = [n.id for n in nodes]
+    mapped_count = 0
+    if node_ids:
+        placeholders = ', '.join(f':nid_{i}' for i in range(len(node_ids)))
+        params = {f'nid_{i}': str(nid) for i, nid in enumerate(node_ids)}
+        mapped_count = db.execute(text(f'''
+            SELECT COUNT(*) FROM questions
+            WHERE node_id IN ({placeholders}) AND historical_exam_id IS NOT NULL
+        '''), params).scalar()
+
     return {
         "subject_id": subject_id,
         "name": subject.name,
@@ -606,6 +627,9 @@ def debug_subject(
         "code_results": code_results,
         "name_match_count": name_count,
         "total_historical_exams": he_count,
+        "knowledge_nodes": node_data,
+        "total_nodes": len(nodes),
+        "mapped_historical_questions": mapped_count,
     }
 
 
@@ -647,3 +671,67 @@ def import_historical_questions(
         "message": f"Imported {imported} files, {importer.imported_count} questions added, {importer.skipped_count} skipped",
         "errors": errors[:10] if errors else [],
     }
+
+
+# ── GCS Sync + Import ──────────────────────────────────────────────────────
+
+@router.post("/sync-questions")
+def sync_questions(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """從 GCS Bucket 同步考古題 JSON 並匯入資料庫。
+
+    流程：GCS → /tmp/historical_questions/ → DB (upsert)
+    """
+    import logging
+    log = logging.getLogger("admin.sync")
+
+    try:
+        from app.scripts.sync_from_gcs import sync_from_gcs, LOCAL_DIR
+        from app.scripts.import_exam_questions import QuestionImporter
+
+        # Step 1: Sync from GCS
+        log.info("Starting GCS sync...")
+        sync_result = sync_from_gcs()
+        log.info(f"GCS sync result: {sync_result}")
+
+        # Step 2: Import to DB
+        log.info("Starting DB import...")
+        importer = QuestionImporter(db, dry_run=False)
+        importer.import_directory(LOCAL_DIR)
+
+        import_result = {
+            "imported": importer.imported_count,
+            "skipped": importer.skipped_count,
+            "errors": importer.error_count,
+        }
+        log.info(f"Import result: {import_result}")
+
+        # Step 3: Seed exam_subject_codes
+        from app.scripts.seed_exam_subject_codes import EXISTING_SUBJECT_CODES
+        from app.models.subject import Subject
+
+        seeded = 0
+        for name, codes in EXISTING_SUBJECT_CODES.items():
+            subject = db.query(Subject).filter_by(name=name).first()
+            if subject and subject.exam_subject_codes != codes:
+                subject.exam_subject_codes = codes
+                seeded += 1
+        if seeded > 0:
+            db.commit()
+
+        return {
+            "message": "Sync complete",
+            "sync": sync_result,
+            "import": import_result,
+            "seeded_codes": seeded,
+        }
+
+    except Exception as e:
+        import traceback
+        log.exception("Sync error: %s", e)
+        raise HTTPException(status_code=500, detail={
+            "message": f"Sync error: {str(e)}",
+            "traceback": traceback.format_exc()[-500:],
+        })
