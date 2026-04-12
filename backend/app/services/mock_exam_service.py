@@ -64,10 +64,17 @@ class MockExamService:
         ).first()
 
         if not answer:
+            # Get tenant_id from RLS GUC for multi-tenant isolation
+            from sqlalchemy import text
+            tenant_id_str = self.db.execute(
+                text("SELECT current_setting('app.current_tenant_id', true)")
+            ).scalar()
+            tid = uuid.UUID(tenant_id_str) if tenant_id_str else None
             answer = Answer(
                 exam_id=eid,
                 question_id=qid,
                 user_id=uid,
+                tenant_id=tid,
             )
             self.db.add(answer)
 

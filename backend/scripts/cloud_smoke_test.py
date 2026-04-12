@@ -201,19 +201,30 @@ def main():
                             check("考題有選項", len(q.get("options", [])) >= 2,
                                   f"options={len(q.get('options', []))}")
 
-                        # --- Test 4: 考試結果 (submit) ---
+                        # --- Test 4: 考試結果 (save answers + submit) ---
                         print(f"\n[4] 考試結果")
-                        answers = [{"questionId": q["id"], "userChoice": "A"} for q in questions]
-                        submit_body = {
-                            "examId": exam_id,
-                            "answers": answers,
-                            "timeSpentSeconds": 60,
-                        }
-                        code, data = api_post(base, "/exams/submit", token, submit_body)
-                        check("提交考試", code == 200, f"status={code}")
-                        if code == 200:
+                        # Save answers one by one
+                        save_ok = 0
+                        for q in questions:
+                            ans_body = {"question_id": q["id"], "selected_answer": "A"}
+                            sc, _ = api_post(base, f"/exams/{exam_id}/answers", token, ans_body)
+                            if sc == 200:
+                                save_ok += 1
+                        check("儲存答案", save_ok == len(questions), f"saved={save_ok}/{len(questions)}")
+
+                        # Submit exam
+                        code, data = api_post(base, f"/exams/{exam_id}/submit", token, {})
+                        check("提交考試", code in (200, 202), f"status={code}")
+                        if code in (200, 202):
                             check("有考試結果", "score" in data or "result" in data or "exam_id" in data,
                                   f"keys={list(data.keys())[:5]}")
+
+                        # Get result
+                        code, data = api_get(base, f"/exams/{exam_id}/result", token)
+                        check("考試結果頁", code == 200, f"status={code}")
+                        if code == 200:
+                            check("有分數", "score" in data or "accuracy" in data,
+                                  f"keys={list(data.keys())[:8]}")
         else:
             check("有可用節點", False, "node_ids 為空 — 知識節點沒有 available_questions")
 
