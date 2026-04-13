@@ -634,6 +634,7 @@ class DocumentProcessingService:
             page_start = section.get("page_start")
             page_end = section.get("page_end")
             depth = section.get("depth", 1)
+            chunk_type = section.get("chunk_type", "text")
 
             if len(tokens) <= chunk_size:
                 # Section fits in a single chunk — keep it whole
@@ -641,6 +642,7 @@ class DocumentProcessingService:
                     "content": content, "token_count": len(tokens),
                     "source_page_start": page_start, "source_page_end": page_end,
                     "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                    "chunk_type": chunk_type,
                 })
                 chunk_index += 1
             else:
@@ -662,6 +664,7 @@ class DocumentProcessingService:
                                 "content": current_chunk, "token_count": current_tokens,
                                 "source_page_start": page_start, "source_page_end": page_end,
                                 "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                                "chunk_type": chunk_type,
                             })
                             chunk_index += 1
 
@@ -676,6 +679,7 @@ class DocumentProcessingService:
                                     "content": chunk_text, "token_count": end - start,
                                     "source_page_start": page_start, "source_page_end": page_end,
                                     "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                                    "chunk_type": chunk_type,
                                 })
                                 chunk_index += 1
                                 if end >= len(para_toks):
@@ -693,6 +697,7 @@ class DocumentProcessingService:
                         "content": current_chunk, "token_count": current_tokens,
                         "source_page_start": page_start, "source_page_end": page_end,
                         "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                        "chunk_type": chunk_type,
                     })
                     chunk_index += 1
 
@@ -768,7 +773,11 @@ class DocumentProcessingService:
                 token_count=cd["token_count"],
                 source_page_start=cd.get("source_page_start"),
                 source_page_end=cd.get("source_page_end"),
-                metadata_json={"section_title": cd.get("section_title", ""), "depth": cd.get("depth", 1)},
+                metadata_json={
+                    "section_title": cd.get("section_title", ""),
+                    "depth": cd.get("depth", 1),
+                    "chunk_type": cd.get("chunk_type", "text"),
+                },
                 embedding=embeddings[i] if i < len(embeddings) else None,
             )
             chunks.append(chunk)

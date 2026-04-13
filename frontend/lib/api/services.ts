@@ -367,6 +367,10 @@ export const knowledgeService = {
   async extractKnowledgeTree(subjectId: string): Promise<Record<string, unknown>> {
     return apiClient.post<Record<string, unknown>>(`/reverse-engineering/subjects/${subjectId}/extract`, {});
   },
+
+  async getResourceChunks(resourceId: string): Promise<Record<string, unknown>> {
+    return apiClient.get<Record<string, unknown>>(`/resources/${resourceId}/chunks`);
+  },
 };
 
 // ===========================
@@ -848,5 +852,61 @@ export const promptTemplateService = {
 
   async listAbTests(): Promise<{ ab_tests: PromptAbTest[]; total: number }> {
     return apiClient.get('/admin/prompt-templates/ab-tests');
+  },
+};
+
+// ─── Practice Service ───────────────────────────────────────────────────────
+
+export interface PracticeQuestion {
+  id: string;
+  content: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  difficulty: string;
+  type: string;
+}
+
+export interface PracticeQuestionsResponse {
+  node_id: string;
+  questions: PracticeQuestion[];
+  total: number;
+}
+
+export interface PracticeSubmitResponse {
+  ok: boolean;
+  is_correct: boolean;
+  correct_answer: string;
+  selected_answer: string;
+  explanation: string;
+  question_id: string;
+  mode: string;
+  state_updated: boolean;
+  progress: {
+    node_id: string;
+    new_progress: number;
+    old_progress: number;
+    status: string;
+  } | null;
+  propagation: Array<{
+    node_id: string;
+    new_progress: number;
+    child_count: number;
+  }>;
+}
+
+export const practiceService = {
+  /** 查詢知識節點下的練習題列表 */
+  async getNodeQuestions(nodeId: string): Promise<PracticeQuestionsResponse> {
+    return apiClient.get(`/practice/nodes/${nodeId}/questions`);
+  },
+
+  /** 提交練習作答（即時回饋 + 知識圖譜進度更新） */
+  async submitAnswer(questionId: string, selectedAnswer: string): Promise<PracticeSubmitResponse> {
+    return apiClient.post('/practice/submit', {
+      question_id: questionId,
+      selected_answer: selectedAnswer,
+    });
   },
 };

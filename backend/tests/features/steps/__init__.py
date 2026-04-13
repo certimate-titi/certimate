@@ -72,6 +72,8 @@ from .resource.aggregate_given import user_subject  # noqa: F401
 from .resource.aggregate_given import chunked_upload_init  # noqa: F401
 from .resource.aggregate_given import chunked_upload_partial  # noqa: F401
 from .resource.aggregate_given import chunked_upload_all  # noqa: F401
+from .resource.aggregate_given import resource_with_chunks  # noqa: F401
+from .resource.aggregate_given import seed_resource_with_chunks  # noqa: F401
 
 # Resource — commands
 from .resource.commands import upload_file  # noqa: F401
@@ -83,6 +85,7 @@ from .resource.commands import upload_missing_params  # noqa: F401
 from .resource.commands import init_chunked_upload  # noqa: F401
 from .resource.commands import query_chunked_progress  # noqa: F401
 from .resource.commands import complete_chunked_upload  # noqa: F401
+from .resource.commands import query_chunks  # noqa: F401
 
 # Resource — readmodel_then
 from .resource.readmodel_then import resource_status  # noqa: F401
@@ -91,6 +94,7 @@ from .resource.readmodel_then import implicit_consent  # noqa: F401
 from .resource.readmodel_then import resource_type  # noqa: F401
 from .resource.readmodel_then import can_resume_upload  # noqa: F401
 from .resource.readmodel_then import resource_file_size  # noqa: F401
+from .resource.readmodel_then import chunk_count  # noqa: F401
 
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
@@ -1202,6 +1206,16 @@ from .pomodoro.commands import pomodoro_actions  # noqa: F401
 
 # Pomodoro (Feature 21) — aggregate_then
 from .pomodoro.aggregate_then import pomodoro_state as pomodoro_then_state  # noqa: F401
+
+# Practice (Feature 32) — aggregate_given
+from .practice.aggregate_given import knowledge_nodes  # noqa: F401
+from .practice.aggregate_given import practice_questions  # noqa: F401
+
+# Practice (Feature 32) — commands
+from .practice.commands import practice_actions  # noqa: F401
+
+# Practice (Feature 32) — readmodel_then
+from .practice.readmodel_then import practice_results  # noqa: F401
 
 # Pomodoro (Feature 21) — readmodel_then
 from .pomodoro.readmodel_then import pomodoro_response  # noqa: F401

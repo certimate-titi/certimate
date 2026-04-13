@@ -328,7 +328,8 @@ class DashboardService:
                     m = mastery_map.get(child.id)
                     c = m.correct_count if m else 0
                     t = m.total_count if m else 0
-                    pct = round(float(m.mastery_rate)) if m and m.total_count > 0 else 0
+                    # 使用 mastery_rate（含 EMA + 傳播結果），而非僅 correct/total
+                    pct = round(float(m.mastery_rate)) if m and m.mastery_rate is not None else 0
                     group_correct += c
                     group_total += t
                     child_items.append({
@@ -345,13 +346,25 @@ class DashboardService:
                 group_correct += c
                 group_total += t
 
-            # 分組的整體百分比
-            if group_total > 0:
+            # 分組的整體百分比 — 優先使用 NodeMastery 的 mastery_rate
+            root_mastery = mastery_map.get(root.id)
+            if children:
+                # 有子節點：用子節點的 mastery_rate 平均值
+                child_rates = [
+                    float(mastery_map[c.id].mastery_rate)
+                    for c in children
+                    if c.id in mastery_map and mastery_map[c.id].mastery_rate is not None
+                ]
+                if child_rates:
+                    group_pct = round(sum(child_rates) / len(child_rates))
+                elif group_total > 0:
+                    group_pct = round((group_correct / group_total) * 100)
+                else:
+                    group_pct = 0
+            elif root_mastery and root_mastery.mastery_rate is not None:
+                group_pct = round(float(root_mastery.mastery_rate))
+            elif group_total > 0:
                 group_pct = round((group_correct / group_total) * 100)
-            elif overall_accuracy > 0:
-                # 尚無該節點的答題資料，使用整體準確率 + 變異
-                variance = (hash(str(root.id)) % 20) - 10
-                group_pct = max(0, min(100, overall_accuracy + variance))
             else:
                 group_pct = 0
 
@@ -363,16 +376,15 @@ class DashboardService:
                 "children": child_items if len(child_items) > 1 else [],
             })
 
-        # 如果完全沒有節點資料，使用通用 Bloom 分類
+        # 如果完全沒有節點資料，使用通用 Bloom 分類（全部 0%）
         if not groups:
             labels = ["記憶", "理解", "應用", "分析", "評估", "創造"]
             for label in labels:
-                variance = (hash(label) % 20) - 10
                 groups.append({
                     "domain": label,
                     "correct": 0,
                     "total": 0,
-                    "percentage": max(0, min(100, overall_accuracy + variance)),
+                    "percentage": 0,
                     "children": [],
                 })
 

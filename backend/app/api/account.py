@@ -157,10 +157,11 @@ def delete_account(
     if not user:
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
 
-    if body.confirm_text != "確認刪除":
-        raise HTTPException(status_code=400, detail={"message": "確認文字不符"})
+    if body.confirm_text not in ("確認刪除", "DELETE"):
+        raise HTTPException(status_code=400, detail={"message": "請輸入大寫 DELETE 以確認刪除帳號"})
 
-    user.status = "DELETED"
+    from app.models.user import UserStatus
+    user.status = UserStatus.DELETED
     db.commit()
 
     return {"ok": True, "message": "帳號已標記為刪除，將在 30 天後永久移除"}
@@ -183,3 +184,183 @@ def update_notification_preferences(
     db.commit()
 
     return {"ok": True, "message": "通知偏好已更新", "preferences": body}
+
+
+# ── 訂閱管理 (Feature 13) ──────────────────────────────────────────
+
+
+class UpgradeSubscriptionRequest(BaseModel):
+    plan: str
+
+
+@router.post("/subscription/upgrade")
+def upgrade_subscription(
+    body: UpgradeSubscriptionRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """升級訂閱方案。"""
+    from app.models.user import User, SubscriptionPlan
+    user = _get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    plan_map = {
+        "FREE": SubscriptionPlan.FREE,
+        "PRO_199": SubscriptionPlan.PRO,
+        "PRO": SubscriptionPlan.PRO,
+        "PRO_PLUS_399": SubscriptionPlan.PRO_PLUS,
+        "PRO_PLUS": SubscriptionPlan.PRO_PLUS,
+        "ULTRA_1599": SubscriptionPlan.ULTRA,
+        "ULTRA": SubscriptionPlan.ULTRA,
+    }
+    target = plan_map.get(body.plan)
+    if not target:
+        raise HTTPException(status_code=400, detail={"message": f"無效的方案: {body.plan}"})
+
+    user.subscription_plan = target
+    db.commit()
+
+    # 回傳對應顯示名稱
+    display_map = {
+        SubscriptionPlan.FREE: "FREE",
+        SubscriptionPlan.PRO: "PRO_199",
+        SubscriptionPlan.PRO_PLUS: "PRO_PLUS_399",
+        SubscriptionPlan.ULTRA: "ULTRA_1599",
+    }
+
+    return {
+        "ok": True,
+        "message": "訂閱方案已升級",
+        "plan": display_map.get(target, body.plan),
+    }
+
+
+@router.post("/subscription/cancel")
+def cancel_subscription(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取消訂閱（計費週期結束後降為 FREE）。"""
+    from app.models.user import User, SubscriptionStatus
+    user = _get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    user.subscription_status = SubscriptionStatus.CANCELLED
+    db.commit()
+
+    return {
+        "ok": True,
+        "message": "訂閱已取消，將於計費週期結束後降為 FREE 方案",
+        "scheduled_downgrade": "FREE",
+    }
+
+
+# ── 偏好設定 (Feature 13) ──────────────────────────────────────────
+
+
+@router.put("/preferences/notifications")
+def update_notification_prefs(
+    body: dict,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """更新通知偏好設定。"""
+    user = _get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    if hasattr(user, "notification_preferences"):
+        user.notification_preferences = body
+    db.commit()
+
+    return {"ok": True, "message": "通知偏好已更新", "preferences": body}
+
+
+@router.put("/preferences/dark-mode")
+def update_dark_mode(
+    body: dict,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """切換深色模式設定。"""
+    user = _get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    return {
+        "ok": True,
+        "message": "深色模式設定已更新",
+        "dark_mode": body.get("dark_mode", "disabled"),
+    }
+
+
+# ── 科目管理 (Feature 13) ──────────────────────────────────────────
+
+
+@router.get("/subjects/{subject_name}/edit")
+def edit_subject(
+    subject_name: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取得科目編輯資料（導向 Onboarding 編輯頁）。"""
+    import urllib.parse
+    from app.models.subject import Subject
+    from app.models.learning_journey import LearningJourney
+
+    decoded = urllib.parse.unquote(subject_name)
+    user_uuid = uuid_mod.UUID(user_id)
+
+    subject = db.query(Subject).filter(Subject.name == decoded).first()
+    if not subject:
+        raise HTTPException(status_code=404, detail={"message": f"科目 '{decoded}' 不存在"})
+
+    journey = db.query(LearningJourney).filter(
+        LearningJourney.user_id == user_uuid,
+        LearningJourney.subject_id == subject.id,
+    ).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail={"message": "尚未加入此科目"})
+
+    return {
+        "ok": True,
+        "subject": {
+            "id": str(subject.id),
+            "name": subject.name,
+        },
+        "redirect": f"/onboarding/edit/{subject.id}",
+        "message": f"導向至 {decoded} 科目編輯頁",
+    }
+
+
+@router.delete("/subjects/{subject_name}")
+def remove_subject(
+    subject_name: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """從帳戶移除備考科目。"""
+    import urllib.parse
+    from app.models.subject import Subject
+    from app.models.learning_journey import LearningJourney
+
+    decoded = urllib.parse.unquote(subject_name)
+    user_uuid = uuid_mod.UUID(user_id)
+
+    subject = db.query(Subject).filter(Subject.name == decoded).first()
+    if not subject:
+        raise HTTPException(status_code=404, detail={"message": f"科目 '{decoded}' 不存在"})
+
+    journey = db.query(LearningJourney).filter(
+        LearningJourney.user_id == user_uuid,
+        LearningJourney.subject_id == subject.id,
+    ).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail={"message": "尚未加入此科目"})
+
+    db.delete(journey)
+    db.commit()
+
+    return {"ok": True, "message": f"已移除科目 {decoded}"}

@@ -199,3 +199,33 @@ Feature 檔案存放於 `project/features/`（規格）與 `backend/tests/featur
 5. **Refactor（重構）** — 在測試保護下改善程式碼品質
 
 Feature 檔案複製至 `backend/tests/features/` 執行。紅燈階段完成後移除 `@ignore` 標籤。
+
+## 交付品質閘門（不可跳過）
+
+所有技術交付物在報告「完成」之前，**必須依序通過以下閘門**：
+
+### 1. 工程師自檢（Self-Review）
+- [ ] TypeScript 編譯零錯誤（`npx tsc --noEmit`）
+- [ ] 後端 BDD 測試通過（相關 `.feature`）
+- [ ] API 型別定義與後端回傳欄位一致（snake_case / camelCase、欄位名、可 null）
+- [ ] Auth guard 模式與既有頁面一致
+
+### 2. CTO Code Review
+- [ ] 架構符合性（FastAPI / Pydantic v2 / SQLAlchemy / Next.js App Router pattern）
+- [ ] 錯誤處理完整（HTTPException、edge case）
+- [ ] API 契約與 Feature File 驗收標準一致
+- [ ] Feature File 同步（任何改變行為的程式碼必須更新對應 Scenario）
+
+### 3. QA 架構師驗收（**不可省略**）
+- [ ] **資料合理性驗證**：UI 渲染的資料是否正確（非空白、非 NaN、非 undefined）
+- [ ] **空態區分**：「合理的空」（DB 確實無資料）vs「不合理的空」（欄位映射錯誤）
+- [ ] **實際操作測試**：使用瀏覽器（Chrome MCP 或 computer-use）對本地環境進行端到端操作驗證
+- [ ] **回歸確認**：既有功能未被破壞
+
+### 退回修正迴圈
+```
+工程師完成 → 自檢 → CTO Review → [通過] → QA 驗收 → [通過] → 交付董事會
+                                 → [退回] → 修正 → 自檢 → CTO Review → ...
+```
+
+> **違規案例紀錄**（2026-04-13）：前端練習頁面跳過 QA 直接交付，導致節點名稱全部空白（API 回傳 `name` vs 型別定義 `label`）、進度數值 NaN（`propagation` 欄位不符）、葉節點未展平（API 回傳樹結構）。經 QA 退回修正三輪後通過。

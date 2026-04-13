@@ -41,4 +41,12 @@ class ImageExtractor:
             content_type="image_ocr",
             raw_text=text or "",
             metadata=f"format:{ext.lstrip('.')}",
+            sections=[{
+                "title": resource_name or Path(file_path).stem,
+                "content": text or "",
+                "page_start": None,
+                "page_end": None,
+                "depth": 1,
+                "chunk_type": "image_analysis",
+            }] if text else [],
         )

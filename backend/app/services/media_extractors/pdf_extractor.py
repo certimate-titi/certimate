@@ -20,10 +20,12 @@ class PdfExtractor:
 
         # Try local extraction first (pymupdf)
         pages = self._extract_with_pymupdf(pdf_bytes)
+        used_vision = False
 
         # Fallback: Claude Vision for scanned PDFs
         if not pages and self.claude:
             pages = self._extract_with_vision(pdf_bytes)
+            used_vision = bool(pages)
 
         if not pages:
             raise ValueError("無法解析 PDF 文件（文字層和 Vision OCR 均失敗）")
@@ -40,6 +42,7 @@ class PdfExtractor:
                 "page_start": p["page_num"],
                 "page_end": p["page_num"],
                 "depth": 1,
+                "chunk_type": "image_analysis" if used_vision else "text",
             }
             for p in pages
         ]

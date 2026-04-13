@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, LayoutDashboard, BrainCircuit, PenTool, User, Menu, X, LogOut, ShieldCheck, Building2 } from 'lucide-react';
+import { BookOpen, LayoutDashboard, BrainCircuit, PenTool, Dumbbell, User, Menu, X, LogOut, ShieldCheck, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/lib/auth-context';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -15,6 +15,7 @@ export default function Navbar() {
     { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
     { href: '/knowledge', label: '知識庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
+    { href: '/practice', label: '練習', icon: Dumbbell },
     { href: '/review', label: 'AI 教練', icon: BrainCircuit },
     ...(isUltra || isAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
     ...(isAdmin ? [{ href: '/super-admin/dashboard', label: '平台管理', icon: ShieldCheck }] : []),

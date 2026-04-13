@@ -7,7 +7,7 @@ def _get_token(context, email):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    return context.jwt_helper.create_token(str(user.id))
+    return context.jwt_helper.generate_token(str(user.id))
 
 
 @when('使用者 "{email}" 今日登入並完成一次測驗')
@@ -232,7 +232,9 @@ def step_impl_toggle_dark_mode(context, email, mode):
 def step_impl_delete_account(context, email, confirm_text):
     """呼叫 API 刪除帳號（含確認文字）。"""
     token = _get_token(context, email)
-    response = context.api_client.delete(
+    # TestClient.delete() 不支援 json 參數，改用 request()
+    response = context.api_client.request(
+        "DELETE",
         "/api/v1/account",
         json={"confirm_text": confirm_text},
         headers={"Authorization": f"Bearer {token}"},

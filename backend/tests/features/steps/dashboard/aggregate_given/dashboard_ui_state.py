@@ -49,14 +49,48 @@ def step_impl_ability_distribution(context, email, subject):
 
 @given('使用者 "{email}" 在 "{subject}" 科目有以下複習排程：')
 def step_impl_review_schedule(context, email, subject):
-    """記錄使用者科目複習排程（用於艾賓浩斯月曆）。"""
-    schedules = []
+    """建立使用者科目複習排程（在 DB 中建立 NodeMastery + KnowledgeNode）。"""
+    from app.models.user import User
+    from app.models.subject import Subject
+    from app.models.knowledge_node import KnowledgeNode
+    from app.models.node_mastery import NodeMastery
+    from datetime import datetime, timezone
+
+    db = context.db_session
+    user = db.query(User).filter(User.email == email).first()
+    assert user, f"找不到使用者 {email}"
+
+    subj = db.query(Subject).filter(Subject.name == subject).first()
+    assert subj, f"找不到科目 {subject}"
+
+    node_counter = 0
     for row in context.table:
-        schedules.append({
-            "date": row["日期"],
-            "count": int(row["複習項目數"]),
-        })
-    context.memo["review_schedule"] = schedules
+        date_str = row["日期"]
+        count = int(row["複習項目數"])
+        review_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+        # 為每個複習項目建立一個 KnowledgeNode + NodeMastery
+        for i in range(count):
+            node_counter += 1
+            node = KnowledgeNode(
+                name=f"複習節點_{date_str}_{i+1}",
+                subject_id=subj.id,
+                depth=1,
+            )
+            db.add(node)
+            db.flush()
+
+            mastery = NodeMastery(
+                user_id=user.id,
+                node_id=node.id,
+                next_review_at=review_date,
+                base_mastery=0.5,
+                ease_factor=2.5,
+                status="PENDING",
+            )
+            db.add(mastery)
+
+    db.commit()
     context.memo["review_subject"] = subject
     context.memo["current_user_email"] = email
 

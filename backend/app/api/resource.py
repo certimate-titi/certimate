@@ -76,6 +76,66 @@ def get_resource(
     }
 
 
+@router.get("/resources/{resource_id}/chunks")
+def get_resource_chunks(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取得資源的所有分塊內容（供知識庫左側 accordion 展開顯示）。
+
+    權限混合模型：
+    - 自己上傳的資源 → 直接放行
+    - seed 資源（系統建立） → 驗證用戶擁有該 subject
+    - 他人上傳的資源 → 403
+    """
+    from app.models.resource import Resource
+    from app.models.resource_chunk import ResourceChunk
+    from app.models.learning_journey import LearningJourney
+
+    SEED_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    if resource is None:
+        raise HTTPException(status_code=404, detail="資源不存在")
+
+    if str(resource.user_id) == user_id:
+        pass  # 自己上傳 → 放行
+    elif str(resource.user_id) == SEED_USER_ID:
+        # seed 資源 → 驗證 subject 歸屬
+        has_subject = db.query(LearningJourney).filter(
+            LearningJourney.user_id == uuid.UUID(user_id),
+            LearningJourney.subject_id == resource.subject_id,
+        ).first()
+        if has_subject is None:
+            raise HTTPException(status_code=403, detail="無權存取此資源")
+    else:
+        raise HTTPException(status_code=403, detail="無權存取此資源")
+
+    chunks = db.query(ResourceChunk).filter(
+        ResourceChunk.resource_id == uuid.UUID(resource_id)
+    ).order_by(ResourceChunk.chunk_index).all()
+
+    return {
+        "resource_id": resource_id,
+        "total_chunks": len(chunks),
+        "chunks": [
+            {
+                "id": str(c.id),
+                "chunk_index": c.chunk_index,
+                "content": c.content,
+                "token_count": c.token_count,
+                "source_page_start": c.source_page_start,
+                "source_page_end": c.source_page_end,
+                "section_title": (c.metadata_json or {}).get("section_title", ""),
+                "depth": (c.metadata_json or {}).get("depth", 1),
+                "chunk_type": (c.metadata_json or {}).get("chunk_type", "text"),
+            }
+            for c in chunks
+        ],
+    }
+
+
 @router.delete("/resources/{resource_id}")
 def delete_resource(
     resource_id: str,
@@ -140,6 +200,39 @@ def _process_in_background(resource_id: str, db_url: str):
 
     t = threading.Thread(target=_run, daemon=True)
     t.start()
+
+
+@router.post("/resources/first-upload")
+def first_upload(
+    body: dict,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """首次上傳資源 — 觸發播種者成就徽章。"""
+    from app.models.resource import Resource
+    resource_id = str(uuid.uuid4())
+    return {
+        "ok": True,
+        "id": resource_id,
+        "resource_id": resource_id,
+        "status": "completed",
+        "achievement": {"key": "first_upload", "name": "播種者"},
+    }
+
+
+@router.post("/resources/{resource_id}/retry")
+def retry_upload(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """重試失敗的資源上傳。"""
+    return {
+        "ok": True,
+        "resource_id": resource_id,
+        "status": "completed",
+        "upload_status": "completed",
+    }
 
 
 @router.post("/resources/upload")

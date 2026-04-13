@@ -41,3 +41,10 @@ venv/
 
 # Uploaded files (local dev)
 backend/uploads/
+
+# TiTi Commander persistent data
+.titi/heartbeats/
+.titi/deliverables/
+.titi/governance/
+.titi/heartbeat-latest.json
+.titi/tasks-archive.json

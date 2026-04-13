@@ -163,3 +163,40 @@ Feature: 資源上傳與隱性版權約定
     Example: 提交無效的 YouTube URL 失敗
       When 使用者 "free@example.com" 提交 YouTube URL "https://not-youtube.com/video"，科目為 1
       Then 操作失敗，錯誤為「無效的 YouTube URL」
+
+  # ========== 資源分塊查詢（知識庫 accordion 展開）==========
+
+  Rule: 後置（查詢）- 使用者可查詢自己資源的分塊內容
+
+    Example: 查詢自己上傳的資源分塊成功
+      Given 使用者 "pro@example.com" 已上傳資源 "我的講義.pdf"（科目 ID: 1）且有 3 個分塊
+      When 使用者 "pro@example.com" 查詢資源分塊
+      Then 操作成功
+      And 回應應包含 3 個分塊
+
+  Rule: 後置（查詢）- Seed 資源的分塊查詢依科目歸屬檢查
+
+    Example: 查詢 seed 資源分塊（有該科目）成功
+      Given 系統中有 seed 資源 "考古題庫"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "pro@example.com" 查詢 seed 資源分塊
+      Then 操作成功
+      And 回應應包含 2 個分塊
+
+    Example: 查詢 seed 資源分塊（無該科目）被拒
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案 |
+        | 5        | other@example.com    | PRO_199  |
+      And 系統中有 seed 資源 "其他考古題"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "other@example.com" 查詢 seed 資源分塊
+      Then 操作失敗，錯誤為「無權存取此資源」
+
+  Rule: 後置（查詢）- 不可查詢他人上傳的資源分塊
+
+    Example: 查詢他人的資源分塊被拒
+      Given 使用者 "pro@example.com" 已上傳資源 "他的講義.pdf"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "free@example.com" 查詢該資源的分塊
+      Then 操作失敗，錯誤為「無權存取此資源」
+
+    Example: 查詢不存在的資源分塊回傳 404
+      When 使用者 "pro@example.com" 查詢不存在的資源分塊
+      Then 操作失敗，錯誤為「資源不存在」

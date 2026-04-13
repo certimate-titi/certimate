@@ -55,7 +55,9 @@ export default function DashboardPage() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects || []);
       if (res.subjects && res.subjects.length > 0) {
-        setActiveSubjectId(res.subjects[0].id);
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
       }
     }).catch(() => setSubjects([]));
   }, [authLoading, isAuthenticated, onboardingCompleted]);
@@ -265,7 +267,7 @@ export default function DashboardPage() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => setShowAddSubject(true)}
         />
       ) : isAuthenticated && onboardingCompleted ? (
