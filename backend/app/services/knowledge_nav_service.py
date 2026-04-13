@@ -94,18 +94,11 @@ class KnowledgeNavService:
         resources = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids)).all()
         resource_ids = [r.id for r in resources]
 
-        # 找所有知識節點（by resource_id OR by subject_id）
-        from sqlalchemy import or_
-        conditions = []
-        if resource_ids:
-            conditions.append(KnowledgeNode.resource_id.in_(resource_ids))
-        conditions.append(KnowledgeNode.subject_id.in_(subject_ids))
-
-        if not conditions:
-            return {"error": False, "nodes": [], "resources": []}
-
+        # 只查統一知識樹節點（resource_id IS NULL）
+        # per-resource 節點是文件處理的中間產物，不應出現在知識庫列表
         nodes = self.db.query(KnowledgeNode).filter(
-            or_(*conditions)
+            KnowledgeNode.subject_id.in_(subject_ids),
+            KnowledgeNode.resource_id.is_(None),
         ).order_by(KnowledgeNode.sort_order).all()
 
         # 找掌握度
