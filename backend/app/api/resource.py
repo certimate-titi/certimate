@@ -154,6 +154,8 @@ def delete_resource(
         raise HTTPException(status_code=404, detail="資源不存在")
 
     rid = resource.id
+    subject_id = str(resource.subject_id) if resource.subject_id else None
+
     # Delete chunks
     db.query(ResourceChunk).filter_by(resource_id=rid).delete()
     # Delete knowledge nodes
@@ -169,6 +171,20 @@ def delete_resource(
             storage.delete_file(resource.gcs_path)
         except Exception:
             pass
+
+    # Rebuild unified knowledge tree (remaining resources may have changed)
+    if subject_id:
+        try:
+            from app.services.unified_knowledge_extraction_service import (
+                UnifiedKnowledgeExtractionService,
+            )
+            extractor = UnifiedKnowledgeExtractionService(db)
+            extractor.extract(subject_id)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Unified re-extraction after delete skipped: %s", e
+            )
 
     return {"message": "資源已刪除"}
 

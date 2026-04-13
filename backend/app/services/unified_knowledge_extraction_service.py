@@ -228,7 +228,9 @@ class UnifiedKnowledgeExtractionService:
         chunk_summaries = self._collect_chunk_summaries(sid)
 
         if not exam_summaries and not chunk_summaries:
-            return {"error": True, "message": f"科目 {subject_name} 無任何可分析素材"}
+            # No materials left — clear unified nodes and return
+            self._clear_old_nodes(sid)
+            return {"ok": True, "nodes_created": 0, "mastery_migrated": 0, "chunks_remapped": 0}
 
         # 3. 取得舊節點（用於 mastery 遷移）
         old_nodes = self._get_old_nodes(sid)
