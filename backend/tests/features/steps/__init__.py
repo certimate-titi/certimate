@@ -1097,10 +1097,12 @@ from .knowledge_merge.aggregate_given import document_extraction  # noqa: F401
 from .knowledge_merge.aggregate_given import merge_conflicts  # noqa: F401
 from .knowledge_merge.aggregate_given import merge_state  # noqa: F401
 from .knowledge_merge.aggregate_given import node_setup  # noqa: F401
+from .knowledge_merge.aggregate_given import unified_knowledge_tree  # noqa: F401
 
 # Knowledge Merge — commands
 from .knowledge_merge.commands import trigger_merge  # noqa: F401
 from .knowledge_merge.commands import resolve_conflict  # noqa: F401
+from .knowledge_merge.commands import trigger_chunk_remap  # noqa: F401
 
 # Knowledge Merge — query
 from .knowledge_merge.query import merge_conflicts_list  # noqa: F401
@@ -1113,6 +1115,7 @@ from .knowledge_merge.query import query_wrong_answer_map_feature29  # noqa: F40
 # Knowledge Merge — aggregate_then
 from .knowledge_merge.aggregate_then import conflict_resolved  # noqa: F401
 from .knowledge_merge.aggregate_then import mastery_preserved  # noqa: F401
+from .knowledge_merge.aggregate_then import chunks_mapped  # noqa: F401
 
 # Knowledge Merge — readmodel_then
 from .knowledge_merge.readmodel_then import unified_tree  # noqa: F401

@@ -260,6 +260,7 @@ async def upload_resource_file(
     subject_id: str = Form(...),
     filename: Optional[str] = Form(None),
     resource_type: Optional[str] = Form(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     user_id: str = Depends(get_current_user_id),
     service: ResourceService = Depends(_get_resource_service),
     db: Session = Depends(get_db),
@@ -305,12 +306,41 @@ async def upload_resource_file(
 
     result["gcs_path"] = storage_path
     result["file_size_bytes"] = len(file_data)
+
+    # 自動觸發背景文件處理（解析→切塊→embedding→知識樹）
+    background_tasks.add_task(_process_resource_background, resource_id, user_id)
+
     return result
+
+
+def _process_resource_background(resource_id: str, user_id: str):
+    """背景執行文件處理 pipeline（獨立 DB session）。"""
+    import logging
+    logger = logging.getLogger(__name__)
+    from app.core.deps import _SessionLocal
+    if _SessionLocal is None:
+        logger.error("[BG Process] Session factory not initialized")
+        return
+
+    db = _SessionLocal()
+    try:
+        from app.services.document_processing_service import DocumentProcessingService
+        svc = DocumentProcessingService(db)
+        result = svc.process_resource(uuid.UUID(resource_id))
+        if result.get("error"):
+            logger.error(f"[BG Process] resource={resource_id} failed: {result.get('message')}")
+        else:
+            logger.info(f"[BG Process] resource={resource_id} completed: {result.get('chunks_created', 0)} chunks")
+    except Exception as e:
+        logger.exception(f"[BG Process] resource={resource_id} exception: {e}")
+    finally:
+        db.close()
 
 
 @router.post("/resources/youtube")
 def submit_youtube(
     request: SubmitYoutubeRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
@@ -321,6 +351,11 @@ def submit_youtube(
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
+
+    # 自動觸發背景文件處理
+    if result.get("id"):
+        background_tasks.add_task(_process_resource_background, result["id"], user_id)
+
     return result
 
 

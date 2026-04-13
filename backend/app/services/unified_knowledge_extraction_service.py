@@ -125,8 +125,8 @@ def _build_unified_prompt(
 
 ## 萃取要求
 
-1. **第一層：章（Chapter）** — 大主題分類，4-8 個
-2. **第二層：節（Section）** — 每章下的子主題，每章 2-5 個
+1. **第一層：章（Chapter）** — 核心主題分類，**最多 6 個**（對應雷達圖六軸，嚴禁超過 6 個）
+2. **第二層：節（Section）** — 每章下的子主題，每章 2-6 個
 3. 每個「節」要包含：
    - name：知識點名稱（繁體中文，簡潔明確）
    - description：50-100 字說明，描述此知識點涵蓋的核心概念
@@ -267,19 +267,24 @@ class UnifiedKnowledgeExtractionService:
 
         mastery_migrated = len([b for b in getattr(self, '_mastery_backup', []) if b])
 
+        # 7.5 重新映射 resource_chunks → 新統一節點
+        chunks_remapped = self._remap_chunks_to_nodes(sid, question_keywords)
+
         # 8. 映射考古題到新節點
         self._map_questions_to_nodes(sid, subject_name, question_keywords)
 
         self.db.commit()
         log.info(
             f"[統一萃取] ✅ {subject_name}: "
-            f"新節點={nodes_created}, mastery遷移={mastery_migrated}"
+            f"新節點={nodes_created}, mastery遷移={mastery_migrated}, "
+            f"chunks映射={chunks_remapped}"
         )
 
         return {
             "ok": True,
             "nodes_created": nodes_created,
             "mastery_migrated": mastery_migrated,
+            "chunks_remapped": chunks_remapped,
         }
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -590,6 +595,124 @@ class UnifiedKnowledgeExtractionService:
             migrated += 1
 
         log.info(f"[mastery 遷移] ✅ {migrated}/{len(self._mastery_backup)} 筆成功遷移")
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Chunk → 統一節點映射
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _remap_chunks_to_nodes(self, sid: uuid.UUID, question_keywords: dict) -> int:
+        """將該科目下所有 resource_chunks 重新映射到統一知識節點。
+
+        映射策略（依優先序）：
+        1. chunk 的 section_title 完全匹配節點名稱
+        2. 節點名稱出現在 chunk section_title 中（子字串匹配）
+        3. 加權 keyword 計分：節點名稱 + question_keywords + source_text 關鍵詞
+           在 chunk content 中出現次數 × 關鍵詞長度（越長越精確）
+        未匹配的 chunk 歸入第一個 section（fallback）。
+        """
+        import re as _re
+
+        # 取得新的統一節點（含 source_text 以提取關鍵詞）
+        nodes = self.db.execute(text('''
+            SELECT id, name, parent_id, depth, source_text FROM knowledge_nodes
+            WHERE subject_id = :sid AND source_origin = 'ai_unified'
+            ORDER BY depth, sort_order
+        '''), {'sid': sid}).fetchall()
+
+        if not nodes:
+            return 0
+
+        section_nodes = [(r[0], r[1], r[2], r[4]) for r in nodes if r[3] == 2]
+        if not section_nodes:
+            return 0
+
+        fallback_node_id = section_nodes[0][0]
+        name_to_id: dict[str, uuid.UUID] = {name: nid for nid, name, _, _ in section_nodes}
+
+        # 建立每個節點的關鍵詞集合（來源：節點名 + question_keywords + source_text 中的關鍵詞）
+        node_kw_sets: dict[uuid.UUID, set[str]] = {}
+        for nid, name, _, source_text in section_nodes:
+            keywords: set[str] = {name}
+
+            # 從 question_keywords 加入
+            qk = question_keywords.get(name, [])
+            for kw in qk:
+                kw = kw.strip()
+                if len(kw) >= 2:
+                    keywords.add(kw)
+
+            # 從 source_text 的「關鍵詞」區段提取
+            if source_text:
+                kw_match = _re.search(r'## 關鍵詞\n(.+)', source_text)
+                if kw_match:
+                    for kw in _re.split(r'[,、，]', kw_match.group(1)):
+                        kw = kw.strip()
+                        if len(kw) >= 2:
+                            keywords.add(kw)
+
+            node_kw_sets[nid] = keywords
+
+        # 取得此科目所有 chunks
+        self.db.execute(text("SAVEPOINT before_chunk_remap"))
+        try:
+            chunks = self.db.execute(text('''
+                SELECT rc.id, rc.metadata_json, rc.content
+                FROM resource_chunks rc
+                JOIN resources r ON rc.resource_id = r.id
+                WHERE r.subject_id = :sid
+            '''), {'sid': sid}).fetchall()
+        except Exception as e:
+            log.warning(f"[chunk映射] 無法讀取 chunks (RLS): {e}")
+            self.db.execute(text("ROLLBACK TO SAVEPOINT before_chunk_remap"))
+            return 0
+
+        if not chunks:
+            return 0
+
+        mapped = 0
+        for chunk_id, metadata, content in chunks:
+            meta = metadata or {}
+            section_title = meta.get("section_title", "")
+            content_text = content or ""
+
+            best_node_id = None
+
+            # 策略 1: section_title 精確匹配節點名
+            if section_title and section_title in name_to_id:
+                best_node_id = name_to_id[section_title]
+
+            # 策略 2: 節點名稱是 section_title 的子字串
+            if not best_node_id and section_title:
+                for node_name, nid in name_to_id.items():
+                    if node_name in section_title or section_title in node_name:
+                        best_node_id = nid
+                        break
+
+            # 策略 3: 加權 keyword 計分（出現次數 × 關鍵詞長度）
+            if not best_node_id:
+                scores: dict[uuid.UUID, int] = {}
+                for nid, keywords in node_kw_sets.items():
+                    score = 0
+                    for kw in keywords:
+                        count = content_text.count(kw)
+                        if count > 0:
+                            score += count * len(kw)
+                    if score > 0:
+                        scores[nid] = score
+                if scores:
+                    best_node_id = max(scores, key=scores.get)  # type: ignore[arg-type]
+
+            # Fallback
+            if not best_node_id:
+                best_node_id = fallback_node_id
+
+            self.db.execute(text('''
+                UPDATE resource_chunks SET node_id = :nid WHERE id = :cid
+            '''), {'nid': best_node_id, 'cid': chunk_id})
+            mapped += 1
+
+        log.info(f"[chunk映射] ✅ {mapped}/{len(chunks)} chunks 已映射到統一節點")
+        return mapped
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 題目映射
