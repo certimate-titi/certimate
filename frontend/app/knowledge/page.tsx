@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen } from 'lucide-react';
+import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList } from 'lucide-react';
 import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -34,9 +34,25 @@ export default function KnowledgeBasePage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [freeQueriesLeft, setFreeQueriesLeft] = useState(isPro199 ? 0 : 3);
+  const [freeQueriesLeft, setFreeQueriesLeft] = useState(() => {
+    if (isPro199) return 0;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('certimate_ai_coach_free_queries');
+      if (saved !== null) return Math.max(0, parseInt(saved, 10));
+    }
+    return 3;
+  });
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
+  const [docChunks, setDocChunks] = useState<Record<string, Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }>>>({});
+  const [loadingChunks, setLoadingChunks] = useState<string | null>(null);
+  const [chunkErrors, setChunkErrors] = useState<Record<string, string>>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractResult, setExtractResult] = useState<string | null>(null);
   const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
+  const [centerView, setCenterView] = useState<'graph' | 'document'>('graph');
+  const [docFullText, setDocFullText] = useState<string>('');
+  const [docFullTitle, setDocFullTitle] = useState<string>('');
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -71,7 +87,11 @@ export default function KnowledgeBasePage() {
 
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
-      if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
+      if (res.subjects.length > 0) {
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
+      }
     }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
@@ -82,8 +102,12 @@ export default function KnowledgeBasePage() {
     setLoadingDetail(false);
     setSelectedNodeDetail(null);
     setChatMessages([]);
-    setFreeQueriesLeft(isPro199 ? 0 : 3);
+    // 不重置 freeQueriesLeft — 切換科目不應消耗免費次數
     setDeleteConfirmId(null);
+    setCenterView('graph');
+    setDocFullText('');
+    setDocFullTitle('');
+    setExpandedDocId(null);
 
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
     const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
@@ -165,7 +189,11 @@ export default function KnowledgeBasePage() {
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
     setChatLoading(true);
-    if (!isProPlus) setFreeQueriesLeft(q => q - 1);
+    if (!isProPlus) setFreeQueriesLeft(q => {
+      const next = q - 1;
+      localStorage.setItem('certimate_ai_coach_free_queries', String(next));
+      return next;
+    });
     try {
       const { apiClient } = await import('@/lib/api/client');
       const res = await apiClient.post<{ message: string }>(`/knowledge-map/nodes/${selectedNodeDetail?.node.id}/chat`, { message: text });
@@ -182,6 +210,42 @@ export default function KnowledgeBasePage() {
     setNodes(prev => prev.filter(n => n.documentId !== docId));
     setDeleteConfirmId(null);
     if (selectedDocId === docId) setSelectedDocId(null);
+  };
+
+  const handleToggleDocChunks = async (docId: string) => {
+    if (expandedDocId === docId) {
+      setExpandedDocId(null);
+      return;
+    }
+    setExpandedDocId(docId);
+    const doc = documents.find(d => d.id === docId);
+    if (docChunks[docId]) {
+      // Already cached — build full text and show
+      const sorted = [...docChunks[docId]].sort((a, b) => a.chunk_index - b.chunk_index);
+      setDocFullText(sorted.map(c => c.content).join('\n\n'));
+      setDocFullTitle(doc?.title || '');
+      setCenterView('document');
+      return;
+    }
+    setLoadingChunks(docId);
+    try {
+      const res = await knowledgeService.getResourceChunks(docId) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
+      const chunks = res.chunks || [];
+      setDocChunks(prev => ({ ...prev, [docId]: chunks }));
+      setChunkErrors(prev => { const next = { ...prev }; delete next[docId]; return next; });
+      // Build full text and switch to document view
+      const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+      setDocFullText(sorted.map(c => c.content).join('\n\n'));
+      setDocFullTitle(doc?.title || '');
+      setCenterView('document');
+    } catch (err) {
+      const errMsg = (err as Error)?.message || '';
+      const msg = errMsg.includes('無權') ? '無權存取此資源'
+        : errMsg.includes('不存在') ? '資源不存在'
+        : '載入失敗，請稍後再試';
+      setChunkErrors(prev => ({ ...prev, [docId]: msg }));
+    }
+    setLoadingChunks(null);
   };
 
   const sourceTypeIcons: Record<string, { icon: typeof FileText; color: string }> = {
@@ -210,7 +274,7 @@ export default function KnowledgeBasePage() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => router.push('/onboarding')}
           allowAdd={false}
         />
@@ -244,7 +308,7 @@ export default function KnowledgeBasePage() {
 
           {/* ── LEFT: Resource List ── */}
           {showLeftPanel && (
-            <div className="w-[220px] shrink-0 border-r border-slate-200">
+            <div className="w-[280px] shrink-0 border-r border-slate-200">
               <div className="h-full flex flex-col bg-white">
                 <div className="p-3 border-b border-slate-100 flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-emerald-500" />
@@ -259,15 +323,75 @@ export default function KnowledgeBasePage() {
                   ) : (
                     documents.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => {
                       const isActive = doc.id === selectedDocId;
+                      const isExpanded = doc.id === expandedDocId;
                       const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
+                      const chunks = docChunks[doc.id];
                       return (
-                        <div key={doc.id} onClick={() => { setSelectedDocId(doc.id); const docNode = nodes.find(n => n.documentId === doc.id); if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id); }}
-                          className={`group p-2.5 rounded-lg border cursor-pointer transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'}`}>
-                          <div className="flex items-center gap-2">
-                            <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-                            <div className="flex-1 min-w-0"><h3 className="text-xs font-medium truncate">{doc.title}</h3><p className="text-[10px] text-slate-400">{doc.sourceType}</p></div>
-                            <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"><Trash2 className="h-3 w-3" /></button>
+                        <div key={doc.id} className={`rounded-lg border transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200'}`}>
+                          <div
+                            onClick={() => { setSelectedDocId(doc.id); handleToggleDocChunks(doc.id); const docNode = nodes.find(n => n.documentId === doc.id); if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id); }}
+                            className="group p-2.5 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" /> : <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />}
+                              <Icon className={`h-4 w-4 shrink-0 ${color}`} />
+                              <div className="flex-1 min-w-0"><h3 className="text-xs font-medium truncate">{doc.title}</h3><p className="text-[10px] text-slate-400">{doc.sourceType}</p></div>
+                              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"><Trash2 className="h-3 w-3" /></button>
+                            </div>
                           </div>
+                          {isExpanded && (
+                            <div className="px-2 pb-2">
+                              {loadingChunks === doc.id ? (
+                                <div className="flex items-center justify-center py-3">
+                                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              ) : chunks && chunks.length > 0 ? (
+                                <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
+                                  {chunks.map(chunk => (
+                                    <div
+                                      key={chunk.id}
+                                      className={`px-2 py-1.5 rounded text-[10px] leading-relaxed ${
+                                        chunk.chunk_type === 'exam_questions'
+                                          ? 'bg-amber-50 border border-amber-100'
+                                          : chunk.chunk_type === 'image_analysis'
+                                            ? 'bg-purple-50 border border-purple-100'
+                                            : 'bg-slate-50 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      <div className="flex items-start gap-1.5">
+                                        {chunk.chunk_type === 'exam_questions' ? (
+                                          <ClipboardList className="h-3 w-3 shrink-0 text-amber-600 mt-0.5" />
+                                        ) : chunk.chunk_type === 'image_analysis' ? (
+                                          <Image className="h-3 w-3 shrink-0 text-purple-500 mt-0.5" />
+                                        ) : (
+                                          <FileText className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          {chunk.chunk_type === 'exam_questions' && (
+                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-amber-700 bg-amber-100 mb-0.5">考古題</span>
+                                          )}
+                                          {chunk.chunk_type === 'image_analysis' && (
+                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-purple-600 bg-purple-100 mb-0.5">圖片分析</span>
+                                          )}
+                                          <p className="font-medium text-slate-700 truncate">
+                                            {chunk.section_title || `段落 ${chunk.chunk_index + 1}`}
+                                          </p>
+                                          <p className="text-slate-500 line-clamp-2 mt-0.5">{chunk.content.slice(0, 120)}{chunk.content.length > 120 ? '...' : ''}</p>
+                                          {chunk.chunk_type !== 'exam_questions' && chunk.source_page_start && (
+                                            <span className="text-[9px] text-slate-400 mt-0.5 inline-block">p.{chunk.source_page_start}{chunk.source_page_end && chunk.source_page_end !== chunk.source_page_start ? `-${chunk.source_page_end}` : ''}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : chunkErrors[doc.id] ? (
+                                <div className="text-center py-2 text-[10px] text-rose-500">{chunkErrors[doc.id]}</div>
+                              ) : (
+                                <div className="text-center py-2 text-[10px] text-slate-400">尚無內容分塊</div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -287,8 +411,9 @@ export default function KnowledgeBasePage() {
                     {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
                   </button>
                   <div className="flex bg-slate-100 rounded-md p-0.5">
-                    <button onClick={() => setGraphView('force')} className={`px-2 py-0.5 text-[10px] rounded font-medium ${graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
-                    <button onClick={() => setGraphView('tree')} className={`px-2 py-0.5 text-[10px] rounded font-medium ${graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
+                    <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
+                    <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
+                    {docFullText && <button onClick={() => setCenterView('document')} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
                   </div>
                   <div className="flex items-center gap-2 text-[9px] text-slate-400 ml-2">
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />精熟</span>
@@ -296,14 +421,59 @@ export default function KnowledgeBasePage() {
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />弱</span>
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300" />未測</span>
                   </div>
+                  <button
+                    onClick={async () => {
+                      if (extracting || !activeSubjectId) return;
+                      const activeSubject = subjects.find(s => s.id === activeSubjectId);
+                      const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+                      setExtracting(true);
+                      setExtractResult(null);
+                      try {
+                        const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
+                        const created = (res as Record<string, number>).nodes_created || 0;
+                        setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                        // 重新載入知識圖譜
+                        const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
+                        setNodes((mapRes.nodes || []) as KnowledgeNode[]);
+                        setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
+                      } catch {
+                        setExtractResult('❌ 萃取失敗，請稍後再試');
+                      } finally {
+                        setExtracting(false);
+                        setTimeout(() => setExtractResult(null), 5000);
+                      }
+                    }}
+                    disabled={extracting || !activeSubjectId}
+                    className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded font-medium ml-2 transition-colors ${
+                      extracting
+                        ? 'bg-blue-100 text-blue-500 cursor-wait'
+                        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                    title="重新分析：合併考古題與上傳教材，AI 統一萃取知識樹"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${extracting ? 'animate-spin' : ''}`} />
+                    {extracting ? '分析中...' : '重新分析'}
+                  </button>
+                  {extractResult && (
+                    <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
+                  )}
                 </div>
                 <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                   {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
                 </button>
               </div>
-              {/* Graph */}
+              {/* Graph / Document */}
               <div className="flex-1 overflow-hidden">
-                {graphView === 'force' ? (
+                {centerView === 'document' ? (
+                  <div className="h-full overflow-y-auto p-6">
+                    <div className="max-w-3xl mx-auto">
+                      <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
+                      <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                        {docFullText}
+                      </div>
+                    </div>
+                  </div>
+                ) : graphView === 'force' ? (
                   <ForceGraph nodes={graphNodes} onNodeClick={handleNodeClick}
                     selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
                     width={800} height={500} />
@@ -334,7 +504,8 @@ export default function KnowledgeBasePage() {
                       <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-blue-500" />
                         <h3 className="text-xs font-bold text-slate-700 truncate">{selectedNodeDetail.node?.label || '節點說明'}</h3>
-                        <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; router.push(`/exam/setup?nodeId=${nid}`); }} className="ml-auto text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">生成測驗</button>
+                        <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; const nname = selectedNodeDetail?.node?.label || ''; router.push(`/practice?nodeId=${nid}&nodeName=${encodeURIComponent(nname)}`); }} className="ml-auto text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
+                        <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; router.push(`/exam/setup?nodeId=${nid}`); }} className="text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">測驗</button>
                       </div>
                       <div className="px-3 py-2">
                         <div className="flex items-center gap-2 mb-2">
@@ -361,8 +532,8 @@ export default function KnowledgeBasePage() {
                           <div className="space-y-2 mt-1">
                             <p className="text-[11px] text-slate-500">此節點尚無詳細說明文字。</p>
                             <div className="flex flex-wrap gap-1.5">
-                              <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; router.push(`/exam/setup?nodeId=${nid}`); }} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] border border-emerald-200 hover:bg-emerald-100">
-                                📝 生成練習題
+                              <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; const nname = selectedNodeDetail?.node?.label || ''; router.push(`/practice?nodeId=${nid}&nodeName=${encodeURIComponent(nname)}`); }} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] border border-emerald-200 hover:bg-emerald-100">
+                                📝 節點練習
                               </button>
                               <button onClick={() => setChatInput('用簡單的話解釋')} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] border border-blue-200 hover:bg-blue-100">
                                 💡 AI 教練解釋

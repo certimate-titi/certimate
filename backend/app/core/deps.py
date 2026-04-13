@@ -150,15 +150,16 @@ def set_rls_tenant(db: Session, tenant_id: str) -> None:
 
     應在每個需要 RLS 的請求開始時呼叫。
     """
-    # SET LOCAL 只在當前 transaction 有效，不會跨請求洩漏
-    # 注意：SET LOCAL 不支援 parameterized query（$1 語法），需用 literal
+    # 使用 SET（session-scoped）而非 SET LOCAL（transaction-scoped）
+    # 避免 mid-service commit 後 GUC 被清除導致 RLS 失敗
+    # Session close 時連線歸還 pool，由 pool 的 reset_on_return 清理
     import re
     tid = str(tenant_id)
     if not re.match(r'^[0-9a-f-]{36}$', tid):
         raise ValueError(f"Invalid tenant_id format: {tid}")
     db.execute(
         __import__("sqlalchemy").text(
-            f"SET LOCAL app.current_tenant_id = '{tid}'"
+            f"SET app.current_tenant_id = '{tid}'"
         )
     )
 
@@ -182,4 +183,9 @@ def get_db_with_tenant(
         set_rls_tenant(db, tenant_id)
         yield db
     finally:
+        # RESET session-scoped GUC to prevent leaking to pooled connections
+        try:
+            db.execute(__import__("sqlalchemy").text("RESET app.current_tenant_id"))
+        except Exception:
+            pass
         db.close()

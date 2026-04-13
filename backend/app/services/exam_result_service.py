@@ -11,12 +11,15 @@ from app.models.answer import Answer
 from app.models.question import Question
 from app.models.knowledge_node import KnowledgeNode
 from app.models.resource import Resource
+from app.models.user import User
 
 
 class ExamResultService:
 
     def __init__(self, db: Session):
         self.db = db
+        self._llm = None
+        self._prompt_svc = None
 
     def get_result(self, exam_id: str, user_id: str) -> dict:
         uid = uuid.UUID(user_id)
@@ -125,6 +128,15 @@ class ExamResultService:
             1 for q in questions
             if answer_map.get(str(q.id)) and answer_map[str(q.id)].is_correct
         )
+
+        # 嘗試用 T-04 LLM 生成考後總評
+        ai_summary = self._generate_llm_summary(exam, questions, answer_map, total, correct)
+        if ai_summary:
+            exam.ai_summary = ai_summary
+            self.db.commit()
+            return ai_summary
+
+        # Fallback: 規則生成摘要（以下是既有邏輯）
         rate = round(correct / total * 100)
 
         # Analyze by difficulty
@@ -198,89 +210,254 @@ class ExamResultService:
 
         return summary
 
+    def _get_llm(self):
+        if self._llm is None:
+            from app.core.config import get_settings
+            settings = get_settings()
+            if settings.GEMINI_API_KEY or settings.ANTHROPIC_API_KEY or settings.OPENAI_API_KEY:
+                from app.services.llm_service import LLMService
+                self._llm = LLMService(db=self.db)
+        return self._llm
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        if not self._prompt_svc:
+            try:
+                from app.services.prompt_template_service import PromptTemplateService
+                self._prompt_svc = PromptTemplateService(self.db)
+            except Exception:
+                return None
+        try:
+            result = self._prompt_svc.get_prompt_for_ai(name)
+            if result.get("error"):
+                return None
+            if variables:
+                render = self._prompt_svc.render_prompt
+                result["system_prompt"] = render(result["system_prompt"], variables)
+                result["user_prompt"] = render(result["user_prompt"], variables)
+            return result
+        except Exception:
+            return None
+
+    def _generate_llm_summary(self, exam, questions, answer_map, total, correct) -> str | None:
+        """用 T-04 模板生成 AI 考後總評。"""
+        llm = self._get_llm()
+        if not llm:
+            return None
+
+        import json
+        accuracy = round(correct / total * 100) if total > 0 else 0
+
+        # 取得科目名稱
+        subject_name = ""
+        if exam.subject_id:
+            from app.models.subject import Subject
+            subject = self.db.query(Subject).filter_by(id=exam.subject_id).first()
+            subject_name = subject.name if subject else ""
+
+        # 計算各考點表現（從 domain_analysis）
+        node_perf = []
+        node_answers = {}
+        for a in [answer_map[k] for k in answer_map]:
+            q = next((q for q in questions if str(q.id) == str(a.question_id)), None)
+            if q and q.node_id:
+                nid = str(q.node_id)
+                node_answers.setdefault(nid, {"correct": 0, "total": 0})
+                node_answers[nid]["total"] += 1
+                if a.is_correct:
+                    node_answers[nid]["correct"] += 1
+
+        weak_nodes = []
+        for nid, stats in node_answers.items():
+            node = self.db.query(KnowledgeNode).filter_by(id=uuid.UUID(nid)).first()
+            name = node.name if node else "未分類"
+            rate = round(stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            node_perf.append({"point": name, "correct": stats["correct"], "total": stats["total"], "rate": rate})
+            if rate < 60:
+                weak_nodes.append({"name": name, "mastery_rate": rate})
+
+        # Determine summary level instruction by plan
+        user = self.db.query(User).filter_by(id=exam.user_id).first() if exam.user_id else None
+        plan = user.subscription_plan.value if user and user.subscription_plan else "FREE"
+
+        level_instructions = {
+            "FREE": "列出前 3 個最弱考點，每個一句話點評。不提供複習計劃。全文上限 150 字。",
+            "PRO": "列出前 3 個最弱考點，每個一句話點評。不提供複習計劃。全文上限 150 字。",
+            "PRO_PLUS": "分析所有弱點考點：每個弱點一句話說明問題所在。最後給出 3 條具體複習行動建議（每條一句話）。全文上限 300 字。",
+            "ULTRA": "分析所有弱點考點：每個弱點一句話說明。若有歷史趨勢用「上次 X%→這次 Y%」簡述。3 條個人化複習建議。3 個考前衝刺重點關鍵字。全文上限 400 字。",
+        }
+        summary_instruction = level_instructions.get(plan, level_instructions["FREE"])
+
+        db_prompt = self._load_prompt("post_exam_summary", {
+            "summary_level_instruction": summary_instruction,
+            "subject_name": subject_name,
+            "total_questions": str(total),
+            "correct_count": str(correct),
+            "accuracy": str(accuracy),
+            "point_performance": json.dumps(node_perf, ensure_ascii=False),
+            "weak_nodes": json.dumps(weak_nodes, ensure_ascii=False),
+        })
+
+        _FALLBACK_SYSTEM = (
+            "你是學習成效分析師，為考生撰寫精簡考後總評。"
+            "開頭一句話總結表現，不要寒暄自我介紹。"
+            "用純文字段落，用「▸」作項目符號，不用 Markdown 標題/表格/分隔線。"
+            "絕不使用「不及格」「失敗」「退步」等負面詞彙。"
+            "不要重複列出滿分強項，一句帶過。不要加結尾鼓勵套話。"
+        )
+
+        if db_prompt:
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = _FALLBACK_SYSTEM + "\n" + summary_instruction
+            user_prompt = (
+                f"科目：{subject_name}\n總題數：{total}，答對：{correct}，答對率：{accuracy}%\n\n"
+                f"各考點表現：\n{json.dumps(node_perf, ensure_ascii=False)}\n\n"
+                f"弱點節點：\n{json.dumps(weak_nodes, ensure_ascii=False)}\n\n"
+                f"請直接輸出總評，不要加標題。"
+            )
+
+        try:
+            max_tokens_map = {"PRO": 512, "PRO_PLUS": 768, "ULTRA": 1024}
+            max_tokens = max_tokens_map.get(plan, 512)
+            result = llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=max_tokens)
+            return result if result and len(result.strip()) > 30 else None
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("T-04 post exam summary LLM failed")
+            return None
+
     def _build_domain_analysis(self, exam_id, answers) -> list:
-        """Build domain (knowledge node) analysis for the exam."""
+        """全維度知識節點掌握度分析。
+
+        四維度加權計算 mastery_score：
+        - SM-2 累計掌握度 (40%)：跨考試 EMA + 記憶衰退
+        - Bloom 認知層次覆蓋 (20%)：已答對的 Bloom 層次數 / 6
+        - 信心度校準 (25%)：confident_correct / (confident_correct + confident_incorrect)
+        - 本次考試答對率 (15%)：correct / total
+        """
         if not answers:
             return []
 
-        from app.models.historical_exam import HistoricalExam
+        from app.models.node_mastery import NodeMastery
+        from app.services.sm2_engine import SM2Engine, TopicState
 
-        # Method 1: 有 node_id 的題目（AI 生成題）
-        node_results = (
-            self.db.query(
-                KnowledgeNode.name,
-                func.sum(func.cast(Answer.is_correct, SAInteger)).label("correct"),
-                func.count(Answer.id).label("total"),
-            )
-            .join(Question, Question.id == Answer.question_id)
-            .join(KnowledgeNode, KnowledgeNode.id == Question.node_id)
-            .filter(Answer.exam_id == exam_id)
-            .group_by(KnowledgeNode.name)
-            .all()
-        )
+        sm2 = SM2Engine()
+        exam_obj = self.db.query(Exam).filter_by(id=exam_id).first()
+        user_id = exam_obj.user_id if exam_obj else None
 
-        # Method 2: 無 node_id 的題目 — 用考試關聯的知識節點做分組
-        # 從考試的 difficulty_distribution（包含 node_ids）取回節點名稱
-        if not node_results:
-            exam_obj = self.db.query(Exam).filter_by(id=exam_id).first()
-            exam_node_ids = []
-            if exam_obj and exam_obj.difficulty_distribution:
-                config = exam_obj.difficulty_distribution
-                if isinstance(config, dict):
-                    raw_ids = config.get("node_ids", [])
-                    exam_node_ids = [uuid.UUID(nid) for nid in raw_ids if nid]
+        # Step 1: 按知識節點分組答案
+        node_answers: dict[str, list] = {}  # node_id → [(answer, question)]
+        for a in answers:
+            q = self.db.query(Question).filter_by(id=a.question_id).first()
+            if not q or not q.node_id:
+                node_answers.setdefault("__unlinked__", []).append((a, q))
+                continue
+            nid = str(q.node_id)
+            node_answers.setdefault(nid, []).append((a, q))
 
-            if exam_node_ids:
-                # 用考試配置的知識節點做弱點分析
-                exam_nodes = self.db.query(KnowledgeNode).filter(
-                    KnowledgeNode.id.in_(exam_node_ids)
-                ).all()
-                node_name_list = [n.name for n in exam_nodes] if exam_nodes else ["全部題目"]
-            else:
-                # 取該使用者的所有知識節點
-                if exam_obj:
-                    all_nodes = self.db.query(KnowledgeNode).filter(
-                        KnowledgeNode.resource_id.in_(
-                            self.db.query(Resource.id).filter(Resource.subject_id == exam_obj.subject_id)
-                        )
-                    ).limit(10).all()
-                    node_name_list = [n.name for n in all_nodes] if all_nodes else ["全部題目"]
-                else:
-                    node_name_list = ["全部題目"]
-
-            # 將答案平均分配到知識節點
-            total_answers = len(answers)
+        # 如果所有題目都沒有 node_id，fallback 到「全部題目」
+        if not node_answers or (len(node_answers) == 1 and "__unlinked__" in node_answers):
             correct_count = sum(1 for a in answers if a.is_correct)
-            per_node = max(1, total_answers // len(node_name_list))
-
-            for i, name in enumerate(node_name_list):
-                start = i * per_node
-                end = start + per_node if i < len(node_name_list) - 1 else total_answers
-                node_answers = answers[start:end]
-                node_correct = sum(1 for a in node_answers if a.is_correct)
-                node_total = len(node_answers)
-                pct = round(node_correct / node_total * 100) if node_total > 0 else 0
-                node_results.append((name, node_correct, node_total))
-
-        domain_list = []
-        for name, correct, total in list(node_results):
-            correct_val = int(correct or 0)
-            total_val = int(total or 0)
-            pct = round(correct_val / total_val * 100) if total_val > 0 else 0
-            domain_list.append({
-                "domain": name or "未分類",
-                "correct": correct_val,
-                "total": total_val,
-                "percentage": pct,
-            })
-
-        if not domain_list and answers:
-            correct_count = sum(1 for a in answers if a.is_correct)
-            domain_list.append({
+            return [{
                 "domain": "全部題目",
                 "correct": correct_count,
                 "total": len(answers),
                 "percentage": round(correct_count / len(answers) * 100) if answers else 0,
+            }]
+
+        # Step 2: 為每個節點計算四維度分數
+        W_SM2 = 0.40
+        W_BLOOM = 0.20
+        W_CONFIDENCE = 0.25
+        W_EXAM = 0.15
+
+        domain_list = []
+        for nid, aq_pairs in node_answers.items():
+            if nid == "__unlinked__":
+                continue
+
+            node = self.db.query(KnowledgeNode).filter_by(id=uuid.UUID(nid)).first()
+            node_name = node.name if node else "未分類"
+
+            # (a) 本次考試答對率
+            correct = sum(1 for a, q in aq_pairs if a.is_correct)
+            total = len(aq_pairs)
+            exam_accuracy = correct / total if total > 0 else 0
+
+            # (b) SM-2 累計掌握度（含記憶衰退）
+            effective = 0.0
+            decay_status = "unseen"
+            sm2_detail = {"base_mastery": 0, "retention": 1.0, "effective": 0}
+            if user_id:
+                nm = self.db.query(NodeMastery).filter_by(
+                    user_id=user_id, node_id=uuid.UUID(nid)
+                ).first()
+                if nm and nm.base_mastery and nm.base_mastery > 0:
+                    state = TopicState(
+                        base_mastery=nm.base_mastery,
+                        ease_factor=nm.ease_factor or SM2Engine.DEFAULT_EASE_FACTOR,
+                        last_tested_at=nm.last_tested_at,
+                        next_review_at=nm.next_review_at,
+                        status=nm.status or "UNSEEN",
+                    )
+                    effective = sm2.calculate_effective_progress(state)
+                    decay_status = sm2.get_decay_status(state)
+                    retention = sm2.calculate_retention(state)
+                    sm2_detail = {
+                        "base_mastery": round(nm.base_mastery, 3),
+                        "retention": round(retention, 3),
+                        "effective": round(effective, 3),
+                    }
+
+            # (c) Bloom 認知層次覆蓋度
+            bloom_correct = set()
+            for a, q in aq_pairs:
+                if a.is_correct and q and q.bloom_category:
+                    cat = q.bloom_category.value if hasattr(q.bloom_category, 'value') else q.bloom_category
+                    bloom_correct.add(cat)
+            bloom_coverage = len(bloom_correct) / 6.0
+            bloom_detail = {"covered": sorted(bloom_correct), "total": 6}
+
+            # (d) 信心度校準分數
+            confident_correct = 0
+            confident_incorrect = 0
+            for a, q in aq_pairs:
+                conf = getattr(a, 'confidence', None) or 'somewhat'
+                if conf == 'confident':
+                    if a.is_correct:
+                        confident_correct += 1
+                    else:
+                        confident_incorrect += 1
+            conf_total = confident_correct + confident_incorrect
+            calibration_rate = confident_correct / conf_total if conf_total > 0 else exam_accuracy  # fallback
+            blind_spots = confident_incorrect
+            conf_detail = {"calibration_rate": round(calibration_rate, 3), "blind_spots": blind_spots}
+
+            # 加權計算 mastery_score
+            mastery_score = (
+                W_SM2 * effective +
+                W_BLOOM * bloom_coverage +
+                W_CONFIDENCE * calibration_rate +
+                W_EXAM * exam_accuracy
+            )
+            mastery_pct = round(mastery_score * 100)
+
+            domain_list.append({
+                "domain": node_name,
+                "correct": correct,
+                "total": total,
+                "percentage": mastery_pct,
+                "exam_accuracy": round(exam_accuracy * 100),
+                "mastery": round(effective * 100),
+                "bloom_coverage": round(bloom_coverage * 100),
+                "confidence_calibration": round(calibration_rate * 100),
+                "decay_status": decay_status,
+                "dimensions": {
+                    "sm2": sm2_detail,
+                    "bloom": bloom_detail,
+                    "confidence": conf_detail,
+                },
             })
 
         domain_list.sort(key=lambda x: x["percentage"])

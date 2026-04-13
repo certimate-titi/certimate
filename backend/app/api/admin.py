@@ -476,3 +476,262 @@ def seed_subjects(
 
     db.commit()
     return {"message": "Subjects seeded"}
+
+
+@router.post("/seed-exam-codes")
+def seed_exam_codes(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Set exam_subject_codes for all known subjects."""
+    from app.models.subject import Subject
+
+    CODES = {
+        "AI 應用規劃師（初級）": [
+            "IPA114:114_ai_fundamentals_4th",
+            "IPA114:114_ai_application_4th",
+        ],
+        "AI 應用規劃師（中級）": [
+            "IPA114:114_ai_mid_ml",
+            "IPA114:114_ai_mid_bigdata",
+            "IPA114:114_ai_mid_tech_planning",
+        ],
+        "證券商業務員": [
+            "FIN114:securities_salesperson_session01_questions",
+            "FIN114:securities_salesperson_session02_questions",
+            "FIN114:senior_securities_session01_questions",
+            "FIN114:senior_securities_session02_questions",
+            "FIN114:securities_regulations_b_session01_questions",
+            "FIN114:securities_regulations_b_session02_questions",
+            "FIN114:internal_control_session01_questions",
+            "FIN114:internal_control_session02_questions",
+        ],
+        "期貨商業務員": [
+            "FIN114:futures_salesperson_session01_questions",
+            "FIN114:futures_salesperson_session02_questions",
+            "FIN114:futures_analyst_session01_questions",
+            "FIN114:futures_analyst_session02_questions",
+            "FIN114:futures_trust_fund_session01_questions",
+            "FIN114:futures_trust_fund_session02_questions",
+        ],
+        "理財規劃人員": [
+            "FIN114:investment_trust_session01_questions",
+            "FIN114:investment_trust_session02_questions",
+            "FIN114:investment_regulations_b_session01_questions",
+            "FIN114:investment_regulations_b_session02_questions",
+        ],
+        "防制洗錢與打擊資恐專業人員": [
+            "FIN114:aml_cft_session01_questions",
+            "FIN114:aml_cft_session02_questions",
+            "FIN114:sustainability_session01_questions",
+            "FIN114:sustainability_session02_questions",
+        ],
+        "資訊安全工程師（初級）": [
+            "IPA114:114_is_beginner_management",
+            "IPA114:114_is_beginner_tech",
+        ],
+        "巨量資料分析師（初級）": [
+            "IPA111:111_bda_beginner_subject1",
+            "IPA111:111_bda_beginner_subject2",
+            "IPA109:109_bda_beginner_sample_subject1",
+            "IPA109:109_bda_beginner_sample_subject2",
+        ],
+        "不動產經紀人": [
+            "REA111:111_land_law_q",
+            "REA111:111_broker_regulations_q",
+            "REA111:111_civil_law_q",
+            "REA111:111_valuation_q",
+            "REA112:112_land_law_q",
+            "REA112:112_broker_regulations_q",
+            "REA112:112_civil_law_q",
+            "REA112:112_valuation_q",
+        ],
+    }
+    updated = 0
+    for name, codes in CODES.items():
+        subject = db.query(Subject).filter_by(name=name).first()
+        if subject:
+            subject.exam_subject_codes = codes
+            updated += 1
+    db.commit()
+    return {"message": f"Updated {updated} subjects with exam_subject_codes"}
+
+
+@router.get("/debug-subject/{subject_id}")
+def debug_subject(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Debug: check subject data for extraction."""
+    from app.models.subject import Subject
+    from app.models.historical_exam import HistoricalExam
+    from app.models.question import Question
+    import uuid as uuid_mod
+    from sqlalchemy import text, func
+
+    sid = uuid_mod.UUID(subject_id)
+    subject = db.query(Subject).filter_by(id=sid).first()
+    if not subject:
+        return {"error": f"Subject {subject_id} not found"}
+
+    codes = subject.exam_subject_codes or []
+
+    # Check historical_exams for each code
+    code_results = []
+    for code in codes:
+        parts = code.split(':', 1)
+        if len(parts) == 2:
+            count = db.execute(text('''
+                SELECT COUNT(*) FROM questions q
+                JOIN historical_exams he ON q.historical_exam_id = he.id
+                WHERE he.exam_code = :ec AND he.subject_code = :sc
+            '''), {'ec': parts[0], 'sc': parts[1]}).scalar()
+            code_results.append({"code": code, "questions": count})
+
+    # Check by subject_name
+    name_count = db.execute(text('''
+        SELECT COUNT(*) FROM questions q
+        JOIN historical_exams he ON q.historical_exam_id = he.id
+        WHERE he.subject_name = :name
+    '''), {'name': subject.name}).scalar()
+
+    # Check all historical_exams
+    he_count = db.query(func.count(HistoricalExam.id)).scalar()
+
+    # Check knowledge nodes for this subject
+    from app.models.knowledge_node import KnowledgeNode
+    nodes = db.query(KnowledgeNode).filter_by(subject_id=sid).order_by(
+        KnowledgeNode.depth, KnowledgeNode.sort_order
+    ).all()
+    node_data = [
+        {"name": n.name, "depth": n.depth, "available_questions": n.available_questions or 0}
+        for n in nodes
+    ]
+
+    # Count mapped historical questions (node_id points to this subject's nodes)
+    node_ids = [n.id for n in nodes]
+    mapped_count = 0
+    if node_ids:
+        placeholders = ', '.join(f':nid_{i}' for i in range(len(node_ids)))
+        params = {f'nid_{i}': str(nid) for i, nid in enumerate(node_ids)}
+        mapped_count = db.execute(text(f'''
+            SELECT COUNT(*) FROM questions
+            WHERE node_id IN ({placeholders}) AND historical_exam_id IS NOT NULL
+        '''), params).scalar()
+
+    return {
+        "subject_id": subject_id,
+        "name": subject.name,
+        "exam_subject_codes": codes,
+        "code_results": code_results,
+        "name_match_count": name_count,
+        "total_historical_exams": he_count,
+        "knowledge_nodes": node_data,
+        "total_nodes": len(nodes),
+        "mapped_historical_questions": mapped_count,
+    }
+
+
+@router.post("/import-historical-questions")
+def import_historical_questions(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Import historical questions from JSON files inside the container."""
+    from pathlib import Path
+    from app.scripts.import_exam_questions import QuestionImporter
+
+    json_dir = Path("/app/data/historical_questions")
+    if not json_dir.exists():
+        # Try local path
+        json_dir = Path(__file__).parent.parent.parent / "data" / "historical_questions"
+    if not json_dir.exists():
+        raise HTTPException(status_code=404, detail={"message": f"JSON dir not found: {json_dir}"})
+
+    importer = QuestionImporter(db, dry_run=False)
+
+    imported = 0
+    errors = []
+    for json_file in sorted(json_dir.rglob("*.json")):
+        if json_file.name.startswith("_") or "backup" in str(json_file):
+            continue
+        try:
+            import json as json_mod
+            data = json_mod.loads(json_file.read_text(encoding="utf-8"))
+            meta = data.get("import_meta", {})
+            if not meta.get("exam_code"):
+                continue
+            importer.import_from_json_file(json_file)
+            imported += 1
+        except Exception as e:
+            errors.append(f"{json_file.name}: {str(e)}")
+
+    return {
+        "message": f"Imported {imported} files, {importer.imported_count} questions added, {importer.skipped_count} skipped",
+        "errors": errors[:10] if errors else [],
+    }
+
+
+# ── GCS Sync + Import ──────────────────────────────────────────────────────
+
+@router.post("/sync-questions")
+def sync_questions(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """從 GCS Bucket 同步考古題 JSON 並匯入資料庫。
+
+    流程：GCS → /tmp/historical_questions/ → DB (upsert)
+    """
+    import logging
+    log = logging.getLogger("admin.sync")
+
+    try:
+        from app.scripts.sync_from_gcs import sync_from_gcs, LOCAL_DIR
+        from app.scripts.import_exam_questions import QuestionImporter
+
+        # Step 1: Sync from GCS
+        log.info("Starting GCS sync...")
+        sync_result = sync_from_gcs()
+        log.info(f"GCS sync result: {sync_result}")
+
+        # Step 2: Import to DB
+        log.info("Starting DB import...")
+        importer = QuestionImporter(db, dry_run=False)
+        importer.import_directory(LOCAL_DIR)
+
+        import_result = {
+            "imported": importer.imported_count,
+            "skipped": importer.skipped_count,
+            "errors": importer.error_count,
+        }
+        log.info(f"Import result: {import_result}")
+
+        # Step 3: Seed exam_subject_codes
+        from app.scripts.seed_exam_subject_codes import EXISTING_SUBJECT_CODES
+        from app.models.subject import Subject
+
+        seeded = 0
+        for name, codes in EXISTING_SUBJECT_CODES.items():
+            subject = db.query(Subject).filter_by(name=name).first()
+            if subject and subject.exam_subject_codes != codes:
+                subject.exam_subject_codes = codes
+                seeded += 1
+        if seeded > 0:
+            db.commit()
+
+        return {
+            "message": "Sync complete",
+            "sync": sync_result,
+            "import": import_result,
+            "seeded_codes": seeded,
+        }
+
+    except Exception as e:
+        import traceback
+        log.exception("Sync error: %s", e)
+        raise HTTPException(status_code=500, detail={
+            "message": f"Sync error: {str(e)}",
+            "traceback": traceback.format_exc()[-500:],
+        })

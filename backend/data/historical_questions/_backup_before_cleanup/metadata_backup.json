@@ -1,0 +1,4103 @@
+{
+  "catalog.json": {},
+  "ipas/big_data/109_bda_beginner_sample_subject1.json": {
+    "source": "初級巨量資料分析師能力鑑定樣題",
+    "exam_code": "IPA109",
+    "category_code": "big_data",
+    "subject_code": "109_bda_beginner_sample_subject1",
+    "exam_name": "初級巨量資料分析師能力鑑定樣題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 39,
+      "understand": 4,
+      "analyze": 4,
+      "create": 3
+    },
+    "difficulty_distribution": {
+      "easy": 43,
+      "hard": 7
+    },
+    "year": 109
+  },
+  "ipas/big_data/111_bda_beginner_subject2.json": {
+    "source": "111 年度巨量資料分析師能力鑑定試題",
+    "exam_code": "IPA111",
+    "category_code": "big_data",
+    "subject_code": "111_bda_beginner_subject2",
+    "exam_name": "111 年度巨量資料分析師能力鑑定試題",
+    "total_questions": 40,
+    "questions_with_answer": 40,
+    "bloom_distribution": {
+      "remember": 23,
+      "apply": 4,
+      "analyze": 9,
+      "create": 1,
+      "understand": 2,
+      "evaluate": 1
+    },
+    "difficulty_distribution": {
+      "easy": 25,
+      "medium": 4,
+      "hard": 11
+    },
+    "year": 111
+  },
+  "ipas/big_data/108_bda_mid_practical.json": {
+    "source": "中級術科考題",
+    "exam_code": "IPA108",
+    "category_code": "big_data",
+    "subject_code": "108_bda_mid_practical",
+    "exam_name": "中級術科考題",
+    "total_questions": 0,
+    "questions_with_answer": 0,
+    "bloom_distribution": {},
+    "difficulty_distribution": {},
+    "year": 108
+  },
+  "ipas/big_data/111_bda_beginner_subject1.json": {
+    "source": "111 年度巨量資料分析師能力鑑定試題",
+    "exam_code": "IPA111",
+    "category_code": "big_data",
+    "subject_code": "111_bda_beginner_subject1",
+    "exam_name": "111 年度巨量資料分析師能力鑑定試題",
+    "total_questions": 43,
+    "questions_with_answer": 43,
+    "bloom_distribution": {
+      "analyze": 15,
+      "remember": 26,
+      "create": 1,
+      "apply": 1
+    },
+    "difficulty_distribution": {
+      "hard": 16,
+      "easy": 26,
+      "medium": 1
+    },
+    "year": 111
+  },
+  "ipas/big_data/109_bda_beginner_sample_subject2.json": {
+    "source": "初級巨量資料分析師能力鑑定樣題",
+    "exam_code": "IPA109",
+    "category_code": "big_data",
+    "subject_code": "109_bda_beginner_sample_subject2",
+    "exam_name": "初級巨量資料分析師能力鑑定樣題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 44,
+      "analyze": 4,
+      "evaluate": 1,
+      "apply": 1
+    },
+    "difficulty_distribution": {
+      "easy": 44,
+      "hard": 5,
+      "medium": 1
+    },
+    "year": 109
+  },
+  "ipas/information_security/114_is_mid_defense.json": {
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_mid_defense",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
+    "total_questions": 40,
+    "questions_with_answer": 40,
+    "bloom_distribution": {
+      "remember": 18,
+      "create": 1,
+      "apply": 12,
+      "analyze": 4,
+      "evaluate": 4,
+      "understand": 1
+    },
+    "difficulty_distribution": {
+      "easy": 19,
+      "hard": 9,
+      "medium": 12
+    },
+    "year": 114
+  },
+  "ipas/information_security/114_is_mid_planning.json": {
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_mid_planning",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 中級試題",
+    "total_questions": 40,
+    "questions_with_answer": 40,
+    "bloom_distribution": {
+      "remember": 19,
+      "analyze": 4,
+      "evaluate": 2,
+      "apply": 8,
+      "create": 7
+    },
+    "difficulty_distribution": {
+      "easy": 19,
+      "hard": 13,
+      "medium": 8
+    },
+    "year": 114
+  },
+  "ipas/information_security/114_is_beginner_management.json": {
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_beginner_management",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 37,
+      "apply": 2,
+      "understand": 4,
+      "create": 1,
+      "evaluate": 4,
+      "analyze": 2
+    },
+    "difficulty_distribution": {
+      "easy": 41,
+      "medium": 2,
+      "hard": 7
+    },
+    "year": 114
+  },
+  "ipas/information_security/114_is_beginner_tech.json": {
+    "source": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
+    "exam_code": "IPA114",
+    "category_code": "information_security",
+    "subject_code": "114_is_beginner_tech",
+    "exam_name": "114 年度第 2 次 資訊安全工程師能力鑑定 初級試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "understand": 5,
+      "evaluate": 3,
+      "remember": 31,
+      "create": 7,
+      "analyze": 2,
+      "apply": 2
+    },
+    "difficulty_distribution": {
+      "easy": 36,
+      "hard": 12,
+      "medium": 2
+    },
+    "year": 114
+  },
+  "ipas/ai_planner/114_ai_application_4th.json": {
+    "source": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_application_4th",
+    "exam_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "total_questions": 48,
+    "questions_with_answer": 48,
+    "bloom_distribution": {
+      "remember": 28,
+      "create": 6,
+      "apply": 2,
+      "understand": 4,
+      "evaluate": 5,
+      "analyze": 3
+    },
+    "difficulty_distribution": {
+      "easy": 32,
+      "hard": 14,
+      "medium": 2
+    },
+    "year": 114
+  },
+  "ipas/ai_planner/114_ai_mid_ml.json": {
+    "source": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_mid_ml",
+    "exam_name": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "total_questions": 39,
+    "questions_with_answer": 39,
+    "bloom_distribution": {
+      "remember": 29,
+      "analyze": 1,
+      "evaluate": 1,
+      "create": 2,
+      "understand": 5,
+      "apply": 1
+    },
+    "difficulty_distribution": {
+      "easy": 34,
+      "hard": 4,
+      "medium": 1
+    },
+    "year": 114
+  },
+  "ipas/ai_planner/114_ai_mid_bigdata.json": {
+    "source": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_mid_bigdata",
+    "exam_name": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "total_questions": 36,
+    "questions_with_answer": 36,
+    "bloom_distribution": {
+      "apply": 4,
+      "remember": 18,
+      "evaluate": 4,
+      "create": 5,
+      "understand": 3,
+      "analyze": 2
+    },
+    "difficulty_distribution": {
+      "medium": 4,
+      "easy": 21,
+      "hard": 11
+    },
+    "year": 114
+  },
+  "ipas/ai_planner/114_ai_mid_tech_planning.json": {
+    "source": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_mid_tech_planning",
+    "exam_name": "114 年第二次 AI 應用規劃師-中級能力鑑定【公告試題】",
+    "total_questions": 46,
+    "questions_with_answer": 46,
+    "bloom_distribution": {
+      "remember": 27,
+      "create": 7,
+      "understand": 5,
+      "evaluate": 3,
+      "analyze": 2,
+      "apply": 2
+    },
+    "difficulty_distribution": {
+      "easy": 32,
+      "hard": 12,
+      "medium": 2
+    },
+    "year": 114
+  },
+  "ipas/ai_planner/114_ai_fundamentals_4th.json": {
+    "source": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "exam_code": "IPA114",
+    "category_code": "ai_planner",
+    "subject_code": "114_ai_fundamentals_4th",
+    "exam_name": "114 年第四次 AI 應用規劃師-初級能力鑑定【公告試題】",
+    "total_questions": 44,
+    "questions_with_answer": 44,
+    "bloom_distribution": {
+      "remember": 30,
+      "understand": 3,
+      "analyze": 5,
+      "create": 2,
+      "apply": 4
+    },
+    "difficulty_distribution": {
+      "easy": 33,
+      "hard": 7,
+      "medium": 4
+    },
+    "year": 114
+  },
+  "114010/502/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "502",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/502/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "502",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/502/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "502",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/502/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "502",
+    "subject_code": "0303",
+    "total_questions": 44,
+    "questions_with_answer": 44
+  },
+  "114010/505/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "505",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/505/0404.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "505",
+    "subject_code": "0404",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114010/505/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "505",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/505/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "505",
+    "subject_code": "0401",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114010/504/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "504",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/504/0301.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "504",
+    "subject_code": "0301",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114010/504/0304.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "504",
+    "subject_code": "0304",
+    "total_questions": 25,
+    "questions_with_answer": 25
+  },
+  "114010/504/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "504",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/503/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "503",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/503/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "503",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/503/0203.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "503",
+    "subject_code": "0203",
+    "total_questions": 37,
+    "questions_with_answer": 37
+  },
+  "114010/503/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "503",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/510/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "510",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/510/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "510",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/516/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "516",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/516/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "516",
+    "subject_code": "0403",
+    "total_questions": 33,
+    "questions_with_answer": 33
+  },
+  "114010/516/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "516",
+    "subject_code": "0406",
+    "total_questions": 31,
+    "questions_with_answer": 31
+  },
+  "114010/516/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "516",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/511/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "511",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/511/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "511",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/508/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "508",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/508/0502.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "508",
+    "subject_code": "0502",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114010/508/0504.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "508",
+    "subject_code": "0504",
+    "total_questions": 26,
+    "questions_with_answer": 26
+  },
+  "114010/508/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "508",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/506/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "506",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/506/0204.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "506",
+    "subject_code": "0204",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/506/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "506",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/506/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "506",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/501/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "501",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/501/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "501",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/501/0302.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "501",
+    "subject_code": "0302",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/501/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "501",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/507/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "507",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/507/0501.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "507",
+    "subject_code": "0501",
+    "total_questions": 20,
+    "questions_with_answer": 20
+  },
+  "114010/507/0503.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "507",
+    "subject_code": "0503",
+    "total_questions": 19,
+    "questions_with_answer": 19
+  },
+  "114010/507/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "507",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/509/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "509",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/509/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "509",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/509/0305.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "509",
+    "subject_code": "0305",
+    "total_questions": 36,
+    "questions_with_answer": 36
+  },
+  "114010/509/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "509",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/514/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "514",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/514/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "514",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/514/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "514",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/513/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "513",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/513/0205.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "513",
+    "subject_code": "0205",
+    "total_questions": 42,
+    "questions_with_answer": 42
+  },
+  "114010/513/0202.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "513",
+    "subject_code": "0202",
+    "total_questions": 30,
+    "questions_with_answer": 30
+  },
+  "114010/513/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "513",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/512/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "512",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/512/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "512",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/515/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "515",
+    "subject_code": "0101",
+    "total_questions": 41,
+    "questions_with_answer": 41
+  },
+  "114010/515/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "515",
+    "subject_code": "0402",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114010/515/0405.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "515",
+    "subject_code": "0405",
+    "total_questions": 25,
+    "questions_with_answer": 25
+  },
+  "114010/515/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114010",
+    "category_code": "515",
+    "subject_code": "0102",
+    "total_questions": 28,
+    "questions_with_answer": 28
+  },
+  "114080/300/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "300",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/300/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "300",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/216/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "216",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/216/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "216",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/440/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "440",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/440/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "440",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/229/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "229",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/229/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "229",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/229/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "229",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/229/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "229",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/447/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "447",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/447/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "447",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/211/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "211",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/211/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "211",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/227/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "227",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/227/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "227",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/218/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "218",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/218/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "218",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/220/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "220",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/220/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "220",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/449/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "449",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/449/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "449",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/280/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "280",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/280/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "280",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/422/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "422",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/422/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "422",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/274/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "274",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/274/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "274",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/273/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "273",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/273/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "273",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/425/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "425",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/425/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "425",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/287/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "287",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/287/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "287",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/413/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "413",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/413/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "413",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/245/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "245",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/245/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "245",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/242/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "242",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/242/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "242",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/414/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "414",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/414/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "414",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/221/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "221",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/221/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "221",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/221/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "221",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/221/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "221",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/448/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "448",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/448/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "448",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/226/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "226",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/226/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "226",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/219/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "219",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/219/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "219",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/446/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "446",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/446/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "446",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/210/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "210",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/210/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "210",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/210/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "210",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/217/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "217",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/217/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "217",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/441/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "441",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/441/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "441",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/228/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "228",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/228/0404.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "228",
+    "subject_code": "0404",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/228/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "228",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/288/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "288",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/288/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "288",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/243/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "243",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/243/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "243",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/415/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "415",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/415/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "415",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/412/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "412",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/412/0304.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "412",
+    "subject_code": "0304",
+    "total_questions": 32,
+    "questions_with_answer": 32
+  },
+  "114080/412/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "412",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/412/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "412",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/286/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "286",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/286/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "286",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/272/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "272",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/272/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "272",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/424/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "424",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/424/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "424",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/423/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "423",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/423/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "423",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/275/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "275",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/275/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "275",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/281/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "281",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/281/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "281",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/257/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "257",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/257/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "257",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/401/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "401",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/401/0304.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "401",
+    "subject_code": "0304",
+    "total_questions": 32,
+    "questions_with_answer": 32
+  },
+  "114080/401/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "401",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/401/0302.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "401",
+    "subject_code": "0302",
+    "total_questions": 20,
+    "questions_with_answer": 20
+  },
+  "114080/401/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "401",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/268/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "268",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/268/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "268",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/406/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "406",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/406/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "406",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/406/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "406",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/250/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "250",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/250/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "250",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/439/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "439",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/439/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "439",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/266/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "266",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/266/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "266",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/430/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "430",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/430/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "430",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/259/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "259",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/259/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "259",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/437/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "437",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/437/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "437",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/261/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "261",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/261/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "261",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/295/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "295",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/295/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "295",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/408/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "408",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/408/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "408",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/408/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "408",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/235/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "235",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/235/0404.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "235",
+    "subject_code": "0404",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/235/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "235",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/232/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "232",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/232/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "232",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/232/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "232",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/452/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "452",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/452/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "452",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/204/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "204",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/204/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "204",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/204/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "204",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/203/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "203",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/203/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "203",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/203/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "203",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/203/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "203",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/455/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "455",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/455/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "455",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/436/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "436",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/436/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "436",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/260/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "260",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/260/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "260",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/409/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "409",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/409/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "409",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/267/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "267",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/267/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "267",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/431/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "431",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/431/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "431",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/258/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "258",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/258/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "258",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/407/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "407",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/407/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "407",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/251/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "251",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/251/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "251",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/438/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "438",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/438/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "438",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/256/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "256",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/256/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "256",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/269/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "269",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/269/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "269",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/202/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "202",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/202/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "202",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/202/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "202",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/202/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "202",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/454/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "454",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/454/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "454",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/453/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "453",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/453/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "453",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/205/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "205",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/205/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "205",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/205/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "205",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/205/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "205",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/233/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "233",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/233/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "233",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/234/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "234",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/234/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "234",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/234/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "234",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/419/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "419",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/419/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "419",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/270/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "270",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/270/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "270",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/426/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "426",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/426/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "426",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/284/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "284",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/284/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "284",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/248/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "248",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/248/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "248",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/283/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "283",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/283/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "283",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/421/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "421",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/421/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "421",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/277/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "277",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/277/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "277",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/428/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "428",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/428/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "428",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/241/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "241",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/241/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "241",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/417/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "417",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/417/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "417",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/417/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "417",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/279/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "279",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/279/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "279",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/410/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "410",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/410/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "410",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/246/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "246",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/246/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "246",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/444/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "444",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/444/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "444",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/212/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "212",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/212/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "212",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/212/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "212",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/215/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "215",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/215/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "215",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/443/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "443",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/443/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "443",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/223/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "223",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/223/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "223",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/224/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "224",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/224/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "224",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/278/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "278",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/278/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "278",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/411/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "411",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/411/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "411",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/247/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "247",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/247/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "247",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/429/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "429",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/429/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "429",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/240/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "240",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/240/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "240",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/416/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "416",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/416/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "416",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/249/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "249",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/249/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "249",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/420/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "420",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/420/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "420",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/276/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "276",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/276/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "276",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/282/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "282",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/282/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "282",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/418/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "418",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/418/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "418",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/418/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "418",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/285/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "285",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/285/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "285",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/271/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "271",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/271/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "271",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/427/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "427",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/427/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "427",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/225/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "225",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/225/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "225",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/222/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "222",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/222/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "222",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/214/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "214",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/214/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "214",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/442/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "442",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/442/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "442",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/445/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "445",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/445/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "445",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/213/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "213",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/213/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "213",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/213/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "213",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/231/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "231",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/231/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "231",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/209/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "209",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/209/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "209",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/209/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "209",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/236/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "236",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/236/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "236",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/238/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "238",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/238/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "238",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/451/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "451",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/451/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "451",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/207/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "207",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/207/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "207",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/207/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "207",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/405/0506.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0506",
+    "total_questions": 15,
+    "questions_with_answer": 15
+  },
+  "114080/405/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/405/0507.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0507",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/405/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/405/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "405",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/253/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "253",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/253/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "253",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/298/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "298",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/298/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "298",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/254/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "254",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/254/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "254",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/402/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "402",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/402/0307.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "402",
+    "subject_code": "0307",
+    "total_questions": 18,
+    "questions_with_answer": 18
+  },
+  "114080/402/0304.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "402",
+    "subject_code": "0304",
+    "total_questions": 32,
+    "questions_with_answer": 32
+  },
+  "114080/402/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "402",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/402/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "402",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/434/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "434",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/434/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "434",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/262/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "262",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/262/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "262",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/296/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "296",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/296/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "296",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/265/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "265",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/265/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "265",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/433/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "433",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/433/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "433",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/239/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "239",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/239/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "239",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/450/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "450",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/450/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "450",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/206/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "206",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/206/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "206",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/206/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "206",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/201/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "201",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/201/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "201",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/201/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "201",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/201/0303.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "201",
+    "subject_code": "0303",
+    "total_questions": 22,
+    "questions_with_answer": 22
+  },
+  "114080/208/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "208",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/208/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "208",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/208/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "208",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/237/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "237",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/237/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "237",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/230/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "230",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/230/0403.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "230",
+    "subject_code": "0403",
+    "total_questions": 23,
+    "questions_with_answer": 23
+  },
+  "114080/230/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "230",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/264/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "264",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/264/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "264",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/432/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "432",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/432/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "432",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/297/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "297",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/297/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "297",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/435/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "435",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/435/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "435",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/263/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "263",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/263/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "263",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/255/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "255",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/255/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "255",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/403/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "403",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/403/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "403",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/403/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "403",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/404/0402.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "404",
+    "subject_code": "0402",
+    "total_questions": 29,
+    "questions_with_answer": 29
+  },
+  "114080/404/0406.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "404",
+    "subject_code": "0406",
+    "total_questions": 39,
+    "questions_with_answer": 39
+  },
+  "114080/404/0102.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "404",
+    "subject_code": "0102",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/252/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "252",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/252/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "252",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "114080/299/0101.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "299",
+    "subject_code": "0101",
+    "total_questions": 10,
+    "questions_with_answer": 10
+  },
+  "114080/299/0401.json": {
+    "source": "考選部考畢試題查詢平臺",
+    "exam_code": "114080",
+    "category_code": "299",
+    "subject_code": "0401",
+    "total_questions": 21,
+    "questions_with_answer": 21
+  },
+  "finance/securities/senior_securities_session02_questions.json": {
+    "source": "114 年第 2 次證券商高級業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "senior_securities_session02_questions",
+    "exam_name": "114 年第 2 次證券商高級業務員資格測驗試題",
+    "total_questions": 150,
+    "questions_with_answer": 150,
+    "bloom_distribution": {
+      "remember": 120,
+      "apply": 16,
+      "understand": 2,
+      "analyze": 8,
+      "evaluate": 4
+    },
+    "difficulty_distribution": {
+      "easy": 122,
+      "medium": 16,
+      "hard": 12
+    },
+    "year": 114
+  },
+  "finance/securities/securities_regulations_b_session02_questions.json": {
+    "source": "114 年第 2 次證券交易相關法規與實務乙科測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "securities_regulations_b_session02_questions",
+    "exam_name": "114 年第 2 次證券交易相關法規與實務乙科測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 44,
+      "apply": 3,
+      "analyze": 2,
+      "understand": 1
+    },
+    "difficulty_distribution": {
+      "easy": 45,
+      "medium": 3,
+      "hard": 2
+    },
+    "year": 114
+  },
+  "finance/securities/senior_securities_session01_questions.json": {
+    "source": "114 年第 3 次證券商高級業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "senior_securities_session01_questions",
+    "exam_name": "114 年第 3 次證券商高級業務員資格測驗試題",
+    "total_questions": 150,
+    "questions_with_answer": 150,
+    "bloom_distribution": {
+      "remember": 115,
+      "evaluate": 3,
+      "analyze": 14,
+      "create": 1,
+      "apply": 16,
+      "understand": 1
+    },
+    "difficulty_distribution": {
+      "easy": 116,
+      "hard": 18,
+      "medium": 16
+    },
+    "year": 114
+  },
+  "finance/securities/securities_regulations_b_session01_questions.json": {
+    "source": "114 年第 3 次證券交易相關法規與實務乙科資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "securities_regulations_b_session01_questions",
+    "exam_name": "114 年第 3 次證券交易相關法規與實務乙科資格測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 48,
+      "analyze": 1,
+      "evaluate": 1
+    },
+    "difficulty_distribution": {
+      "easy": 48,
+      "hard": 2
+    },
+    "year": 114
+  },
+  "finance/securities/internal_control_session01_questions.json": {
+    "source": "114 年第 3 次企業內部控制基本能力測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "internal_control_session01_questions",
+    "exam_name": "114 年第 3 次企業內部控制基本能力測驗試題",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "remember": 56,
+      "apply": 6,
+      "understand": 4,
+      "analyze": 8,
+      "evaluate": 4,
+      "create": 2
+    },
+    "difficulty_distribution": {
+      "easy": 60,
+      "medium": 6,
+      "hard": 14
+    },
+    "year": 114
+  },
+  "finance/securities/securities_salesperson_session02_questions.json": {
+    "source": "114 年第 2 次證券商業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "securities_salesperson_session02_questions",
+    "exam_name": "114 年第 2 次證券商業務員資格測驗試題",
+    "total_questions": 100,
+    "questions_with_answer": 100,
+    "bloom_distribution": {
+      "remember": 85,
+      "apply": 7,
+      "analyze": 5,
+      "understand": 2,
+      "create": 1
+    },
+    "difficulty_distribution": {
+      "easy": 87,
+      "medium": 7,
+      "hard": 6
+    },
+    "year": 114
+  },
+  "finance/securities/internal_control_session02_questions.json": {
+    "source": "114 年第 2 次企業內部控制基本能力測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "internal_control_session02_questions",
+    "exam_name": "114 年第 2 次企業內部控制基本能力測驗試題",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "remember": 63,
+      "analyze": 6,
+      "understand": 4,
+      "evaluate": 3,
+      "apply": 2,
+      "create": 2
+    },
+    "difficulty_distribution": {
+      "easy": 67,
+      "hard": 11,
+      "medium": 2
+    },
+    "year": 114
+  },
+  "finance/securities/securities_salesperson_session01_questions.json": {
+    "source": "114 年第 3 次證券商業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "securities",
+    "subject_code": "securities_salesperson_session01_questions",
+    "exam_name": "114 年第 3 次證券商業務員資格測驗試題",
+    "total_questions": 100,
+    "questions_with_answer": 99,
+    "bloom_distribution": {
+      "remember": 77,
+      "analyze": 9,
+      "evaluate": 1,
+      "apply": 10,
+      "create": 1,
+      "understand": 2
+    },
+    "difficulty_distribution": {
+      "easy": 79,
+      "hard": 11,
+      "medium": 10
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_analyst_session02_questions.json": {
+    "source": "114 年第 2 次期貨交易分析人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_analyst_session02_questions",
+    "exam_name": "114 年第 2 次期貨交易分析人員資格測驗試題",
+    "total_questions": 140,
+    "questions_with_answer": 140,
+    "bloom_distribution": {
+      "remember": 105,
+      "analyze": 6,
+      "apply": 22,
+      "understand": 1,
+      "evaluate": 2,
+      "create": 4
+    },
+    "difficulty_distribution": {
+      "easy": 106,
+      "hard": 12,
+      "medium": 22
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_trust_fund_session02_questions.json": {
+    "source": "114 年第 2 次期貨信託基金銷售機構銷售人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_trust_fund_session02_questions",
+    "exam_name": "114 年第 2 次期貨信託基金銷售機構銷售人員資格測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "analyze": 1,
+      "remember": 48,
+      "create": 1
+    },
+    "difficulty_distribution": {
+      "hard": 2,
+      "easy": 48
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_salesperson_session01_questions.json": {
+    "source": "114 年第 3 次期貨商業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_salesperson_session01_questions",
+    "exam_name": "114 年第 3 次期貨商業務員資格測驗試題",
+    "total_questions": 100,
+    "questions_with_answer": 100,
+    "bloom_distribution": {
+      "remember": 84,
+      "analyze": 7,
+      "understand": 1,
+      "apply": 6,
+      "create": 2
+    },
+    "difficulty_distribution": {
+      "easy": 85,
+      "hard": 9,
+      "medium": 6
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_analyst_session01_questions.json": {
+    "source": "114 年第 3 次期貨交易分析人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_analyst_session01_questions",
+    "exam_name": "114 年第 3 次期貨交易分析人員資格測驗試題",
+    "total_questions": 141,
+    "questions_with_answer": 140,
+    "bloom_distribution": {
+      "remember": 108,
+      "analyze": 11,
+      "understand": 2,
+      "apply": 16,
+      "create": 4
+    },
+    "difficulty_distribution": {
+      "easy": 110,
+      "hard": 15,
+      "medium": 16
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_trust_fund_session01_questions.json": {
+    "source": "114 年第 3 次期貨信託基金銷售機構銷售人員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_trust_fund_session01_questions",
+    "exam_name": "114 年第 3 次期貨信託基金銷售機構銷售人員資格測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 49,
+      "analyze": 1
+    },
+    "difficulty_distribution": {
+      "easy": 49,
+      "hard": 1
+    },
+    "year": 114
+  },
+  "finance/derivatives/futures_salesperson_session02_questions.json": {
+    "source": "114 年第 2 次期貨商業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "derivatives",
+    "subject_code": "futures_salesperson_session02_questions",
+    "exam_name": "114 年第 2 次期貨商業務員資格測驗試題",
+    "total_questions": 100,
+    "questions_with_answer": 100,
+    "bloom_distribution": {
+      "remember": 91,
+      "create": 1,
+      "apply": 7,
+      "understand": 1
+    },
+    "difficulty_distribution": {
+      "easy": 92,
+      "hard": 1,
+      "medium": 7
+    },
+    "year": 114
+  },
+  "finance/anti_money_laundering/sustainability_session01_questions.json": {
+    "source": "114 年第 4 次永續發展基礎能力測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "anti_money_laundering",
+    "subject_code": "sustainability_session01_questions",
+    "exam_name": "114 年第 4 次永續發展基礎能力測驗試題",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "analyze": 10,
+      "understand": 3,
+      "remember": 58,
+      "create": 3,
+      "evaluate": 3,
+      "apply": 3
+    },
+    "difficulty_distribution": {
+      "hard": 16,
+      "easy": 61,
+      "medium": 3
+    },
+    "year": 114
+  },
+  "finance/anti_money_laundering/aml_cft_session02_questions.json": {
+    "source": "（財）證券暨期貨市場發展基金會辦理",
+    "exam_code": "FIN113",
+    "category_code": "anti_money_laundering",
+    "subject_code": "aml_cft_session02_questions",
+    "exam_name": "（財）證券暨期貨市場發展基金會辦理",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "remember": 73,
+      "apply": 3,
+      "analyze": 1,
+      "understand": 1,
+      "evaluate": 2
+    },
+    "difficulty_distribution": {
+      "easy": 74,
+      "medium": 3,
+      "hard": 3
+    },
+    "year": 113
+  },
+  "finance/anti_money_laundering/sustainability_session02_questions.json": {
+    "source": "114 年第 2 次永續發展基礎能力測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "anti_money_laundering",
+    "subject_code": "sustainability_session02_questions",
+    "exam_name": "114 年第 2 次永續發展基礎能力測驗試題",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "analyze": 8,
+      "remember": 62,
+      "apply": 2,
+      "evaluate": 4,
+      "understand": 1,
+      "create": 3
+    },
+    "difficulty_distribution": {
+      "hard": 15,
+      "easy": 63,
+      "medium": 2
+    },
+    "year": 114
+  },
+  "finance/anti_money_laundering/aml_cft_session01_questions.json": {
+    "source": "（財）證券暨期貨市場發展基金會辦理",
+    "exam_code": "FIN114",
+    "category_code": "anti_money_laundering",
+    "subject_code": "aml_cft_session01_questions",
+    "exam_name": "（財）證券暨期貨市場發展基金會辦理",
+    "total_questions": 80,
+    "questions_with_answer": 80,
+    "bloom_distribution": {
+      "remember": 69,
+      "apply": 2,
+      "understand": 4,
+      "evaluate": 5
+    },
+    "difficulty_distribution": {
+      "easy": 73,
+      "medium": 2,
+      "hard": 5
+    },
+    "year": 114
+  },
+  "finance/financial_planning/investment_regulations_b_session01_questions.json": {
+    "source": "114 年第 3 次投信投顧相關法規(含自律規範)乙科資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "financial_planning",
+    "subject_code": "investment_regulations_b_session01_questions",
+    "exam_name": "114 年第 3 次投信投顧相關法規(含自律規範)乙科資格測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "analyze": 4,
+      "remember": 43,
+      "understand": 2,
+      "evaluate": 1
+    },
+    "difficulty_distribution": {
+      "hard": 5,
+      "easy": 45
+    },
+    "year": 114
+  },
+  "finance/financial_planning/investment_trust_session01_questions.json": {
+    "source": "114 年第 3 次投信投顧業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "financial_planning",
+    "subject_code": "investment_trust_session01_questions",
+    "exam_name": "114 年第 3 次投信投顧業務員資格測驗試題",
+    "total_questions": 150,
+    "questions_with_answer": 150,
+    "bloom_distribution": {
+      "analyze": 7,
+      "remember": 120,
+      "understand": 2,
+      "evaluate": 4,
+      "apply": 17
+    },
+    "difficulty_distribution": {
+      "hard": 11,
+      "easy": 122,
+      "medium": 17
+    },
+    "year": 114
+  },
+  "finance/financial_planning/investment_regulations_b_session02_questions.json": {
+    "source": "114 年第 2 次投信投顧相關法規(含自律規範)乙科測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "financial_planning",
+    "subject_code": "investment_regulations_b_session02_questions",
+    "exam_name": "114 年第 2 次投信投顧相關法規(含自律規範)乙科測驗試題",
+    "total_questions": 50,
+    "questions_with_answer": 50,
+    "bloom_distribution": {
+      "remember": 48,
+      "understand": 1,
+      "analyze": 1
+    },
+    "difficulty_distribution": {
+      "easy": 49,
+      "hard": 1
+    },
+    "year": 114
+  },
+  "finance/financial_planning/investment_trust_session02_questions.json": {
+    "source": "114 年第 2 次投信投顧業務員資格測驗試題",
+    "exam_code": "FIN114",
+    "category_code": "financial_planning",
+    "subject_code": "investment_trust_session02_questions",
+    "exam_name": "114 年第 2 次投信投顧業務員資格測驗試題",
+    "total_questions": 150,
+    "questions_with_answer": 149,
+    "bloom_distribution": {
+      "remember": 122,
+      "understand": 3,
+      "analyze": 7,
+      "apply": 16,
+      "create": 2
+    },
+    "difficulty_distribution": {
+      "easy": 125,
+      "hard": 9,
+      "medium": 16
+    },
+    "year": 114
+  },
+  "real_estate/broker/111_land_law_q.json": {
+    "source": "代號：60140 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_land_law_q",
+    "exam_name": "代號：60140 111年專門職業及技術人員高等考試建築師、",
+    "total_questions": 14,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 13,
+      "evaluate": 1
+    },
+    "difficulty_distribution": {
+      "easy": 13,
+      "hard": 1
+    },
+    "year": 111
+  },
+  "real_estate/broker/112_broker_regulations_q.json": {
+    "source": "代號：60130 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_broker_regulations_q",
+    "exam_name": "代號：60130 112年專門職業及技術人員高等考試建築師、",
+    "total_questions": 7,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "apply": 1,
+      "remember": 4,
+      "analyze": 2
+    },
+    "difficulty_distribution": {
+      "medium": 1,
+      "easy": 4,
+      "hard": 2
+    },
+    "year": 112
+  },
+  "real_estate/broker/112_civil_law_q.json": {
+    "source": "代號：60120 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_civil_law_q",
+    "exam_name": "代號：60120 112年專門職業及技術人員高等考試建築師、",
+    "total_questions": 18,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 18
+    },
+    "difficulty_distribution": {
+      "easy": 18
+    },
+    "year": 112
+  },
+  "real_estate/broker/107_broker_regulations_q.json": {
+    "source": "代號：60140 107年 專 門 職 業 及 技 術 人 員 高 等 考 試",
+    "exam_code": "REA107",
+    "category_code": "broker",
+    "subject_code": "107_broker_regulations_q",
+    "exam_name": "代號：60140 107年 專 門 職 業 及 技 術 人 員 高 等 考 試",
+    "total_questions": 13,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 10,
+      "apply": 1,
+      "understand": 1,
+      "analyze": 1
+    },
+    "difficulty_distribution": {
+      "easy": 11,
+      "medium": 1,
+      "hard": 1
+    },
+    "year": 107
+  },
+  "real_estate/broker/111_valuation_q.json": {
+    "source": "代號：60150 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_valuation_q",
+    "exam_name": "代號：60150 111年專門職業及技術人員高等考試建築師、",
+    "total_questions": 17,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 15,
+      "analyze": 1,
+      "understand": 1
+    },
+    "difficulty_distribution": {
+      "easy": 16,
+      "hard": 1
+    },
+    "year": 111
+  },
+  "real_estate/broker/112_valuation_q.json": {
+    "source": "代號：60150 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_valuation_q",
+    "exam_name": "代號：60150 112年專門職業及技術人員高等考試建築師、",
+    "total_questions": 23,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 22,
+      "analyze": 1
+    },
+    "difficulty_distribution": {
+      "easy": 22,
+      "hard": 1
+    },
+    "year": 112
+  },
+  "real_estate/broker/111_civil_law_q.json": {
+    "source": "代號：60120 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_civil_law_q",
+    "exam_name": "代號：60120 111年專門職業及技術人員高等考試建築師、",
+    "total_questions": 19,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 19
+    },
+    "difficulty_distribution": {
+      "easy": 19
+    },
+    "year": 111
+  },
+  "real_estate/broker/111_broker_regulations_q.json": {
+    "source": "代號：60130 111年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA111",
+    "category_code": "broker",
+    "subject_code": "111_broker_regulations_q",
+    "exam_name": "代號：60130 111年專門職業及技術人員高等考試建築師、",
+    "total_questions": 7,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 3,
+      "analyze": 2,
+      "understand": 1,
+      "apply": 1
+    },
+    "difficulty_distribution": {
+      "easy": 4,
+      "hard": 2,
+      "medium": 1
+    },
+    "year": 111
+  },
+  "real_estate/broker/112_land_law_q.json": {
+    "source": "代號：60140 112年專門職業及技術人員高等考試建築師、",
+    "exam_code": "REA112",
+    "category_code": "broker",
+    "subject_code": "112_land_law_q",
+    "exam_name": "代號：60140 112年專門職業及技術人員高等考試建築師、",
+    "total_questions": 18,
+    "questions_with_answer": 0,
+    "bloom_distribution": {
+      "remember": 18
+    },
+    "difficulty_distribution": {
+      "easy": 18
+    },
+    "year": 112
+  }
+}

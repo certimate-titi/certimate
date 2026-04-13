@@ -2,14 +2,44 @@
 
 import re
 
-from app.models.resource import Resource, ResourceType, ResourceStatus, ResourceScope
+from app.models.resource import Resource, ResourceType, ResourceStatus, ResourceScope, FILE_SIZE_LIMITS
 from app.repositories.resource_repository import ResourceRepository
 from app.repositories.user_repository import UserRepository
 
 
-ALLOWED_EXTENSIONS = {"pdf", "md", "markdown", "txt", "png", "jpg", "jpeg", "gif", "bmp", "webp"}
+ALLOWED_EXTENSIONS = {
+    # Documents
+    "pdf", "md", "markdown", "txt",
+    "docx", "pptx", "xlsx",
+    "doc", "ppt", "xls",
+    # Images
+    "png", "jpg", "jpeg", "gif", "bmp", "webp",
+    # Audio
+    "mp3", "wav", "m4a", "flac", "ogg", "wma", "aac",
+    # Video
+    "mp4", "mov", "avi", "mkv", "webm", "wmv", "flv",
+}
 
 IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp"}
+
+DOCUMENT_EXTENSIONS = {"pdf", "docx", "pptx", "xlsx", "doc", "ppt", "xls", "md", "markdown", "txt"}
+
+AUDIO_EXTENSIONS = {"mp3", "wav", "m4a", "flac", "ogg", "wma", "aac"}
+
+VIDEO_EXTENSIONS = {"mp4", "mov", "avi", "mkv", "webm", "wmv", "flv"}
+
+# Extension → ResourceType mapping
+EXTENSION_TO_RESOURCE_TYPE = {
+    "pdf": "pdf", "md": "markdown", "markdown": "markdown", "txt": "txt",
+    "docx": "docx", "pptx": "pptx", "xlsx": "xlsx",
+    "doc": "doc", "ppt": "ppt", "xls": "xls",
+    "png": "image", "jpg": "image", "jpeg": "image",
+    "gif": "image", "bmp": "image", "webp": "image",
+    "mp3": "audio", "wav": "audio", "m4a": "audio",
+    "flac": "audio", "ogg": "audio", "wma": "audio", "aac": "audio",
+    "mp4": "video", "mov": "video", "avi": "video",
+    "mkv": "video", "webm": "video", "wmv": "video", "flv": "video",
+}
 
 YOUTUBE_REGEX = re.compile(r"^https?://(www\.)?youtube\.com/watch\?v=[\w-]+")
 
@@ -53,9 +83,10 @@ class ResourceService:
 
         ext = _get_extension(filename)
         if ext not in ALLOWED_EXTENSIONS:
+            supported = "PDF、DOCX、PPTX、XLSX、DOC、PPT、XLS、Markdown、圖片、音訊（MP3/WAV/M4A）、影片（MP4/MOV）"
             return {
                 "error": True, "status_code": 400,
-                "message": "不支援的檔案格式，請上傳 PDF、Markdown 或通用圖片檔案",
+                "message": f"不支援的檔案格式，支援的格式：{supported}",
             }
 
         user = self.user_repo.find_by_id(user_id)
@@ -64,15 +95,18 @@ class ResourceService:
 
         plan = _get_plan_value(user.subscription_plan)
 
+        # Determine resource type from extension
+        r_type = resource_type or EXTENSION_TO_RESOURCE_TYPE.get(ext, "pdf")
+        is_image = ext in IMAGE_EXTENSIONS or r_type == "image"
+
         # Check if image upload requires PRO_PLUS or above
-        is_image = ext in IMAGE_EXTENSIONS or resource_type == "image"
         if is_image and plan not in VISION_OCR_MIN_PLAN:
             return {
                 "error": True, "status_code": 400,
                 "message": "手寫圖片辨識（Vision OCR）需升級至 PRO_PLUS 方案",
             }
 
-        # Check file size limit
+        # Check file size limit (plan-based)
         if file_size_mb is not None:
             limit = FILE_SIZE_LIMITS_MB.get(plan, 10)
             if file_size_mb > limit:
@@ -82,22 +116,23 @@ class ResourceService:
                     "message": f"檔案大小超過 {display_name} 方案限制（{limit}MB）",
                 }
 
-        # Determine resource type
-        if resource_type:
-            r_type = resource_type
-        elif is_image:
-            r_type = "image"
-        elif ext in ("md", "markdown"):
-            r_type = "markdown"
-        elif ext == "txt":
-            r_type = "txt"
-        else:
-            r_type = "pdf"
+        # Check file size limit (type-based)
+        if file_size_mb is not None:
+            type_limit_bytes = FILE_SIZE_LIMITS.get(r_type, 50 * 1024 * 1024)
+            type_limit_mb = type_limit_bytes / (1024 * 1024)
+            if file_size_mb > type_limit_mb:
+                return {
+                    "error": True, "status_code": 400,
+                    "message": f"檔案大小超過{r_type}類型限制（{int(type_limit_mb)}MB）",
+                }
 
         # Determine processing engine
-        processing_engine = "gemini_flash"
         if is_image:
             processing_engine = "vision_ocr"
+        elif r_type in ("audio", "video"):
+            processing_engine = "whisper_api"
+        else:
+            processing_engine = "gemini_flash"
 
         resource = Resource(
             user_id=user_id,

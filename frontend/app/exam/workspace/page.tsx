@@ -50,6 +50,7 @@ function MockExamWorkspacePage() {
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
   const [timeRemaining, setTimeRemaining] = useState(900); // default 15 min, updated after API load
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
@@ -81,7 +82,10 @@ function MockExamWorkspacePage() {
       }
 
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      setLoadError(err?.message || '無法載入考試資料');
+      setLoading(false);
+    });
   }, [examId]);
 
   // Auto-save to localStorage (debounced)
@@ -162,10 +166,25 @@ function MockExamWorkspacePage() {
     });
   };
 
-  if (loading || questions.length === 0) {
+  if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-900">
         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError || questions.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 text-white gap-4">
+        <div className="text-xl font-semibold">{loadError || '此考試目前沒有可用的考題'}</div>
+        <p className="text-slate-400 text-sm">請返回考試設定頁重新建立測驗</p>
+        <button
+          onClick={() => router.push('/exam/setup')}
+          className="mt-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+        >
+          返回考試設定
+        </button>
       </div>
     );
   }
@@ -364,8 +383,15 @@ function MockExamWorkspacePage() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-3xl p-10 max-w-sm w-full shadow-2xl text-center">
             <h2 className="text-xl font-bold text-slate-900 mb-4">確認交卷</h2>
+            {markedForReview.size > 0 && (
+              <p className="text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-3 text-sm font-medium">
+                你有 {markedForReview.size} 題標記為「待複習」尚未回頭檢查
+              </p>
+            )}
             <p className="text-slate-600 mb-8">
-              你還有 {questions.filter(q => !answers[q.id]).length} 題未作答，確定要交卷嗎？
+              {questions.filter(q => !answers[q.id]).length > 0
+                ? `你還有 ${questions.filter(q => !answers[q.id]).length} 題未作答，確定要交卷嗎？`
+                : '所有題目已作答完畢，確定要交卷嗎？'}
             </p>
             <div className="flex gap-3">
               <button

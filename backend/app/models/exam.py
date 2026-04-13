@@ -59,6 +59,7 @@ class Exam(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ai_summary: Mapped[str | None] = mapped_column(Text)
+    custom_point_ratio: Mapped[dict | None] = mapped_column(JSON)
     custom_bloom_ratio: Mapped[dict | None] = mapped_column(JSON)
     historical_priority: Mapped[bool] = mapped_column(Boolean, default=False)
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(

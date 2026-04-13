@@ -10,7 +10,7 @@ export type UserRole = 'USER' | 'ADMIN' | 'STUDENT';
 
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIAL';
 
-export type DocumentSourceType = 'PDF' | 'MARKDOWN' | 'YOUTUBE_URL' | 'IMAGE_MATH';
+export type DocumentSourceType = 'PDF' | 'MARKDOWN' | 'YOUTUBE_URL' | 'IMAGE_MATH' | 'OFFICE' | 'AUDIO' | 'VIDEO';
 
 export type DocumentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'RATE_LIMITED';
 
@@ -72,6 +72,9 @@ export interface Exam {
   score: number | null;
   totalQuestions: number;
   timeLimit: number; // seconds
+  timeSpent: number; // seconds (actual time taken)
+  passingScore: number;
+  passStatus: string;
   createdAt: string; // ISO timestamp
 }
 
@@ -129,6 +132,8 @@ export interface ExamSetupConfig {
   difficulty: 1 | 2 | 3; // 1=基礎, 2=綜合, 3=魔王
   questionTypes: QuestionType[];
   examMode?: 'hybrid' | 'historical_only'; // hybrid=混合式(預設), historical_only=考古題模擬考
+  customPointRatio?: Record<string, number>; // node_id → percentage (0-100, sum=100)
+  customBloomRatio?: Record<string, number>; // bloom_level → percentage (sum=100)
 }
 
 export interface DailyQuest {
@@ -174,6 +179,7 @@ export interface DomainAnalysis {
   correct: number;
   total: number;
   percentage: number;
+  children?: DomainAnalysis[];
 }
 
 export interface ReviewCalendarDay {

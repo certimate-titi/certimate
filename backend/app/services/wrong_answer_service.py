@@ -22,6 +22,7 @@ class WrongAnswerService:
         # Prompt template service for DB-based prompts
         from app.services.prompt_template_service import PromptTemplateService
         self._prompt_svc = PromptTemplateService(db)
+        self._llm = None
 
     def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
         """Load prompt template from DB with fallback."""
@@ -162,8 +163,14 @@ class WrongAnswerService:
             result["deep_analysis_locked"] = True
             result["upgrade"] = {"target_plan": "PRO_199", "monthly_fee": 199}
         else:
-            explanation = question.explanation or ""
-            result["deep_analysis"] = f"## 深度解析\n\n{explanation}" if explanation else ""
+            # 嘗試 AI 深度分析（T-03）
+            ai_analysis = self._generate_wrong_answer_analysis(question, answer, user, node)
+            if ai_analysis:
+                result["deep_analysis"] = ai_analysis
+            else:
+                # Fallback: 使用靜態 explanation
+                explanation = question.explanation or ""
+                result["deep_analysis"] = f"## 深度解析\n\n{explanation}" if explanation else ""
             result["deep_analysis_locked"] = False
 
             resource = None
@@ -178,6 +185,91 @@ class WrongAnswerService:
             }
 
         return result
+
+    def _get_llm(self):
+        if self._llm is None:
+            from app.core.config import get_settings
+            settings = get_settings()
+            if settings.GEMINI_API_KEY or settings.ANTHROPIC_API_KEY or settings.OPENAI_API_KEY:
+                from app.services.llm_service import LLMService
+                self._llm = LLMService(db=self.db)
+        return self._llm
+
+    def _generate_wrong_answer_analysis(self, question, answer, user, node=None) -> str | None:
+        """用 T-03 模板生成 AI 錯因分析。"""
+        llm = self._get_llm()
+        if not llm:
+            return None
+
+        # Build variables
+        options = f"(A) {question.option_a}\n(B) {question.option_b}\n(C) {question.option_c}\n(D) {question.option_d}"
+
+        # Get related content from resource chunks if available
+        related_content = ""
+        if question.node_id:
+            from app.models.resource_chunk import ResourceChunk
+            chunks = self.db.query(ResourceChunk).filter_by(node_id=question.node_id).limit(3).all()
+            if chunks:
+                for chunk in chunks:
+                    related_content += f"> {chunk.content[:300]}\n\n"
+
+        # User background instruction
+        tone = self._get_user_tone_context(user)
+        bg_instructions = {
+            "simple": "使用者為高中生，請使用生活化比喻和簡單詞彙",
+            "technical": "使用者有技術背景，可使用專業術語",
+            "advanced": "使用者有碩博士學歷，可深入分析",
+            "general": "",
+        }
+        user_bg = bg_instructions.get(tone, "")
+
+        # Load prompt from DB
+        db_prompt = self._load_prompt("wrong_answer_analysis", {
+            "user_background_instruction": user_bg,
+            "question_text": question.content,
+            "options": options,
+            "user_answer": answer.selected_answer if answer else "未作答",
+            "correct_answer": question.correct_answer,
+            "related_content": related_content or "（無相關知識庫內容）",
+        })
+
+        # Fallback system prompt
+        _FALLBACK = '''你是考題解析專家。針對用戶答錯的題目提供深度解析。
+
+解析結構：
+1. **正確答案**：直接告知正確答案是什麼
+2. **為什麼你選的答案是錯的**：分析用戶選答的常見迷思
+3. **正確推導**：用步驟化方式解釋為什麼正確答案是對的
+4. **知識庫引用**：若有相關內容，以 blockquote 引用並標註來源
+5. **延伸觀念**：1-2 個相關的延伸知識點
+
+規則：語氣正向，不批評用戶選錯。回覆使用 Markdown 格式。'''
+
+        if db_prompt:
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = _FALLBACK
+            user_prompt = (
+                f"題目：{question.content}\n"
+                f"選項：{options}\n"
+                f"我的選答：{answer.selected_answer if answer else '未作答'}\n"
+                f"正確答案：{question.correct_answer}\n\n"
+                f"相關知識庫內容：\n{related_content or '（無）'}"
+            )
+
+        try:
+            # Determine max_tokens by plan
+            plan = user.subscription_plan.value if user and user.subscription_plan else "FREE"
+            max_tokens_map = {"PRO": 1024, "PRO_PLUS": 2048, "ULTRA": 4096}
+            max_tokens = max_tokens_map.get(plan, 1024)
+
+            result = llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=max_tokens)
+            return result if result and len(result.strip()) > 20 else None
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("T-03 wrong answer analysis failed: %s", e)
+            return None
 
     def _get_user_tone_context(self, user: User) -> str:
         """根據使用者個人資料決定回覆風格。"""

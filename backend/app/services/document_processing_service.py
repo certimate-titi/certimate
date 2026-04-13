@@ -1,8 +1,18 @@
 """DocumentProcessingService — orchestrates the full document processing pipeline.
 
-Pipeline (per spec: 資源上傳與解析流程.md):
-  1. Copyright check (scan first 2 pages for restricted keywords)
-  2. Text extraction (pymupdf / pdfplumber / Claude Vision)
+Two-layer architecture:
+  Layer 1: Media Extraction (pure engineering, no LLM)
+    - PDF/DOCX/PPTX/XLSX/DOC/PPT/XLS → text extraction
+    - Image → OCR (Claude Vision)
+    - Audio/Video → Whisper API transcription
+    - YouTube → yt-dlp subtitles / Whisper fallback
+  Layer 2: K-01 Unified Prompt (Gemini Flash)
+    - Raw text → structured Markdown
+
+Pipeline:
+  0. Copyright check (PDF only)
+  1. Layer 1: Media extraction (via media_extractors module)
+  2. Layer 2: K-01 LLM structuring (optional, for non-text formats)
   3. Text cleaning (remove headers/footers/watermarks)
   4. AI structure analysis (chapters → sections → subsections)
   5. Smart chunking (by section boundaries, then token-based)
@@ -10,6 +20,7 @@ Pipeline (per spec: 資源上傳與解析流程.md):
   7. Embedding (Voyage AI → pgvector)
   8. Markdown normalization & storage
   9. Original file cleanup
+  10. Unified knowledge tree extraction trigger
 """
 
 import json
@@ -43,16 +54,21 @@ COPYRIGHT_KEYWORDS = [
     "嚴禁任何形式之轉載", "禁止轉載",
 ]
 
-IMAGE_OCR_PROMPT = """請辨識這張圖片中的所有文字內容，並以結構化方式輸出。
+# Fallback prompts（DB 模板不可用時使用）
+_FALLBACK_IMAGE_OCR = """請辨識這張圖片中的所有文字內容，並以結構化方式輸出。
 要求：1. 完整辨識所有可見文字 2. 保留段落結構 3. 表格轉 Markdown 4. 數學公式保留原始表達
 以純文字格式回傳辨識結果。"""
 
-STRUCTURE_ANALYSIS_PROMPT = (
+_FALLBACK_STRUCTURE_ANALYSIS = (
     "分析文件結構，產出章節目錄 JSON。1-3 層深度（章→節→小節）。\n"
     "標題要簡短（15字內）。只回傳 JSON，不要 markdown。\n"
     '格式：{"chapters":[{"title":"章","page_start":1,"page_end":5,'
     '"sections":[{"title":"節","page_start":1,"page_end":2}]}]}'
 )
+
+# Legacy aliases for backward compatibility
+IMAGE_OCR_PROMPT = _FALLBACK_IMAGE_OCR
+STRUCTURE_ANALYSIS_PROMPT = _FALLBACK_STRUCTURE_ANALYSIS
 
 
 class DocumentProcessingService:
@@ -89,6 +105,30 @@ class DocumentProcessingService:
             from app.services.llm_service import LLMService
             self._llm = LLMService(db=db)
 
+        # Prompt template service for DB-managed prompts
+        self._prompt_svc = None
+        try:
+            from app.services.prompt_template_service import PromptTemplateService
+            self._prompt_svc = PromptTemplateService(db)
+        except Exception:
+            pass
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """Load prompt template from DB. Returns dict or None (caller uses fallback)."""
+        if not self._prompt_svc:
+            return None
+        try:
+            result = self._prompt_svc.get_prompt_for_ai(name)
+            if result.get("error"):
+                return None
+            if variables:
+                render = self._prompt_svc.render_prompt
+                result["system_prompt"] = render(result["system_prompt"], variables)
+                result["user_prompt"] = render(result["user_prompt"], variables)
+            return result
+        except Exception:
+            return None
+
     # ================================================================
     # Main entry point
     # ================================================================
@@ -110,17 +150,17 @@ class DocumentProcessingService:
                 pdf_bytes = Path(file_path).read_bytes()
                 self._check_copyright(pdf_bytes)
 
-            # Step 1: Extract text
+            # Step 1 + 1.5: Layer 1 media extraction → Layer 2 K-01 structuring
             extracted = self._extract_text(resource)
             if not extracted.get("sections"):
                 raise ValueError("文件解析未產出任何內容")
 
-            # Step 2: Clean text
-            if resource_type == "pdf":
+            # Step 2: Clean text (PDF/DOCX page-based formats)
+            if resource_type in ("pdf", "docx", "doc"):
                 extracted["sections"] = self._clean_page_texts(extracted["sections"])
 
             # Step 3: AI structure analysis (regroup flat pages into chapters)
-            if resource_type == "pdf" and len(extracted["sections"]) > 3:
+            if resource_type in ("pdf", "docx", "doc") and len(extracted["sections"]) > 3:
                 structured = self._analyze_document_structure(extracted["sections"], extracted.get("title", ""))
                 if structured:
                     extracted["sections"] = structured
@@ -157,11 +197,29 @@ class DocumentProcessingService:
             resource.status = ResourceStatus.COMPLETED
             self.db.commit()
 
+            # Step 11: 自動觸發統一知識樹萃取（如果資源有 subject_id）
+            extraction_result = None
+            if resource.subject_id:
+                try:
+                    from app.services.unified_knowledge_extraction_service import (
+                        UnifiedKnowledgeExtractionService,
+                    )
+                    extractor = UnifiedKnowledgeExtractionService(self.db)
+                    extraction_result = extractor.extract(str(resource.subject_id))
+                    if extraction_result.get("error"):
+                        logger.warning(
+                            "Unified extraction warning for subject %s: %s",
+                            resource.subject_id, extraction_result.get("message")
+                        )
+                except Exception as e:
+                    logger.warning("Unified extraction skipped: %s", e)
+
             return {
                 "status": "completed",
                 "chunks_created": len(chunks_data),
                 "nodes_created": len(nodes),
                 "markdown_path": md_path,
+                "extraction": extraction_result,
             }
 
         except Exception as e:
@@ -197,86 +255,177 @@ class DocumentProcessingService:
                 )
 
     # ================================================================
-    # Step 1: Text Extraction
+    # Step 1: Layer 1 — Media Extraction (pure engineering, no LLM)
     # ================================================================
 
     def _extract_text(self, resource: Resource) -> dict:
-        """Extract structured text from resource by type."""
+        """Layer 1: Extract raw text using media_extractors module.
+
+        Dispatches to the appropriate extractor based on resource type.
+        For non-text formats, follows up with Layer 2 (K-01 LLM structuring).
+        """
+        from app.services.media_extractors import extract as media_extract
+        from app.services.media_extractors.base import ExtractionResult
+
         resource_type = resource.type.value if hasattr(resource.type, "value") else str(resource.type)
-        if resource_type == "pdf":
-            return self._extract_from_pdf(resource)
-        elif resource_type in ("markdown", "txt"):
-            return self._extract_from_text_file(resource)
-        elif resource_type == "image":
-            return self._extract_from_image(resource)
+
+        # Resolve file path (YouTube uses URL directly)
+        if resource_type == "youtube":
+            file_path = resource.youtube_url or resource.name
         else:
-            raise ValueError(f"不支援的資源類型: {resource_type}")
+            file_path = self._resolve_file_path(resource)
 
-    def _extract_from_pdf(self, resource: Resource) -> dict:
-        """Extract text from PDF using pymupdf, fallback to Claude for scanned PDFs."""
-        file_path = self._resolve_file_path(resource)
-        pdf_bytes = Path(file_path).read_bytes()
+        # Get OCR prompt for image extraction
+        ocr_prompt = None
+        if resource_type == "image":
+            db_prompt = self._load_prompt("image_ocr_recognition")
+            ocr_prompt = db_prompt["system_prompt"] if db_prompt else IMAGE_OCR_PROMPT
 
-        # Try local extraction first
+        # Layer 1: Media extraction
+        result: ExtractionResult = media_extract(
+            resource_type,
+            file_path,
+            resource_name=resource.name,
+            claude_service=self.claude,
+            ocr_prompt=ocr_prompt,
+        )
+
+        # Layer 2: K-01 LLM structuring (for formats that benefit from it)
+        needs_llm_structuring = resource_type not in ("markdown", "txt")
+        if needs_llm_structuring and result.raw_text and self._llm:
+            structured = self._apply_k01_structuring(result)
+            if structured:
+                return structured
+
+        # Use pre-split sections from extractor, or create single section
+        if result.sections:
+            return {"title": result.title, "sections": result.sections}
+        else:
+            return {"title": result.title, "sections": [{
+                "title": result.title,
+                "content": result.raw_text,
+                "page_start": None, "page_end": None, "depth": 1,
+            }]}
+
+    # ================================================================
+    # Step 1.5: Layer 2 — K-01 LLM Structuring
+    # ================================================================
+
+    # Fallback K-01 prompt（DB 模板不可用時使用）
+    _FALLBACK_K01_SYSTEM = """你是專業的教育文件解析器。將以下原始內容轉換為結構化 Markdown。
+
+規則：
+1. 保留原始標題層級（#, ##, ###）
+2. 表格轉為 Markdown table
+3. 數學公式轉為 KaTeX 格式（$...$）
+4. 移除頁首頁尾、浮水印、頁碼
+5. 保留項目符號列表結構
+6. 程式碼區塊使用 ``` 包裹並標注語言
+7. 不添加任何原文中沒有的內容
+8. 重要概念以粗體標記
+9. 逐字稿內容：每 3-5 分鐘自動分段加小標題、保留時間戳、口語轉書面語
+10. 投影片內容：每張投影片作為一個 section
+11. 全繁體中文"""
+
+    def _apply_k01_structuring(self, extraction_result) -> dict | None:
+        """Layer 2: Use K-01 prompt to convert raw text → structured Markdown.
+
+        Returns structured dict or None if LLM unavailable/fails.
+        """
+        if not self._llm:
+            return None
+
+        raw_text = extraction_result.raw_text
+        if not raw_text or len(raw_text.strip()) < 20:
+            return None
+
+        # Truncate extremely long content to avoid token limits
+        max_chars = 60000  # ~15K tokens
+        if len(raw_text) > max_chars:
+            raw_text = raw_text[:max_chars] + "\n\n[...內容已截斷...]"
+
+        # Try DB template first
+        db_prompt = self._load_prompt("resource_to_markdown", {
+            "content_type": extraction_result.content_type,
+            "source_name": extraction_result.title,
+            "raw_content": raw_text,
+            "metadata": extraction_result.metadata,
+        })
+
+        if db_prompt:
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = self._FALLBACK_K01_SYSTEM
+            user_prompt = (
+                f"來源：{extraction_result.title}（{extraction_result.content_type}）\n"
+                f"{extraction_result.metadata}\n\n"
+                f"{raw_text}"
+            )
+
         try:
-            import fitz
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            pages = []
-            for i in range(len(doc)):
-                text = doc[i].get_text()
-                if text.strip():
-                    pages.append({"page_num": i + 1, "content": text.strip()})
-            doc.close()
-            if pages:
-                sections = [
-                    {"title": f"p.{p['page_num']}", "content": p["content"],
-                     "page_start": p["page_num"], "page_end": p["page_num"], "depth": 1}
-                    for p in pages
-                ]
-                return {"title": resource.name, "sections": sections}
+            structured_md = self._llm.generate(
+                system_prompt,
+                user_prompt,
+                model="gemini-flash",
+                max_tokens=4096,
+            )
+
+            if not structured_md or len(structured_md.strip()) < 20:
+                return None
+
+            # Parse the structured markdown into sections
+            sections = self._parse_markdown_to_sections(structured_md, extraction_result.title)
+
+            logger.info(
+                "K-01 structuring produced %d sections for %s",
+                len(sections), extraction_result.title,
+            )
+            return {"title": extraction_result.title, "sections": sections}
+
         except Exception as e:
-            logger.warning("Local PDF extraction failed: %s", e)
+            logger.warning("K-01 LLM structuring failed: %s", e)
+            return None
 
-        # Fallback: Claude Vision for scanned PDFs
-        if self.claude:
-            try:
-                from app.services.document_processing_service import PDF_EXTRACTION_PROMPT
-                raw = self.claude.parse_pdf(pdf_bytes, "請分析此 PDF 並以 JSON 回傳結構化內容。")
-                return self._parse_json_response(raw)
-            except Exception as e:
-                logger.warning("Claude PDF parsing failed: %s", e)
-
-        raise ValueError("無法解析 PDF 文件")
-
-    def _extract_from_text_file(self, resource: Resource) -> dict:
-        """Read text/markdown file and split by headers."""
-        file_path = self._resolve_file_path(resource)
-        content = Path(file_path).read_text(encoding="utf-8")
-
-        sections = []
-        current_title = resource.name
+    @staticmethod
+    def _parse_markdown_to_sections(markdown_text: str, default_title: str) -> list[dict]:
+        """Parse structured markdown into sections list."""
+        sections: list[dict] = []
+        current_title = default_title
         current_depth = 1
         current_content: list[str] = []
 
-        for line in content.split("\n"):
+        for line in markdown_text.split("\n"):
             if line.startswith("### "):
                 if current_content:
-                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
-                                     "page_start": None, "page_end": None, "depth": current_depth})
+                    content = "\n".join(current_content).strip()
+                    if content:
+                        sections.append({
+                            "title": current_title, "content": content,
+                            "page_start": None, "page_end": None, "depth": current_depth,
+                        })
                 current_title = line.lstrip("# ").strip()
                 current_depth = 3
                 current_content = []
             elif line.startswith("## "):
                 if current_content:
-                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
-                                     "page_start": None, "page_end": None, "depth": current_depth})
+                    content = "\n".join(current_content).strip()
+                    if content:
+                        sections.append({
+                            "title": current_title, "content": content,
+                            "page_start": None, "page_end": None, "depth": current_depth,
+                        })
                 current_title = line.lstrip("# ").strip()
                 current_depth = 2
                 current_content = []
             elif line.startswith("# "):
                 if current_content:
-                    sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
-                                     "page_start": None, "page_end": None, "depth": current_depth})
+                    content = "\n".join(current_content).strip()
+                    if content:
+                        sections.append({
+                            "title": current_title, "content": content,
+                            "page_start": None, "page_end": None, "depth": current_depth,
+                        })
                 current_title = line.lstrip("# ").strip()
                 current_depth = 1
                 current_content = []
@@ -284,23 +433,17 @@ class DocumentProcessingService:
                 current_content.append(line)
 
         if current_content:
-            sections.append({"title": current_title, "content": "\n".join(current_content).strip(),
-                             "page_start": None, "page_end": None, "depth": current_depth})
+            content = "\n".join(current_content).strip()
+            if content:
+                sections.append({
+                    "title": current_title, "content": content,
+                    "page_start": None, "page_end": None, "depth": current_depth,
+                })
 
-        return {"title": resource.name, "sections": sections}
-
-    def _extract_from_image(self, resource: Resource) -> dict:
-        """Extract text from image using Claude Vision OCR."""
-        if not self.claude:
-            raise ValueError("圖片 OCR 需要設定 ANTHROPIC_API_KEY")
-        file_path = self._resolve_file_path(resource)
-        image_bytes = Path(file_path).read_bytes()
-        ext = Path(file_path).suffix.lower()
-        media_type = IMAGE_MEDIA_TYPES.get(ext, "image/png")
-        text = self.claude.parse_image(image_bytes, media_type, IMAGE_OCR_PROMPT)
-        return {"title": resource.name, "sections": [
-            {"title": resource.name, "content": text, "page_start": None, "page_end": None, "depth": 1}
-        ]}
+        return sections if sections else [{
+            "title": default_title, "content": markdown_text,
+            "page_start": None, "page_end": None, "depth": 1,
+        }]
 
     # ================================================================
     # Step 2: Text Cleaning
@@ -369,9 +512,16 @@ class DocumentProcessingService:
             summaries.append(f"p.{page}: {preview}")
 
         try:
+            # 嘗試從 DB 載入模板，fallback 到 hardcoded
+            db_prompt = self._load_prompt("content_type_detect", {
+                "doc_title": doc_title,
+            })
+            sys_prompt = db_prompt["system_prompt"] if db_prompt else STRUCTURE_ANALYSIS_PROMPT
+            user_content = f"文件：{doc_title}\n\n" + "\n".join(summaries)
+
             result = self._llm.generate(
-                STRUCTURE_ANALYSIS_PROMPT,
-                f"文件：{doc_title}\n\n" + "\n".join(summaries),
+                sys_prompt,
+                user_content,
                 max_tokens=8000,
             )
 
@@ -484,6 +634,7 @@ class DocumentProcessingService:
             page_start = section.get("page_start")
             page_end = section.get("page_end")
             depth = section.get("depth", 1)
+            chunk_type = section.get("chunk_type", "text")
 
             if len(tokens) <= chunk_size:
                 # Section fits in a single chunk — keep it whole
@@ -491,6 +642,7 @@ class DocumentProcessingService:
                     "content": content, "token_count": len(tokens),
                     "source_page_start": page_start, "source_page_end": page_end,
                     "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                    "chunk_type": chunk_type,
                 })
                 chunk_index += 1
             else:
@@ -512,6 +664,7 @@ class DocumentProcessingService:
                                 "content": current_chunk, "token_count": current_tokens,
                                 "source_page_start": page_start, "source_page_end": page_end,
                                 "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                                "chunk_type": chunk_type,
                             })
                             chunk_index += 1
 
@@ -526,6 +679,7 @@ class DocumentProcessingService:
                                     "content": chunk_text, "token_count": end - start,
                                     "source_page_start": page_start, "source_page_end": page_end,
                                     "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                                    "chunk_type": chunk_type,
                                 })
                                 chunk_index += 1
                                 if end >= len(para_toks):
@@ -543,6 +697,7 @@ class DocumentProcessingService:
                         "content": current_chunk, "token_count": current_tokens,
                         "source_page_start": page_start, "source_page_end": page_end,
                         "section_title": section_title, "depth": depth, "chunk_index": chunk_index,
+                        "chunk_type": chunk_type,
                     })
                     chunk_index += 1
 
@@ -618,7 +773,11 @@ class DocumentProcessingService:
                 token_count=cd["token_count"],
                 source_page_start=cd.get("source_page_start"),
                 source_page_end=cd.get("source_page_end"),
-                metadata_json={"section_title": cd.get("section_title", ""), "depth": cd.get("depth", 1)},
+                metadata_json={
+                    "section_title": cd.get("section_title", ""),
+                    "depth": cd.get("depth", 1),
+                    "chunk_type": cd.get("chunk_type", "text"),
+                },
                 embedding=embeddings[i] if i < len(embeddings) else None,
             )
             chunks.append(chunk)
@@ -667,10 +826,11 @@ class DocumentProcessingService:
     # ================================================================
 
     def _cleanup_original_file(self, resource: Resource):
-        """Delete original PDF/image after successful processing. Keep .md.
+        """Delete original file after successful processing. Keep .md.
 
         使用 StorageService 統一刪除（本地/GCS 都支援）。
         注意：不再清空 gcs_path，保留以供後續溯源。
+        YouTube 類型無檔案，跳過清理。
         """
         if not resource.gcs_path:
             return

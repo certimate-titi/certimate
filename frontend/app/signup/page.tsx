@@ -277,6 +277,7 @@ export default function SignupPage() {
                     </div>
                     <p className={`mt-1 text-xs ${passwordStrength.level === 'weak' ? 'text-red-500' : passwordStrength.level === 'medium' ? 'text-yellow-600' : 'text-green-600'}`}>
                       密碼強度：{passwordStrength.label}
+                      {passwordStrength.level === 'weak' && <span className="text-slate-400 ml-1">（需至少 8 字元，含大小寫或數字）</span>}
                     </p>
                   </div>
                 )}

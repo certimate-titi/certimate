@@ -11,7 +11,10 @@ from app.models.subject import SubjectCategory, Subject
 from app.models.learning_journey import LearningJourney, SelfAssessedLevel
 from app.models.resource import Resource, ResourceType, ResourceStatus
 from app.models.knowledge_node import KnowledgeNode
+from app.models.resource_chunk import ResourceChunk
 from app.models.question import Question
+from app.models.exam import Exam
+from app.models.answer import Answer
 
 logger = logging.getLogger("certimate.onboarding")
 
@@ -193,8 +196,107 @@ class OnboardingService:
             )
             self.db.add(node)
 
+        # 為 seed 資源建立 resource_chunks（供知識庫 accordion 展開顯示）
+        self._create_seed_chunks(resource.id, exam_subject_id)
+
         logger.info("Auto-created exam bank resource for subject %s (%d questions)",
                      subject.name, subject.available_questions)
+
+    def _create_seed_chunks(self, resource_id: uuid.UUID, exam_subject_id: uuid.UUID) -> None:
+        """從考古題 questions 建立 resource_chunks，按 historical_exam 分群。
+
+        每個 chunk = 一份考卷（historical_exam），內容為格式化的考題列表。
+        透過 subject.exam_subject_codes → historical_exams → questions 路徑查詢。
+        """
+        from app.models.historical_exam import HistoricalExam
+
+        # 取得 subject 的 exam_subject_codes
+        subject = self.db.query(Subject).filter(Subject.id == exam_subject_id).first()
+        if not subject or not subject.exam_subject_codes:
+            return
+
+        # 解析 exam_subject_codes → (exam_code, subject_code) pairs
+        # 格式: ["IPA114:114_ai_fundamentals_4th", "IPA114:114_ai_application_4th"]
+        code_pairs = []
+        for code_str in subject.exam_subject_codes:
+            parts = code_str.split(":", 1)
+            if len(parts) == 2:
+                code_pairs.append((parts[0], parts[1]))
+
+        if not code_pairs:
+            return
+
+        # 查找對應的 historical_exams
+        from sqlalchemy import or_, and_
+        conditions = [
+            and_(HistoricalExam.exam_code == ec, HistoricalExam.subject_code == sc)
+            for ec, sc in code_pairs
+        ]
+        hist_exams = (
+            self.db.query(HistoricalExam)
+            .filter(or_(*conditions))
+            .order_by(HistoricalExam.subject_code)
+            .all()
+        )
+
+        for i, he in enumerate(hist_exams):
+            # 取得該份考卷的所有題目
+            questions = (
+                self.db.query(Question)
+                .filter(Question.historical_exam_id == he.id)
+                .order_by(Question.question_number)
+                .all()
+            )
+            if not questions:
+                continue
+
+            # 用 exam_name + subject_name 產生可辨識的標題
+            exam_title = he.exam_name or he.subject_code
+            # 加入考科名稱區分（同一考試可能有多個考科）
+            subject_label = he.subject_name or ""
+            # 若 subject_name 與 exam_name 高度重複，改用 subject_code 解析
+            if not subject_label or subject_label in (exam_title or ""):
+                code_label = self._subject_code_to_label(he.subject_code)
+                if code_label:
+                    subject_label = code_label
+            if subject_label:
+                exam_title = f"{exam_title}｜{subject_label}"
+
+            # 格式化考題內容
+            lines = [f"📝 {exam_title}（共 {len(questions)} 題）\n"]
+            for q in questions:
+                lines.append(f"{q.question_number}. {q.content}")
+                if q.option_a:
+                    lines.append(f"   (A) {q.option_a}")
+                if q.option_b:
+                    lines.append(f"   (B) {q.option_b}")
+                if q.option_c:
+                    lines.append(f"   (C) {q.option_c}")
+                if q.option_d:
+                    lines.append(f"   (D) {q.option_d}")
+                if q.correct_answer:
+                    lines.append(f"   ✅ 答案：{q.correct_answer}")
+                lines.append("")  # blank line between questions
+
+            content = "\n".join(lines)
+
+            chunk = ResourceChunk(
+                resource_id=resource_id,
+                chunk_index=i,
+                content=content,
+                token_count=len(content),
+                source_page_start=i + 1,
+                source_page_end=i + 1,
+                metadata_json={
+                    "section_title": f"{exam_title} — {len(questions)} 題",
+                    "depth": 1,
+                    "chunk_type": "exam_questions",
+                    "historical_exam_id": str(he.id),
+                    "subject_code": he.subject_code,
+                    "question_count": len(questions),
+                },
+            )
+            self.db.add(chunk)
 
     @staticmethod
     def _format_source_name(raw_source: str) -> str:
@@ -263,6 +365,35 @@ class OnboardingService:
             return f"{prefix} {label.strip()}"
 
         return raw_source
+
+    @staticmethod
+    def _subject_code_to_label(subject_code: str) -> str:
+        """從 historical_exam.subject_code 提取考科中文標籤。
+
+        Examples:
+            '114_ai_fundamentals_4th' → '基礎概論'
+            '114_ai_application_4th'  → '應用'
+            '0101'                    → ''（純數字編碼不翻譯）
+        """
+        keyword_map = {
+            "fundamentals": "基礎概論", "application": "應用",
+            "tech": "技術", "management": "管理",
+            "planning": "規劃", "ml": "機器學習",
+            "bigdata": "大數據", "land": "土地", "law": "法規",
+            "civil": "民事", "security": "資安",
+        }
+        noise = {"ai", "is", "mid", "beginner", "advanced", "bda", "114", "113", "112"}
+
+        parts = subject_code.replace("_", " ").split()
+        labels = []
+        for p in parts:
+            low = p.lower()
+            if low in noise or low.isdigit() or low.endswith(("st", "nd", "rd", "th")):
+                continue
+            mapped = keyword_map.get(low)
+            if mapped:
+                labels.append(mapped)
+        return "".join(labels)
 
     def _create_journey(self, user_uuid: uuid.UUID, subj_data: dict) -> LearningJourney:
         subj_name = subj_data["subject_name"]
@@ -389,7 +520,7 @@ class OnboardingService:
                     "availableQuestions": s.available_questions or 0,
                 }
                 for s in subjects
-                if s.id not in parent_ids
+                if s.id not in parent_ids and (s.available_questions or 0) > 0
             ]
         }
 
@@ -532,15 +663,50 @@ class OnboardingService:
             ).first()
             if existing:
                 if existing.is_archived:
-                    # 重新啟用已封存的學習歷程
+                    # 重新啟用已封存的學習歷程，清除舊考試資料
                     existing.is_archived = False
                     exam_date_str = data.get("exam_date")
                     if exam_date_str:
                         existing.exam_date = date.fromisoformat(exam_date_str)
                     level = LEVEL_MAP.get(data.get("self_assessed_level", "beginner"), SelfAssessedLevel.BEGINNER)
                     existing.self_assessed_level = level
+
+                    # 清除舊的考試和答題紀錄
+                    old_exams = self.db.query(Exam).filter_by(
+                        user_id=user_uuid, subject_id=subject.id
+                    ).all()
+                    old_exam_ids = [e.id for e in old_exams]
+                    if old_exam_ids:
+                        self.db.query(Answer).filter(
+                            Answer.user_id == user_uuid,
+                            Answer.question_id.in_(
+                                self.db.query(Question.id).filter(
+                                    Question.exam_id.in_(old_exam_ids)
+                                )
+                            ),
+                        ).delete(synchronize_session=False)
+                        self.db.query(Question).filter(
+                            Question.exam_id.in_(old_exam_ids),
+                            Question.historical_exam_id.is_(None),  # 只刪 AI 生成題，保留考古題引用
+                        ).delete(synchronize_session=False)
+                        self.db.query(Exam).filter(
+                            Exam.id.in_(old_exam_ids)
+                        ).delete(synchronize_session=False)
+
+                    # 清除 node_mastery
+                    from app.models.node_mastery import NodeMastery
+                    from app.models.knowledge_node import KnowledgeNode
+                    node_ids = [n.id for n in self.db.query(KnowledgeNode.id).filter(
+                        KnowledgeNode.subject_id == subject.id
+                    ).all()]
+                    if node_ids:
+                        self.db.query(NodeMastery).filter(
+                            NodeMastery.user_id == user_uuid,
+                            NodeMastery.node_id.in_(node_ids),
+                        ).delete(synchronize_session=False)
+
                     self.db.commit()
-                    return {"message": f"已重新啟用備考科目 {subj_name}"}
+                    return {"message": f"已重新啟用備考科目 {subj_name}，學習紀錄已重置"}
                 return {"error": True, "status_code": 409, "message": f"已在備考 {subj_name}，無需重複新增"}
 
         self._create_journey(user_uuid, data)

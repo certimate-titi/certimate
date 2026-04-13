@@ -54,7 +54,7 @@ class KnowledgeNavService:
                 self.db.flush()
                 return
 
-        # Fallback: 字串比對（去掉括號後綴），向後相容尚未設定 parent_subject_id 的資料
+        # TODO(deprecate): 字串比對 fallback — 待所有 subjects 都設定 parent_subject_id 後移除
         base_name = subject.name.split("（")[0].strip()
         if base_name != subject.name:
             parent = (
@@ -87,19 +87,8 @@ class KnowledgeNavService:
         self._ensure_exam_bank_resource(sid)
         self.db.commit()
 
-        # 收集相關 subject IDs（含父科目，如 "AI 應用規劃師（初級）" → "AI 應用規劃師"）
+        # 只查詢此科目自己的知識節點，不混入父科目的節點
         subject_ids = [sid]
-        subject = self.db.query(Subject).filter_by(id=sid).first()
-        if subject and subject.parent_subject_id:
-            subject_ids.append(subject.parent_subject_id)
-        else:
-            # Fallback: name prefix match (e.g. "AI 應用規劃師（初級）" → "AI 應用規劃師")
-            if subject:
-                base_name = subject.name.split("（")[0].strip()
-                if base_name != subject.name:
-                    parent = self.db.query(Subject).filter(Subject.name == base_name).first()
-                    if parent:
-                        subject_ids.append(parent.id)
 
         # 找此科目下所有資源
         resources = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids)).all()
@@ -127,19 +116,50 @@ class KnowledgeNavService:
         ).all()
         mastery_map = {str(m.node_id): m for m in masteries}
 
-        # Build flat node list with full info
+        # Build flat node list — SM-2 記憶衰退計算
+        from app.services.sm2_engine import SM2Engine, TopicState
+        sm2 = SM2Engine()
         flat_nodes = {}
-        # V3 有機生長：直接用 progress_percentage（無衰退）
+
         for node in nodes:
             m = mastery_map.get(str(node.id))
 
-            progress = float(m.mastery_rate or 0) / 100.0 if m else 0.0
-            display_color = m.color if m and m.color else (
-                "green" if progress >= 0.7 else
-                "yellow" if progress >= 0.4 else
-                "red" if progress > 0 else "gray"
-            )
-            status = m.status if m and m.status else "UNSEEN"
+            if m and m.base_mastery and m.base_mastery > 0:
+                # 有 SM-2 資料 → 計算 effective_progress（含記憶衰退）
+                state = TopicState(
+                    base_mastery=m.base_mastery,
+                    ease_factor=m.ease_factor or SM2Engine.DEFAULT_EASE_FACTOR,
+                    last_tested_at=m.last_tested_at,
+                    next_review_at=m.next_review_at,
+                    status=m.status or "UNSEEN",
+                )
+                effective = sm2.calculate_effective_progress(state)
+                decay_status = sm2.get_decay_status(state)
+                display_color = (
+                    "green" if effective >= 0.7 else
+                    "yellow" if effective >= 0.4 else
+                    "red" if effective > 0 else "gray"
+                )
+                progress = effective
+                status = (
+                    "MASTERED" if effective >= 0.7 else
+                    "PENDING" if effective >= 0.4 else
+                    "CRITICAL" if effective > 0 else "UNSEEN"
+                )
+            elif m:
+                progress = float(m.mastery_rate or 0) / 100.0
+                display_color = m.color if m.color else (
+                    "green" if progress >= 0.7 else
+                    "yellow" if progress >= 0.4 else
+                    "red" if progress > 0 else "gray"
+                )
+                status = m.status if m.status else "UNSEEN"
+                decay_status = "fresh"
+            else:
+                progress = 0.0
+                display_color = "gray"
+                status = "UNSEEN"
+                decay_status = "unseen"
 
             flat_nodes[str(node.id)] = {
                 "id": str(node.id),
@@ -153,6 +173,7 @@ class KnowledgeNavService:
                 "mastery_rate": int(progress * 100),
                 "color": display_color,
                 "status": status,
+                "decay_status": decay_status,
                 "progress_percentage": round(progress, 4),
                 "children": [],
             }

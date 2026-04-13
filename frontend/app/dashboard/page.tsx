@@ -12,6 +12,7 @@ import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
 export default function DashboardPage() {
@@ -54,15 +55,18 @@ export default function DashboardPage() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects || []);
       if (res.subjects && res.subjects.length > 0) {
-        setActiveSubjectId(res.subjects[0].id);
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
       }
     }).catch(() => setSubjects([]));
   }, [authLoading, isAuthenticated, onboardingCompleted]);
 
   // Load dashboard data
   useEffect(() => {
-    if (authLoading || !isAuthenticated || !onboardingCompleted) return;
-    dashboardService.get().then(d => {
+    if (authLoading || !isAuthenticated || !onboardingCompleted || !activeSubjectId) return;
+    setLoading(true);
+    dashboardService.get(activeSubjectId).then(d => {
       // Ensure all expected fields have defaults for backend compatibility
       setData({
         ...d,
@@ -94,6 +98,36 @@ export default function DashboardPage() {
       alert('請先選擇或新增備考科目後再上傳資源');
       return;
     }
+
+    // 依檔案類型分級大小限制
+    const file = files[0];
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const docExts = ['pdf', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'md', 'txt'];
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const audioExts = ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'wma', 'aac'];
+    const videoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
+
+    let maxSizeMB = 50; // 預設文件類
+    let typeLabel = '文件';
+    if (imageExts.includes(ext)) {
+      maxSizeMB = 20;
+      typeLabel = '圖片';
+    } else if (audioExts.includes(ext)) {
+      maxSizeMB = 100;
+      typeLabel = '音訊';
+    } else if (videoExts.includes(ext)) {
+      maxSizeMB = 500;
+      typeLabel = '影片';
+    } else if (!docExts.includes(ext)) {
+      alert('不支援的檔案格式');
+      return;
+    }
+
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      alert(`${typeLabel}檔案大小不可超過 ${maxSizeMB}MB`);
+      return;
+    }
+
     setUploading(true);
     setUploadStatus('pending');
     setUploadProgress(0);
@@ -120,7 +154,7 @@ export default function DashboardPage() {
         stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
         domainStrengths: d.domainStrengths || [],
       });
-      setTimeout(() => setUploadStatus('idle'), 4000);
+      // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
       setUploadStatus('failed');
@@ -162,7 +196,7 @@ export default function DashboardPage() {
         stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
         domainStrengths: d.domainStrengths || [],
       });
-      setTimeout(() => setUploadStatus('idle'), 4000);
+      // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
       setUploadStatus('failed');
@@ -233,7 +267,7 @@ export default function DashboardPage() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => setShowAddSubject(true)}
         />
       ) : isAuthenticated && onboardingCompleted ? (
@@ -331,7 +365,7 @@ export default function DashboardPage() {
 
         {/* V3: 有機生長 — 無 decay 提醒，改用進度稀釋 Toast（由 WebSocket 觸發） */}
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Upload Widget */}
@@ -371,10 +405,15 @@ export default function DashboardPage() {
                 </div>
               )}
               {uploadStatus === 'completed' && (
-                <div className="mb-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <p className="text-sm text-emerald-800 font-medium">解析完成</p>
-                  <Link href="/knowledge" className="text-sm font-bold text-emerald-600 underline underline-offset-2 ml-1">立即查看</Link>
+                <div className="mb-4 flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <p className="text-sm text-emerald-800 font-medium">解析完成</p>
+                    <Link href="/knowledge" className="text-sm font-bold text-emerald-600 underline underline-offset-2 ml-1">立即查看</Link>
+                  </div>
+                  <button onClick={() => setUploadStatus('idle')} className="text-emerald-400 hover:text-emerald-600 transition-colors">
+                    <XCircle className="h-4 w-4" />
+                  </button>
                 </div>
               )}
               {uploadStatus === 'failed' && (
@@ -404,7 +443,7 @@ export default function DashboardPage() {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".pdf,.md,.txt"
+                      accept=".pdf,.md,.txt,.docx,.pptx,.xlsx,.doc,.ppt,.xls,.mp3,.wav,.m4a,.flac,.ogg,.wma,.aac,.mp4,.mov,.avi,.mkv,.webm,.jpg,.jpeg,.png,.gif,.webp"
                       className="hidden"
                       onChange={e => handleFileUpload(e.target.files)}
                       disabled={uploading}
@@ -418,7 +457,7 @@ export default function DashboardPage() {
                       <>
                         <FileText className="h-8 w-8 text-slate-400 group-hover:text-emerald-500 transition-colors mb-3" />
                         <p className="font-medium text-slate-700 mb-1">上傳實體檔案</p>
-                        <p className="text-xs text-slate-500">PDF、Markdown、TXT</p>
+                        <p className="text-xs text-slate-500">PDF、Office、文字、音訊、影片、圖片</p>
                       </>
                     )}
                   </div>
@@ -623,42 +662,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider">能力分佈</h3>
-                <div className="aspect-square w-full bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-3/4 h-3/4 border border-slate-200 rounded-full" />
-                    <div className="w-1/2 h-1/2 border border-slate-200 rounded-full absolute" />
-                    <div className="w-1/4 h-1/4 border border-slate-200 rounded-full absolute" />
-                    <div className="w-full h-px bg-slate-200 absolute" />
-                    <div className="h-full w-px bg-slate-200 absolute" />
-                    <div className="w-full h-px bg-slate-200 absolute rotate-45" />
-                    <div className="w-full h-px bg-slate-200 absolute -rotate-45" />
-                    {data.domainStrengths.length > 0 && (
-                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                        <polygon points="50,15 80,40 70,80 30,75 15,45" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" strokeWidth="2" />
-                      </svg>
-                    )}
-                  </div>
-                  {data.domainStrengths.length === 0 ? (
-                    <span className="absolute text-xs text-slate-400">尚無測驗資料</span>
-                  ) : (
-                    data.domainStrengths.slice(0, 4).map((d, i) => {
-                      const positions = [
-                        'top-2 left-1/2 -translate-x-1/2',
-                        'bottom-2 left-1/2 -translate-x-1/2',
-                        'left-2 top-1/2 -translate-y-1/2',
-                        'right-2 top-1/2 -translate-y-1/2',
-                      ];
-                      return (
-                        <span key={i} className={`absolute ${positions[i]} text-[10px] font-medium text-slate-500`}>
-                          {d.domain.split(' ')[0]}
-                        </span>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+              <DomainRadarChart domains={data.domainStrengths} />
             </section>
           </div>
         </div>

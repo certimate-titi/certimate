@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user_id
 from app.services.reverse_engineering_service import ReverseEngineeringService
+from app.services.unified_knowledge_extraction_service import UnifiedKnowledgeExtractionService
 
 router = APIRouter(prefix="/reverse-engineering")
 
@@ -22,7 +23,26 @@ class ImportMarkdownRequest(BaseModel):
     markdown: str
 
 
-# ========== Trigger ==========
+# ========== 統一知識樹萃取 ==========
+
+@router.post("/subjects/{subject_id}/extract")
+def extract_unified_knowledge_tree(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """統一萃取知識樹（合併考古題 + 用戶資源 chunks）。"""
+    import logging
+    try:
+        service = UnifiedKnowledgeExtractionService(db)
+        result = service.extract(subject_id)
+        return _handle_result(result)
+    except Exception as e:
+        logging.getLogger("extraction").exception("Extraction error: %s", e)
+        raise HTTPException(status_code=500, detail={"message": f"Extraction error: {str(e)}"})
+
+
+# ========== Trigger (Legacy) ==========
 
 @router.post("/subjects/{subject_id}/trigger")
 def trigger_reverse_engineering(

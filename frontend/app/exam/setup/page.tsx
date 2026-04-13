@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock } from 'lucide-react';
+import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw } from 'lucide-react';
 import { documentService, examService, subjectService, knowledgeService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
 import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
@@ -54,7 +54,7 @@ function ExamSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedNodeId = searchParams.get('nodeId');
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier, isAdmin } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -79,6 +79,15 @@ function ExamSetupPage() {
   const [generatedExamId, setGeneratedExamId] = useState<string | null>(null);
   const generatedExamIdRef = useRef<string | null>(null);
 
+  // Advanced recipe (B2B teacher only)
+  const [showAdvancedRecipe, setShowAdvancedRecipe] = useState(false);
+  const [customPointRatio, setCustomPointRatio] = useState<Record<string, number>>({});
+  const [customBloomRatio, setCustomBloomRatio] = useState<Record<string, number>>({
+    'remember': 20, 'understand': 20, 'apply': 20,
+    'analyze': 15, 'evaluate': 15, 'create': 10,
+  });
+  const [loadingHistoricalStats, setLoadingHistoricalStats] = useState(false);
+
   // Load subjects + guard
   useEffect(() => {
     if (authLoading) return;
@@ -93,7 +102,11 @@ function ExamSetupPage() {
 
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
-      if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
+      if (res.subjects.length > 0) {
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
+      }
     }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
@@ -211,6 +224,104 @@ function ExamSetupPage() {
     });
   };
 
+  // Auto-initialize point ratio when nodes change
+  useEffect(() => {
+    if (!showAdvancedRecipe) return;
+    const selectedNodes = systemNodes.filter(n => selectedNodeIds.has(n.id));
+    if (selectedNodes.length === 0) return;
+    // Only init if empty or nodes changed
+    const currentKeys = Object.keys(customPointRatio).sort().join(',');
+    const newKeys = selectedNodes.map(n => n.id).sort().join(',');
+    if (currentKeys !== newKeys) {
+      const evenShare = Math.floor(100 / selectedNodes.length);
+      const remainder = 100 - evenShare * selectedNodes.length;
+      const ratio: Record<string, number> = {};
+      selectedNodes.forEach((n, i) => {
+        ratio[n.id] = evenShare + (i < remainder ? 1 : 0);
+      });
+      setCustomPointRatio(ratio);
+    }
+  }, [showAdvancedRecipe, selectedNodeIds, systemNodes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updatePointRatio = (nodeId: string, value: number) => {
+    setCustomPointRatio(prev => {
+      const updated = { ...prev, [nodeId]: value };
+      // Normalize others proportionally so total = 100
+      const others = Object.keys(updated).filter(k => k !== nodeId);
+      const othersTotal = others.reduce((s, k) => s + (prev[k] || 0), 0);
+      const remaining = 100 - value;
+      if (othersTotal > 0) {
+        others.forEach(k => {
+          updated[k] = Math.round((prev[k] / othersTotal) * remaining);
+        });
+        // Fix rounding: adjust first other
+        const newSum = Object.values(updated).reduce((s, v) => s + v, 0);
+        if (newSum !== 100 && others.length > 0) {
+          updated[others[0]] += 100 - newSum;
+        }
+      }
+      return updated;
+    });
+  };
+
+  const updateBloomRatio = (level: string, value: number) => {
+    setCustomBloomRatio(prev => {
+      const updated = { ...prev, [level]: value };
+      const others = Object.keys(updated).filter(k => k !== level);
+      const othersTotal = others.reduce((s, k) => s + (prev[k] || 0), 0);
+      const remaining = 100 - value;
+      if (othersTotal > 0) {
+        others.forEach(k => {
+          updated[k] = Math.round((prev[k] / othersTotal) * remaining);
+        });
+        const newSum = Object.values(updated).reduce((s, v) => s + v, 0);
+        if (newSum !== 100 && others.length > 0) {
+          updated[others[0]] += 100 - newSum;
+        }
+      }
+      return updated;
+    });
+  };
+
+  const loadHistoricalStats = async () => {
+    if (!activeSubjectId) return;
+    setLoadingHistoricalStats(true);
+    try {
+      const stats = await apiClient.get<{
+        node_distribution?: Record<string, number>;
+        bloom_distribution?: Record<string, number>;
+      }>(`/exams/subjects/${activeSubjectId}/historical-stats`);
+      if (stats.node_distribution) {
+        // Map to selected nodes only
+        const mapped: Record<string, number> = {};
+        let total = 0;
+        for (const [nodeId, pct] of Object.entries(stats.node_distribution)) {
+          if (selectedNodeIds.has(nodeId)) {
+            mapped[nodeId] = pct;
+            total += pct;
+          }
+        }
+        // Normalize to 100%
+        if (total > 0) {
+          for (const k of Object.keys(mapped)) {
+            mapped[k] = Math.round((mapped[k] / total) * 100);
+          }
+          const sum = Object.values(mapped).reduce((s, v) => s + v, 0);
+          const first = Object.keys(mapped)[0];
+          if (first && sum !== 100) mapped[first] += 100 - sum;
+          setCustomPointRatio(mapped);
+        }
+      }
+      if (stats.bloom_distribution) {
+        setCustomBloomRatio(stats.bloom_distribution);
+      }
+    } catch {
+      // Silently fail — historical stats may not be available
+    } finally {
+      setLoadingHistoricalStats(false);
+    }
+  };
+
   const handleGenerate = useCallback(async () => {
     const hasSelection = selectedDocIds.size > 0 || selectedNodeIds.size > 0;
     if (!hasSelection) {
@@ -221,16 +332,22 @@ function ExamSetupPage() {
     setIsGenerating(true);
 
     try {
-      const result = await examService.create({
-        config: {
-          selectedDocumentIds: Array.from(selectedDocIds),
-          selectedNodeIds: Array.from(selectedNodeIds),
-          questionCount,
-          difficulty,
-          questionTypes: Array.from(questionTypes),
-          examMode,
-        },
-      });
+      const config: Record<string, unknown> = {
+        selectedDocumentIds: Array.from(selectedDocIds),
+        selectedNodeIds: Array.from(selectedNodeIds),
+        questionCount,
+        difficulty,
+        questionTypes: Array.from(questionTypes),
+        examMode,
+      };
+      // Attach custom ratios if advanced recipe is enabled
+      if (showAdvancedRecipe && Object.keys(customPointRatio).length > 0) {
+        config.customPointRatio = customPointRatio;
+      }
+      if (showAdvancedRecipe && Object.keys(customBloomRatio).length > 0) {
+        config.customBloomRatio = customBloomRatio;
+      }
+      const result = await examService.create({ config: config as never });
       const examId = result.exam?.id || result.exam_id || result.examId || null;
       generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
@@ -277,7 +394,7 @@ function ExamSetupPage() {
       <SubjectSwitcher
         subjects={subjects}
         activeSubjectId={activeSubjectId}
-        onSwitch={setActiveSubjectId}
+        onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
         onAddSubject={() => router.push('/onboarding')}
         allowAdd={false}
       />
@@ -298,12 +415,13 @@ function ExamSetupPage() {
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="grid md:grid-cols-2">
           {/* Left Column: Scope Selection */}
-          <div className="p-8 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50/50">
+          <div className="p-8 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50/50 flex flex-col">
             <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-sm">1</span>
               選擇測驗範圍
             </h2>
 
+            <div className="max-h-[50vh] overflow-y-auto pr-1 space-y-4">
             {loadingDocs ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
@@ -351,10 +469,26 @@ function ExamSetupPage() {
 
             {/* 考古題題庫 — 始終顯示（有系統節點時） */}
             {systemNodes.length > 0 ? (
-              <div className="space-y-4 mt-4">
-                <p className="text-xs text-slate-500 mb-2 font-medium">
-                  📚 考古題題庫（系統內建 · {systemNodes.reduce((sum, n) => sum + n.availableQuestions, 0)} 題可用）
-                </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-medium">
+                    📚 考古題題庫（系統內建 · {systemNodes.reduce((sum, n) => sum + n.availableQuestions, 0)} 題可用）
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValidationError(null);
+                      if (selectedNodeIds.size === systemNodes.length) {
+                        setSelectedNodeIds(new Set());
+                      } else {
+                        setSelectedNodeIds(new Set(systemNodes.map(n => n.id)));
+                      }
+                    }}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                  >
+                    {selectedNodeIds.size === systemNodes.length ? '取消全選' : '全選'}
+                  </button>
+                </div>
                 {systemNodes.map(node => {
                   const isSelected = selectedNodeIds.has(node.id);
                   return (
@@ -394,6 +528,7 @@ function ExamSetupPage() {
                 <p className="text-xs mt-1">上傳文件後即可生成考題</p>
               </div>
             ) : null}
+            </div>
           </div>
 
           {/* Right Column: Parameters */}
@@ -514,6 +649,105 @@ function ExamSetupPage() {
                   })}
                 </div>
               </div>
+
+              {/* Advanced Recipe Panel — B2B teachers only */}
+              {isAdmin && (
+                <div className="border-t border-slate-200 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedRecipe(!showAdvancedRecipe)}
+                    className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-emerald-600 transition-colors w-full"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <span>進階出題配方</span>
+                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${showAdvancedRecipe ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showAdvancedRecipe && (
+                    <div className="mt-4 space-y-6 animate-in slide-in-from-top-2 duration-200">
+                      {/* Historical stats button */}
+                      <button
+                        type="button"
+                        onClick={loadHistoricalStats}
+                        disabled={loadingHistoricalStats || selectedNodeIds.size === 0}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+                      >
+                        <RotateCcw className={`h-4 w-4 ${loadingHistoricalStats ? 'animate-spin' : ''}`} />
+                        {loadingHistoricalStats ? '載入中...' : '套用考古題分佈'}
+                      </button>
+
+                      {/* Node point ratio sliders */}
+                      {selectedNodeIds.size > 0 && Object.keys(customPointRatio).length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-3">
+                            知識節點出題比例
+                            <span className="text-xs text-slate-400 ml-2">
+                              (總計 {Object.values(customPointRatio).reduce((s, v) => s + v, 0)}%)
+                            </span>
+                          </label>
+                          <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                            {systemNodes.filter(n => selectedNodeIds.has(n.id)).map(node => (
+                              <div key={node.id} className="flex items-center gap-3">
+                                <span className="text-xs text-slate-600 w-28 truncate flex-shrink-0" title={node.name}>
+                                  {node.name}
+                                </span>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={customPointRatio[node.id] || 0}
+                                  onChange={e => updatePointRatio(node.id, Number(e.target.value))}
+                                  className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                />
+                                <span className="text-xs font-mono text-slate-700 w-10 text-right">
+                                  {customPointRatio[node.id] || 0}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bloom taxonomy ratio sliders */}
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">
+                          Bloom 認知層次配比
+                          <span className="text-xs text-slate-400 ml-2">
+                            (總計 {Object.values(customBloomRatio).reduce((s, v) => s + v, 0)}%)
+                          </span>
+                        </label>
+                        <div className="space-y-3">
+                          {[
+                            { key: 'remember', label: '記憶', color: 'text-blue-600' },
+                            { key: 'understand', label: '理解', color: 'text-cyan-600' },
+                            { key: 'apply', label: '應用', color: 'text-green-600' },
+                            { key: 'analyze', label: '分析', color: 'text-yellow-600' },
+                            { key: 'evaluate', label: '評鑑', color: 'text-orange-600' },
+                            { key: 'create', label: '創造', color: 'text-red-600' },
+                          ].map(({ key, label, color }) => (
+                            <div key={key} className="flex items-center gap-3">
+                              <span className={`text-xs font-medium w-10 flex-shrink-0 ${color}`}>
+                                {label}
+                              </span>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={customBloomRatio[key] || 0}
+                                onChange={e => updateBloomRatio(key, Number(e.target.value))}
+                                className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                              />
+                              <span className="text-xs font-mono text-slate-700 w-10 text-right">
+                                {customBloomRatio[key] || 0}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

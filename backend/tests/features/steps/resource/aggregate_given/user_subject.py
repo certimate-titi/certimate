@@ -17,21 +17,32 @@ def step_impl(context, email, subject_name, subject_id):
         db.commit()
         db.refresh(category)
 
-    # Create subject
-    subject = Subject(
-        name=subject_name,
-        category_id=category.id,
-    )
-    db.add(subject)
-    db.commit()
-    db.refresh(subject)
+    # Reuse existing subject with same logical ID to avoid duplicates
+    existing_subject_uuid = context.ids.get(f"subject_{subject_id}")
+    if existing_subject_uuid:
+        subject = db.query(Subject).filter(Subject.id == existing_subject_uuid).first()
+    else:
+        subject = None
 
-    context.ids[f"subject_{subject_id}"] = str(subject.id)
+    if subject is None:
+        subject = Subject(
+            name=subject_name,
+            category_id=category.id,
+        )
+        db.add(subject)
+        db.commit()
+        db.refresh(subject)
+        context.ids[f"subject_{subject_id}"] = str(subject.id)
 
-    # Create learning journey
-    journey = LearningJourney(
-        user_id=user_id,
-        subject_id=subject.id,
-    )
-    db.add(journey)
-    db.commit()
+    # Create learning journey (skip if already exists for this user+subject)
+    existing_journey = db.query(LearningJourney).filter(
+        LearningJourney.user_id == user_id,
+        LearningJourney.subject_id == subject.id,
+    ).first()
+    if existing_journey is None:
+        journey = LearningJourney(
+            user_id=user_id,
+            subject_id=subject.id,
+        )
+        db.add(journey)
+        db.commit()

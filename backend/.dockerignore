@@ -13,3 +13,4 @@ pretty.output
 scripts/
 behave.ini
 pyproject.toml
+data/historical_questions/

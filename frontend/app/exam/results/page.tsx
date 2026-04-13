@@ -104,23 +104,10 @@ function ExamResultsPage() {
   // Consecutive decline detection (from API data when available)
   const showAiCoachIntervention = extData.consecutiveDeclines ? extData.consecutiveDeclines >= 2 : false;
 
-  // Completion stats (from API data when available)
-  // 計算真實作答時間
-  const calcTime = (() => {
-    // 優先用後端計算的 time_spent_seconds
-    const timeSpent = (data as unknown as Record<string, unknown>).time_spent_seconds || (data as unknown as Record<string, unknown>).timeSpentSeconds;
-    if (timeSpent && Number(timeSpent) > 0) return Math.round(Number(timeSpent) / 60);
-    // 其次用 started_at / submitted_at
-    const started = (data as unknown as Record<string, unknown>).started_at || (data as unknown as Record<string, unknown>).startedAt;
-    const submitted = (data as unknown as Record<string, unknown>).submitted_at || (data as unknown as Record<string, unknown>).submittedAt;
-    if (started && submitted) {
-      const diffMs = new Date(submitted as string).getTime() - new Date(started as string).getTime();
-      if (diffMs > 0) return Math.round(diffMs / 60000);
-    }
-    return null;
-  })();
-  const totalTimeMinutes = calcTime ?? 0;
-  const avgTimePerQuestion = questions.length > 0 && totalTimeMinutes > 0 ? Math.round((totalTimeMinutes * 60) / questions.length) : 0;
+  // Completion stats — exam.timeSpent is time_spent_seconds from backend
+  const timeSpentSeconds = data.exam.timeSpent || 0;
+  const totalTimeMinutes = timeSpentSeconds > 0 ? Math.round(timeSpentSeconds / 60) : 0;
+  const avgTimePerQuestion = questions.length > 0 && timeSpentSeconds > 0 ? Math.round(timeSpentSeconds / questions.length) : 0;
   const markedQuestions = userAnswers.filter(a => a.isMarkedForReview);
   const markedCorrectRate = markedQuestions.length > 0
     ? Math.round((markedQuestions.filter(a => a.isCorrect).length / markedQuestions.length) * 100)

@@ -19,13 +19,23 @@ Feature: 資源上傳與隱性版權約定
 
     Scenario Outline: 上傳不支援的 <副檔名> 檔案失敗
       When 使用者 "pro@example.com" 上傳檔案 "document.<副檔名>"，科目為 1
-      Then 操作失敗，錯誤為「不支援的檔案格式，請上傳 PDF、Markdown 或通用圖片檔案」
+      Then 操作失敗，錯誤為「不支援的檔案格式」
+
+      Examples:
+        | 副檔名 |
+        | exe    |
+        | bat    |
+        | sh     |
+
+    Scenario Outline: 上傳支援的 <副檔名> 檔案成功
+      When 使用者 "pro@example.com" 上傳檔案 "document.<副檔名>"，科目為 1
+      Then 操作成功
 
       Examples:
         | 副檔名 |
         | docx   |
-        | mp4    |
-        | exe    |
+        | pptx   |
+        | xlsx   |
 
   # ========== 前置條件：檔案大小 ==========
 
@@ -35,20 +45,24 @@ Feature: 資源上傳與隱性版權約定
       When 使用者 "free@example.com" 上傳大小為 12MB 的 PDF 檔案 "大型講義.pdf"，科目為 1
       Then 操作失敗，錯誤為「檔案大小超過 FREE 方案限制（10MB）」
 
-    Example: PRO 方案上傳 95MB 檔案成功
-      When 使用者 "pro@example.com" 上傳大小為 95MB 的 PDF 檔案 "進階教材.pdf"，科目為 1
+    Example: PRO 方案上傳 40MB PDF 檔案成功
+      When 使用者 "pro@example.com" 上傳大小為 40MB 的 PDF 檔案 "進階教材.pdf"，科目為 1
       Then 操作成功
 
-    Example: PRO_PLUS 方案上傳 95MB 檔案成功
-      When 使用者 "proplus@example.com" 上傳大小為 95MB 的 PDF 檔案 "專業教材.pdf"，科目為 1
+    Example: PRO_PLUS 方案上傳 40MB PDF 檔案成功
+      When 使用者 "proplus@example.com" 上傳大小為 40MB 的 PDF 檔案 "專業教材.pdf"，科目為 1
       Then 操作成功
 
     Example: PRO 方案上傳超過 100MB 的檔案失敗
       When 使用者 "pro@example.com" 上傳大小為 105MB 的 PDF 檔案 "超大教材.pdf"，科目為 1
       Then 操作失敗，錯誤為「檔案大小超過 PRO_199 方案限制（100MB）」
 
-    Example: ULTRA 方案上傳 300MB 檔案成功
-      When 使用者 "ultra@example.com" 上傳大小為 300MB 的 PDF 檔案 "教科書合輯.pdf"，科目為 1
+    Example: PDF 檔案超過 50MB 類型限制失敗
+      When 使用者 "ultra@example.com" 上傳大小為 55MB 的 PDF 檔案 "超大教材.pdf"，科目為 1
+      Then 操作失敗，錯誤為「檔案大小超過」
+
+    Example: ULTRA 方案上傳 45MB PDF 檔案成功
+      When 使用者 "ultra@example.com" 上傳大小為 45MB 的 PDF 檔案 "教科書合輯.pdf"，科目為 1
       Then 操作成功
 
   # ========== 前置條件：Vision OCR 權限 ==========
@@ -149,3 +163,40 @@ Feature: 資源上傳與隱性版權約定
     Example: 提交無效的 YouTube URL 失敗
       When 使用者 "free@example.com" 提交 YouTube URL "https://not-youtube.com/video"，科目為 1
       Then 操作失敗，錯誤為「無效的 YouTube URL」
+
+  # ========== 資源分塊查詢（知識庫 accordion 展開）==========
+
+  Rule: 後置（查詢）- 使用者可查詢自己資源的分塊內容
+
+    Example: 查詢自己上傳的資源分塊成功
+      Given 使用者 "pro@example.com" 已上傳資源 "我的講義.pdf"（科目 ID: 1）且有 3 個分塊
+      When 使用者 "pro@example.com" 查詢資源分塊
+      Then 操作成功
+      And 回應應包含 3 個分塊
+
+  Rule: 後置（查詢）- Seed 資源的分塊查詢依科目歸屬檢查
+
+    Example: 查詢 seed 資源分塊（有該科目）成功
+      Given 系統中有 seed 資源 "考古題庫"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "pro@example.com" 查詢 seed 資源分塊
+      Then 操作成功
+      And 回應應包含 2 個分塊
+
+    Example: 查詢 seed 資源分塊（無該科目）被拒
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案 |
+        | 5        | other@example.com    | PRO_199  |
+      And 系統中有 seed 資源 "其他考古題"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "other@example.com" 查詢 seed 資源分塊
+      Then 操作失敗，錯誤為「無權存取此資源」
+
+  Rule: 後置（查詢）- 不可查詢他人上傳的資源分塊
+
+    Example: 查詢他人的資源分塊被拒
+      Given 使用者 "pro@example.com" 已上傳資源 "他的講義.pdf"（科目 ID: 1）且有 2 個分塊
+      When 使用者 "free@example.com" 查詢該資源的分塊
+      Then 操作失敗，錯誤為「無權存取此資源」
+
+    Example: 查詢不存在的資源分塊回傳 404
+      When 使用者 "pro@example.com" 查詢不存在的資源分塊
+      Then 操作失敗，錯誤為「資源不存在」

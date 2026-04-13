@@ -129,6 +129,24 @@ class LLMService:
         }.get(provider, ""))
 
     # ----------------------------------------------------------
+    # Model alias resolution
+    # ----------------------------------------------------------
+
+    _MODEL_ALIASES = {
+        "gemini-flash": "GEMINI_MODEL",
+        "gemini-pro": "GEMINI_MODEL",
+        "claude-sonnet": "CLAUDE_MODEL",
+        "claude-haiku": "CLAUDE_HAIKU_MODEL",
+    }
+
+    def _resolve_model_alias(self, model: str) -> str:
+        """Resolve shorthand model names (e.g. 'gemini-flash') to full API names."""
+        setting_key = self._MODEL_ALIASES.get(model.lower())
+        if setting_key:
+            return getattr(self.settings, setting_key, model)
+        return model
+
+    # ----------------------------------------------------------
     # Unified generation API
     # ----------------------------------------------------------
 
@@ -147,6 +165,8 @@ class LLMService:
         Otherwise resolves from plan + task_type routing.
         """
         if model:
+            # Resolve shorthand model names to full API model names
+            model = self._resolve_model_alias(model)
             provider = _detect_provider(model)
         else:
             model, provider = self.resolve_model(plan, task_type)

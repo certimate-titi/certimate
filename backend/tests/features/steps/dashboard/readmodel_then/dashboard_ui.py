@@ -68,10 +68,15 @@ def step_impl_resource_type(context, resource_type):
 
 @then('回應應包含升級方案的連結')
 def step_impl_upgrade_link_in_response(context):
-    """驗證回應包含升級方案連結（Red 階段允許 200/404）。"""
+    """驗證回應包含升級方案連結。"""
     response = context.last_response
-    assert response.status_code in (200, 201, 404), \
+    assert response.status_code in (200, 201, 403, 404), \
         f"意外的 HTTP 狀態碼: {response.status_code}"
+    data = response.json()
+    detail = data.get("detail", data)
+    if isinstance(detail, dict):
+        assert "upgrade_url" in detail or "url" in detail, \
+            "回應應包含 upgrade_url 欄位"
 
 
 @then('回應應包含上傳進度狀態：')

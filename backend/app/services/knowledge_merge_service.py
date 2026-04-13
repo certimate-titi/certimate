@@ -1,6 +1,9 @@
 """Knowledge Merge Service — 知識樹合併對齊業務邏輯。"""
 
 import difflib
+import json
+import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -14,16 +17,130 @@ from app.models.merge_conflict import MergeConflict
 from app.models.merge_history import MergeHistory
 from app.models.user import User
 
+logger = logging.getLogger(__name__)
 
 # Similarity thresholds
 THRESHOLD_AUTO_MERGE = 0.75
 THRESHOLD_CONFLICT = 0.55
+
+# LLM 語意比對的 fallback prompt
+_FALLBACK_MERGE_SYSTEM_PROMPT = """你是知識圖譜對齊專家。比對以下兩個知識節點的語意相似度。
+
+判斷規則：
+- similarity >= 0.85：建議自動合併（名稱不同但概念相同）
+- 0.65 <= similarity < 0.85：標記衝突，建議人工審核
+- similarity < 0.65：保持獨立（不同概念）
+
+考慮因素：
+1. 節點名稱的語意（非字面）相似度
+2. 節點描述的內容重疊程度
+3. 節點所在層級是否對等
+4. 考綱來源（syllabus）的名稱優先於個人筆記（personal）
+
+僅回覆 JSON：
+{
+  "similarity": 0.92,
+  "suggestion": "merge|review|keep_separate",
+  "reason": "兩者皆指 AWS EC2 虛擬伺服器，僅名稱差異",
+  "preferred_name": "EC2 運算服務"
+}"""
 
 
 class KnowledgeMergeService:
 
     def __init__(self, db: Session):
         self.db = db
+        self._prompt_svc = None
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """嘗試從 DB 載入 prompt 模板，失敗回傳 None。"""
+        try:
+            if self._prompt_svc is None:
+                from app.services.prompt_template_service import PromptTemplateService
+                self._prompt_svc = PromptTemplateService(self.db)
+            result = self._prompt_svc.get_prompt_for_ai(name, variables or {})
+            if not result.get("error"):
+                return result
+        except Exception:
+            pass
+        return None
+
+    def _get_llm_service(self):
+        """取得 LLMService 實例（lazy init）。"""
+        try:
+            from app.services.llm_service import LLMService
+            return LLMService()
+        except Exception:
+            return None
+
+    def _llm_compare_nodes(
+        self,
+        existing_node: KnowledgeNode,
+        incoming: dict,
+    ) -> dict | None:
+        """用 LLM 做語意比對，回傳 {similarity, suggestion, reason, preferred_name} 或 None。"""
+        llm = self._get_llm_service()
+        if not llm:
+            return None
+
+        existing_origin = existing_node.source_origin or "document"
+        incoming_origin = incoming.get("source_origin", "document")
+
+        node_a_json = json.dumps({
+            "name": existing_node.name,
+            "description": existing_node.description or "",
+        }, ensure_ascii=False)
+        node_b_json = json.dumps({
+            "name": incoming.get("name", ""),
+            "description": incoming.get("description", ""),
+        }, ensure_ascii=False)
+
+        # 嘗試從 DB 載入 prompt
+        db_prompt = self._load_prompt("knowledge_tree_merge", {
+            "node_type_a": existing_origin,
+            "node_a": node_a_json,
+            "node_type_b": incoming_origin,
+            "node_b": node_b_json,
+        })
+
+        if db_prompt:
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = _FALLBACK_MERGE_SYSTEM_PROMPT
+            user_prompt = f"節點 A（{existing_origin}）：{node_a_json}\n節點 B（{incoming_origin}）：{node_b_json}"
+
+        try:
+            raw = llm.generate(
+                system_prompt,
+                user_prompt,
+                model="gemini-flash",
+                max_tokens=256,
+            )
+            return self._parse_llm_response(raw)
+        except Exception as e:
+            logger.warning("LLM merge comparison failed: %s", e)
+            return None
+
+    @staticmethod
+    def _parse_llm_response(raw) -> dict | None:
+        """解析 LLM 回傳的 JSON。"""
+        if not raw:
+            return None
+        text = raw if isinstance(raw, str) else str(raw)
+        text = re.sub(r'```json\s*', '', text)
+        text = re.sub(r'```\s*', '', text)
+        text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            match = re.search(r'\{.*\}', text, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group())
+                except json.JSONDecodeError:
+                    pass
+        return None
 
     # ========== Helpers ==========
 
@@ -141,7 +258,65 @@ class KnowledgeMergeService:
                 })
 
             elif best_score >= THRESHOLD_CONFLICT and best_match is not None:
-                # Gray zone: create conflict for manual review
+                # Gray zone: 先嘗試 LLM 語意比對做更精確判斷
+                llm_result = self._llm_compare_nodes(best_match, incoming)
+
+                if llm_result and "similarity" in llm_result:
+                    llm_sim = float(llm_result["similarity"])
+                    llm_suggestion = llm_result.get("suggestion", "review")
+                    preferred_name = llm_result.get("preferred_name")
+
+                    if llm_sim >= 0.85 or llm_suggestion == "merge":
+                        # LLM 判定應合併
+                        origins = set(
+                            (best_match.source_origin or "").split(",")
+                        )
+                        origins.discard("")
+                        origins.add(incoming_source)
+                        best_match.source_origin = ",".join(sorted(origins))
+                        # 若 LLM 建議了 preferred_name，更新節點名稱
+                        if preferred_name and preferred_name != best_match.name:
+                            best_match.name = preferred_name
+                        nodes_merged += 1
+                        merged_nodes.append({
+                            "existing_node_id": str(best_match.id),
+                            "existing_name": best_match.name,
+                            "incoming_name": incoming_name,
+                            "similarity": round(llm_sim, 4),
+                            "llm_enhanced": True,
+                            "reason": llm_result.get("reason", ""),
+                        })
+                        continue
+
+                    elif llm_sim < 0.65 or llm_suggestion == "keep_separate":
+                        # LLM 判定不相關 → 新增為獨立節點
+                        parent_uuid = (
+                            uuid.UUID(incoming_parent_id)
+                            if incoming_parent_id
+                            else None
+                        )
+                        new_node = KnowledgeNode(
+                            subject_id=sid,
+                            parent_id=parent_uuid,
+                            name=incoming_name,
+                            depth=incoming_depth,
+                            sort_order=incoming_sort_order,
+                            source_origin=incoming_source,
+                        )
+                        self.db.add(new_node)
+                        newly_added.append(new_node)
+                        nodes_added += 1
+                        added_nodes.append({
+                            "name": incoming_name,
+                            "source_origin": incoming_source,
+                            "llm_enhanced": True,
+                        })
+                        continue
+
+                    # LLM 也不確定 → 仍然建立 conflict，但用 LLM 的 similarity
+                    best_score = llm_sim
+
+                # Fallback: 建立衝突待人工審核
                 suggestion = self._suggest_resolution(best_score, best_match, incoming)
                 conflict = MergeConflict(
                     subject_id=sid,

@@ -22,7 +22,7 @@ function FullMindMapPageInner() {
   const { isAuthenticated, loading: authLoading, onboardingCompleted } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialSubjectId = searchParams.get('subjectId') || '';
+  const initialSubjectId = searchParams.get('subjectId') || localStorage.getItem('certimate_active_subject_id') || '';
 
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState(initialSubjectId);
@@ -95,7 +95,7 @@ function FullMindMapPageInner() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => router.push('/onboarding')}
           allowAdd={false}
         />

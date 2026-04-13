@@ -200,12 +200,26 @@ def run_seed(db_url: Optional[str] = None):
             session.rollback()
             stats["errors"] += 1
 
+    # 清理孤兒：DB 中存在但檔案已刪除的模板 → 停用
+    file_ids = {d["template_id"] for d in file_templates}
+    all_db_templates = repo.find_all()
+    orphan_count = 0
+    for t in all_db_templates:
+        if t.template_id not in file_ids and t.is_active:
+            t.is_active = False
+            session.commit()
+            print(f"  🗑️  停用孤兒：{t.template_id} {t.name}")
+            orphan_count += 1
+    stats["deactivated"] = orphan_count
+
     session.close()
 
     print("\n📊 Seed 結果：")
     print(f"   ✅ 新增：{stats['created']} 個")
     print(f"   🔄 更新：{stats['updated']} 個")
     print(f"   ⏭️  跳過：{stats['skipped']} 個")
+    if stats.get("deactivated"):
+        print(f"   🗑️  停用：{stats['deactivated']} 個")
     if stats["errors"]:
         print(f"   ❌ 錯誤：{stats['errors']} 個")
 

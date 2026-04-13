@@ -84,45 +84,72 @@ class AiGenerationService:
     # ------------------------------------------------------------------ #
 
     def _get_subject_ids_for_exam(self, exam) -> list:
-        """取得考試對應的科目 ID 列表（含父科目），用於 subject-level 考古題查詢。
+        """取得考試對應的科目 ID 列表，用於 subject-level 考古題查詢。"""
+        return [exam.subject_id]
 
-        匯入的考古題 Question.node_id = NULL，透過 Question.exam_id → Exam.subject_id
-        連結到父科目。子科目（如「AI 應用規劃師（初級）」）需要同時查詢父科目。
+    def _get_exam_subject_codes(self, exam) -> list[str]:
+        """取得科目的 exam_subject_codes 映射（如 ["114080:0102", "FIN114:securities_*"]）。
+
+        用於精確查詢該科目可用的考古題，支援共用科目（高普考）和專業證照。
         """
-        subject_ids = [exam.subject_id]
         subject = self.db.query(Subject).filter_by(id=exam.subject_id).first()
+        if subject and subject.exam_subject_codes:
+            return subject.exam_subject_codes
+
+        # Fallback: 查同名父科目
         if subject:
-            # 透過 FK 查找父科目
-            if subject.parent_subject_id and subject.parent_subject_id != subject.id:
-                subject_ids.append(subject.parent_subject_id)
-            else:
-                # Fallback: 字串比對（去掉括號後綴）
-                base_name = subject.name.split("（")[0].strip()
-                if base_name != subject.name:
-                    parent = self.db.query(Subject).filter(
-                        Subject.name == base_name
-                    ).first()
-                    if parent:
-                        subject_ids.append(parent.id)
-        return subject_ids
+            base_name = subject.name.split("（")[0].strip()
+            if base_name != subject.name:
+                parent = self.db.query(Subject).filter(Subject.name == base_name).first()
+                if parent and parent.exam_subject_codes:
+                    return parent.exam_subject_codes
+        return []
 
     def _query_historical_by_subject(self, exam, limit: int = None,
                                       quality_filter: bool = False,
                                       exclude_ids: set = None):
-        """透過 subject_id 查詢考古題（當 node_id 查詢無結果時的 fallback）。
+        """透過 exam_subject_codes 查詢考古題。
 
-        匯入的考古題 node_id = NULL，但它們的 exam 記錄有正確的 subject_id。
+        優先使用 subjects.exam_subject_codes 映射（精確匹配 exam_code:subject_code），
+        Fallback 到舊的 subject_id 查詢。
         """
         from sqlalchemy.sql.expression import func as sqlfunc
+        from app.models.historical_exam import HistoricalExam
+        from sqlalchemy import or_, and_
 
-        subject_ids = self._get_subject_ids_for_exam(exam)
+        codes = self._get_exam_subject_codes(exam)
 
-        query = self.db.query(Question).join(
-            Exam, Question.exam_id == Exam.id
-        ).filter(
-            Exam.subject_id.in_(subject_ids),
-            Question.historical_source.isnot(None),
-        )
+        if codes:
+            # 解析 exam_code:subject_code 組合
+            code_filters = []
+            for code in codes:
+                parts = code.split(":", 1)
+                if len(parts) == 2:
+                    exam_code, subject_code = parts
+                    code_filters.append(
+                        and_(
+                            HistoricalExam.exam_code == exam_code,
+                            HistoricalExam.subject_code == subject_code,
+                        )
+                    )
+
+            if code_filters:
+                query = (
+                    self.db.query(Question)
+                    .join(HistoricalExam, HistoricalExam.id == Question.historical_exam_id)
+                    .filter(or_(*code_filters))
+                )
+            else:
+                return []
+        else:
+            # Fallback: 舊邏輯，用 subject_id 查
+            subject_ids = self._get_subject_ids_for_exam(exam)
+            query = self.db.query(Question).join(
+                Exam, Question.exam_id == Exam.id
+            ).filter(
+                Exam.subject_id.in_(subject_ids),
+                Question.historical_source.isnot(None),
+            )
 
         if quality_filter:
             query = query.filter(Question.quality_flag == "ok")
@@ -142,14 +169,37 @@ class AiGenerationService:
 
     def _count_historical_by_subject(self, exam, quality_filter: bool = False) -> int:
         """計算 subject-level 可用考古題數量。"""
-        subject_ids = self._get_subject_ids_for_exam(exam)
+        from app.models.historical_exam import HistoricalExam
+        from sqlalchemy import or_, and_
 
-        query = self.db.query(Question).join(
-            Exam, Question.exam_id == Exam.id
-        ).filter(
-            Exam.subject_id.in_(subject_ids),
-            Question.historical_source.isnot(None),
-        )
+        codes = self._get_exam_subject_codes(exam)
+
+        if codes:
+            code_filters = []
+            for code in codes:
+                parts = code.split(":", 1)
+                if len(parts) == 2:
+                    code_filters.append(
+                        and_(
+                            HistoricalExam.exam_code == parts[0],
+                            HistoricalExam.subject_code == parts[1],
+                        )
+                    )
+            if not code_filters:
+                return 0
+            query = (
+                self.db.query(Question)
+                .join(HistoricalExam, HistoricalExam.id == Question.historical_exam_id)
+                .filter(or_(*code_filters))
+            )
+        else:
+            subject_ids = self._get_subject_ids_for_exam(exam)
+            query = self.db.query(Question).join(
+                Exam, Question.exam_id == Exam.id
+            ).filter(
+                Exam.subject_id.in_(subject_ids),
+                Question.historical_source.isnot(None),
+            )
 
         if quality_filter:
             query = query.filter(Question.quality_flag == "ok")
@@ -219,7 +269,7 @@ class AiGenerationService:
         })
 
         # Stage 1
-        stage1_result = self._stage1_exam_point_analysis(nodes, total_q, difficulty_dist)
+        stage1_result = self._stage1_exam_point_analysis(nodes, total_q, difficulty_dist, exam=exam)
         progress_events.append({
             "percentage": 30, "stage": "階段 1",
             "message": "AI 正在分析考點與出題比例...",
@@ -282,47 +332,261 @@ class AiGenerationService:
     # Stage 1: Exam Point Analysis
     # ------------------------------------------------------------------ #
 
-    def _stage1_exam_point_analysis(self, nodes, total_q, difficulty_dist):
-        """Analyse nodes and produce exam points with ratios."""
+    def _stage1_exam_point_analysis(self, nodes, total_q, difficulty_dist, exam=None):
+        """Stage 1: 智慧出題配方 — 三層優先級鏈。
+
+        優先級：教師自訂 > 考古題 DB 統計 > LLM 知識密度加權
+        """
         if not nodes:
-            # 無節點時回傳空，不再產生 mock 「考點_N」
             return {"exam_points": [], "point_ratio": {}, "difficulty_map": {}}
 
-        nodes_data = [{"name": n.name, "id": str(n.id)} for n in nodes]
-        num_points = min(max(len(nodes_data), 1), 10)
+        # Layer 1: 教師自訂配方（最高優先）
+        if exam and getattr(exam, 'custom_point_ratio', None):
+            return self._apply_custom_recipe(nodes, total_q, exam, difficulty_dist)
 
+        # Layer 2 + 3: LLM 智慧配方（考古題統計 + 知識密度）
+        return self._generate_smart_recipe(nodes, total_q, difficulty_dist)
+
+    def _apply_custom_recipe(self, nodes, total_q, exam, difficulty_dist):
+        """Layer 1: 套用教師自訂的出題配方。"""
+        custom_ratio = exam.custom_point_ratio or {}
+        custom_bloom = exam.custom_bloom_ratio or {}
+
+        nodes_data = {n.name: str(n.id) for n in nodes}
         exam_points = []
-        # Distribute ratio evenly then adjust
-        base_ratio = 100 // num_points
-        remainder = 100 - base_ratio * num_points
+        total_assigned = 0
 
-        for i in range(num_points):
-            ratio = base_ratio + (1 if i < remainder else 0)
-            node_info = nodes_data[i]
+        for node_name, ratio in custom_ratio.items():
+            if node_name not in nodes_data:
+                continue
+            q_count = max(1, round(total_q * ratio / 100))
+            total_assigned += q_count
+
+            # Bloom allocation from custom or default
+            bloom = custom_bloom.get(node_name, {
+                "remember": 30, "understand": 25, "apply": 20,
+                "analyze": 15, "evaluate": 7, "create": 3,
+            })
+            bloom_counts = {}
+            bloom_total = sum(bloom.values())
+            for level, pct in bloom.items():
+                bloom_counts[level] = max(0, round(q_count * pct / bloom_total))
+
             exam_points.append({
-                "name": node_info["name"],
-                "node_id": node_info["id"],
+                "name": node_name,
+                "node_id": nodes_data[node_name],
                 "ratio": ratio,
-                "suggested_difficulty": {
-                    "easy": difficulty_dist.get("easy", 30),
-                    "medium": difficulty_dist.get("medium", 50),
-                    "hard": difficulty_dist.get("hard", 20),
-                },
+                "question_count": q_count,
+                "bloom_allocation": bloom_counts,
+                "suggested_difficulty": difficulty_dist,
             })
 
-        # Build point_ratio ensuring unique keys and sum = 100
-        point_ratio = {}
-        for p in exam_points:
-            name = p["name"]
-            if name in point_ratio:
-                point_ratio[name] += p["ratio"]
-            else:
-                point_ratio[name] = p["ratio"]
+        # 補齊未列入的節點（每個至少 1 題）
+        for n in nodes:
+            if n.name not in custom_ratio:
+                exam_points.append({
+                    "name": n.name,
+                    "node_id": str(n.id),
+                    "ratio": 0,
+                    "question_count": 1,
+                    "bloom_allocation": {"remember": 1},
+                    "suggested_difficulty": difficulty_dist,
+                })
+                total_assigned += 1
 
+        # 調整總數
+        diff = total_q - total_assigned
+        if diff != 0 and exam_points:
+            exam_points[0]["question_count"] = max(1, exam_points[0]["question_count"] + diff)
+
+        point_ratio = {p["name"]: p["ratio"] for p in exam_points}
         return {
             "exam_points": exam_points,
             "point_ratio": point_ratio,
             "difficulty_map": {p["name"]: p["suggested_difficulty"] for p in exam_points},
+            "source": "custom",
+        }
+
+    def _generate_smart_recipe(self, nodes, total_q, difficulty_dist):
+        """Layer 2+3: LLM 生成智慧出題配方（考古題統計 + 知識密度加權）。"""
+        nodes_data = [{"name": n.name, "id": str(n.id)} for n in nodes]
+
+        # 收集考古題統計
+        historical_stats = self._get_historical_exam_stats(nodes)
+        has_historical = bool(historical_stats)
+
+        # 收集知識密度（chunk 數量）
+        chunk_counts = self._get_chunk_density(nodes)
+        node_list = [
+            {"name": n.name, "chunks": chunk_counts.get(str(n.id), 0)}
+            for n in nodes
+        ]
+
+        # Bloom 指令
+        if has_historical:
+            # 從考古題統計計算 Bloom 分佈
+            bloom_totals = {}
+            for stat in historical_stats:
+                for level, count in stat.get("bloom", {}).items():
+                    bloom_totals[level] = bloom_totals.get(level, 0) + count
+            total_bloom = sum(bloom_totals.values()) or 1
+            bloom_pcts = {k: round(v / total_bloom * 100) for k, v in bloom_totals.items()}
+            bloom_instruction = "依考古題統計：" + ", ".join(f"{k}:{v}%" for k, v in bloom_pcts.items())
+        else:
+            bloom_instruction = "使用預設配比：remember:30%, understand:25%, apply:20%, analyze:15%, evaluate:7%, create:3%"
+
+        # 嘗試 LLM 生成
+        db_prompt = self._load_prompt("stage1_exam_point_analysis", {
+            "total_questions": str(total_q),
+            "node_list": json.dumps(node_list, ensure_ascii=False),
+            "historical_stats": json.dumps(historical_stats, ensure_ascii=False) if historical_stats else "（無考古題資料）",
+            "bloom_instruction": bloom_instruction,
+        })
+
+        _FALLBACK_SYSTEM = f"""你是專業的考試出題規劃師。根據知識節點資訊和考古題統計，規劃最佳出題配方。
+綜合考量：1. 考古題分佈 2. 知識密度（chunk 數量） 3. Bloom 認知層次
+{bloom_instruction}
+輸出 JSON：{{"exam_points": [{{"name": "節點", "ratio": 30, "question_count": 15, "bloom_allocation": {{"remember": 5}}, "difficulty_map": {{"easy": 4, "medium": 8, "hard": 3}}}}], "source": "historical|density"}}
+所有 ratio 加總 = 100，question_count 加總 = {total_q}，每個節點至少 1 題。"""
+
+        if db_prompt:
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = _FALLBACK_SYSTEM
+            user_prompt = (
+                f"出題總數：{total_q}\n\n"
+                f"知識節點：\n{json.dumps(node_list, ensure_ascii=False)}\n\n"
+                f"考古題統計：\n{json.dumps(historical_stats, ensure_ascii=False) if historical_stats else '（無）'}"
+            )
+
+        try:
+            if self._llm:
+                raw = self._llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=2048)
+                parsed = self._parse_json_response(raw)
+                if parsed and parsed.get("exam_points"):
+                    # Map node_id back
+                    node_id_map = {n.name: str(n.id) for n in nodes}
+                    for ep in parsed["exam_points"]:
+                        ep["node_id"] = node_id_map.get(ep["name"], "")
+                        ep["suggested_difficulty"] = ep.get("difficulty_map", difficulty_dist)
+                    parsed["point_ratio"] = {p["name"]: p["ratio"] for p in parsed["exam_points"]}
+                    parsed["difficulty_map"] = {p["name"]: p.get("suggested_difficulty", difficulty_dist) for p in parsed["exam_points"]}
+                    return parsed
+        except Exception as e:
+            logger.warning("E-01 LLM stage1 failed: %s", e)
+
+        # Fallback: 用知識密度加權的規則邏輯
+        return self._density_weighted_fallback(nodes, total_q, difficulty_dist, chunk_counts)
+
+    def _get_historical_exam_stats(self, nodes) -> list[dict]:
+        """從 DB 統計考古題的各節點出題分佈。"""
+        from sqlalchemy import func
+
+        node_ids = [n.id for n in nodes]
+        if not node_ids:
+            return []
+
+        # 查詢有 historical_exam_id 的題目，按 node_id 分組
+        results = (
+            self.db.query(
+                Question.node_id,
+                Question.bloom_category,
+                func.count(Question.id).label("count"),
+            )
+            .filter(
+                Question.historical_exam_id.isnot(None),
+                Question.node_id.in_(node_ids),
+            )
+            .group_by(Question.node_id, Question.bloom_category)
+            .all()
+        )
+
+        if not results:
+            return []
+
+        # 彙整成每個節點的統計
+        node_stats = {}  # node_id -> {count, bloom: {level: count}}
+        node_name_map = {str(n.id): n.name for n in nodes}
+
+        for node_id, bloom_cat, count in results:
+            nid = str(node_id)
+            if nid not in node_stats:
+                node_stats[nid] = {"node": node_name_map.get(nid, ""), "count": 0, "bloom": {}}
+            node_stats[nid]["count"] += count
+            bloom_key = bloom_cat.value if hasattr(bloom_cat, 'value') else (bloom_cat or "remember")
+            node_stats[nid]["bloom"][bloom_key] = node_stats[nid]["bloom"].get(bloom_key, 0) + count
+
+        total = sum(s["count"] for s in node_stats.values()) or 1
+        stats_list = []
+        for nid, stat in node_stats.items():
+            stat["ratio"] = round(stat["count"] / total * 100)
+            stats_list.append(stat)
+
+        stats_list.sort(key=lambda x: x["count"], reverse=True)
+        return stats_list
+
+    def _get_chunk_density(self, nodes) -> dict:
+        """計算各節點的 chunk 數量（知識密度）。"""
+        from app.models.resource_chunk import ResourceChunk
+        from sqlalchemy import func
+
+        node_ids = [n.id for n in nodes]
+        if not node_ids:
+            return {}
+
+        results = (
+            self.db.query(
+                ResourceChunk.node_id,
+                func.count(ResourceChunk.id).label("count"),
+            )
+            .filter(ResourceChunk.node_id.in_(node_ids))
+            .group_by(ResourceChunk.node_id)
+            .all()
+        )
+
+        return {str(nid): count for nid, count in results}
+
+    def _density_weighted_fallback(self, nodes, total_q, difficulty_dist, chunk_counts):
+        """Fallback：用 chunk 數量加權分配比例。"""
+        # 用 chunk 數量加權，無 chunk 的節點給基底權重 1
+        weights = []
+        for n in nodes:
+            w = max(1, chunk_counts.get(str(n.id), 0))
+            weights.append(w)
+
+        total_weight = sum(weights) or 1
+        exam_points = []
+        assigned = 0
+
+        for i, n in enumerate(nodes):
+            ratio = round(weights[i] / total_weight * 100)
+            q_count = max(1, round(total_q * weights[i] / total_weight))
+            assigned += q_count
+
+            exam_points.append({
+                "name": n.name,
+                "node_id": str(n.id),
+                "ratio": ratio,
+                "question_count": q_count,
+                "suggested_difficulty": difficulty_dist,
+            })
+
+        # 調整總數
+        diff = total_q - assigned
+        if diff != 0 and exam_points:
+            exam_points[0]["question_count"] = max(1, exam_points[0]["question_count"] + diff)
+
+        # 調整 ratio 總和 = 100
+        ratio_sum = sum(p["ratio"] for p in exam_points)
+        if ratio_sum != 100 and exam_points:
+            exam_points[0]["ratio"] += (100 - ratio_sum)
+
+        return {
+            "exam_points": exam_points,
+            "point_ratio": {p["name"]: p["ratio"] for p in exam_points},
+            "difficulty_map": {p["name"]: p["suggested_difficulty"] for p in exam_points},
+            "source": "density",
         }
 
     # ------------------------------------------------------------------ #

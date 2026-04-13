@@ -55,7 +55,11 @@ function ReviewBookPage() {
 
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
-      if (res.subjects.length > 0) setActiveSubjectId(res.subjects[0].id);
+      if (res.subjects.length > 0) {
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
+      }
     }).catch(() => {});
   }, [authLoading, isAuthenticated, onboardingCompleted, router]);
 
@@ -66,7 +70,8 @@ function ReviewBookPage() {
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
     const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
 
-    reviewService.getWrongQuestions(examId || undefined, targetSubjectId).then(res => {
+    // 有 examId 時只用 examId 查（考試可能屬於不同科目）；無 examId 時用 subjectId 查
+    reviewService.getWrongQuestions(examId || undefined, examId ? undefined : targetSubjectId).then(res => {
       setData(res);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -120,7 +125,7 @@ function ReviewBookPage() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => router.push('/onboarding')}
           allowAdd={false}
         />
@@ -137,7 +142,7 @@ function ReviewBookPage() {
         <SubjectSwitcher
           subjects={subjects}
           activeSubjectId={activeSubjectId}
-          onSwitch={setActiveSubjectId}
+          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
           onAddSubject={() => router.push('/onboarding')}
           allowAdd={false}
         />
@@ -165,7 +170,7 @@ function ReviewBookPage() {
       <SubjectSwitcher
         subjects={subjects}
         activeSubjectId={activeSubjectId}
-        onSwitch={setActiveSubjectId}
+        onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
         onAddSubject={() => router.push('/onboarding')}
         allowAdd={false}
       />
@@ -388,21 +393,11 @@ function ReviewBookPage() {
               </div>
             )}
 
-            {/* FREE: glassmorphism overlay blocking AI chat */}
-            {isFreeUser && (
-              <div className="absolute inset-x-0 bottom-0 top-32 backdrop-blur-md bg-white/60 z-10 flex flex-col items-center justify-center p-8 text-center border-t border-white/50">
-                <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 max-w-sm">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
-                    <Lock className="h-6 w-6 text-indigo-500" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">升級 PRO 方案，解鎖完整詳解與 AI 教練</h3>
-                  <p className="text-sm text-slate-500 mb-6">
-                    完整的詳細解析與 AI 教練深度對話，助你徹底掌握每道錯題。
-                  </p>
-                  <Link href="/account" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md">
-                    <Sparkles className="h-4 w-4" /> 立即升級
-                  </Link>
-                </div>
+            {/* FREE: 簡化提示（主要升級卡已在解析區域，這裡只放輕量提示避免重複） */}
+            {isFreeUser && messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center px-6 opacity-60">
+                <Lock className="h-8 w-8 text-slate-300 mb-3" />
+                <p className="text-sm text-slate-400">升級 PRO 方案即可使用 AI 教練</p>
               </div>
             )}
 

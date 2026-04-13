@@ -59,13 +59,12 @@ Bloom 認知層次定義：
 def classify_batch_gemini(questions: list[dict], api_key: str) -> list[str]:
     """使用 Gemini API 批次分類。"""
     try:
-        import google.generativeai as genai
+        from google import genai
     except ImportError:
-        log.error("需要 google-generativeai：pip install google-generativeai")
+        log.error("需要 google-genai：pip install google-genai")
         return ["remember"] * len(questions)
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    client = genai.Client(api_key=api_key)
 
     results = []
     for q in questions:
@@ -77,7 +76,9 @@ def classify_batch_gemini(questions: list[dict], api_key: str) -> list[str]:
             option_d=q.get("option_d", ""),
         )
         try:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash", contents=prompt
+            )
             bloom = response.text.strip().lower()
             if bloom not in BLOOM_LEVELS:
                 # 嘗試提取第一個有效值

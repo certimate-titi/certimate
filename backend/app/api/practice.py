@@ -16,6 +16,41 @@ from app.services.organic_progress import OrganicProgressEngine
 router = APIRouter(prefix="/practice")
 
 
+@router.get("/nodes/{node_id}/questions")
+def get_node_questions(
+    node_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """查詢知識節點下的練習題列表。"""
+    nid = uuid_mod.UUID(node_id)
+
+    questions = (
+        db.query(Question)
+        .filter(Question.node_id == nid)
+        .order_by(Question.question_number)
+        .all()
+    )
+
+    return {
+        "node_id": node_id,
+        "questions": [
+            {
+                "id": str(q.id),
+                "content": q.content,
+                "option_a": q.option_a,
+                "option_b": q.option_b,
+                "option_c": q.option_c,
+                "option_d": q.option_d,
+                "difficulty": q.difficulty.value if hasattr(q.difficulty, "value") else q.difficulty,
+                "type": q.type.value if hasattr(q.type, "value") else q.type,
+            }
+            for q in questions
+        ],
+        "total": len(questions),
+    }
+
+
 class PracticeSubmitRequest(BaseModel):
     question_id: str
     selected_answer: str
