@@ -672,11 +672,11 @@ export const superAdminService = {
     return apiClient.get('/admin/dashboard/alerts');
   },
 
-  async getSystemLoad(): Promise<{ cpu_percent: number; db_connections_percent: number; cache_hit_rate: number }> {
+  async getSystemLoad(): Promise<{ cpu_percent: number; db_connections_percent: number; queue_depth_percent: number }> {
     return apiClient.get('/admin/dashboard/system-load');
   },
 
-  async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number }[] }> {
+  async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number; voyage: number }[] }> {
     return apiClient.get('/admin/dashboard/charts');
   },
 

@@ -134,7 +134,7 @@ def get_dashboard_charts(
         ]
         return {"models": models}
 
-    # ── 預設：月份 user_growth + ai_cost（舊格式向下相容）─────────────────
+    # ── 預設：月份 user_growth + ai_cost ─────────────────
     user_growth = []
     for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -150,21 +150,39 @@ def get_dashboard_charts(
             "mau": max(1, min(total_users, exams_in_month * 3)),
         })
 
+    # AI cost — real data from ai_usage_ledger (Feature 33)
+    from sqlalchemy import text as _text
+    try:
+        rows = db.execute(_text("""
+            SELECT DATE_TRUNC('month', created_at) AS month,
+                   provider,
+                   SUM(cost_usd) AS total_cost
+            FROM ai_usage_ledger
+            WHERE created_at >= :start_date
+            GROUP BY month, provider
+            ORDER BY month
+        """), {"start_date": now - timedelta(days=180)}).fetchall()
+    except Exception:
+        rows = []
+
+    # Pivot: month → {gemini, claude, voyage, gpt4}
+    by_month: dict = {}
+    for month, provider, cost in rows:
+        key = month.strftime("%m月") if month else ""
+        if key not in by_month:
+            by_month[key] = {"name": key, "gemini": 0.0, "claude": 0.0, "gpt4": 0.0, "voyage": 0.0}
+        prov_key = "claude" if provider == "anthropic" else provider
+        if prov_key in by_month[key]:
+            by_month[key][prov_key] = round(float(cost or 0), 4)
+
+    # Build last 6 months in order, fill zeros for empty months
     ai_cost = []
     for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_name = month_start.strftime("%m月")
-        exams = db.query(func.count(Exam.id)).filter(
-            Exam.created_at >= month_start,
-            Exam.created_at < month_start + timedelta(days=31),
-            Exam.status.in_([ExamStatus.READY, ExamStatus.SUBMITTED]),
-        ).scalar() or 0
-        ai_cost.append({
-            "name": month_name,
-            "gemini": round(exams * 0.01, 2),
-            "claude": round(exams * 0.003, 2),
-            "gpt4": 0,
-        })
+        ai_cost.append(by_month.get(month_name, {
+            "name": month_name, "gemini": 0.0, "claude": 0.0, "gpt4": 0.0, "voyage": 0.0,
+        }))
 
     return {"user_growth": user_growth, "ai_cost": ai_cost}
 
@@ -174,30 +192,49 @@ def get_system_load(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """系統負載（從 DB 連線池 + 資源處理佇列推算）。"""
-    from app.models.resource import Resource, ResourceStatus
-    from sqlalchemy import func
+    """系統負載（真實值）。
 
-    # DB connection usage: estimate from active queries
-    processing = db.query(func.count(Resource.id)).filter(
-        Resource.status == ResourceStatus.PROCESSING
-    ).scalar() or 0
-    total_resources = db.query(func.count(Resource.id)).scalar() or 1
+    - cpu_percent: 當前 backend process CPU 使用率（psutil, 無 GCP API 費用）
+    - db_connections_percent: PostgreSQL pg_stat_activity / max_connections
+    - queue_depth_percent: 佇列深度（處理中資源 / 上限）— 取代原本的 Redis 假指標
+    """
+    from sqlalchemy import text as _text
 
-    # Estimate CPU from processing load
-    cpu_percent = min(90, max(5, processing * 15 + 10))
-    # DB connections: based on processing tasks
-    db_connections_percent = min(80, max(10, processing * 10 + 15))
-    # Cache hit rate: higher with more completed resources
-    completed = db.query(func.count(Resource.id)).filter(
-        Resource.status == ResourceStatus.COMPLETED
-    ).scalar() or 0
-    cache_hit_rate = min(99, max(50, 85 + (completed * 2)))
+    # CPU — psutil reads this process's CPU sample
+    try:
+        import psutil
+        cpu_percent = int(psutil.cpu_percent(interval=0.1))
+    except Exception:
+        cpu_percent = 0
+
+    # DB connections — SELECT count + max_connections
+    try:
+        rows = db.execute(_text("""
+            SELECT
+                (SELECT count(*) FROM pg_stat_activity WHERE state IS NOT NULL)::int AS active,
+                current_setting('max_connections')::int AS maxc
+        """)).first()
+        active = rows[0] if rows else 0
+        max_conn = rows[1] if rows and rows[1] else 100
+        db_connections_percent = min(100, int(active * 100 / max_conn))
+    except Exception:
+        db_connections_percent = 0
+
+    # Queue depth — processing resources vs 10 (small pool assumption)
+    try:
+        from app.models.resource import Resource, ResourceStatus
+        from sqlalchemy import func
+        processing = db.query(func.count(Resource.id)).filter(
+            Resource.status == ResourceStatus.PROCESSING
+        ).scalar() or 0
+        queue_depth_percent = min(100, int(processing * 10))
+    except Exception:
+        queue_depth_percent = 0
 
     return {
         "cpu_percent": cpu_percent,
         "db_connections_percent": db_connections_percent,
-        "cache_hit_rate": cache_hit_rate,
+        "queue_depth_percent": queue_depth_percent,
     }
 
 
