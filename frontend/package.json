@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:prod": "mv .env.local .env.local.bak 2>/dev/null; NODE_ENV=production next build; mv .env.local.bak .env.local 2>/dev/null; true",
+    "build:prod": "mv .env.local .env.local.bak 2>/dev/null; NEXT_PUBLIC_BUILD_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo dev) NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) NODE_ENV=production next build; mv .env.local.bak .env.local 2>/dev/null; true",
     "deploy:prod": "npm run build:prod && firebase deploy --only hosting --project certimate-titi",
     "start": "next start",
     "lint": "eslint .",

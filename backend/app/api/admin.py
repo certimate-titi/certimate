@@ -3,6 +3,7 @@
 import os
 import sys
 import subprocess
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -33,19 +34,53 @@ def _get_git_commit() -> str:
 _CACHED_COMMIT = _get_git_commit()
 
 
+# Container startup time — best-effort fallback when DEPLOYED_AT env var unset
+_STARTUP_TIME = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
 @router.get("/version")
-def get_version():
-    """公開版本資訊端點（不需認證）。"""
+def get_version(db: Session = Depends(get_db)):
+    """公開版本資訊端點（不需認證）。
+
+    Real-time values:
+    - alembic_head: queried from alembic_version table (never stale)
+    - backend_commit: BUILD_COMMIT env var (set by Cloud Build), fallback to git
+    - deployed_at: DEPLOYED_AT env var (set by Cloud Build), fallback to
+      container startup time which is a reasonable proxy
+    """
+    from sqlalchemy import text as _sql_text
+
     database_url = os.environ.get("DATABASE_URL", "")
     environment = "production" if "cloudsql" in database_url else "development"
 
+    # Real alembic head from DB
+    try:
+        alembic_head = db.execute(
+            _sql_text("SELECT version_num FROM alembic_version LIMIT 1")
+        ).scalar() or "unknown"
+    except Exception:
+        alembic_head = "unknown"
+
+    # Commit: prefer env var (Cloud Build sets BUILD_COMMIT=$SHORT_SHA),
+    # fall back to git (works in dev), then "dev"
+    commit = (
+        os.environ.get("BUILD_COMMIT")
+        or _CACHED_COMMIT
+        or "dev"
+    )
+
+    # Deployed at: env var (Cloud Build sets DEPLOYED_AT=$BUILD_TIMESTAMP)
+    # or container startup time (reasonable proxy — Cloud Run restarts on
+    # each deploy so startup ≈ deploy).
+    deployed_at = os.environ.get("DEPLOYED_AT") or _STARTUP_TIME
+
     return {
-        "backend_version": "0.3.1",
-        "backend_commit": _CACHED_COMMIT,
+        "backend_version": os.environ.get("BACKEND_VERSION", "0.3.1"),
+        "backend_commit": commit,
         "api_prefix": "/api/v1",
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        "alembic_head": "034",
-        "deployed_at": os.environ.get("DEPLOYED_AT", "unknown"),
+        "alembic_head": alembic_head,
+        "deployed_at": deployed_at,
         "environment": environment,
     }
 
