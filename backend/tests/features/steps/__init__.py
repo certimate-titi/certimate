@@ -1234,3 +1234,42 @@ from .account_settings.aggregate_then import account_state  # noqa: F401
 
 # Account Settings (Feature 22) — readmodel_then
 from .account_settings.readmodel_then import account_response  # noqa: F401
+
+# Cost Monitor (Feature 33) — aggregate_given
+from .cost_monitor.aggregate_given import budget_config as cm_budget_config  # noqa: F401
+from .cost_monitor.aggregate_given import current_usage as cm_current_usage  # noqa: F401
+from .cost_monitor.aggregate_given import misc_given as cm_misc_given  # noqa: F401
+from .cost_monitor.aggregate_given import scenario_extras as cm_scenario_extras  # noqa: F401
+
+# Cost Monitor (Feature 33) — commands
+from .cost_monitor.commands import view_endpoints as cm_view_endpoints  # noqa: F401
+from .cost_monitor.commands import budget_mutations as cm_budget_mutations  # noqa: F401
+from .cost_monitor.commands import internal_actions as cm_internal_actions  # noqa: F401
+
+# Cost Monitor (Feature 33) — readmodel_then
+from .cost_monitor.readmodel_then import response_fields as cm_response_fields  # noqa: F401
+from .cost_monitor.readmodel_then import misc_then as cm_misc_then  # noqa: F401
+
+# Cost Monitor (Feature 33) — aggregate_then
+from .cost_monitor.aggregate_then import db_assertions as cm_db_assertions  # noqa: F401
+
+# Common — error code (shared across features)
+from .common_then import error_code as common_error_code  # noqa: F401
+
+# Mindmap Upgrade (Feature 34) — aggregate_given
+from .mindmap_upgrade.aggregate_given import (  # noqa: F401
+    setup_nodes_and_chunks as mu_setup,
+    rerank_schema_setup as mu_rerank_setup,
+)
+
+# Mindmap Upgrade (Feature 34) — commands
+from .mindmap_upgrade.commands import (  # noqa: F401
+    direct_service_calls as mu_commands,
+    rerank_schema_commands as mu_rerank_commands,
+)
+
+# Mindmap Upgrade (Feature 34) — aggregate_then
+from .mindmap_upgrade.aggregate_then import (  # noqa: F401
+    assertions as mu_assertions,
+    rerank_schema_assertions as mu_rerank_assertions,
+)

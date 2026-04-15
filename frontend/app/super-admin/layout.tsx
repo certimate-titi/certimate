@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
+import {
   LayoutDashboard,
   Users,
   CreditCard,
@@ -15,7 +15,8 @@ import {
   Bell,
   Search,
   History,
-  FileText
+  FileText,
+  DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -35,6 +36,7 @@ const sidebarItems = [
   { name: '系統設定', href: '/super-admin/settings', icon: Settings },
   { name: '審計日誌', href: '/super-admin/audit-logs', icon: History },
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },
+  { name: '成本監控', href: '/super-admin/cost-monitor', icon: DollarSign },
 ];
 
 export default function SuperAdminLayout({

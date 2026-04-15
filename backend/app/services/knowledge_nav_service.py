@@ -154,6 +154,15 @@ class KnowledgeNavService:
                 status = "UNSEEN"
                 decay_status = "unseen"
 
+            # Mindmap upgrade §3 — support_strength display hints
+            from app.services.mindmap_strength_service import MindmapStrengthService
+            strength_value = getattr(node, "support_strength", 1.0) or 0.0
+            strength_hint = MindmapStrengthService.strength_to_display(strength_value)
+
+            # Empty/sparse nodes override decay color with gray "待補充"
+            if strength_hint["needs_supplement"]:
+                display_color = strength_hint["color"]
+
             flat_nodes[str(node.id)] = {
                 "id": str(node.id),
                 "name": node.name,
@@ -168,6 +177,12 @@ class KnowledgeNavService:
                 "status": status,
                 "decay_status": decay_status,
                 "progress_percentage": round(progress, 4),
+                # §3 新增
+                "support_strength": round(float(strength_value), 3),
+                "strength_tier": strength_hint["tier"],
+                "strength_label": strength_hint["label"],
+                "needs_supplement": strength_hint["needs_supplement"],
+                "node_source": getattr(node, "node_source", "user_data"),
                 "children": [],
             }
 

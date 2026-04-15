@@ -284,11 +284,65 @@ class LLMService:
         return response.choices[0].message.content
 
     def _generate_google(self, model: str, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+        """Generate via Gemini with optional explicit context caching (Tier 1-C).
+
+        Flow:
+        1. Attempt to fetch/create a cached-content resource for the system_prompt.
+        2. If cache available → send only user_prompt + cached_content reference.
+        3. Otherwise → send combined prompt (rely on Gemini implicit caching).
+        4. Record cached_content_token_count for observability.
+        """
+        from app.services.gemini_cache_service import GeminiCacheService
+
         client = self._get_google()
-        combined_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = client.models.generate_content(
+        cache_svc = GeminiCacheService()
+
+        # Try explicit caching for the system prompt
+        cache_name = cache_svc.get_or_create_cache(
             model=model,
-            contents=combined_prompt,
-            config={"max_output_tokens": max_tokens},
+            system_prompt=system_prompt,
+            display_name=f"llm-{model}-sys",
+            ttl_seconds=3600,
         )
+
+        try:
+            if cache_name:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=user_prompt,
+                    config={
+                        "max_output_tokens": max_tokens,
+                        "cached_content": cache_name,
+                    },
+                )
+            else:
+                combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+                response = client.models.generate_content(
+                    model=model,
+                    contents=combined_prompt,
+                    config={"max_output_tokens": max_tokens},
+                )
+        except Exception as exc:
+            # Graceful fallback: cache reference may have expired server-side
+            import logging
+            logging.getLogger(__name__).warning(
+                "Gemini generate with cache failed (%s); retrying without cache",
+                exc,
+            )
+            combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+            response = client.models.generate_content(
+                model=model,
+                contents=combined_prompt,
+                config={"max_output_tokens": max_tokens},
+            )
+
+        # Track cache savings (implicit + explicit)
+        try:
+            cached_tokens = (
+                getattr(response.usage_metadata, "cached_content_token_count", 0) or 0
+            )
+            cache_svc.record_cached_tokens_seen(cached_tokens)
+        except Exception:  # noqa: BLE001
+            pass
+
         return response.text

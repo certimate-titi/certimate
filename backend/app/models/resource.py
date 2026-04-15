@@ -62,6 +62,7 @@ class ResourceStatus(str, enum.Enum):
     COMPLETED_NO_MAP = "COMPLETED_NO_MAP"
     FAILED = "FAILED"
     DELETED = "DELETED"
+    PENDING_BUDGET_RECOVERY = "PENDING_BUDGET_RECOVERY"  # Feature 33
 
 
 class ResourceScope(str, enum.Enum):

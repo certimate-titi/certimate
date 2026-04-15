@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid
@@ -39,6 +39,22 @@ class KnowledgeNode(Base):
         comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
         index=True,
     )
+    # ── Mindmap architecture upgrade §3 — 骨架失焦處理 ───────────────
+    support_strength: Mapped[float] = mapped_column(
+        Float, nullable=False, server_default="0.0", default=0.0,
+        comment="使用者資料對此節點的支撐強度（0.0-1.0），< 0.3 顯示灰色「待補充」",
+    )
+    syllabus_topic_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("syllabus_topics.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="對應的考綱 topic id（骨架優先策略的錨點）",
+    )
+    node_source: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="user_data",
+        comment="節點來源：syllabus / user_data / hybrid",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

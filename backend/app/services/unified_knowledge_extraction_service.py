@@ -11,6 +11,7 @@
 """
 
 import json
+import os
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -30,7 +31,9 @@ _gemini_client = None
 if settings.GEMINI_API_KEY:
     _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-GEMINI_MODEL = "gemini-2.5-flash"
+# T2-B: env-var controlled model selection for A/B testing
+# Default flash for cost, allow pro for quality experiments
+GEMINI_MODEL = os.environ.get("GEMINI_UNIFIED_EXTRACTION_MODEL", "gemini-2.5-flash")
 
 # ─── Token 壓縮策略 ───
 MAX_EXAM_QUESTIONS = 120   # 考古題最多送幾題摘要
@@ -276,10 +279,21 @@ class UnifiedKnowledgeExtractionService:
         self._map_questions_to_nodes(sid, subject_name, question_keywords)
 
         self.db.commit()
+
+        # Mindmap upgrade §3 — 萃取完成後重算每個節點的 support_strength
+        try:
+            from app.services.mindmap_strength_service import MindmapStrengthService
+            strength_updated = MindmapStrengthService(self.db).recompute_for_subject(sid)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "[統一萃取] support_strength recompute failed (non-fatal): %s", exc
+            )
+            strength_updated = 0
+
         log.info(
             f"[統一萃取] ✅ {subject_name}: "
             f"新節點={nodes_created}, mastery遷移={mastery_migrated}, "
-            f"chunks映射={chunks_remapped}"
+            f"chunks映射={chunks_remapped}, strength更新={strength_updated}"
         )
 
         return {
@@ -287,6 +301,7 @@ class UnifiedKnowledgeExtractionService:
             "nodes_created": nodes_created,
             "mastery_migrated": mastery_migrated,
             "chunks_remapped": chunks_remapped,
+            "strength_updated": strength_updated,
         }
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -389,18 +404,81 @@ class UnifiedKnowledgeExtractionService:
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     def _call_gemini(self, prompt: str) -> dict:
-        """呼叫 Gemini API 並解析 JSON 回應。"""
+        """呼叫 Gemini API 並解析 JSON 回應。
+
+        T2-C: 使用 response_schema 強制輸出結構（最多 6 個 chapters），
+        避免 LLM 超量輸出破壞心智圖六軸約束。
+        """
         if not _gemini_client:
             raise RuntimeError("GEMINI_API_KEY not configured")
 
-        response = _gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config={
-                "temperature": 0.2,
-                "response_mime_type": "application/json",
+        # T2-C JSON Schema — 六大章節上限硬性約束
+        response_schema = {
+            "type": "object",
+            "properties": {
+                "knowledge_tree": {
+                    "type": "object",
+                    "properties": {
+                        "chapters": {
+                            "type": "array",
+                            "maxItems": 6,  # 六大章節上限
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "sections": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {"type": "string"},
+                                                "subsections": {
+                                                    "type": "array",
+                                                    "items": {"type": "string"},
+                                                },
+                                            },
+                                            "required": ["name"],
+                                        },
+                                    },
+                                },
+                                "required": ["name"],
+                            },
+                        }
+                    },
+                    "required": ["chapters"],
+                },
+                "node_mapping": {"type": "object"},
+                "question_keywords": {"type": "object"},
             },
-        )
+            "required": ["knowledge_tree"],
+        }
+
+        try:
+            response = _gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": 0.2,
+                    "response_mime_type": "application/json",
+                    "response_schema": response_schema,
+                },
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Some Gemini versions may reject complex response_schema — fallback
+            log.warning(
+                "Gemini response_schema rejected (%s); retrying without schema",
+                exc,
+            )
+            response = _gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": 0.2,
+                    "response_mime_type": "application/json",
+                },
+            )
 
         raw = response.text.strip()
         if raw.startswith("```"):

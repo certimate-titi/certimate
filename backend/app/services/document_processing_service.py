@@ -174,8 +174,9 @@ class DocumentProcessingService:
                 if structured:
                     extracted["sections"] = structured
 
-            # Step 4: Delete old data (for reprocessing)
-            self.chunk_repo.delete_by_resource_id(resource_id)
+            # Step 4: Delete old data (for reprocessing) — use hard delete to
+            # avoid chunk_index unique conflicts with soft-deleted rows
+            self.chunk_repo.delete_by_resource_id(resource_id, hard=True)
             self.db.query(KnowledgeNode).filter_by(resource_id=resource_id).delete()
             self.db.flush()
 
@@ -185,12 +186,61 @@ class DocumentProcessingService:
             # Step 6: Smart chunking
             chunks_data = self._chunk_sections(extracted["sections"])
 
-            # Step 7: Embed
+            # Step 7: Embed (with Voyage quota gate — Feature 33)
             chunk_texts = [c["content"] for c in chunks_data]
             embeddings = [None] * len(chunk_texts)
+
+            # Voyage 配額鎖：在實際呼叫 Voyage API 前檢查當月預算
+            from app.services.voyage_quota_service import (
+                VoyageQuotaDegraded,
+                VoyageQuotaExceeded,
+                VoyageQuotaService,
+            )
+            from app.middleware.ai_usage_tracker import (
+                estimate_voyage_cost,
+                track_ai_usage,
+            )
+            from decimal import Decimal
+
+            est_tokens = sum(len(t) for t in chunk_texts) // 4 or 1
+            est_cost = estimate_voyage_cost(est_tokens)
+            quota_svc = VoyageQuotaService(self.db)
+
+            try:
+                quota_svc.check_and_reserve(est_cost)
+            except VoyageQuotaDegraded:
+                # 達 80% 降級門檻：標記資源為 PENDING_BUDGET_RECOVERY 並中止本次處理
+                resource.status = ResourceStatus.PENDING_BUDGET_RECOVERY
+                self.db.commit()
+                logger.warning(
+                    "Resource %s queued for budget recovery (Voyage degraded)",
+                    resource_id,
+                )
+                return {
+                    "ok": True,
+                    "status": "PENDING_BUDGET_RECOVERY",
+                    "resource_id": resource_id,
+                    "message": "AI 資源處理已排隊，因本月 embedding 預算已達降級門檻",
+                }
+            except VoyageQuotaExceeded:
+                resource.status = ResourceStatus.FAILED
+                resource.error_message = "Voyage 月度預算已耗盡（100%），請聯繫管理員擴充預算"
+                self.db.commit()
+                logger.error(
+                    "Resource %s failed: Voyage quota exhausted",
+                    resource_id,
+                )
+                raise
+
             if self.embedding_service:
                 try:
-                    embeddings = self.embedding_service.embed_texts(chunk_texts)
+                    with track_ai_usage(
+                        self.db, provider="voyage", feature="document_embedding"
+                    ) as tracker:
+                        embeddings = self.embedding_service.embed_texts(chunk_texts)
+                        tracker.input_tokens = est_tokens
+                        tracker.cost_usd = est_cost
+                        tracker.endpoint = "voyage/embed"
                 except Exception as e:
                     logger.warning("Embedding failed: %s", e)
 

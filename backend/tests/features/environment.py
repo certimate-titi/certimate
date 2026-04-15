@@ -251,6 +251,22 @@ def after_scenario(context, scenario):
     except ImportError:
         pass
 
+    # Feature 33: 重設 GCP billing test override + GCP budget sync factory
+    try:
+        from app.services.gcp_billing_service import set_test_override
+        set_test_override(None)
+    except ImportError:
+        pass
+    try:
+        import app.services.gcp_budget_sync_service as _gbs
+        if hasattr(_gbs, "_original_make_default_adapter"):
+            _gbs._make_default_adapter = _gbs._original_make_default_adapter
+        else:
+            # Cache the pristine factory the first time we see it
+            _gbs._original_make_default_adapter = _gbs._make_default_adapter
+    except ImportError:
+        pass
+
     # 清理狀態
     context.last_error = None
     context.last_response = None

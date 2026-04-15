@@ -910,3 +910,48 @@ export const practiceService = {
     });
   },
 };
+
+// ===========================
+// Feature 33 — Cost Monitor Service
+// ===========================
+
+import type {
+  CostSummaryResponse,
+  ProviderDetailResponse,
+  GcpServicesResponse,
+  TrendsResponse,
+  UpdateBudgetRequest,
+  GlobalScaleRequest,
+  OverrideDisableRequest,
+  BudgetUpdateResponse,
+} from '@/types/cost-monitor';
+
+export const costMonitorService = {
+  async getSummary(): Promise<CostSummaryResponse> {
+    return apiClient.get('/admin/cost/summary');
+  },
+
+  async getProviderDetail(provider: 'anthropic' | 'gemini' | 'voyage'): Promise<ProviderDetailResponse> {
+    return apiClient.get(`/admin/cost/providers/${provider}`);
+  },
+
+  async getGcpServices(): Promise<GcpServicesResponse> {
+    return apiClient.get('/admin/cost/gcp/services');
+  },
+
+  async getTrends(days = 30): Promise<TrendsResponse> {
+    return apiClient.get(`/admin/cost/trends?days=${days}`);
+  },
+
+  async updateBudget(req: UpdateBudgetRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.put('/admin/cost/budget', req);
+  },
+
+  async globalScale(req: GlobalScaleRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.post('/admin/cost/budget/global-scale', req);
+  },
+
+  async overrideDisable(req: OverrideDisableRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.post('/admin/cost/budget/override-disable', req);
+  },
+};

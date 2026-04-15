@@ -44,6 +44,7 @@ Enum resource_status {
   COMPLETED
   COMPLETED_NO_MAP
   FAILED
+  PENDING_BUDGET_RECOVERY // Feature 33 — 當 AI_VOYAGE 達 80% 降級門檻時，新上傳資源進入此狀態等待預算恢復
 }
 
 Enum resource_scope {
@@ -399,7 +400,9 @@ Table resource_chunks {
   source_page_start integer [note: 'PDF 起始頁碼']
   source_page_end integer [note: 'PDF 結束頁碼']
   metadata_json json [note: '額外中繼資料']
-  embedding "vector(1024)" [note: 'Voyage AI voyage-3 embedding']
+  embedding "vector(1024)" [note: 'Voyage AI voyage-3 embedding（Phase 1 預設）']
+  embedding_provider varchar(32) [default: 'voyage', note: 'Feature 33 — 記錄此 chunk 使用的 embedding provider，供未來多 provider 並存時分流查詢']
+  embedding_model varchar(64) [default: 'voyage-3', note: 'Feature 33 — 記錄具體模型版本，供重嵌決策']
   created_at timestamptz [default: `now()`]
 
   indexes {
@@ -1254,3 +1257,67 @@ Table historical_exams {
 }
 
 Ref: questions.historical_exam_id > historical_exams.id [delete: cascade]
+
+// ============================================================
+// Feature 33 — 成本監控中心（Cost Monitor）
+// ============================================================
+
+Table ai_usage_ledger {
+  id uuid [pk, default: `gen_random_uuid()`]
+  provider varchar(32) [not null, note: 'anthropic / gemini / voyage']
+  endpoint varchar(128) [note: '呼叫的 API endpoint 或模型名稱']
+  request_id varchar(128) [note: '對應 HTTP request id 或 trace id']
+  input_tokens integer [default: 0]
+  output_tokens integer [default: 0]
+  cost_usd decimal(12,6) [not null, default: 0, note: '應用層換算的美元成本']
+  billing_source varchar(16) [default: 'app', note: 'app / provider_api（若後續對帳）']
+  user_id uuid [note: '觸發呼叫的使用者，允許 null（系統排程）']
+  feature varchar(64) [note: '觸發來源：ai_gen / coach / embedding / mindmap']
+  created_at timestamptz [default: `now()`, not null]
+
+  indexes {
+    (provider, created_at) [name: 'idx_ai_usage_ledger_provider_date']
+    created_at
+    user_id
+  }
+
+  Note: 'AI 呼叫的 token 級用量明細，供成本監控與配額鎖查詢'
+}
+
+Ref: ai_usage_ledger.user_id > users.id [delete: set null]
+
+Table budget_config {
+  id uuid [pk, default: `gen_random_uuid()`]
+  scope varchar(32) [unique, not null, note: 'AI_ANTHROPIC / AI_GEMINI / AI_VOYAGE / GCP_TOTAL']
+  monthly_limit_usd decimal(12,2) [not null]
+  warning_percent integer [default: 50]
+  degrade_percent integer [default: 80]
+  disable_percent integer [default: 100]
+  current_state varchar(16) [default: 'active', note: 'active / warning / degraded / disabled']
+  overridden_until timestamptz [note: '手動解除停用的到期時間']
+  updated_by uuid [note: '最後修改人（super_admin user_id）']
+  created_at timestamptz [default: `now()`, not null]
+  updated_at timestamptz [default: `now()`, not null]
+
+  Note: '成本監控的預算設定與當前狀態'
+}
+
+Ref: budget_config.updated_by > users.id [delete: set null]
+
+Table budget_alert_log {
+  id uuid [pk, default: `gen_random_uuid()`]
+  scope varchar(32) [not null]
+  alert_type varchar(16) [not null, note: 'WARNING / DEGRADE / DISABLED']
+  triggered_at_usd decimal(12,2) [not null]
+  limit_usd decimal(12,2) [not null]
+  percent decimal(5,2) [not null]
+  notified_channels jsonb [note: '已送出的通知管道列表，如 ["email","in_app"]']
+  resolved_at timestamptz
+  created_at timestamptz [default: `now()`, not null]
+
+  indexes {
+    (scope, created_at) [name: 'idx_budget_alert_log_scope_date']
+  }
+
+  Note: '預算告警歷史紀錄'
+}

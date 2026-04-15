@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
@@ -35,6 +35,15 @@ class ResourceChunk(Base):
         comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）— RLS 強制啟用",
         index=True,
     )
+    # T2-A 軟刪剪枝
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false",
+        comment="軟刪標記 — true 時從檢索與強度計算排除",
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

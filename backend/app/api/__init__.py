@@ -37,6 +37,7 @@ from app.api.prompt_template import internal_router as prompt_template_internal_
 from app.api.account import router as account_router
 from app.api.practice import router as practice_router
 from app.api.users import router as users_router
+from app.api.cost_monitor import router as cost_monitor_router
 
 router = APIRouter()
 
@@ -75,3 +76,4 @@ router.include_router(prompt_template_internal_router, tags=["prompt-templates-i
 router.include_router(account_router, tags=["account"])
 router.include_router(practice_router, tags=["practice"])
 router.include_router(users_router, tags=["users"])
+router.include_router(cost_monitor_router, tags=["cost-monitor"])
