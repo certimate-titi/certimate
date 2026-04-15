@@ -54,6 +54,13 @@ class SyllabusTopic(Base):
         comment="多租戶隔離鍵",
     )
 
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("subjects.id", ondelete="CASCADE"),
+        nullable=True, index=True,
+        comment="所屬科目（NULL = 跨科目 / 元數據）",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

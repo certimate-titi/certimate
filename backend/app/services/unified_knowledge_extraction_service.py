@@ -46,6 +46,7 @@ def _build_unified_prompt(
     exam_summaries: list[str],
     chunk_summaries: list[str],
     old_node_names: list[str],
+    syllabus_anchors: list[dict] | None = None,
 ) -> str:
     """
     組合統一萃取 Prompt。
@@ -105,6 +106,34 @@ def _build_unified_prompt(
     if not materials_block.strip():
         raise ValueError(f"科目 {subject_name} 無任何可分析素材")
 
+    # ── Feature 34 §3 Strategy E — Syllabus anchor floor ──
+    # 若有預 seed 的考綱錨點，強制 LLM 的 6 章必須對應到這組錨點，
+    # 避免資料稀少時 LLM 自由發揮產生 6 個不相干的章。
+    anchor_block = ""
+    anchor_constraint = ""
+    if syllabus_anchors:
+        anchor_lines = []
+        for idx, ch in enumerate(syllabus_anchors, 1):
+            secs = ch.get("sections", [])
+            sec_names = "、".join(s["name"] for s in secs) if secs else "(尚無子節點)"
+            anchor_lines.append(
+                f"{idx}. **{ch['name']}** — {sec_names}"
+            )
+        anchor_block = f"""
+
+## 🎯 考綱錨點（必須對齊）
+
+此科目已有預先定義的考綱錨點（由考古題反向歸納並人工校對）：
+
+{chr(10).join(anchor_lines)}
+"""
+        anchor_constraint = (
+            "\n**【強制約束】** 第一層「章」必須 1:1 對應上述考綱錨點 —"
+            " 名稱可以微調（同義詞、更精確的用詞），但不得自由創造新的章，"
+            "也不得合併或拆分。第二層「節」在每個章底下可根據實際素材調整，"
+            "允許新增/合併/刪除。\n"
+        )
+
     # ── 舊節點對應區塊 ──
     mapping_block = ""
     if old_node_names:
@@ -125,9 +154,9 @@ def _build_unified_prompt(
 請綜合分析所有素材，萃取出一份**完整統一的知識樹（考綱結構）**。
 
 {materials_block}
-
+{anchor_block}
 ## 萃取要求
-
+{anchor_constraint}
 1. **第一層：章（Chapter）** — 核心主題分類，**最多 6 個**（對應雷達圖六軸，嚴禁超過 6 個）
 2. **第二層：節（Section）** — 每章下的子主題，每章 2-6 個
 3. 每個「節」要包含：
@@ -230,6 +259,9 @@ class UnifiedKnowledgeExtractionService:
         exam_summaries = self._collect_exam_summaries(sid, subject_name)
         chunk_summaries = self._collect_chunk_summaries(sid)
 
+        # 2.5 Feature 34 §3 Strategy E — 載入 syllabus anchors（若有）
+        syllabus_anchors = self._load_syllabus_anchors(sid)
+
         if not exam_summaries and not chunk_summaries:
             # No materials left — clear unified nodes and return
             self._clear_old_nodes(sid)
@@ -253,7 +285,8 @@ class UnifiedKnowledgeExtractionService:
             })
             # DB 模板目前為簡易版，統一萃取需要完整 prompt，仍用 hardcoded builder
             prompt = _build_unified_prompt(
-                subject_name, exam_summaries, chunk_summaries, old_node_names
+                subject_name, exam_summaries, chunk_summaries, old_node_names,
+                syllabus_anchors=syllabus_anchors,
             )
             result = self._call_gemini(prompt)
         except Exception as e:
@@ -307,6 +340,59 @@ class UnifiedKnowledgeExtractionService:
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 素材收集
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _load_syllabus_anchors(self, sid: uuid.UUID) -> list[dict]:
+        """Feature 34 §3 Strategy E — 載入科目的考綱錨點（depth=0 章 + depth=1 節）.
+
+        Returns:
+            List of chapters, each with {"id", "name", "weight", "sections": [...]}
+            Empty list if no syllabus_topics seeded for this subject.
+        """
+        chapters = self.db.execute(
+            text(
+                """
+                SELECT id, name, weight
+                FROM syllabus_topics
+                WHERE subject_id = :sid AND parent_id IS NULL AND is_active = true
+                ORDER BY weight DESC, name
+                """
+            ),
+            {"sid": sid},
+        ).fetchall()
+
+        if not chapters:
+            return []
+
+        anchors: list[dict] = []
+        for ch_id, ch_name, ch_weight in chapters:
+            sections = self.db.execute(
+                text(
+                    """
+                    SELECT id, name, weight
+                    FROM syllabus_topics
+                    WHERE parent_id = :pid AND is_active = true
+                    ORDER BY weight DESC, name
+                    """
+                ),
+                {"pid": ch_id},
+            ).fetchall()
+            anchors.append(
+                {
+                    "id": str(ch_id),
+                    "name": ch_name,
+                    "weight": float(ch_weight or 1.0),
+                    "sections": [
+                        {"id": str(s[0]), "name": s[1], "weight": float(s[2] or 1.0)}
+                        for s in sections
+                    ],
+                }
+            )
+
+        log.info(
+            f"[syllabus_anchor] loaded {len(anchors)} chapters "
+            f"with {sum(len(a['sections']) for a in anchors)} sections"
+        )
+        return anchors
 
     def _collect_exam_summaries(self, sid: uuid.UUID, subject_name: str) -> list[str]:
         """從 questions + historical_exams 收集考古題摘要。"""

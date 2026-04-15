@@ -36,6 +36,8 @@ logger = logging.getLogger(__name__)
 # Strength calculation tuning (env-var overridable later if needed)
 _SIMILARITY_THRESHOLD = 0.60        # cosine similarity cutoff for a chunk to count
 _STRENGTH_SATURATION_AT = 5         # 5+ relevant chunks = 1.0 strength
+_QUESTION_SATURATION_AT = 10        # 10+ mapped historical questions = 1.0 strength
+                                    # (Layer 3 — Feature 34 补強: preseed-mindmaps 場景)
 
 
 class MindmapStrengthService:
@@ -146,43 +148,69 @@ class MindmapStrengthService:
     ) -> float:
         """Compute 0.0-1.0 support strength for a node.
 
-        Algorithm:
-        1. Direct binding: count chunks where node_id = this node (already mapped)
-        2. Semantic binding: embed node name + count chunks within similarity threshold
-        3. Combine: direct count weighted higher, saturate at _STRENGTH_SATURATION_AT
-        """
-        if not resource_ids:
-            return 0.0
+        Algorithm (Feature 34 §3 Strategy E + 考古題補強):
+        1. Direct binding: chunks where node_id = this node (user resources)
+        2. Semantic binding: pgvector similarity within this subject's chunks
+        3. Question binding (NEW): mapped historical questions (questions.node_id)
+        4. Combine: direct×2 + semantic×1 + question×1, saturate at 2×5 = 10
 
+        Key fix: previously returned 0.0 when resource_ids was empty, which made
+        pure-historical-qa subjects look like empty shells even though they had
+        hundreds of mapped questions. Layer 3 gives those subjects real strength.
+        """
         # Layer 1: direct chunk binding (exclude soft-deleted)
-        direct_count = self.db.execute(
+        direct_count = 0
+        if resource_ids:
+            direct_count = self.db.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM resource_chunks
+                    WHERE node_id = :nid
+                      AND is_deleted = false
+                    """
+                ),
+                {"nid": node_id},
+            ).scalar() or 0
+
+        if direct_count >= _STRENGTH_SATURATION_AT:
+            return 1.0
+
+        # Layer 2: semantic similarity via pgvector (only if user has resources)
+        semantic_count = 0
+        if resource_ids:
+            try:
+                semantic_count = self._count_similar_chunks(node_name, resource_ids)
+            except Exception as exc:  # noqa: BLE001
+                # If embedding service fails (e.g. Voyage quota), fall back gracefully
+                logger.warning(
+                    "strength: semantic search failed for node %s: %s", node_id, exc
+                )
+                semantic_count = 0
+
+        # Layer 3: historical question binding (NEW — Feature 34 补強)
+        # Count questions that have been mapped to this node via
+        # UnifiedKnowledgeExtractionService._map_questions_to_nodes().
+        # This lets pure-考古題 subjects accumulate non-zero strength.
+        question_count = self.db.execute(
             text(
                 """
                 SELECT COUNT(*)
-                FROM resource_chunks
+                FROM questions
                 WHERE node_id = :nid
-                  AND is_deleted = false
+                  AND historical_exam_id IS NOT NULL
                 """
             ),
             {"nid": node_id},
         ).scalar() or 0
 
-        if direct_count >= _STRENGTH_SATURATION_AT:
+        # Early saturation on question count alone (10+ questions = full coverage)
+        if question_count >= _QUESTION_SATURATION_AT:
             return 1.0
 
-        # Layer 2: semantic similarity via pgvector
-        #   Embed the node name once and query.
-        try:
-            semantic_count = self._count_similar_chunks(node_name, resource_ids)
-        except Exception as exc:  # noqa: BLE001
-            # If embedding service fails (e.g. Voyage quota), fall back to direct count only
-            logger.warning(
-                "strength: semantic search failed for node %s: %s", node_id, exc
-            )
-            semantic_count = 0
-
-        # Combine: direct weighted 2x
-        weighted_total = direct_count * 2 + semantic_count
+        # Combine: direct×2, semantic×1, question×1
+        # Max weighted = 5*2 + X + 10 = can exceed 10, so clamp to 1.0
+        weighted_total = direct_count * 2 + semantic_count + question_count
         strength = min(weighted_total / (_STRENGTH_SATURATION_AT * 2), 1.0)
         return round(strength, 3)
 
