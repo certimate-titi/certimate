@@ -47,7 +47,9 @@ from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-MIN_DESCRIPTION_CHARS = 50  # description must add at least this many chars beyond "# {name}\n\n"
+MIN_DESCRIPTION_CHARS = 100  # description must add at least this many chars beyond "# {name}\n\n"
+# Target is 150-250 字, but threshold is set at 100 to accept LLM/fallback
+# responses that are shorter but still substantive.
 
 
 def _check_subject(db: Session, subject_id: str) -> dict[str, Any]:

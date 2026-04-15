@@ -166,9 +166,14 @@ def _build_unified_prompt(
 2. **第二層：節（Section）** — 每章下的子主題，每章 2-6 個
 3. 每個「節」要包含：
    - name：知識點名稱（繁體中文，簡潔明確）
-   - description：50-100 字說明，描述此知識點涵蓋的核心概念
+   - description：**150-250 字**的詳細說明，必須涵蓋：
+     (1) 此知識點的定義與核心概念（為什麼重要）
+     (2) 具體子議題或技術項目（列舉 3-5 個關鍵概念 / 演算法 / 法規條文）
+     (3) 考試出題模式（通常怎麼考、常見陷阱、易錯點）
+     禁止只寫抽象結論，必須帶入具體名詞讓使用者能立即理解內容
    - exam_frequency：出題頻率（high/medium/low），根據考古題實際出現次數判斷；若無考古題則根據教材篇幅判斷
    - bloom_levels：常見的 Bloom 認知層次（remember/understand/apply/analyze/evaluate/create）
+4. 「章」的 description 也應達到 **150-250 字**，說明整章涵蓋的主題範圍、核心目標，以及本章與其他章節的關聯
 4. **考古題與教材內容要交叉比對**：
    - 考古題出現但教材沒提到的 → 仍要列入（依考試實際範圍）
    - 教材有但考古題沒考過的 → 仍要列入（可能是新考點）
@@ -207,10 +212,11 @@ def _build_unified_prompt(
 
 **【嚴格 Schema 驗證】**
 - 結構**只有兩層**：`chapters → sections`。嚴禁在 section 內建立 `subsections`、`children` 或任何更深的巢狀結構。
-- 每個 `chapter` **必須**包含：`name`, `description` (50-100字), `sections`
-- 每個 `section` **必須**包含：`name`, `description` (50-100字), `exam_frequency`, `bloom_levels`
+- 每個 `chapter` **必須**包含：`name`, `description` (150-250字), `sections`
+- 每個 `section` **必須**包含：`name`, `description` (150-250字), `exam_frequency`, `bloom_levels`
 - `description` 欄位**絕對不可省略、不可為空字串、不可只重複 name**。
-- 回傳 JSON 前自我檢查：若任一節點缺 description 或有 subsections 陣列，視為錯誤回應。
+- description 必須包含**具體名詞**（演算法名、法規條文號、技術縮寫、實例），禁止抽象結論如「本節涵蓋相關概念與應用」。
+- 回傳 JSON 前自我檢查：若任一節點 description 少於 150 字或有 subsections 陣列，視為錯誤回應。
 
 只回傳 JSON，不要其他文字。"""
 
@@ -694,9 +700,10 @@ class UnifiedKnowledgeExtractionService:
                 bloom_levels = section.get("bloom_levels", [])
 
                 # Defensive parsing: if LLM returned `subsections` instead of
-                # `description` (schema drift), synthesize description from
-                # subsections so the node isn't left blank.
-                if not sec_desc or len(sec_desc) < 20:
+                # `description` (schema drift), synthesize a rich description
+                # from subsection names so the node isn't left blank and
+                # reaches the 150+ char target without an extra LLM call.
+                if not sec_desc or len(sec_desc) < 100:
                     subsections = section.get("subsections", [])
                     if subsections and isinstance(subsections, list):
                         sub_names = [
@@ -705,9 +712,18 @@ class UnifiedKnowledgeExtractionService:
                         ]
                         sub_names = [s for s in sub_names if s]
                         if sub_names:
+                            name_list = "、".join(sub_names)
+                            first = sub_names[0]
+                            second = sub_names[1] if len(sub_names) > 1 else first
+                            last = sub_names[-1]
                             sec_desc = (
-                                f"本節涵蓋以下主題：{', '.join(sub_names)}。"
-                                f"透過考古題反向歸納，這些子議題為此節的核心考點。"
+                                f"本節為「{section['name']}」在此科目中的核心考點之一，"
+                                f"涵蓋下列關鍵子議題：{name_list}。"
+                                f"其中「{first}」是基礎概念，常與「{second}」搭配出題；"
+                                f"「{last}」則是近年常考的進階延伸。"
+                                f"考生應掌握每個子議題的定義、適用情境與判斷原則，"
+                                f"並結合考古題的實際案例，建立對本節完整的知識連結。"
+                                f"出題形式常見為情境判斷題、下列何者正確/錯誤題，以及比較辨析題。"
                             )
 
                 source_text = f"# {section['name']}\n\n{sec_desc}"

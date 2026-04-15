@@ -429,7 +429,6 @@ export default function KnowledgeBasePage() {
                             className="group p-2.5 cursor-pointer"
                           >
                             <div className="flex items-center gap-2">
-                              {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" /> : <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />}
                               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
                               <div className="flex-1 min-w-0">
                                 <h3 className="text-xs font-medium truncate">{doc.title}</h3>
@@ -623,12 +622,10 @@ export default function KnowledgeBasePage() {
               {/* Graph / Document */}
               <div className="flex-1 overflow-hidden">
                 {centerView === 'document' ? (
-                  <div className="h-full overflow-y-auto p-3 md:p-6">
-                    <div className="max-w-3xl mx-auto">
-                      <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                      <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                        {docFullText}
-                      </div>
+                  <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
+                    <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
+                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                      {docFullText}
                     </div>
                   </div>
                 ) : graphView === 'force' ? (
