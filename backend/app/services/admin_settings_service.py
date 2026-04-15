@@ -142,7 +142,8 @@ class AdminSettingsService:
             return {"error": True, "status_code": 404, "message": "方案限額不存在"}
 
         allowed_fields = [
-            "monthly_uploads", "monthly_exams", "daily_ai_chats", "monthly_vision_pages"
+            "monthly_uploads", "monthly_exams", "daily_ai_chats",
+            "monthly_vision_pages", "max_file_size_mb",
         ]
         for field, value in updates.items():
             if field in allowed_fields:
