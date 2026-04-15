@@ -462,7 +462,9 @@ export default function KnowledgeBasePage() {
                                     : doc.status === 'FAILED'
                                       ? '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。'
                                       : '（尚無可顯示內容）';
-                                  // Force document view — fetch chunks if not cached
+
+                                  // Fetch chunks if not cached
+                                  let fullText = '';
                                   if (!docChunks[doc.id]) {
                                     setLoadingChunks(doc.id);
                                     try {
@@ -470,17 +472,43 @@ export default function KnowledgeBasePage() {
                                       const chunks = res.chunks || [];
                                       setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
                                       const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
-                                      const fullText = sorted.map(c => c.content).join('\n\n');
-                                      setDocFullText(fullText || statusMsg);
+                                      fullText = sorted.map(c => c.content).join('\n\n');
                                     } catch {
-                                      setDocFullText('（載入失敗，請稍後再試）');
+                                      fullText = '';
                                     } finally {
                                       setLoadingChunks(null);
                                     }
                                   } else {
                                     const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
-                                    setDocFullText(sorted.map(c => c.content).join('\n\n') || statusMsg);
+                                    fullText = sorted.map(c => c.content).join('\n\n');
                                   }
+
+                                  // Fallback 1: system-generated resources (e.g. 考古題題庫) have no
+                                  // chunks but do have a rich summary stored in the root knowledge
+                                  // node's source_text. Fetch that as the display content.
+                                  if (!fullText || fullText.length < 20) {
+                                    try {
+                                      const docRootNode = nodes.find(n => n.documentId === doc.id);
+                                      if (docRootNode) {
+                                        const detail = await knowledgeService.getNodeDetail(docRootNode.id) as unknown as Record<string, unknown>;
+                                        const summary = (detail.source_text as string) || '';
+                                        if (summary && summary.length > 20) {
+                                          // Also stitch in children summaries for richer view
+                                          const childSummaries: string[] = [];
+                                          for (const child of (docRootNode.children || []).slice(0, 20)) {
+                                            try {
+                                              const cd = await knowledgeService.getNodeDetail(child.id) as unknown as Record<string, unknown>;
+                                              const ct = (cd.source_text as string) || '';
+                                              if (ct) childSummaries.push(`## ${(cd.node_name as string) || child.label}\n\n${ct}`);
+                                            } catch { /* skip */ }
+                                          }
+                                          fullText = summary + (childSummaries.length ? '\n\n---\n\n' + childSummaries.join('\n\n') : '');
+                                        }
+                                      }
+                                    } catch { /* silent */ }
+                                  }
+
+                                  setDocFullText(fullText || statusMsg);
                                   setDocFullTitle(doc.title);
                                   setCenterView('document');
                                 }}
