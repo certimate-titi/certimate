@@ -383,6 +383,37 @@ export default function KnowledgeBasePage() {
                               {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" /> : <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />}
                               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
                               <div className="flex-1 min-w-0"><h3 className="text-xs font-medium truncate">{doc.title}</h3><p className="text-[10px] text-slate-400">{doc.sourceType}</p></div>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setSelectedDocId(doc.id);
+                                  // Force document view — fetch chunks if not cached
+                                  if (!docChunks[doc.id]) {
+                                    setLoadingChunks(doc.id);
+                                    try {
+                                      const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
+                                      const chunks = res.chunks || [];
+                                      setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
+                                      const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+                                      const fullText = sorted.map(c => c.content).join('\n\n');
+                                      setDocFullText(fullText || '（此資源尚未完成處理或無可顯示內容）');
+                                    } catch {
+                                      setDocFullText('（載入失敗，請稍後再試）');
+                                    } finally {
+                                      setLoadingChunks(null);
+                                    }
+                                  } else {
+                                    const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
+                                    setDocFullText(sorted.map(c => c.content).join('\n\n') || '（此資源尚未完成處理或無可顯示內容）');
+                                  }
+                                  setDocFullTitle(doc.title);
+                                  setCenterView('document');
+                                }}
+                                className="text-[10px] font-medium text-blue-600 hover:text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-50 shrink-0 whitespace-nowrap"
+                                title="查看原文"
+                              >
+                                📖 原文
+                              </button>
                               <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"><Trash2 className="h-3 w-3" /></button>
                             </div>
                           </div>
