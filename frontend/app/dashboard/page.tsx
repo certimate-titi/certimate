@@ -242,28 +242,36 @@ export default function DashboardPage() {
   }
 
   // User logged in but hasn't picked a subject yet — show an explicit CTA
-  // instead of an infinite skeleton.
-  if (!onboardingCompleted || !activeSubjectId || subjects.length === 0) {
+  // instead of an infinite skeleton. Uses the in-app SubjectPickerModal
+  // (NOT /onboarding) because onboardingCompleted may already be true
+  // for admin users — navigating to /onboarding would just bounce back.
+  if (!activeSubjectId || subjects.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-8 text-center">
-          <div className="text-5xl mb-4">📚</div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">歡迎使用 TiTi</h2>
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-            你還沒有選擇備考科目。請先新增一個科目，我們會為你準備考古題題庫、
-            知識心智圖與 AI 教練。
-          </p>
-          <button
-            onClick={() => router.push('/onboarding')}
-            className="w-full bg-emerald-500 text-white py-3 rounded-full font-medium hover:bg-emerald-600 transition-colors"
-          >
-            開始選擇科目
-          </button>
-          <p className="text-[11px] text-slate-400 mt-4">
-            已選過的使用者：點上方「科目切換」切換回原科目
-          </p>
+      <>
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-8 text-center">
+            <div className="text-5xl mb-4">📚</div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">歡迎使用 TiTi</h2>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              你還沒有選擇備考科目。請先新增一個科目，我們會為你準備考古題題庫、
+              知識心智圖與 AI 教練。
+            </p>
+            <button
+              onClick={() => setShowAddSubject(true)}
+              className="w-full bg-emerald-500 text-white py-3 rounded-full font-medium hover:bg-emerald-600 transition-colors"
+            >
+              開始選擇科目
+            </button>
+          </div>
         </div>
-      </div>
+        {showAddSubject && (
+          <SubjectPickerModal
+            excludeSubjectIds={subjects.map(s => s.subjectId)}
+            onConfirm={handleAddSubject}
+            onClose={() => setShowAddSubject(false)}
+          />
+        )}
+      </>
     );
   }
 
