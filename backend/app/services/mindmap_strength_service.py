@@ -54,6 +54,14 @@ class MindmapStrengthService:
     def recompute_for_subject(self, subject_id: uuid.UUID) -> int:
         """Recompute support_strength for every node in this subject.
 
+        Two-pass algorithm (Feature 34 §3 補強):
+        Pass 1 — compute per-node strength for LEAF nodes (no children) using
+          direct/semantic/question layers.
+        Pass 2 — aggregate chapter (parent) strength from its children's avg.
+          Without this, chapters always show 0 ("待補充") even when every
+          child section has questions, because chapters themselves don't hold
+          direct question mappings.
+
         Returns the number of nodes updated.
         """
         nodes = self.db.execute(
@@ -79,10 +87,42 @@ class MindmapStrengthService:
             ).fetchall()
         ]
 
-        updated = 0
+        # Build parent → children map for Pass 2 aggregation
+        children_of: dict = {}
+        for nid, name, pid in nodes:
+            if pid is not None:
+                children_of.setdefault(pid, []).append(nid)
+
+        # Pass 1 — compute leaf node strengths
+        strength_cache: dict = {}
         for row in nodes:
             node_id, name, _ = row
-            strength = self._compute_node_strength(node_id, name, resource_ids)
+            is_leaf = node_id not in children_of
+            if is_leaf:
+                strength = self._compute_node_strength(
+                    node_id, name, resource_ids
+                )
+            else:
+                strength = None  # filled in Pass 2
+            strength_cache[node_id] = strength
+
+        # Pass 2 — bottom-up aggregation for non-leaf nodes
+        # Simple avg of direct children (could be weighted later)
+        def resolve(nid) -> float:
+            cached = strength_cache.get(nid)
+            if cached is not None:
+                return cached
+            kids = children_of.get(nid, [])
+            if not kids:
+                return 0.0
+            vals = [resolve(k) for k in kids]
+            avg = sum(vals) / len(vals) if vals else 0.0
+            strength_cache[nid] = avg
+            return avg
+
+        for row in nodes:
+            node_id, _, _ = row
+            final_strength = resolve(node_id)
             self.db.execute(
                 text(
                     """
@@ -91,14 +131,14 @@ class MindmapStrengthService:
                     WHERE id = :nid
                     """
                 ),
-                {"s": float(strength), "nid": node_id},
+                {"s": float(final_strength), "nid": node_id},
             )
-            updated += 1
         self.db.commit()
         logger.info(
-            "[strength] recomputed %d nodes for subject %s", updated, subject_id
+            "[strength] recomputed %d nodes for subject %s (2-pass)",
+            len(nodes), subject_id
         )
-        return updated
+        return len(nodes)
 
     def recompute_for_node(self, node_id: uuid.UUID) -> float:
         """Recompute and persist strength for a single node. Returns new strength."""

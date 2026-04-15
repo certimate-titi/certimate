@@ -112,26 +112,31 @@ def _build_unified_prompt(
     anchor_block = ""
     anchor_constraint = ""
     if syllabus_anchors:
-        anchor_lines = []
-        for idx, ch in enumerate(syllabus_anchors, 1):
-            secs = ch.get("sections", [])
-            sec_names = "、".join(s["name"] for s in secs) if secs else "(尚無子節點)"
-            anchor_lines.append(
-                f"{idx}. **{ch['name']}** — {sec_names}"
-            )
+        # Only list CHAPTER names — omitting section names prevents the LLM
+        # from pattern-copying them verbatim without generating descriptions.
+        anchor_lines = [
+            f"{idx}. **{ch['name']}**"
+            for idx, ch in enumerate(syllabus_anchors, 1)
+        ]
         anchor_block = f"""
 
-## 🎯 考綱錨點（必須對齊）
+## 🎯 考綱錨點（章層級，必須對齊）
 
-此科目已有預先定義的考綱錨點（由考古題反向歸納並人工校對）：
+此科目已有預先定義的 {len(syllabus_anchors)} 個考綱章層級錨點（由考古題反向歸納）：
 
 {chr(10).join(anchor_lines)}
+
+（第二層「節」由你依考古題內容自行萃取與描述，不預設。）
 """
         anchor_constraint = (
-            "\n**【強制約束】** 第一層「章」必須 1:1 對應上述考綱錨點 —"
+            "\n**【強制約束 1】** 第一層「章」必須 1:1 對應上述考綱錨點 —"
             " 名稱可以微調（同義詞、更精確的用詞），但不得自由創造新的章，"
             "也不得合併或拆分。第二層「節」在每個章底下可根據實際素材調整，"
             "允許新增/合併/刪除。\n"
+            "**【強制約束 2】** 所有「章」和「節」都必須有完整的 description 欄位"
+            "（50-100 字繁體中文說明）。**絕對不可**只複製錨點上的節名當結果 —"
+            "你必須根據考古題內容，為每一個節點撰寫獨立的、實質性的描述。"
+            "description 為空字串或僅含標題會被視為格式錯誤。\n"
         )
 
     # ── 舊節點對應區塊 ──
@@ -199,6 +204,13 @@ def _build_unified_prompt(
   }}
 }}
 ```
+
+**【嚴格 Schema 驗證】**
+- 結構**只有兩層**：`chapters → sections`。嚴禁在 section 內建立 `subsections`、`children` 或任何更深的巢狀結構。
+- 每個 `chapter` **必須**包含：`name`, `description` (50-100字), `sections`
+- 每個 `section` **必須**包含：`name`, `description` (50-100字), `exam_frequency`, `bloom_levels`
+- `description` 欄位**絕對不可省略、不可為空字串、不可只重複 name**。
+- 回傳 JSON 前自我檢查：若任一節點缺 description 或有 subsections 陣列，視為錯誤回應。
 
 只回傳 JSON，不要其他文字。"""
 
@@ -658,6 +670,23 @@ class UnifiedKnowledgeExtractionService:
                 sec_desc = section.get("description", "")
                 freq = section.get("exam_frequency", "medium")
                 bloom_levels = section.get("bloom_levels", [])
+
+                # Defensive parsing: if LLM returned `subsections` instead of
+                # `description` (schema drift), synthesize description from
+                # subsections so the node isn't left blank.
+                if not sec_desc or len(sec_desc) < 20:
+                    subsections = section.get("subsections", [])
+                    if subsections and isinstance(subsections, list):
+                        sub_names = [
+                            s if isinstance(s, str) else s.get("name", "")
+                            for s in subsections
+                        ]
+                        sub_names = [s for s in sub_names if s]
+                        if sub_names:
+                            sec_desc = (
+                                f"本節涵蓋以下主題：{', '.join(sub_names)}。"
+                                f"透過考古題反向歸納，這些子議題為此節的核心考點。"
+                            )
 
                 source_text = f"# {section['name']}\n\n{sec_desc}"
                 if bloom_levels:
