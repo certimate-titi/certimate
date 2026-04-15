@@ -8,6 +8,10 @@
 - §3 Strategy B 考綱優先骨架（真實使用者回報冷啟動問題後再做）
 - §3 Strategy F Dashboard 主動建議 UI（前端 Dashboard 改版時一併做）
 - Tier 3 全部（Embedding 全量遷移、Incremental Mindmap、Gemini 3 切換）
+
+**永久跳過項目（外部條件不滿足）**:
+- Anthropic Admin API 整合（CertiMate 為個人帳號，Admin API 僅限 Team/Enterprise Organization；
+  程式碼 `AnthropicUsageService` 已預備好，未來升級 Org 時設環境變數即可啟用）
 **對應現有模組**:
 - `backend/app/services/unified_knowledge_extraction_service.py`
 - `backend/app/services/retrieval_service.py`

@@ -1,15 +1,27 @@
 """AnthropicUsageService — Feature 33 Tier 3b / pending TODO #3.
 
+🚫 STATUS (2026-04-15): Permanently disabled for CertiMate's current account
+tier. Anthropic Admin API requires a Team / Enterprise Organization plan,
+which CertiMate does not currently subscribe to. The code is preserved here
+so that upgrading to Org tier in the future = just set env vars (no code).
+
 Fetches real monthly usage from Anthropic's Admin API and reports it back to
 the cost monitor layer. Unlike Gemini/Voyage (which rely on application-layer
 `ai_usage_ledger`), Anthropic provides a first-party usage report endpoint so
 the numbers are authoritative.
 
-Activation:
+Activation (when Org plan available):
 - Set `ANTHROPIC_ADMIN_MODE=real` in the environment
-- Supply `ANTHROPIC_ADMIN_API_KEY` (Organization-level admin key, NOT a
-  regular API key). Obtain from https://console.anthropic.com/settings/admin-keys
-- Supply `ANTHROPIC_ORGANIZATION_ID` (visible in the admin console)
+- Supply `ANTHROPIC_ADMIN_API_KEY` (Organization-level admin key starting
+  with `sk-ant-admin...`, NOT a regular API key). Obtainable only by
+  organization members with the admin role via Claude Console (path:
+  Console → Settings → Admin keys, after Org is set up).
+- Supply `ANTHROPIC_ORGANIZATION_ID`
+
+Until then, AI_ANTHROPIC scope falls back to ai_usage_ledger which is
+populated automatically by LLMService.generate() (Feature 33 TODO #4).
+Estimated cost via estimate_anthropic_cost() has < 5% drift vs official
+billing.
 
 Graceful degrade:
 - If any of the required env vars are missing → return None from
