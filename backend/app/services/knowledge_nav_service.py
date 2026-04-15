@@ -203,7 +203,14 @@ class KnowledgeNavService:
         sort_tree(roots)
 
         result_resources = [
-            {"id": str(r.id), "name": r.name, "type": r.type.value if hasattr(r.type, 'value') else r.type}
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "type": r.type.value if hasattr(r.type, 'value') else r.type,
+                "status": r.status.value if hasattr(r.status, 'value') else (r.status or "pending"),
+                "error_message": r.error_message,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
             for r in resources
         ]
 

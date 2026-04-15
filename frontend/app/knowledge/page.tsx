@@ -129,19 +129,28 @@ export default function KnowledgeBasePage() {
 
     knowledgeService.getMap(targetSubjectId).then((mapRes: Record<string, unknown>) => {
       const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
-      const allDocuments: Document[] = rawResources.map(r => ({
-        id: r.id,
-        userId: '',
-        title: r.name || r.title || '',
-        sourceType: (r.type || r.resource_type || 'pdf') as Document['sourceType'],
-        subjectId: targetSubjectId,
-        sourceUrl: r.source_url || '',
-        mcpParsedTranscriptUrl: null,
-        status: 'COMPLETED' as Document['status'],
-        fileSizeBytes: 0,
-        visionRequired: false,
-        createdAt: r.created_at || new Date().toISOString(),
-      }));
+      const allDocuments: Document[] = rawResources.map(r => {
+        // Map backend status → frontend Document status
+        // Backend ResourceStatus enum: pending / processing / completed / failed / completed_no_map
+        const backendStatus = (r.status || 'pending').toString().toLowerCase();
+        let feStatus: Document['status'] = 'PROCESSING';
+        if (backendStatus === 'completed' || backendStatus === 'completed_no_map') feStatus = 'COMPLETED';
+        else if (backendStatus === 'failed') feStatus = 'FAILED';
+        else if (backendStatus === 'pending' || backendStatus === 'processing') feStatus = 'PROCESSING';
+        return {
+          id: r.id,
+          userId: '',
+          title: r.name || r.title || '',
+          sourceType: (r.type || r.resource_type || 'pdf') as Document['sourceType'],
+          subjectId: targetSubjectId,
+          sourceUrl: r.source_url || '',
+          mcpParsedTranscriptUrl: null,
+          status: feStatus,
+          fileSizeBytes: 0,
+          visionRequired: false,
+          createdAt: r.created_at || new Date().toISOString(),
+        };
+      });
       const allNodes = ((mapRes.nodes || []) as KnowledgeNode[]);
       setDocuments(allDocuments);
       setNodes(allNodes);
@@ -151,6 +160,46 @@ export default function KnowledgeBasePage() {
     }).catch(() => setLoadingDocs(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSubjectId]);
+
+  // Polling: refresh resource statuses every 5s while any are PROCESSING.
+  // Stops automatically once all resources are COMPLETED or FAILED.
+  useEffect(() => {
+    const hasPending = documents.some(d => d.status === 'PROCESSING');
+    if (!hasPending || !activeSubjectId) return;
+    const activeSubject = subjects.find(s => s.id === activeSubjectId);
+    const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+    const timer = setInterval(() => {
+      knowledgeService.getMap(targetSubjectId).then((mapRes: Record<string, unknown>) => {
+        const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
+        setDocuments(prev => {
+          const updated = rawResources.map(r => {
+            const backendStatus = (r.status || 'pending').toString().toLowerCase();
+            let feStatus: Document['status'] = 'PROCESSING';
+            if (backendStatus === 'completed' || backendStatus === 'completed_no_map') feStatus = 'COMPLETED';
+            else if (backendStatus === 'failed') feStatus = 'FAILED';
+            const existing = prev.find(d => d.id === r.id);
+            return existing ? { ...existing, status: feStatus } : existing;
+          }).filter(Boolean) as Document[];
+          // Keep order from previous list, append new ones
+          const existingIds = new Set(updated.map(d => d.id));
+          return [...updated, ...prev.filter(d => !existingIds.has(d.id))];
+        });
+        // If extraction just finished, also refresh nodes
+        const justCompleted = rawResources.some(r => {
+          const bs = (r.status || '').toString().toLowerCase();
+          const prev = documents.find(d => d.id === r.id);
+          return (bs === 'completed' || bs === 'completed_no_map') && prev?.status === 'PROCESSING';
+        });
+        if (justCompleted) {
+          const newNodes = (mapRes.nodes || []) as KnowledgeNode[];
+          setNodes(newNodes);
+          setMindMapNodes(newNodes as unknown as MindMapNode[]);
+        }
+      }).catch(() => { /* silent — next tick retries */ });
+    }, 5000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents.map(d => `${d.id}:${d.status}`).join(','), activeSubjectId]);
 
   const handleNodeClick = async (nodeId: string) => {
     setLoadingDetail(true);
@@ -382,11 +431,38 @@ export default function KnowledgeBasePage() {
                             <div className="flex items-center gap-2">
                               {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" /> : <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />}
                               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-                              <div className="flex-1 min-w-0"><h3 className="text-xs font-medium truncate">{doc.title}</h3><p className="text-[10px] text-slate-400">{doc.sourceType}</p></div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xs font-medium truncate">{doc.title}</h3>
+                                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                  {doc.sourceType}
+                                  {doc.status === 'PROCESSING' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-medium">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                      處理中
+                                    </span>
+                                  )}
+                                  {doc.status === 'FAILED' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-medium">
+                                      失敗
+                                    </span>
+                                  )}
+                                  {doc.status === 'COMPLETED' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-medium">
+                                      ✓ 完成
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   setSelectedDocId(doc.id);
+                                  // Status-aware fallback messages
+                                  const statusMsg = doc.status === 'PROCESSING'
+                                    ? '⏳ 此資源仍在處理中（PDF 解析 → 文字切塊 → 向量化）。系統每 5 秒自動更新狀態，請稍後再試。'
+                                    : doc.status === 'FAILED'
+                                      ? '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。'
+                                      : '（尚無可顯示內容）';
                                   // Force document view — fetch chunks if not cached
                                   if (!docChunks[doc.id]) {
                                     setLoadingChunks(doc.id);
@@ -396,7 +472,7 @@ export default function KnowledgeBasePage() {
                                       setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
                                       const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
                                       const fullText = sorted.map(c => c.content).join('\n\n');
-                                      setDocFullText(fullText || '（此資源尚未完成處理或無可顯示內容）');
+                                      setDocFullText(fullText || statusMsg);
                                     } catch {
                                       setDocFullText('（載入失敗，請稍後再試）');
                                     } finally {
@@ -404,7 +480,7 @@ export default function KnowledgeBasePage() {
                                     }
                                   } else {
                                     const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
-                                    setDocFullText(sorted.map(c => c.content).join('\n\n') || '（此資源尚未完成處理或無可顯示內容）');
+                                    setDocFullText(sorted.map(c => c.content).join('\n\n') || statusMsg);
                                   }
                                   setDocFullTitle(doc.title);
                                   setCenterView('document');
