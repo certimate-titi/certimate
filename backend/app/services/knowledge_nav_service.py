@@ -84,8 +84,20 @@ class KnowledgeNavService:
             return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
 
         # 確保考古題 Resource 存在（並 commit 以持久化）
-        self._ensure_exam_bank_resource(sid)
-        self.db.commit()
+        # Defensive: 任何錯誤都不該讓整個 endpoint 回 500 — 使用者至少該看到
+        # 已存在的 knowledge_nodes，即使 synthetic resource 創建失敗。
+        try:
+            self._ensure_exam_bank_resource(sid)
+            self.db.commit()
+        except Exception as exc:
+            import logging
+            logging.getLogger("knowledge_nav").warning(
+                "[ensure_exam_bank] failed for subject %s: %s", sid, exc,
+            )
+            try:
+                self.db.rollback()
+            except Exception:
+                pass
 
         # 只查詢此科目自己的知識節點，不混入父科目的節點
         subject_ids = [sid]
