@@ -137,16 +137,54 @@ grep -E "status.*===.*'[a-z_]+'" frontend/app/knowledge/page.tsx
 - [ ] 後端回應和前端類型的 key 名稱大小寫一致（snake_case / camelCase 規範遵守）
 - [ ] 新欄位有預設值處理（`r.new_field ?? defaultValue`）避免 undefined 崩潰
 
-## Checklist C — 每次部署後的真人流程驗證
+## Checklist C — 每次部署後的真人流程驗證（**強制 Chrome MCP**）
 
-必須親自走完整使用者流程，不能只看 API 200 就收工：
+**絕對禁止**只跑 Python 腳本查 DB 就宣稱驗證完成。QA 驗證**必須**用 Chrome MCP 實際打開生產環境頁面操作。
 
-1. 登入 → 進目標頁面
-2. 執行主要操作（上傳 / 建立 / 編輯）
-3. 在操作「進行中」的狀態觀察 UI 是否有合理提示
-4. 等到操作完成，UI 是否自動反映
-5. 如果操作失敗，UI 是否顯示錯誤原因
-6. 點每個主要按鈕至少一次，看是否都有回應
+### 強制 Chrome MCP 驗證流程
+
+```
+1. mcp__Claude_in_Chrome__tabs_context_mcp({createIfEmpty: true})  # 取得 tab
+2. mcp__Claude_in_Chrome__navigate(url="https://certimate-titi.web.app")
+3. mcp__Claude_in_Chrome__read_page or computer screenshot  # 觀察初始狀態
+4. 登入 → 執行主要操作
+5. mcp__Claude_in_Chrome__read_console_messages(pattern="error|warn|failed")
+6. mcp__Claude_in_Chrome__read_network_requests(filter="failed")
+7. 在每個關鍵步驟截圖比對
+8. 主動觸發錯誤 path 至少一次（空輸入、無效值、中斷操作）
+```
+
+### 必跑 6 個關鍵測試場景
+
+1. **登入流程**：帳密登入 + 快速登入 + Google SSO (若 key 有效)
+2. **上傳 → 處理 → 顯示**：上傳資源後等 polling 自動更新到完成，點開原文檢查內容
+3. **長流程中斷**：上傳過程中切換頁面再回來，狀態應保持
+4. **錯誤恢復**：刻意觸發錯誤（錯密碼、大檔案、格式不符），觀察錯誤訊息是否清晰
+5. **空態各情境**：無資源、處理中、處理失敗、完成但零內容，UI 訊息都要不同
+6. **跨頁面跳轉**：從儀表板 → 知識庫 → 測驗 → 練習，Auth 狀態和 subject 選擇要 persist
+
+### 禁止的「跳過 QA」藉口
+
+- ❌ "本地 dev 跑過了" — 本地 ≠ production（env vars、seed 資料、cache 都不同）
+- ❌ "API 回應 200 就是對的" — 200 可能回空資料也算成功
+- ❌ "Python 腳本查 DB 沒問題" — DB 層正確不代表 UI 層正確
+- ❌ "build 成功就是 deploy 成功" — build 成功不代表路由工作
+- ❌ "上次驗證過了，這次只改一行" — 一行改動能 break 全站
+
+### 案例：2026-04-15 我自己犯的錯
+
+當天做 Feature 34 根本解驗收，我跑了這些：
+- ✅ Python local extract() 測試（QA passed）
+- ✅ SQL count nodes 對上
+- ✅ Cloud Build SUCCESS
+- ❌ **從未打開瀏覽器看 production 頁面**
+
+結果使用者一打開就發現 3 個 bug 連環爆：
+1. 章全「待補充」
+2. 節點說明空白
+3. 原文按鈕錯位
+
+**教訓**：程式跑得動 ≠ 使用者體驗正確。這個 skill 存在就是為了逼自己不能跳過 Chrome MCP。
 
 ---
 
