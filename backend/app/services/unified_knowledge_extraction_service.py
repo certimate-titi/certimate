@@ -341,12 +341,34 @@ class UnifiedKnowledgeExtractionService:
             f"chunks映射={chunks_remapped}, strength更新={strength_updated}"
         )
 
+        # Post-extract quality gate (Feature 34 — QA depth improvement).
+        # Runs data-integrity checks after every extract() so schema drift,
+        # empty descriptions, and strength anomalies are caught at the source
+        # instead of leaking to the UI. Failures are logged but non-fatal so
+        # the user still gets the nodes — fix-forward rather than block.
+        try:
+            from app.scripts.verify_mindmap_quality import _check_subject
+            qa_report = _check_subject(self.db, str(sid))
+            if not qa_report["passed"]:
+                log.warning(
+                    "[QA gate] %s: %d failures — %s",
+                    subject_name,
+                    qa_report["failure_count"],
+                    [f["code"] for f in qa_report["failures"][:5]],
+                )
+            else:
+                log.info("[QA gate] %s: all checks passed", subject_name)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("[QA gate] check failed (non-fatal): %s", exc)
+            qa_report = {"passed": None, "error": str(exc)}
+
         return {
             "ok": True,
             "nodes_created": nodes_created,
             "mastery_migrated": mastery_migrated,
             "chunks_remapped": chunks_remapped,
             "strength_updated": strength_updated,
+            "qa_report": qa_report,
         }
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

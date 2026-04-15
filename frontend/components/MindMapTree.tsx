@@ -153,6 +153,29 @@ function TreeNode({
               {displayRate}%
             </span>
           )}
+
+          {/* 原文按鈕 — 點擊開啟右側節點說明面板（source_text） */}
+          {node.depth > 0 && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNodeClick(node.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onNodeClick(node.id);
+                }
+              }}
+              className="ml-1 shrink-0 text-[10px] font-medium text-blue-600 hover:text-blue-700 hover:underline px-1.5 py-0.5 rounded hover:bg-blue-50 cursor-pointer"
+              title="查看原文與說明"
+            >
+              📖 原文
+            </span>
+          )}
         </button>
 
         {/* Children */}
