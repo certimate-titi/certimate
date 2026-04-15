@@ -64,7 +64,13 @@ export default function DashboardPage() {
 
   // Load dashboard data
   useEffect(() => {
-    if (authLoading || !isAuthenticated || !onboardingCompleted || !activeSubjectId) return;
+    if (authLoading || !isAuthenticated) return;
+    // User hasn't completed onboarding or has no active subject:
+    // stop the skeleton loader and render empty state with CTA.
+    if (!onboardingCompleted || !activeSubjectId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     dashboardService.get(activeSubjectId).then(d => {
       // Ensure all expected fields have defaults for backend compatibility
@@ -227,10 +233,36 @@ export default function DashboardPage() {
     setShowAddSubject(false);
   }, [activeSubjectId]);
 
-  if (authLoading || !isAuthenticated || !onboardingCompleted) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // User logged in but hasn't picked a subject yet — show an explicit CTA
+  // instead of an infinite skeleton.
+  if (!onboardingCompleted || !activeSubjectId || subjects.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-8 text-center">
+          <div className="text-5xl mb-4">📚</div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">歡迎使用 TiTi</h2>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            你還沒有選擇備考科目。請先新增一個科目，我們會為你準備考古題題庫、
+            知識心智圖與 AI 教練。
+          </p>
+          <button
+            onClick={() => router.push('/onboarding')}
+            className="w-full bg-emerald-500 text-white py-3 rounded-full font-medium hover:bg-emerald-600 transition-colors"
+          >
+            開始選擇科目
+          </button>
+          <p className="text-[11px] text-slate-400 mt-4">
+            已選過的使用者：點上方「科目切換」切換回原科目
+          </p>
+        </div>
       </div>
     );
   }
