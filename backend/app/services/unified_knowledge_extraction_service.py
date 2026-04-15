@@ -532,9 +532,36 @@ class UnifiedKnowledgeExtractionService:
     def _call_gemini(self, prompt: str) -> dict:
         """呼叫 Gemini API 並解析 JSON 回應。
 
-        T2-C: 使用 response_schema 強制輸出結構（最多 6 個 chapters），
-        避免 LLM 超量輸出破壞心智圖六軸約束。
+        Wrapped with track_ai_usage (Feature 33) so the ai_usage_ledger
+        records every extract() invocation against the AI_GEMINI budget
+        scope. Without this wrapper the cost monitor showed $0 despite
+        real spend — this was the QA gap flagged on 2026-04-15.
         """
+        from app.middleware.ai_usage_tracker import (
+            estimate_gemini_cost,
+            track_ai_usage,
+        )
+
+        if not _gemini_client:
+            raise RuntimeError("GEMINI_API_KEY not configured")
+
+        with track_ai_usage(
+            self.db, provider="gemini", feature="unified_extract"
+        ) as tracker:
+            result = self._call_gemini_inner(prompt)
+            # Estimate tokens from char counts (~4 chars / token — zh/en mixed)
+            in_tokens = len(prompt) // 4 or 1
+            out_tokens = len(str(result)) // 4 or 1
+            tracker.input_tokens = in_tokens
+            tracker.output_tokens = out_tokens
+            tracker.endpoint = GEMINI_MODEL
+            tracker.cost_usd = estimate_gemini_cost(
+                in_tokens, out_tokens, model=GEMINI_MODEL
+            )
+            return result
+
+    def _call_gemini_inner(self, prompt: str) -> dict:
+        """Raw Gemini call — separated so track_ai_usage wrapper stays clean."""
         if not _gemini_client:
             raise RuntimeError("GEMINI_API_KEY not configured")
 
@@ -951,6 +978,91 @@ class UnifiedKnowledgeExtractionService:
     # 題目映射
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+    def _semantic_map_questions_via_voyage(
+        self, sid: uuid.UUID, leaf_nodes: list, questions: list
+    ) -> int:
+        """Fallback mapping using Voyage embeddings + cosine similarity.
+
+        Feature 33 + 34 補強: previous mapping was pure keyword LIKE which
+        missed questions phrased differently from the node name. This adds
+        a semantic layer so every question gets a best-match node even
+        without keyword overlap. Voyage usage is tracked via track_ai_usage.
+
+        Returns count of questions mapped.
+        """
+        from app.middleware.ai_usage_tracker import (
+            estimate_voyage_cost,
+            track_ai_usage,
+        )
+        from app.services.embedding_service import EmbeddingService
+        import math
+
+        if not leaf_nodes or not questions:
+            return 0
+
+        try:
+            emb_svc = EmbeddingService()
+        except Exception as exc:
+            log.warning("[Voyage] init failed, skipping semantic map: %s", exc)
+            return 0
+
+        # Pull node source_text for richer embedding input
+        node_rows = self.db.execute(
+            text(
+                """
+                SELECT id, name, COALESCE(source_text, name)
+                FROM knowledge_nodes
+                WHERE id = ANY(:ids)
+                """
+            ),
+            {"ids": [r[0] for r in leaf_nodes]},
+        ).fetchall()
+        node_ids = [r[0] for r in node_rows]
+        node_texts = [f"{r[1]} — {r[2][:400]}" for r in node_rows]
+
+        # Build question texts
+        q_ids = [r[0] for r in questions]
+        q_texts = [
+            " ".join(str(c or "") for c in r[1:6])[:500] for r in questions
+        ]
+
+        def _cosine(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            na = math.sqrt(sum(x * x for x in a)) or 1.0
+            nb = math.sqrt(sum(x * x for x in b)) or 1.0
+            return dot / (na * nb)
+
+        with track_ai_usage(
+            self.db, provider="voyage", feature="unified_extract_map"
+        ) as tracker:
+            # Voyage allows batch embedding; SDK handles chunking internally
+            node_embs = emb_svc.embed_texts(node_texts, input_type="document")
+            question_embs = emb_svc.embed_texts(q_texts, input_type="document")
+
+            total_chars = sum(len(t) for t in node_texts) + sum(len(t) for t in q_texts)
+            est_tokens = total_chars // 4 or 1
+            tracker.input_tokens = est_tokens
+            tracker.output_tokens = 0
+            tracker.endpoint = emb_svc.model
+            tracker.cost_usd = estimate_voyage_cost(est_tokens, model=emb_svc.model)
+
+        # For each question pick best node by cosine
+        mapped = 0
+        for qi, qemb in enumerate(question_embs):
+            best_idx = 0
+            best_score = -1.0
+            for ni, nemb in enumerate(node_embs):
+                s = _cosine(qemb, nemb)
+                if s > best_score:
+                    best_score = s
+                    best_idx = ni
+            self.db.execute(
+                text("UPDATE questions SET node_id = :nid WHERE id = :qid"),
+                {"nid": node_ids[best_idx], "qid": q_ids[qi]},
+            )
+            mapped += 1
+        return mapped
+
     def _map_questions_to_nodes(self, sid: uuid.UUID, subject_name: str, question_keywords: dict):
         """用 Gemini 回傳的 question_keywords 將考古題映射到新節點。"""
         # 取得新的 leaf 節點
@@ -997,6 +1109,7 @@ class UnifiedKnowledgeExtractionService:
                     questions = list(questions) + list(more)
 
         mapped = 0
+        weak_questions: list = []  # questions that failed keyword matching
         leaf_list = list(node_name_to_id.values())
 
         for i, q in enumerate(questions):
@@ -1022,15 +1135,51 @@ class UnifiedKnowledgeExtractionService:
                     best_score = score
                     best_node_id = nid
 
-            # Fallback: round-robin
-            if not best_node_id:
-                best_node_id = leaf_list[i % len(leaf_list)]
+            # Only commit keyword matches with decent confidence (score ≥ 2).
+            # Everything weaker goes to the Voyage semantic pass below.
+            if best_node_id and best_score >= 2:
+                self.db.execute(
+                    text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                    {'nid': best_node_id, 'qid': q[0]}
+                )
+                mapped += 1
+            else:
+                weak_questions.append(q)
 
-            self.db.execute(
-                text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
-                {'nid': best_node_id, 'qid': q[0]}
-            )
-            mapped += 1
+        # Voyage semantic fallback for weak-keyword-match questions (Feature 34 Tier 1+).
+        # Gated by env var — disable if Voyage quota is exhausted or for cost control.
+        use_voyage = os.environ.get("EXTRACT_VOYAGE_MAPPING", "true").lower() == "true"
+        if weak_questions and use_voyage:
+            try:
+                leaf_tuples = [(nid, name) for name, nid in node_name_to_id.items()]
+                voyage_mapped = self._semantic_map_questions_via_voyage(
+                    sid, leaf_tuples, weak_questions
+                )
+                mapped += voyage_mapped
+                log.info(
+                    "[題目映射] Voyage 語意 fallback: %d/%d 題",
+                    voyage_mapped, len(weak_questions),
+                )
+            except Exception as exc:
+                log.warning(
+                    "[題目映射] Voyage fallback failed (%s); using round-robin",
+                    exc,
+                )
+                # Final round-robin fallback for remaining weak questions
+                for i, q in enumerate(weak_questions):
+                    self.db.execute(
+                        text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                        {'nid': leaf_list[i % len(leaf_list)], 'qid': q[0]}
+                    )
+                    mapped += 1
+        else:
+            # Voyage disabled — round-robin fallback
+            for i, q in enumerate(weak_questions):
+                self.db.execute(
+                    text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                    {'nid': leaf_list[i % len(leaf_list)], 'qid': q[0]}
+                )
+                mapped += 1
 
         # 更新 available_questions 計數
         self.db.execute(text('''
