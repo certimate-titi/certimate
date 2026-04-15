@@ -65,6 +65,50 @@ def get_node_source(
     return _handle_result(result)
 
 
+@router.get("/resources/{resource_id}/summary")
+def get_resource_summary(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """Return synthesized summary for a resource — used by frontend 原文
+    fallback when resource_chunks is empty (system-created 考古題題庫).
+
+    Walks the knowledge_nodes subtree rooted at any node with matching
+    resource_id, concatenating source_text fields into a readable document.
+    """
+    import uuid as _u
+    from sqlalchemy import text as _sql
+    try:
+        rid = _u.UUID(resource_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail={"message": "invalid resource_id"})
+
+    rows = db.execute(
+        _sql(
+            """
+            SELECT id::text, name, depth, parent_id::text, source_text
+            FROM knowledge_nodes
+            WHERE resource_id = :rid
+            ORDER BY depth, sort_order
+            """
+        ),
+        {"rid": rid},
+    ).fetchall()
+    if not rows:
+        return {"title": "", "content": "", "node_count": 0}
+
+    root = rows[0]
+    parts = [str(root[4] or root[1])]
+    for r in rows[1:]:
+        parts.append(f"\n\n## {r[1]}\n\n{r[4] or ''}")
+    return {
+        "title": root[1],
+        "content": "\n".join(parts),
+        "node_count": len(rows),
+    }
+
+
 @router.get("/layout")
 def get_layout(
     user_id: str = Depends(get_current_user_id),

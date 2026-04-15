@@ -364,6 +364,10 @@ export const knowledgeService = {
     return apiClient.get<GetNodeDetailResponse>(`/knowledge-map/nodes/${nodeId}`);
   },
 
+  async getResourceSummary(resourceId: string): Promise<{ title: string; content: string; node_count: number }> {
+    return apiClient.get(`/knowledge-map/resources/${resourceId}/summary`);
+  },
+
   async extractKnowledgeTree(subjectId: string): Promise<Record<string, unknown>> {
     return apiClient.post<Record<string, unknown>>(`/reverse-engineering/subjects/${subjectId}/extract`, {});
   },

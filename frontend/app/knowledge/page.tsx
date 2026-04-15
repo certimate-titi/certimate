@@ -483,27 +483,15 @@ export default function KnowledgeBasePage() {
                                     fullText = sorted.map(c => c.content).join('\n\n');
                                   }
 
-                                  // Fallback 1: system-generated resources (e.g. 考古題題庫) have no
-                                  // chunks but do have a rich summary stored in the root knowledge
-                                  // node's source_text. Fetch that as the display content.
+                                  // Fallback: system-generated resources (e.g. 考古題題庫) have no
+                                  // chunks but the backend exposes a rolled-up summary via
+                                  // /knowledge-map/resources/{id}/summary that walks the
+                                  // synthetic knowledge_nodes subtree and returns a readable doc.
                                   if (!fullText || fullText.length < 20) {
                                     try {
-                                      const docRootNode = nodes.find(n => n.documentId === doc.id);
-                                      if (docRootNode) {
-                                        const detail = await knowledgeService.getNodeDetail(docRootNode.id) as unknown as Record<string, unknown>;
-                                        const summary = (detail.source_text as string) || '';
-                                        if (summary && summary.length > 20) {
-                                          // Also stitch in children summaries for richer view
-                                          const childSummaries: string[] = [];
-                                          for (const child of (docRootNode.children || []).slice(0, 20)) {
-                                            try {
-                                              const cd = await knowledgeService.getNodeDetail(child.id) as unknown as Record<string, unknown>;
-                                              const ct = (cd.source_text as string) || '';
-                                              if (ct) childSummaries.push(`## ${(cd.node_name as string) || child.label}\n\n${ct}`);
-                                            } catch { /* skip */ }
-                                          }
-                                          fullText = summary + (childSummaries.length ? '\n\n---\n\n' + childSummaries.join('\n\n') : '');
-                                        }
+                                      const summary = await knowledgeService.getResourceSummary(doc.id);
+                                      if (summary?.content && summary.content.length > 20) {
+                                        fullText = summary.content;
                                       }
                                     } catch { /* silent */ }
                                   }
