@@ -43,6 +43,9 @@ class CostMonitorService(BaseService):
         configs = {c.scope: c for c in self.budget_repo.list_all()}
         provider_costs = self.ledger_repo.month_total_all_providers(now.year, now.month)
 
+        # Try Anthropic Admin API (TODO #3 — real usage reporting)
+        anthropic_authoritative = self._safe_anthropic_cost(now)
+
         scopes: list[dict] = []
         for scope in ("AI_ANTHROPIC", "AI_GEMINI", "AI_VOYAGE", "GCP_TOTAL"):
             config = configs.get(scope)
@@ -50,6 +53,9 @@ class CostMonitorService(BaseService):
 
             if scope == "GCP_TOTAL":
                 current = self._safe_gcp_total(now)
+            elif scope == "AI_ANTHROPIC" and anthropic_authoritative is not None:
+                # Prefer Admin API authoritative value; fallback to ledger
+                current = anthropic_authoritative
             else:
                 provider_key = scope.removeprefix("AI_").lower()
                 current = provider_costs.get(provider_key, Decimal("0"))
@@ -64,6 +70,18 @@ class CostMonitorService(BaseService):
             })
 
         return self.ok({"scopes": scopes, "as_of": now.isoformat()})
+
+    def _safe_anthropic_cost(self, now: datetime) -> Decimal | None:
+        """Try fetching current-month cost from Anthropic Admin API.
+
+        Returns None if Admin API not configured, rate-limited, or failed.
+        In that case caller falls back to ai_usage_ledger.
+        """
+        try:
+            from app.services.anthropic_usage_service import AnthropicUsageService
+            return AnthropicUsageService().get_current_month_cost_usd()
+        except Exception:  # noqa: BLE001
+            return None
 
     def _safe_gcp_total(self, now: datetime) -> Decimal:
         try:

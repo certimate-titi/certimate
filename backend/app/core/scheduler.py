@@ -72,6 +72,21 @@ def init_scheduler(session_factory: sessionmaker) -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # 4) Feature 33 — 預算告警評估（每 30 分鐘）
+    import os
+    if os.environ.get("BUDGET_ALERT_SCHEDULER_ENABLED", "true").lower() == "true":
+        interval_min = int(os.environ.get("BUDGET_ALERT_INTERVAL_MINUTES", "30"))
+        from apscheduler.triggers.interval import IntervalTrigger
+        _scheduler.add_job(
+            job_budget_alert_evaluate,
+            IntervalTrigger(minutes=interval_min),
+            id="budget_alert_evaluate",
+            name=f"Feature 33 預算告警評估（每 {interval_min} 分鐘）",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
     logger.info("Scheduler initialized with %d jobs", len(_scheduler.get_jobs()))
     return _scheduler
 
@@ -156,5 +171,28 @@ async def job_weekly_report():
     except Exception:
         db.rollback()
         logger.exception("Weekly report job failed")
+    finally:
+        db.close()
+
+
+async def job_budget_alert_evaluate():
+    """Feature 33 TODO #6 — 定期評估所有 scope 的預算門檻，
+    寫入 budget_alert_log 並觸發通知管道。"""
+    db = _get_db()
+    try:
+        from app.services.budget_service import BudgetService
+        result = BudgetService(db).evaluate_alerts()
+        fired = result.get("fired", []) if isinstance(result, dict) else []
+        if fired:
+            logger.warning(
+                "Budget alert evaluate fired %d alerts: %s",
+                len(fired),
+                [f.get("scope") for f in fired],
+            )
+        else:
+            logger.debug("Budget alert evaluate: no alerts fired")
+    except Exception:
+        db.rollback()
+        logger.exception("Budget alert evaluate job failed")
     finally:
         db.close()

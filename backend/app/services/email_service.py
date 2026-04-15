@@ -38,6 +38,60 @@ class EmailService:
             logger.exception("Failed to send email to %s", to_email)
             return False
 
+    def send_budget_alert(
+        self,
+        to_email: str,
+        *,
+        scope: str,
+        alert_type: str,
+        current_usd: float,
+        limit_usd: float,
+        percent: float,
+    ) -> bool:
+        """Send a Feature 33 budget alert email to a Super Admin.
+
+        TODO #5 — Replaces the previous stub where evaluate_alerts only
+        wrote to budget_alert_log without actually notifying anyone.
+        """
+        tier_label = {
+            "WARNING": "⚠️ 警告",
+            "DEGRADE": "🟠 降級",
+            "DISABLED": "🔴 停用",
+        }.get(alert_type, alert_type)
+
+        subject = f"[CertiMate] {tier_label} {scope} 預算達 {percent:.1f}%"
+        html = f"""
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
+            <h2 style="color:#dc2626">CertiMate 預算告警 — {tier_label}</h2>
+            <p style="font-size:16px;line-height:1.6">
+                <b>{scope}</b> 當月用量已達 <b>{percent:.1f}%</b>，自動觸發 <b>{alert_type}</b> 狀態。
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0">
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb">當月已花費</td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:bold">
+                        ${current_usd:.2f}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb">月預算上限</td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right">
+                        ${limit_usd:.2f}</td></tr>
+                <tr><td style="padding:8px">使用率</td>
+                    <td style="padding:8px;text-align:right;color:#dc2626;font-weight:bold">
+                        {percent:.1f}%</td></tr>
+            </table>
+            <p style="margin-top:24px">
+                <a href="{self.settings.FRONTEND_URL}/super-admin/cost-monitor"
+                   style="display:inline-block;padding:10px 24px;background:#10b981;color:#fff;
+                          text-decoration:none;border-radius:8px;font-weight:bold">
+                    前往成本監控中心
+                </a>
+            </p>
+            <p style="color:#6b7280;font-size:12px;margin-top:32px">
+                此為自動化告警，由 CertiMate Feature 33 成本監控中心發送。
+                若您不是 Super Admin 請忽略此信。
+            </p>
+        </div>
+        """
+        return self._send(to_email, subject, html)
+
     def send_verification_email(self, to_email: str, token: str) -> bool:
         url = f"{self.settings.FRONTEND_URL}/verify-email?token={token}"
         html = f"""

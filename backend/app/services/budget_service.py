@@ -294,9 +294,65 @@ class BudgetService(BaseService):
                     "percent": float(round(percent, 2)),
                     "alert_id": str(entry.id),
                 })
+                # TODO #5 — 實際寄送 email 給 super_admin
+                self._notify_super_admins(
+                    scope=c.scope,
+                    alert_type=alert_type,
+                    current_usd=current,
+                    limit_usd=limit,
+                    percent=percent,
+                )
 
         self.db.commit()
         return self.ok({"fired": fired, "as_of": now.isoformat()})
+
+    def _notify_super_admins(
+        self,
+        *,
+        scope: str,
+        alert_type: str,
+        current_usd: Decimal,
+        limit_usd: Decimal,
+        percent: Decimal,
+    ) -> None:
+        """Send budget alert email to all super_admin users.
+
+        Failures are swallowed — we don't want alert DB writes to roll back
+        because email delivery is flaky.
+        """
+        try:
+            from app.models.user import User, UserRole
+            from app.services.email_service import EmailService
+
+            super_admins = (
+                self.db.query(User)
+                .filter(User.role == UserRole.SUPER_ADMIN)
+                .all()
+            )
+            if not super_admins:
+                return
+
+            email_svc = EmailService()
+            for user in super_admins:
+                try:
+                    email_svc.send_budget_alert(
+                        to_email=user.email,
+                        scope=scope,
+                        alert_type=alert_type,
+                        current_usd=float(current_usd),
+                        limit_usd=float(limit_usd),
+                        percent=float(percent),
+                    )
+                except Exception:  # noqa: BLE001
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "Budget alert email failed for %s", user.email
+                    )
+        except Exception:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).warning(
+                "Budget alert notification batch failed", exc_info=True
+            )
 
     # ------------------------------------------------------------------
     # Helpers
