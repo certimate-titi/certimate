@@ -21,13 +21,25 @@ while [ $RETRY -lt $MAX_RETRY ]; do
     fi
 done
 
-# Download historical questions from GCS (no DB needed, non-fatal)
-echo "Downloading historical questions from GCS..."
+# Download historical questions from GCS + import to DB (idempotent, non-fatal)
+echo "Syncing historical questions from GCS + importing to DB..."
 python -c "
-from app.scripts.sync_from_gcs import sync_from_gcs
-result = sync_from_gcs()
-print(f'  GCS: {result[\"downloaded\"]} downloaded, {result[\"skipped\"]} skipped, {len(result[\"errors\"])} errors')
-" 2>&1 || echo "WARNING: GCS download failed (non-fatal)"
+from app.scripts.sync_from_gcs import sync_and_import
+result = sync_and_import()
+sr = result.get('sync_result', {})
+ir = result.get('import_result', {})
+print(f'  GCS: {sr.get(\"downloaded\",0)} downloaded, {sr.get(\"skipped\",0)} skipped, {len(sr.get(\"errors\",[]))} errors')
+if ir:
+    print(f'  DB: {ir.get(\"imported\",0)} imported, {ir.get(\"skipped\",0)} skipped, {ir.get(\"errors\",0)} errors')
+" 2>&1 || echo "WARNING: GCS sync+import failed (non-fatal)"
+
+# Seed prompt templates from GCS (if available, non-fatal)
+echo "Syncing prompt templates from GCS..."
+python -c "
+from app.scripts.sync_prompts_from_gcs import sync_and_seed_prompts
+result = sync_and_seed_prompts()
+print(f'  Prompts: {result}')
+" 2>&1 || echo "WARNING: Prompt sync failed (non-fatal, templates may not be in GCS yet)"
 
 # Seed exam_subject_codes (idempotent, retry up to 3 times)
 echo "Seeding exam_subject_codes..."

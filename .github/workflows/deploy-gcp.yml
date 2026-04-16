@@ -48,6 +48,25 @@ jobs:
           gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
 
       # ========================================
+      # 3.5 Sync data to GCS (考古題 JSON + Prompt templates)
+      # ========================================
+      - name: Upload exam questions to GCS
+        run: |
+          gsutil -m rsync -r -x '.*_pdf/.*|.*_backup.*|.*__pycache__.*' \
+            backend/data/historical_questions/ \
+            gs://certimate-titi-data/historical_questions/
+        continue-on-error: true
+
+      - name: Upload prompt templates to GCS
+        run: |
+          if [ -d "project/03_Research_and_Development/03_Prompt_Templates" ]; then
+            gsutil -m rsync -r \
+              project/03_Research_and_Development/03_Prompt_Templates/ \
+              gs://certimate-titi-data/prompt_templates/
+          fi
+        continue-on-error: true
+
+      # ========================================
       # 4. Build and push Docker image (Backend)
       # ========================================
       - name: Get commit hash

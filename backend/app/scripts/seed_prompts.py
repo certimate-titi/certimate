@@ -31,13 +31,17 @@ from app.core.config import get_settings
 from app.models.prompt_template import PromptTemplateV2, PromptTemplateVersion, PromptCategory
 from app.repositories.prompt_template_repository import PromptTemplateRepository
 
-# 模板檔案所在目錄（相對於 backend/）
-_TEMPLATES_DIR = (
+# 模板檔案所在目錄 — 支援自定義路徑（CI/CD 從 GCS 下載到 /tmp）
+_DEFAULT_TEMPLATES_DIR = (
     _backend_dir.parent
     / "project"
     / "03_Research_and_Development"
     / "03_Prompt_Templates"
 )
+
+# Allow override via env var or CLI (for GCS-synced prompts in production)
+import os as _os
+_TEMPLATES_DIR = Path(_os.environ.get("PROMPT_TEMPLATES_DIR", str(_DEFAULT_TEMPLATES_DIR)))
 
 
 def _parse_md_file(filepath: Path) -> Optional[dict]:
@@ -224,6 +228,10 @@ def run_seed(db_url: Optional[str] = None):
         print(f"   ❌ 錯誤：{stats['errors']} 個")
 
     return stats
+
+
+# Alias for sync_prompts_from_gcs.py to call
+seed_all = run_seed
 
 
 if __name__ == "__main__":
