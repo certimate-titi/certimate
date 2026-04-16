@@ -121,25 +121,31 @@ class QuestionImporter:
                 f"({len(questions_data)} 題)"
             )
 
-            # Defensive import: use PostgreSQL INSERT ... ON CONFLICT DO NOTHING
-            # against the UNIQUE (historical_exam_id, question_number) index
-            # added in migration 055. Previous approach (ORM query → check →
-            # insert) could race-condition duplicate inserts, causing the
-            # "867 duplicate rows across 13 exams" bug we cleaned up 2026-04-16.
-            from sqlalchemy.dialects.postgresql import insert as pg_insert
-            from sqlalchemy import Table, MetaData
-
-            # Reflect questions table once per run
-            if not hasattr(self, "_questions_table"):
-                md = MetaData()
-                self._questions_table = Table(
-                    "questions", md, autoload_with=self.db.bind,
-                )
+            # Defensive import: ORM add + IntegrityError catch.
+            # UNIQUE (historical_exam_id, question_number) index from migration 055
+            # guarantees no duplicates. On conflict we skip silently.
+            # Note: pg_insert().on_conflict_do_nothing() was tried but fails on
+            # production SA 2.0 because session.bind is None (SA 2.0 deprecation).
+            from sqlalchemy.exc import IntegrityError
 
             imported_in_file = 0
             for q_data in questions_data:
                 q_num = q_data.get("question_number")
-                stmt = pg_insert(self._questions_table).values(
+
+                # Pre-check (fast path — avoids SA object creation for existing rows)
+                existing = (
+                    self.db.query(Question)
+                    .filter(
+                        Question.historical_exam_id == he.id,
+                        Question.question_number == q_num,
+                    )
+                    .first()
+                )
+                if existing:
+                    self.skipped_count += 1
+                    continue
+
+                question = Question(
                     id=uuid4(),
                     exam_id=None,
                     historical_exam_id=he.id,
@@ -156,14 +162,14 @@ class QuestionImporter:
                     historical_source="moex",
                     source_type="historical",
                     tenant_id=tenant_id,
-                ).on_conflict_do_nothing(
-                    index_elements=["historical_exam_id", "question_number"]
                 )
-                result = self.db.execute(stmt)
-                if result.rowcount > 0:
+                try:
+                    self.db.add(question)
+                    self.db.flush()
                     imported_in_file += 1
                     self.imported_count += 1
-                else:
+                except IntegrityError:
+                    self.db.rollback()
                     self.skipped_count += 1
 
             if not self.dry_run:
