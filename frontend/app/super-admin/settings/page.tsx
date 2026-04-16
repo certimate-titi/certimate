@@ -650,14 +650,6 @@ export default function SettingsPage() {
                         <p className="text-sm font-bold text-slate-900">{versionInfo ? 'Connected' : 'Unreachable'}</p>
                       </div>
                     </div>
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">API URL</p>
-                      <p className="text-sm font-mono font-bold text-slate-900 break-all">
-                        {typeof window !== 'undefined'
-                          ? (process.env.NEXT_PUBLIC_API_URL || '/api/v1')
-                          : '/api/v1'}
-                      </p>
-                    </div>
                   </div>
                 </section>
               </div>
