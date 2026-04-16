@@ -27,15 +27,23 @@ class EmailService:
         msg["Subject"] = subject
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
+        port = self.settings.SMTP_PORT
         try:
-            with smtplib.SMTP(host, self.settings.SMTP_PORT, timeout=10) as server:
-                server.starttls()
-                server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
-                server.sendmail(self.settings.SMTP_FROM_EMAIL, [to_email], msg.as_string())
-            logger.info("Email sent to %s: %s", to_email, subject)
+            if port == 465:
+                # SSL (port 465) — used when STARTTLS on 587 is blocked (e.g. Cloud Run)
+                with smtplib.SMTP_SSL(host, port, timeout=15) as server:
+                    server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+                    server.sendmail(self.settings.SMTP_FROM_EMAIL, [to_email], msg.as_string())
+            else:
+                # STARTTLS (port 587) — standard
+                with smtplib.SMTP(host, port, timeout=15) as server:
+                    server.starttls()
+                    server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+                    server.sendmail(self.settings.SMTP_FROM_EMAIL, [to_email], msg.as_string())
+            logger.info("Email sent to %s: %s (port %d)", to_email, subject, port)
             return True
         except Exception:
-            logger.exception("Failed to send email to %s", to_email)
+            logger.exception("Failed to send email to %s (port %d)", to_email, port)
             return False
 
     def send_budget_alert(
