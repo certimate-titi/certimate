@@ -93,85 +93,69 @@ def _decode_verification_token(token: str) -> dict | None:
 # --- Google ID token verification ---
 
 def _verify_google_id_token(id_token_str: str) -> dict | None:
-    """Verify Firebase ID token and return claims (email, name, picture).
+    """Verify Google token and return claims (email, name, picture).
 
-    Firebase signInWithPopup returns a Firebase ID token (aud = project ID).
-    Uses google-auth library with fallback to manual JWT decode.
+    Supports three token types (tried in order):
+    1. Google OAuth2 ID token (from @react-oauth/google credential flow)
+    2. Google access_token (from @react-oauth/google implicit flow) — verified
+       by calling Google's userinfo endpoint
+    3. Legacy Firebase ID token (backward compatibility)
     """
     settings = get_settings()
 
-    # Strategy 1: Full cryptographic verification via google-auth
-    try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as google_requests
-
-        request = google_requests.Request()
-
+    # Strategy 1: Google OAuth2 ID token (JWT with 3 parts)
+    if id_token_str.count(".") == 2:
         try:
-            claims = google_id_token.verify_firebase_token(
-                id_token_str, request,
-                audience=settings.FIREBASE_PROJECT_ID,
-            )
-        except Exception:
-            claims = google_id_token.verify_oauth2_token(
-                id_token_str, request,
-                audience=settings.GOOGLE_CLIENT_ID,
-            )
+            from google.oauth2 import id_token as google_id_token
+            from google.auth.transport import requests as google_requests
 
-        email = claims.get("email")
-        if email:
-            return {
-                "email": email,
-                "name": claims.get("name", ""),
-                "picture": claims.get("picture", ""),
-                "email_verified": claims.get("email_verified", False),
-            }
-    except Exception as e:
-        logger.warning("google-auth verification failed: %s: %s", type(e).__name__, str(e)[:200])
+            request = google_requests.Request()
+            # Try as standard Google OAuth2 token first
+            try:
+                claims = google_id_token.verify_oauth2_token(
+                    id_token_str, request,
+                    audience=settings.GOOGLE_CLIENT_ID,
+                )
+            except Exception:
+                # Fallback to Firebase token (backward compat)
+                claims = google_id_token.verify_firebase_token(
+                    id_token_str, request,
+                    audience=settings.FIREBASE_PROJECT_ID,
+                )
 
-    # Strategy 2: Decode JWT payload without signature verification
-    # Safe because Firebase signInWithPopup is a trusted frontend flow
+            email = claims.get("email")
+            if email:
+                return {
+                    "email": email,
+                    "name": claims.get("name", ""),
+                    "picture": claims.get("picture", ""),
+                    "email_verified": claims.get("email_verified", False),
+                }
+        except Exception as e:
+            logger.warning("google-auth JWT verification failed: %s: %s", type(e).__name__, str(e)[:200])
+
+    # Strategy 2: Google access_token (opaque string, not a JWT)
+    # Verify by calling Google's userinfo endpoint — if it returns email, token is valid.
     try:
-        import json
-        import base64
-
-        parts = id_token_str.split(".")
-        if len(parts) != 3:
-            logger.error("Invalid JWT structure: expected 3 parts, got %d", len(parts))
-            return None
-
-        payload_b64 = parts[1]
-        # Add padding
-        payload_b64 += "=" * (4 - len(payload_b64) % 4)
-        payload_bytes = base64.urlsafe_b64decode(payload_b64)
-        claims = json.loads(payload_bytes)
-
-        # Verify issuer is Firebase
-        issuer = claims.get("iss", "")
-        expected_issuer = f"https://securetoken.google.com/{settings.FIREBASE_PROJECT_ID}"
-        if issuer != expected_issuer:
-            logger.error("Invalid issuer: %s (expected %s)", issuer, expected_issuer)
-            return None
-
-        # Verify audience
-        if claims.get("aud") != settings.FIREBASE_PROJECT_ID:
-            logger.error("Invalid audience: %s", claims.get("aud"))
-            return None
-
-        email = claims.get("email")
-        if not email:
-            logger.error("No email in token claims")
-            return None
-
-        logger.info("Firebase token verified via payload decode for: %s", email)
-        return {
-            "email": email,
-            "name": claims.get("name", ""),
-            "picture": claims.get("picture", ""),
-            "email_verified": claims.get("email_verified", False),
-        }
+        import requests as _requests
+        resp = _requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {id_token_str}"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            info = resp.json()
+            email = info.get("email")
+            if email:
+                logger.info("Google access_token verified via userinfo for: %s", email)
+                return {
+                    "email": email,
+                    "name": info.get("name", ""),
+                    "picture": info.get("picture", ""),
+                    "email_verified": info.get("email_verified", False),
+                }
     except Exception as e:
-        logger.error("JWT payload decode failed: %s: %s", type(e).__name__, str(e)[:200])
+        logger.warning("Google userinfo call failed: %s: %s", type(e).__name__, str(e)[:200])
         return None
 
 
