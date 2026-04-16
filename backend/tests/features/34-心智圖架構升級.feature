@@ -179,3 +179,55 @@ Feature: 心智圖架構升級（Tier 1 + §3 + Tier 2）
     Example: 強度 1.0 應為 full
       When 系統計算 strength_to_display(1.0)
       Then 回應的 tier 應為 "full"
+
+  # ========== §3 Strategy E Root Solution: Syllabus Anchors ==========
+
+  Rule: 前置 - 有 syllabus_topics 時 extract() 的 6 章必須對齊錨點
+
+    Example: extract 產出的章名應與 syllabus_topics 一致
+      Given 系統有一個科目 "資訊安全" 含 6 個 syllabus_topics 章節
+      And 該科目有 50 題考古題
+      When 系統對 "資訊安全" 執行 UnifiedKnowledgeExtractionService.extract()
+      Then 產出的第一層知識節點數量應為 6
+      And 每個第一層節點名稱應與 syllabus_topics 章節名稱語意相近
+
+  Rule: 後置（計算）- Layer 3 question_count 應讓純考古題科目非零強度
+
+    Example: 節點有 10+ 映射考古題時強度飽和為 1.0
+      Given 系統有一個知識節點 "密碼學基礎" 映射 12 題考古題且無 resource_chunks
+      When 系統呼叫 MindmapStrengthService.recompute_for_node("密碼學基礎")
+      Then 該節點的 support_strength 應為 1.0
+
+    Example: 節點有少量映射考古題時強度介於 0-1
+      Given 系統有一個知識節點 "網路安全" 映射 3 題考古題且無 resource_chunks
+      When 系統呼叫 MindmapStrengthService.recompute_for_node("網路安全")
+      Then 該節點的 support_strength 應大於 0.0 且小於 1.0
+
+  Rule: 後置（聚合）- 章層級 strength 應繼承子節的平均值
+
+    Example: 章包含 3 個子節各 strength 0.4 時章 strength 為 0.4
+      Given 系統有一個章節點 "資訊安全治理" 包含 3 個子節點各 strength 0.4
+      When 系統呼叫 MindmapStrengthService.recompute_for_subject
+      Then "資訊安全治理" 的 support_strength 應約為 0.4
+
+    Example: 章包含混合強度子節時取平均
+      Given 系統有一個章節點 "網路與系統安全" 包含子節點 strength 分別為 1.0, 0.5, 0.0
+      When 系統呼叫 MindmapStrengthService.recompute_for_subject
+      Then "網路與系統安全" 的 support_strength 應約為 0.5
+
+  Rule: 前置 - Voyage 語意映射應用於 keyword 匹配弱的考古題
+
+    Example: keyword 弱匹配的題目走 Voyage 語意 fallback
+      Given 系統有一個科目含 20 題考古題和 4 個知識節點
+      And 其中 5 題的題幹不包含任何節點關鍵字
+      When 系統對該科目執行 extract() 含 Voyage 語意映射
+      Then 全部 20 題應被映射到某個知識節點
+      And Voyage 語意 fallback 應至少處理 5 題
+
+  Rule: 後置（品質 gate）- QA gate 應在每次 extract 自動檢查
+
+    Example: extract 完成後 QA gate 應回報結果
+      Given 系統對某科目執行 extract()
+      Then 回傳結果應包含 qa_report 欄位
+      And qa_report.failure_count 應為 0
+      And qa_report.passed 應為 true

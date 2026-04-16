@@ -50,11 +50,11 @@ steps:
       - '80'
       - '--timeout'
       - '300'
-      - '--set-env-vars'
-      - 'DATABASE_URL=${_DATABASE_URL},JWT_SECRET_KEY=${_JWT_SECRET_KEY}'
+      - '--update-env-vars'
+      - 'BUILD_COMMIT=${SHORT_SHA}'
 
 substitutions:
-  _SERVICE_NAME: certimate-titi
+  _SERVICE_NAME: certimate
   _REGION: asia-east1
   _DATABASE_URL: ''
   _JWT_SECRET_KEY: ''
