@@ -157,9 +157,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">無可取代的陪伴感</h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">考古題智慧出題</h3>
                   <p className="text-slate-600 leading-relaxed">
-                    宛如嚴厲又貼心的專屬家教每天盯著你讀書。未來更將銜接 Notion / Google Drive 雙向同步，昨天抄的新筆記，今天一早自動變成隨堂測驗。
+                    收錄金融證照、iPAS、不動產經紀人、高普考等歷屆考古題，AI 自動分析出題頻率與 Bloom 認知層次，根據你的弱點動態組卷，每次練習都精準命中盲區。
                   </p>
                 </div>
               </div>
