@@ -385,9 +385,9 @@ export default function LandingPage() {
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> B2B 後台與席位管理</li>
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> Super Admin 控制台</li>
               </ul>
-              <Link href="/edu-console" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm">
+              <a href="mailto:certimate.web@gmail.com?subject=企業方案諮詢" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm block">
                 聯絡企業銷售
-              </Link>
+              </a>
               <p className="mt-4 text-xs text-center text-slate-400">企業管理 + API 整合</p>
             </div>
           </div>
@@ -438,6 +438,7 @@ export default function LandingPage() {
               <ul className="space-y-3">
                 <li><Link href="#faq" className="text-sm text-slate-400 hover:text-white transition-colors">常見問題</Link></li>
                 <li><Link href="/feedback" className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> 意見反饋</Link></li>
+                <li><a href="mailto:certimate.web@gmail.com" className="text-sm text-slate-400 hover:text-white transition-colors">certimate.web@gmail.com</a></li>
               </ul>
             </div>
 
