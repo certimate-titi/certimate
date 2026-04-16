@@ -10,16 +10,45 @@
 import { apiClient } from '@/lib/api/client';
 
 export enum AdminAction {
-  CREATE_ADMIN = 'CREATE_ADMIN',
+  // 使用者管理
+  CREATE_ADMIN = 'create_admin',
   EDIT_ADMIN = 'EDIT_ADMIN',
-  DELETE_ADMIN = 'DELETE_ADMIN',
-  UPDATE_SETTINGS = 'UPDATE_SETTINGS',
-  SUSPEND_USER = 'SUSPEND_USER',
-  ACTIVATE_USER = 'ACTIVATE_USER',
-  ADJUST_SUBSCRIPTION = 'ADJUST_SUBSCRIPTION',
+  DELETE_USER = 'delete_user',
+  DELETE_ADMIN = 'delete_user', // backward compat alias
+  SUSPEND_USER = 'suspend_user',
+  ACTIVATE_USER = 'activate_user',
   ADJUST_ROLE = 'adjust_role',
-  UPDATE_PLAN_QUOTA = 'update_plan_quota',
-  BUDGET_ALERT = 'budget_alert',
+  NOTIFY_USER = 'notify_user',
+  // 訂閱 & 財務
+  ADJUST_SUBSCRIPTION = 'adjust_subscription',
+  SUBSCRIPTION_UPGRADE = 'subscription_upgrade',
+  APPROVE_REFUND = 'approve_refund',
+  REJECT_REFUND = 'reject_refund',
+  // 系統設定
+  UPDATE_SETTINGS = 'UPDATE_SETTINGS',
+  UPDATE_MODEL_ROUTING = 'update_model_routing',
+  RESET_AI_LIMITS = 'reset_ai_limits',
+  CLEAR_CACHE = 'clear_cache',
+  // 成本監控
+  COST_MONITOR_VIEWED = 'COST_MONITOR_VIEWED',
+  BUDGET_UPDATED = 'BUDGET_UPDATED',
+  BUDGET_OVERRIDE = 'BUDGET_OVERRIDE',
+  // 內容審核
+  RESOLVE_REPORT = 'resolve_report',
+  UNLOCK_COOLDOWN = 'unlock_cooldown',
+  APPROVE_CONTENT = 'approve',
+  REJECT_CONTENT = 'reject',
+  UPDATE_FEEDBACK = 'update_feedback_status',
+  UPDATE_ANOMALY = 'update_anomaly_status',
+  // AI & Prompt
+  CREATE_PROMPT = 'create_prompt_template',
+  UPDATE_PROMPT = 'update_prompt_template',
+  DEACTIVATE_PROMPT = 'deactivate_prompt_template',
+  ROLLBACK_PROMPT = 'rollback_prompt_template',
+  CREATE_AB_TEST = 'create_ab_test',
+  COMPLETE_AB_TEST = 'complete_ab_test',
+  FUP_SOFT_CAP = 'fup_soft_cap_triggered',
+  // 知識庫
   EXTRACT_KNOWLEDGE = 'extract_knowledge',
 }
 
