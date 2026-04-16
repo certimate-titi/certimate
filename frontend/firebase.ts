@@ -16,7 +16,11 @@ export enum AdminAction {
   UPDATE_SETTINGS = 'UPDATE_SETTINGS',
   SUSPEND_USER = 'SUSPEND_USER',
   ACTIVATE_USER = 'ACTIVATE_USER',
-  ADJUST_SUBSCRIPTION = 'ADJUST_SUBSCRIPTION'
+  ADJUST_SUBSCRIPTION = 'ADJUST_SUBSCRIPTION',
+  ADJUST_ROLE = 'adjust_role',
+  UPDATE_PLAN_QUOTA = 'update_plan_quota',
+  BUDGET_ALERT = 'budget_alert',
+  EXTRACT_KNOWLEDGE = 'extract_knowledge',
 }
 
 export async function logAdminAction(

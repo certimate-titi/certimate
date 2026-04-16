@@ -74,6 +74,8 @@ export default function AuditLogsPage() {
     switch (action) {
       case AdminAction.CREATE_ADMIN:
         return { icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '新增管理員' };
+      case AdminAction.EDIT_ADMIN:
+        return { icon: Settings, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '編輯管理員' };
       case AdminAction.DELETE_ADMIN:
         return { icon: UserMinus, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '刪除管理員' };
       case AdminAction.UPDATE_SETTINGS:
@@ -84,6 +86,14 @@ export default function AuditLogsPage() {
         return { icon: User, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '啟用用戶' };
       case AdminAction.ADJUST_SUBSCRIPTION:
         return { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '調整訂閱' };
+      case AdminAction.ADJUST_ROLE:
+        return { icon: ShieldAlert, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', label: '調整角色' };
+      case AdminAction.UPDATE_PLAN_QUOTA:
+        return { icon: Settings, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', label: '調整方案限額' };
+      case AdminAction.BUDGET_ALERT:
+        return { icon: Zap, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '預算告警' };
+      case AdminAction.EXTRACT_KNOWLEDGE:
+        return { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '知識樹萃取' };
       default:
         return { icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', label: action };
     }
