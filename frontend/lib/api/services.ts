@@ -629,19 +629,66 @@ export const superAdminService = {
   },
 
   async getFinanceOverview(): Promise<{ mrr: number; arpu: number; churn_rate: number; ltv: number; mrr_trend: string; arpu_trend: string; churn_trend: string; ltv_trend: string }> {
-    return apiClient.get('/admin/finance/overview');
+    const raw = await apiClient.get<Record<string, unknown>>('/admin/finance/overview');
+    return {
+      mrr: Number(raw.mrr || 0),
+      arpu: Number(raw.arpu || 0),
+      churn_rate: Number(raw.churn_rate || 0),
+      ltv: Number(raw.ltv || 0),
+      mrr_trend: (raw.mrr_trend as string) || '--',
+      arpu_trend: (raw.arpu_trend as string) || '--',
+      churn_trend: (raw.churn_trend as string) || '--',
+      ltv_trend: (raw.ltv_trend as string) || '--',
+    };
   },
 
   async getFinanceTransactions(): Promise<{ transactions: { id: string; user: string; amount: string; plan: string; status: string; time: string }[] }> {
-    return apiClient.get('/admin/finance/transactions');
+    const raw = await apiClient.get<{ transactions: Array<Record<string, unknown>> }>('/admin/finance/transactions');
+    return {
+      transactions: (raw.transactions || []).map(t => ({
+        id: String(t.transaction_id || t.id || ''),
+        user: String(t.user_email || t.user_id || t.user || ''),
+        amount: `NT$${Number(t.amount || 0).toLocaleString()}`,
+        plan: String(t.target_plan || t.plan || ''),
+        status: String(t.status || ''),
+        time: String(t.created_at || t.time || ''),
+      })),
+    };
   },
 
   async getMrrTrend(): Promise<{ data: { name: string; new: number; expansion: number; churn: number }[] }> {
-    return apiClient.get('/admin/finance/mrr-trend');
+    const raw = await apiClient.get<{ trend?: Array<Record<string, unknown>>; data?: Array<Record<string, unknown>> }>('/admin/finance/mrr-trend');
+    const items = raw.trend || raw.data || [];
+    return {
+      data: items.map(r => ({
+        name: String(r.name || ''),
+        new: Number(r.mrr || r.new || 0),
+        expansion: Number(r.expansion || 0),
+        churn: Number(r.churn || 0),
+      })),
+    };
   },
 
   async getSubscriptionDistribution(): Promise<{ distribution: { name: string; value: number; color: string }[] }> {
-    return apiClient.get('/admin/finance/subscription-distribution');
+    const PLAN_COLORS: Record<string, string> = {
+      FREE: '#94a3b8', PRO_199: '#10b981', PRO_PLUS_399: '#6366f1', ULTRA_1599: '#f59e0b', EDU: '#06b6d4',
+    };
+    const raw = await apiClient.get<{ distribution: Record<string, number> | Array<Record<string, unknown>> }>('/admin/finance/subscription-distribution');
+    const dist = raw.distribution;
+    // Backend returns dict { "FREE": 3, "ULTRA_1599": 3 }; frontend needs array
+    if (dist && !Array.isArray(dist)) {
+      return {
+        distribution: Object.entries(dist)
+          .filter(([, v]) => v > 0)
+          .map(([name, value]) => ({
+            name,
+            value,
+            color: PLAN_COLORS[name] || '#94a3b8',
+          })),
+      };
+    }
+    // Already array (future-proof)
+    return { distribution: (dist as Array<{ name: string; value: number; color: string }>) || [] };
   },
 
   async getModerationQueue(): Promise<{ items: { id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[] }> {
