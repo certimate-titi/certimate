@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, X, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import TiTiLogo from '@/components/TiTiLogo';
 import { useAuth } from '@/lib/auth-context';
 import { authService } from '@/lib/api/services';
@@ -332,14 +333,17 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={async () => {
+            <div className="mt-6 flex justify-center">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (!credentialResponse.credential) {
+                    setError('Google 註冊失敗：未取得憑證');
+                    return;
+                  }
                   setIsLoading(true);
                   setError(null);
                   try {
-                    const { redirect_to } = await loginWithGoogle();
+                    const { redirect_to } = await loginWithGoogle(credentialResponse.credential);
                     router.push(redirect_to || '/dashboard');
                   } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Google 註冊失敗';
@@ -348,12 +352,11 @@ export default function SignupPage() {
                     setIsLoading(false);
                   }
                 }}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center px-4 py-3 border border-slate-300 rounded-xl shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
-              >
-                <GoogleIcon />
-                Google 註冊
-              </button>
+                onError={() => setError('Google 註冊失敗')}
+                width="400"
+                text="signup_with"
+                shape="pill"
+              />
             </div>
           </div>
 

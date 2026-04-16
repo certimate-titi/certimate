@@ -1,8 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth as firebaseAuth, googleProvider } from '@/firebase';
 import type { User, SubscriptionTier, SubscriptionStatus, UserRole } from '@/types';
 import { apiClient, getStoredToken, setStoredToken, clearStoredToken } from '@/lib/api/client';
 import { authService } from '@/lib/api/services';
@@ -103,7 +101,7 @@ interface AuthContextValue {
   onboardingCompleted: boolean;
   setOnboardingCompleted: (completed: boolean) => void;
   loginWithCredentials: (email: string, password: string) => Promise<{ redirect_to: string }>;
-  loginWithGoogle: () => Promise<{ redirect_to: string }>;
+  loginWithGoogle: (googleCredential: string) => Promise<{ redirect_to: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -143,12 +141,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { redirect_to: res.redirect_to };
   }, []);
 
-  const loginWithGoogle = useCallback(async () => {
-    const result = await signInWithPopup(firebaseAuth, googleProvider);
-    const idToken = await result.user.getIdToken();
-    console.log('[Google SSO] Firebase ID token length:', idToken.length);
-    console.log('[Google SSO] Firebase ID token (first 50):', idToken.substring(0, 50));
-    const res = await authService.googleSSO(idToken);
+  const loginWithGoogle = useCallback(async (googleCredential: string) => {
+    // Google Identity Services returns a standard Google OAuth ID token.
+    // Backend verifies via google.oauth2.id_token.verify_oauth2_token().
+    const res = await authService.googleSSO(googleCredential);
     setStoredToken((res as any).access_token);
     const me = await apiClient.get<BackendMeResponse>('/auth/me');
     const u = backendMeToUser(me);

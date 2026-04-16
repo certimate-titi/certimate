@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { BrainCircuit, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { apiClient } from '@/lib/api/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -20,16 +19,11 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await apiClient.post('/auth/forgot-password', { email: email.trim() });
       setSent(true);
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/invalid-email') {
-        setError('請輸入有效的電子郵件地址。');
-      } else {
-        // Always show success to prevent account enumeration
-        setSent(true);
-      }
+    } catch (err: unknown) {
+      // Always show success to prevent account enumeration
+      setSent(true);
     } finally {
       setIsLoading(false);
     }
