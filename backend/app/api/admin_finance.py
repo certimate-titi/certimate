@@ -132,7 +132,18 @@ def get_finance_overview(
 
     arpu = round(mrr / max(paid_users, 1))
     ltv = arpu * 12  # estimate 12 months average retention
-    churn_rate = round(max(0, 5 - paid_users * 0.5), 1)  # simplified estimate
+
+    # Churn: users who downgraded to FREE in last 30 days / paid users last month
+    # Real data from audit_logs where action='adjust_subscription' and details contains '→ FREE'
+    from sqlalchemy import text as _text
+    try:
+        churned = db.execute(_text(
+            "SELECT count(*) FROM admin_audit_logs WHERE action='adjust_subscription' "
+            "AND details LIKE '%→ FREE%' AND created_at >= NOW() - INTERVAL '30 days'"
+        )).scalar() or 0
+        churn_rate = round(churned * 100 / max(paid_users, 1), 1)
+    except Exception:
+        churn_rate = 0.0
 
     return {
         "mrr": mrr,

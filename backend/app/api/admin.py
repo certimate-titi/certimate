@@ -302,7 +302,36 @@ def get_dashboard_alerts(
             "time": "剛剛",
         })
 
-    return {"alerts": alerts, "system_alerts": []}
+    # System alerts — real infrastructure checks
+    system_alerts = []
+
+    # Cloud SQL connection check
+    try:
+        from sqlalchemy import text as _text
+        active_conn = db.execute(_text("SELECT count(*) FROM pg_stat_activity WHERE state IS NOT NULL")).scalar() or 0
+        max_conn = int(db.execute(_text("SELECT current_setting('max_connections')")).scalar() or 25)
+        if active_conn > max_conn * 0.8:
+            system_alerts.append({
+                "severity": "critical",
+                "message": f"Cloud SQL 連線數 {active_conn}/{max_conn} (>{int(max_conn*0.8)})",
+                "time": "即時",
+            })
+    except Exception:
+        pass
+
+    # Processing queue stuck check
+    from app.models.resource import Resource, ResourceStatus
+    stuck = db.query(func.count(Resource.id)).filter(
+        Resource.status == ResourceStatus.PROCESSING,
+    ).scalar() or 0
+    if stuck > 5:
+        system_alerts.append({
+            "severity": "warning",
+            "message": f"{stuck} 個資源處理卡住（PROCESSING 狀態）",
+            "time": "即時",
+        })
+
+    return {"alerts": alerts, "system_alerts": system_alerts}
 
 
 @router.get("/settings")

@@ -338,16 +338,10 @@ export default function SettingsPage() {
 
                   <section>
                     <h3 className="text-lg font-bold text-slate-900 mb-4">Fallback 觸發條件</h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Timeout 閾值 (ms)</label>
-                        <input type="number" value={aiRouting.timeout} onChange={e => setAiRouting(p => ({ ...p, timeout: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">重試次數</label>
-                        <input type="number" value={aiRouting.retries} onChange={e => setAiRouting(p => ({ ...p, retries: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all" />
-                      </div>
-                    </div>
+                    <p className="text-sm text-slate-500">
+                      Timeout 和重試次數目前由後端 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">LLMService</code> 控制（預設 timeout 30s / 重試 2 次），
+                      未來可透過環境變數 <code className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">LLM_TIMEOUT_SECONDS</code> 調整。
+                    </p>
                   </section>
                 </div>
               </div>

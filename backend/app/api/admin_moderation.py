@@ -115,11 +115,36 @@ def get_moderation_stats(
     reports = service.get_report_queue(actor_id=user_id)
     pending = len([r for r in reports.get("reports", []) if r.get("status") == "pending"])
     cooled = len(abuse.get("cooled_users", []))
+    # Auto-flagged: count FUP soft cap triggers from audit log today
+    from sqlalchemy import func, text as _text
+    auto_flagged = 0
+    try:
+        auto_flagged = db.execute(_text(
+            "SELECT count(*) FROM admin_audit_logs WHERE action='fup_soft_cap_triggered' AND created_at >= CURRENT_DATE"
+        )).scalar() or 0
+    except Exception:
+        pass
+
+    # False positive rate: resolved reports marked as 'false_positive' / total resolved
+    total_resolved = 0
+    false_positives = 0
+    try:
+        from app.models.content_report import ContentReport
+        total_resolved = db.query(func.count(ContentReport.id)).filter(
+            ContentReport.status != 'pending'
+        ).scalar() or 0
+        false_positives = db.query(func.count(ContentReport.id)).filter(
+            ContentReport.status == 'false_positive'
+        ).scalar() or 0
+    except Exception:
+        pass
+    fp_rate = f"{round(false_positives * 100 / total_resolved)}%" if total_resolved > 0 else "N/A"
+
     return {
         "pending_reports": pending,
-        "auto_flagged_today": 0,
+        "auto_flagged_today": auto_flagged,
         "cooled_users": cooled,
-        "false_positive_rate": "0%",
+        "false_positive_rate": fp_rate,
     }
 
 

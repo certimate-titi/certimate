@@ -163,7 +163,15 @@ class AdminService:
             )
             .scalar() or 0
         )
-        ai_token_today = round(ai_exams_today * 0.01, 2)  # ~$0.01 per exam
+        # Real AI cost from ai_usage_ledger (Feature 33)
+        try:
+            from sqlalchemy import text as _text
+            ai_token_today = float(self.db.execute(_text(
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM ai_usage_ledger WHERE created_at >= :start"
+            ), {"start": today_start}).scalar() or 0)
+            ai_token_today = round(ai_token_today, 4)
+        except Exception:
+            ai_token_today = round(ai_exams_today * 0.01, 2)  # fallback estimate
 
         # Queue depth: resources currently processing
         queue_depth = (

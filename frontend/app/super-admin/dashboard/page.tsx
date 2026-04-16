@@ -118,7 +118,7 @@ export default function OperationsDashboard() {
             }}
             className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all"
           >
-            匯出報表
+            匯出用戶 CSV
           </button>
           <button
             onClick={() => {
