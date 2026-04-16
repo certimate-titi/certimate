@@ -1,7 +1,10 @@
 """意見反饋 Service。"""
 
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func as sa_func
@@ -94,6 +97,37 @@ class FeedbackService:
                 attachment_paths.append(fa.file_path)
 
         self.db.commit()
+
+        # Email notification to admin
+        try:
+            from app.services.email_service import EmailService
+            from app.models.user import User
+            user = self.db.query(User).filter_by(id=user_uuid).first()
+            user_email = user.email if user else "unknown"
+            email_svc = EmailService()
+            html = (
+                f'<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">'
+                f'<h2 style="color:#10b981">CertiMate — 新用戶反饋</h2>'
+                f'<table style="width:100%;border-collapse:collapse;margin:16px 0">'
+                f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">編號</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{fb_id}</td></tr>'
+                f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">類型</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{feedback_type}</td></tr>'
+                f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">主旨</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{subject}</td></tr>'
+                f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">提交者</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{user_email}</td></tr>'
+                f'<tr><td style="padding:8px;font-weight:bold">附件</td><td style="padding:8px">{len(attachment_paths)} 張</td></tr>'
+                f'</table>'
+                f'<div style="background:#f8fafc;padding:16px;border-radius:8px;margin:16px 0">'
+                f'<p style="white-space:pre-wrap;margin:0">{content}</p></div>'
+                f'<a href="https://certimate-titi.web.app/super-admin/moderation" '
+                f'style="display:inline-block;padding:10px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:16px">'
+                f'前往管理後台處理</a></div>'
+            )
+            email_svc._send(
+                to_email="certimate.web@gmail.com",
+                subject=f"[CertiMate 反饋] {feedback_type} — {subject}",
+                html_body=html,
+            )
+        except Exception as e:
+            logger.warning("Feedback email notification failed: %s", e)
 
         return {
             "feedback_id": fb_id,
