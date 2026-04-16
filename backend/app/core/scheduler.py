@@ -87,6 +87,25 @@ def init_scheduler(session_factory: sessionmaker) -> AsyncIOScheduler:
             coalesce=True,
         )
 
+    # 5) 審計日誌清理 — 每天 03:00 刪除 90 天以前的紀錄
+    retention_days = int(os.environ.get("AUDIT_LOG_RETENTION_DAYS", "90"))
+    _scheduler.add_job(
+        job_audit_log_cleanup,
+        CronTrigger(hour=3, minute=0),
+        id="audit_log_cleanup",
+        name=f"審計日誌清理（保留 {retention_days} 天）",
+        replace_existing=True,
+    )
+
+    # 6) ai_usage_ledger 清理 — 每月 1 號 04:00 刪除 12 個月以前的紀錄
+    _scheduler.add_job(
+        job_usage_ledger_cleanup,
+        CronTrigger(day=1, hour=4, minute=0),
+        id="usage_ledger_cleanup",
+        name="AI 用量帳本清理（保留 12 個月）",
+        replace_existing=True,
+    )
+
     logger.info("Scheduler initialized with %d jobs", len(_scheduler.get_jobs()))
     return _scheduler
 
@@ -194,5 +213,54 @@ async def job_budget_alert_evaluate():
     except Exception:
         db.rollback()
         logger.exception("Budget alert evaluate job failed")
+    finally:
+        db.close()
+
+
+async def job_audit_log_cleanup():
+    """刪除超過 retention_days 天的審計日誌。
+
+    保留近期紀錄供合規查詢，刪除老舊紀錄避免 DB 膨脹。
+    每天 03:00 執行，AUDIT_LOG_RETENTION_DAYS 環境變數可調（預設 90 天）。
+    """
+    import os
+    from sqlalchemy import text
+    db = _get_db()
+    try:
+        days = int(os.environ.get("AUDIT_LOG_RETENTION_DAYS", "90"))
+        result = db.execute(
+            text("DELETE FROM admin_audit_logs WHERE created_at < NOW() - INTERVAL :days"),
+            {"days": f"{days} days"},
+        )
+        deleted = result.rowcount
+        db.commit()
+        if deleted > 0:
+            logger.info("Audit log cleanup: deleted %d rows older than %d days", deleted, days)
+    except Exception:
+        db.rollback()
+        logger.exception("Audit log cleanup failed")
+    finally:
+        db.close()
+
+
+async def job_usage_ledger_cleanup():
+    """刪除超過 12 個月的 AI 用量帳本紀錄。
+
+    ai_usage_ledger 用於 cost monitor 月報表；超過 12 個月的不需要逐筆保留。
+    每月 1 號 04:00 執行。
+    """
+    from sqlalchemy import text
+    db = _get_db()
+    try:
+        result = db.execute(
+            text("DELETE FROM ai_usage_ledger WHERE created_at < NOW() - INTERVAL '12 months'"),
+        )
+        deleted = result.rowcount
+        db.commit()
+        if deleted > 0:
+            logger.info("Usage ledger cleanup: deleted %d rows older than 12 months", deleted)
+    except Exception:
+        db.rollback()
+        logger.exception("Usage ledger cleanup failed")
     finally:
         db.close()
