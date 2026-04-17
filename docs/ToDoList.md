@@ -2,17 +2,16 @@
 
 ## 待辦事項
 
-### 階段二（未完成項目）
-* **[x] LLM 防火牆配置：** ~~導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。~~  → **程式碼已完成（2026-04-11）：雙層防護（規則引擎 + Llama Guard 客戶端），待部署 LLAMA_GUARD_URL 推理服務端點**
-* **[x] 欄位級加密：** ~~針對 `Student_Answers` 表中的成績與個資實作應用層加密。（需選定 KMS 方案）~~ → **程式碼已完成，待部署 KMS 金鑰（2026-04-09）**
+###重新整理 平台管理的功能內容 功能分類過於分散以及確認功能必須性以及是否遺漏
 
-### 階段三（需外部基礎設施）
-* **[x] 語意快取 (Semantic Cache)：** ~~建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取~~  → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
-* **[x] 多租戶限流 (Rate Limiting)：** ~~實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制~~ → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
-* **[x] 任務佇列隔離 (Queue Prioritization)：** ~~設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。~~ → **程式碼已完成（2026-04-11）：paid_priority / standard / background 三層佇列，待 Redis/Celery Worker 基礎設施**
+### 用戶管理
+- 沒辦法看到用戶詳情
+- 寄信給用戶功能失效
+- 停權啟動後應寄信給用戶並且在管理中後面停權功能應該要自動切換成啟動
 
-### 階段四（未完成項目）
-* **[x] 全鏈路追蹤：** ~~導入 OpenTelemetry~~ → **程式碼已完成，待 OTLP Collector / Grafana Tempo 部署（2026-04-09）**
+### 平台管理 - Prompt模板
+- prompt無法編輯
+- prompt的AI模型應該要可以選擇claude or gemini
 
 ---
 
