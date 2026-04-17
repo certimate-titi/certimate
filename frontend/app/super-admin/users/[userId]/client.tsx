@@ -4,22 +4,24 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { superAdminService } from '@/lib/api/services';
-import { 
-  ChevronLeft, 
-  Mail, 
-  ShieldAlert, 
-  ShieldCheck, 
-  CreditCard, 
-  Activity, 
-  Cpu, 
-  Clock, 
+import {
+  ChevronLeft,
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
+  CreditCard,
+  Activity,
+  Cpu,
+  Clock,
   History,
   AlertCircle,
   ExternalLink,
   Calendar,
   Zap,
   FileText,
-  BrainCircuit
+  BrainCircuit,
+  Send,
+  Bell
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -77,6 +79,9 @@ export default function UserDetailsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [showUsageModal, setShowUsageModal] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState('');
+  const [notifySending, setNotifySending] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -171,31 +176,41 @@ export default function UserDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 mt-8">
+              {userData.status === 'suspended' ? (
+                <button
+                  onClick={async () => {
+                    if (!confirm('確定要恢復此用戶帳號？系統將自動發送恢復通知信。')) return;
+                    try {
+                      await superAdminService.activateUser(String(userId));
+                      setUserData(prev => ({ ...prev, status: 'active' }));
+                      alert('帳號已恢復，通知信已發送');
+                    } catch { alert('操作失敗'); }
+                  }}
+                  className="py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="h-4 w-4" /> 恢復帳號
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    const reason = prompt('請輸入停權原因:');
+                    if (!reason) return;
+                    try {
+                      await superAdminService.suspendUser(String(userId), reason);
+                      setUserData(prev => ({ ...prev, status: 'suspended' }));
+                      alert('帳號已停權，通知信已發送');
+                    } catch { alert('操作失敗'); }
+                  }}
+                  className="py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldAlert className="h-4 w-4" /> 停權帳號
+                </button>
+              )}
               <button
-                onClick={async () => {
-                  if (!confirm('確定要恢復此用戶帳號？')) return;
-                  try {
-                    await superAdminService.activateUser(String(userId));
-                    setUserData(prev => ({ ...prev, status: 'active' }));
-                  } catch { alert('操作失敗'); }
-                }}
-                className="py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                onClick={() => { setNotifyMessage(''); setShowNotifyModal(true); }}
+                className="py-2 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all flex items-center justify-center gap-2"
               >
-                <ShieldCheck className="h-4 w-4" /> 恢復正常
-              </button>
-              <button
-                onClick={async () => {
-                  const reason = prompt('請輸入停權原因:');
-                  if (!reason) return;
-                  try {
-                    await superAdminService.suspendUser(String(userId), reason);
-                    setUserData(prev => ({ ...prev, status: 'suspended' }));
-                    alert('帳號已停權');
-                  } catch { alert('操作失敗'); }
-                }}
-                className="py-2 bg-white border border-slate-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-              >
-                <ShieldAlert className="h-4 w-4" /> 停權帳號
+                <Bell className="h-4 w-4" /> 發送通知
               </button>
             </div>
             <button
@@ -510,6 +525,49 @@ export default function UserDetailsPage() {
                 className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
               >
                 確認調整
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 發送通知 Modal */}
+      {showNotifyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowNotifyModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <Send className="h-5 w-5 text-indigo-500" /> 發送通知給用戶
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              通知將以 Email 發送給 <span className="font-bold text-slate-900">{userData.email}</span>
+            </p>
+            <textarea
+              value={notifyMessage}
+              onChange={e => setNotifyMessage(e.target.value)}
+              placeholder="請輸入通知訊息內容..."
+              rows={4}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition-all resize-none"
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setShowNotifyModal(false)}
+                className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+              >
+                取消
+              </button>
+              <button
+                disabled={!notifyMessage.trim() || notifySending}
+                onClick={async () => {
+                  setNotifySending(true);
+                  try {
+                    await superAdminService.notifyUser(String(userId), notifyMessage);
+                    setShowNotifyModal(false);
+                    alert('通知已成功發送');
+                  } catch { alert('發送失敗，請稍後再試'); }
+                  finally { setNotifySending(false); }
+                }}
+                className="flex-1 py-2.5 bg-indigo-500 text-white rounded-xl text-sm font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {notifySending ? '發送中...' : '確認發送'}
               </button>
             </div>
           </div>

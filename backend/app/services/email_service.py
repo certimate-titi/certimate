@@ -143,3 +143,64 @@ class EmailService:
         </div>
         """
         return self._send(to_email, "CertiMate — 請驗證您的帳號", html)
+
+    def send_suspension_email(self, to_email: str, reason: str) -> bool:
+        """通知用戶帳號已被停權。"""
+        html = f"""
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="color:#ef4444">CertiMate — 帳號停權通知</h2>
+            <p style="font-size:15px;line-height:1.6;color:#334155">
+                您的 CertiMate 帳號已被管理員停權。
+            </p>
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0">
+                <p style="color:#991b1b;font-size:14px;margin:0">
+                    <strong>停權原因：</strong>{reason}
+                </p>
+            </div>
+            <p style="font-size:14px;line-height:1.6;color:#334155">
+                在停權期間，您將無法登入或使用平台功能。<br>
+                如有疑問，請聯繫平台管理員。
+            </p>
+            <p style="color:#94a3b8;font-size:12px;margin-top:24px">
+                此為系統自動通知，請勿直接回覆。
+            </p>
+        </div>
+        """
+        return self._send(to_email, "[CertiMate] 帳號停權通知", html)
+
+    def send_restoration_email(self, to_email: str) -> bool:
+        """通知用戶帳號已恢復。"""
+        login_url = f"{self.settings.FRONTEND_URL}/login"
+        html = f"""
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="color:#10b981">CertiMate — 帳號恢復通知</h2>
+            <p style="font-size:15px;line-height:1.6;color:#334155">
+                您的 CertiMate 帳號已由管理員恢復正常。<br>
+                您現在可以正常登入並使用所有平台功能。
+            </p>
+            <a href="{login_url}"
+               style="display:inline-block;padding:12px 32px;background:#10b981;color:#fff;
+                      text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
+                立即登入
+            </a>
+            <p style="color:#94a3b8;font-size:12px;margin-top:24px">
+                此為系統自動通知，請勿直接回覆。
+            </p>
+        </div>
+        """
+        return self._send(to_email, "[CertiMate] 帳號已恢復", html)
+
+    def send_admin_notification_email(self, to_email: str, message: str) -> bool:
+        """管理員手動發送通知給用戶。"""
+        html = f"""
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="color:#6366f1">CertiMate — 平台通知</h2>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0">
+                <p style="font-size:15px;line-height:1.6;color:#334155;margin:0;white-space:pre-wrap">{message}</p>
+            </div>
+            <p style="color:#94a3b8;font-size:12px;margin-top:24px">
+                此為平台管理員發送的通知。如有疑問，請聯繫平台管理員。
+            </p>
+        </div>
+        """
+        return self._send(to_email, "[CertiMate] 平台通知", html)

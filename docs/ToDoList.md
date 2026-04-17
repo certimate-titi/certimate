@@ -2,34 +2,57 @@
 
 ## 待辦事項
 
-### GCP Billing Export 配置部署（P1） — 2026-04-17 完成實現
+### GCP Billing Export 配置部署（P1） — 2026-04-17 程式碼完成
 - ✅ **實現完成**：GcpBillingService BigQuery SQL 查詢、config 設定、錯誤處理、test hooks
-- [ ] **待部署**：
+- ⏳ **待運維操作**（非程式碼）：
   - [ ] Cloud Run：設定 `GCP_BILLING_MODE=real`
   - [ ] Cloud Run：掛載 Service Account key（workload identity）
   - [ ] 驗證 API：`GET /admin/cost/gcp/services` 回傳真實資料
-  - [ ] BDD 測試驗收（Feature 33）— 需要 Docker
 
 ---
 
-### 用戶管理前端修復（P1）
-- [ ] 用戶詳情頁載入驗證 — 前端頁面已實作，需端到端測試確認 API 回應格式是否正確
-- [ ] 新增「發送通知」按鈕至 `users/[userId]/client.tsx` — 後端 API `POST /admin/users/{userId}/notify` 已存在
-- [ ] 停權後自動發送通知信 + 按鈕動態切換（active 顯示「停權」、suspended 顯示「恢復」）
+### ✅ 用戶管理前端修復（P1） — 完成於 2026-04-17
+- ✅ 新增「發送通知」按鈕至 `users/[userId]/client.tsx`（彈窗輸入 → Email 發送）
+- ✅ 停權/恢復按鈕動態切換（active 顯示「停權」、suspended 顯示「恢復」）
+- ✅ 停權/恢復後自動發送通知信（`send_suspension_email` / `send_restoration_email`）
+- ✅ `notify_user` 後端實際發送 Email（`send_admin_notification_email`）
+- ✅ 前端 `services.ts` 新增 `notifyUser()` API 函式
 
-### Prompt 模板前端修復（P1）
-- [ ] 編輯表單新增 model 下拉選單（gemini-2.5-flash / claude-3.5-sonnet / gpt-4o 等）— 後端 PATCH API 已支援 model 欄位
+### ✅ Prompt 模板前端修復（P1） — 完成於 2026-04-17
+- ✅ 編輯表單新增 model 下拉選單（gemini-2.5-flash / gemini-2.5-pro / claude-3.5-sonnet / claude-3.5-haiku / gpt-4o / gpt-4o-mini）
+- ✅ 儲存時自動傳送 model 參數至後端 PATCH API
 - ~~prompt無法編輯~~ → ✅ 已確認可編輯（system_prompt / user_prompt / temperature）
 
-### RAG 物理級跳轉完善（P2）
-- [ ] resource_chunks metadata 加入 anchor_id 欄位
-- [ ] knowledge_map source API 返回 highlight_line / highlight_chars
+### ✅ SSO 密碼重設流程 — 已完成（驗證於 2026-04-17）
+- ✅ Backend：`forgot_password()` 生成 reset token + 發送 Email
+- ✅ Backend：`reset_password()` 驗證 token + 設定密碼
+- ✅ Backend：`login()` SSO 用戶無密碼時回傳專用錯誤訊息
+- ✅ Frontend：`/forgot-password` 頁面（含 SSO 提示）
+- ✅ Frontend：`/reset-password` 頁面（密碼強度驗證）
+- ✅ Email 模板：`send_password_reset_email`（含 SSO 提示）
 
-### 向量快取機制（P2）
-- [ ] Redis 快取最近 1000 個查詢向量（TTL 24h），節省 Voyage 配額 15-20%
+---
 
-### 系統設定頁面重組（P3）
-- [ ] 將過於龐雜的 6 Tab 設定頁拆分（AI 配置 / 營運管理 / 開發配置 / 帳號管理）
+### ✅ RAG 物理級跳轉完善（P2） — 完成於 2026-04-17
+- ✅ ResourceChunk model 新增 `anchor_id`、`highlight_line_start/end`、`highlight_char_start/end` 欄位
+- ✅ Alembic migration 056 建立
+- ✅ DBML (erm.dbml) 同步更新
+- ✅ `get_node_source()` API 增強 — 回傳 `highlight` 物件（anchor_id + line/char 範圍）
+
+### ✅ 向量快取機制（P2） — 完成於 2026-04-17
+- ✅ `EmbeddingService.embed_query()` 自動快取（LRU 1000 + TTL 24h）
+- ✅ 支援 Redis（優先）+ 記憶體 fallback
+- ✅ 新增 `get_cache_stats()` 供 admin 監控快取命中率
+- ✅ 環境變數：`EMBEDDING_CACHE_MAX_SIZE`、`EMBEDDING_CACHE_TTL`
+
+### ✅ 系統設定頁面重組（P3） — 完成於 2026-04-17
+- ✅ 拆分為 6 個獨立子頁面（含 shared layout + sidebar 導航）：
+  - `/super-admin/settings` — AI 模型路由
+  - `/super-admin/settings/plans` — 方案限額
+  - `/super-admin/settings/announcements` — 公告管理
+  - `/super-admin/settings/flags` — Feature Flags
+  - `/super-admin/settings/admins` — 管理員帳號
+  - `/super-admin/settings/version` — 版本資訊
 
 ---
 

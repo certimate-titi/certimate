@@ -572,6 +572,10 @@ export const superAdminService = {
     await apiClient.post('/admin/users/delete', { target_user_id: userId, confirm_name: confirmName });
   },
 
+  async notifyUser(userId: string, message: string): Promise<{ message: string }> {
+    return apiClient.post(`/admin/users/${userId}/notify`, { message });
+  },
+
   async getSettings(): Promise<Record<string, unknown>> {
     return apiClient.get('/admin/settings');
   },

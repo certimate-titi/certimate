@@ -8,6 +8,7 @@ from app.models.knowledge_node import KnowledgeNode
 from app.models.node_mastery import NodeMastery
 from app.models.learning_journey import LearningJourney
 from app.models.resource import Resource
+from app.models.resource_chunk import ResourceChunk
 from app.models.subject import Subject
 from app.models.ai_chat import AiChatSession, AiChatMessage
 from app.models.user import User
@@ -275,8 +276,34 @@ class KnowledgeNavService:
         }
 
     def get_node_source(self, node_id: str, user_id: str) -> dict:
-        """取得節點溯源內容。"""
-        return self.get_node_detail(node_id, user_id)
+        """取得節點溯源內容（含物理級跳轉資訊）。"""
+        result = self.get_node_detail(node_id, user_id)
+        if result.get("error"):
+            return result
+
+        # 查詢關聯的 chunk，取得物理級跳轉資訊
+        nid = uuid.UUID(node_id)
+        chunk = (
+            self.db.query(ResourceChunk)
+            .filter_by(node_id=nid, is_deleted=False)
+            .order_by(ResourceChunk.chunk_index)
+            .first()
+        )
+
+        if chunk:
+            result["highlight"] = {
+                "anchor_id": chunk.anchor_id,
+                "line_start": chunk.highlight_line_start,
+                "line_end": chunk.highlight_line_end,
+                "char_start": chunk.highlight_char_start,
+                "char_end": chunk.highlight_char_end,
+                "page_start": chunk.source_page_start,
+                "page_end": chunk.source_page_end,
+            }
+        else:
+            result["highlight"] = None
+
+        return result
 
     def get_layout(self, user_id: str) -> dict:
         """取得知識心智圖頁面佈局。"""
