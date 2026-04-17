@@ -78,7 +78,11 @@ class AdminService:
             logger.warning("Email 發送失敗 (%s): %s", method, args[0] if args else "", exc_info=True)
 
     def _get_user(self, user_id: str) -> User | None:
-        return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
+        try:
+            uid = uuid.UUID(user_id)
+        except (ValueError, AttributeError):
+            return None
+        return self.db.query(User).filter_by(id=uid).first()
 
     def _require_admin(self, user_id: str) -> dict | None:
         """Return error dict if not admin/super_admin, else None."""
