@@ -2,6 +2,16 @@
 
 ## 待辦事項
 
+### GCP Billing Export 配置部署（P1） — 2026-04-17 完成實現
+- ✅ **實現完成**：GcpBillingService BigQuery SQL 查詢、config 設定、錯誤處理、test hooks
+- [ ] **待部署**：
+  - [ ] Cloud Run：設定 `GCP_BILLING_MODE=real`
+  - [ ] Cloud Run：掛載 Service Account key（workload identity）
+  - [ ] 驗證 API：`GET /admin/cost/gcp/services` 回傳真實資料
+  - [ ] BDD 測試驗收（Feature 33）— 需要 Docker
+
+---
+
 ### 用戶管理前端修復（P1）
 - [ ] 用戶詳情頁載入驗證 — 前端頁面已實作，需端到端測試確認 API 回應格式是否正確
 - [ ] 新增「發送通知」按鈕至 `users/[userId]/client.tsx` — 後端 API `POST /admin/users/{userId}/notify` 已存在
@@ -24,6 +34,23 @@
 ---
 
 ## 完成事項
+
+### ✅ 13. GCP Billing Export 功能實現 — 完成於 2026-04-17
+
+**成本監控中心（Feature 33）的 BigQuery Billing Export 模組實現**：
+- ✅ `GcpBillingService` — SQL 查詢層（使用 `export_time` 欄位）
+- ✅ 環境變數配置（`config.py`）
+- ✅ 詳細錯誤處理與日誌
+- ✅ BDD 測試集成（test hooks）
+- ✅ 配置指南文檔（`GCP_BILLING_EXPORT_SETUP.md`）
+- ✅ 實現總結文檔（`BILLING_EXPORT_COMPLETION.md`）
+- [ ] **待部署**：Cloud Run 環境變數 + Service Account key 掛載
+
+**API 端點**：`GET /admin/cost/gcp/services` — 查詢當月 GCP 服務分類成本
+
+*詳細處理紀錄：`docs/BILLING_EXPORT_COMPLETION.md`*
+
+---
 
 ### ✅ 12. RAG 資料流程差異分析 + 平台管理功能審查 — 完成於 2026-04-17
 
