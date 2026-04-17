@@ -1226,16 +1226,30 @@ class DocumentProcessingService:
                         node_id = nid
                         break
 
+            # 生成物理級跳轉錨點 ID
+            page_start = cd.get("source_page_start")
+            anchor_id = f"page_{page_start}" if page_start else f"chunk_{cd['chunk_index']}"
+
+            # 計算高亮位置（基於 content 在原文中的行號）
+            content_text = cd["content"]
+            line_count = content_text.count("\n") + 1
+
             chunk = ResourceChunk(
                 resource_id=resource.id, node_id=node_id,
-                chunk_index=cd["chunk_index"], content=cd["content"],
+                chunk_index=cd["chunk_index"], content=content_text,
                 token_count=cd["token_count"],
-                source_page_start=cd.get("source_page_start"),
+                source_page_start=page_start,
                 source_page_end=cd.get("source_page_end"),
+                anchor_id=anchor_id,
+                highlight_line_start=cd.get("source_line_start"),
+                highlight_line_end=cd.get("source_line_end"),
+                highlight_char_start=cd.get("source_char_start"),
+                highlight_char_end=cd.get("source_char_end"),
                 metadata_json={
                     "section_title": cd.get("section_title", ""),
                     "depth": cd.get("depth", 1),
                     "chunk_type": cd.get("chunk_type", "text"),
+                    "line_count": line_count,
                 },
                 embedding=embeddings[i] if i < len(embeddings) else None,
             )
