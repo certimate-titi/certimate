@@ -85,6 +85,13 @@ jobs:
       # ========================================
       # 5. Deploy Backend to Cloud Run
       # ========================================
+      # NOTE: GCP Billing Export environment variables are set with:
+      #   GCP_BILLING_MODE=fake (development mode - returns stub data)
+      # To enable real mode in production:
+      #   1. Set GCP_BILLING_MODE=real via gcloud
+      #   2. Mount Service Account key via Workload Identity
+      #   3. Ensure GCP_BQ_CREDENTIALS_PATH is configured
+      # See docs/GCP_BILLING_EXPORT_SETUP.md for deployment instructions
       - name: Deploy backend to Cloud Run
         run: |
           DOCKER_IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.SERVICE_NAME }}:${{ steps.commit.outputs.short_sha }}"
@@ -101,7 +108,7 @@ jobs:
             --concurrency=80 \
             --timeout=300 \
             --add-cloudsql-instances=${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }} \
-            --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},SMTP_HOST=smtp.gmail.com,SMTP_USER=${{ secrets.SMTP_USER }},SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" \
+            --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},SMTP_HOST=smtp.gmail.com,SMTP_USER=${{ secrets.SMTP_USER }},SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }},GCP_BILLING_MODE=fake,GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},GCP_BILLING_EXPORT_DATASET=billing_export,GCP_BILLING_EXPORT_TABLE=gcp_billing_export_v1" \
             --quiet
 
       # ========================================
