@@ -16,11 +16,29 @@ def _get_any_user_id(db) -> str | None:
 
 @given('BigQuery Billing Export 有以下資料：')
 def step_impl_bq_data(context):
-    """The fake GcpBillingService returns fixed stub data.
-    This step is informational — Layer 3b will hook into a configurable fake.
+    """Inject BigQuery Billing Export test data into GcpBillingService.
+
+    Feature table format:
+        | service              | cost_usd | billing_date |
+        | Cloud Run            | 120.00   | 2026-04-01   |
+        | Cloud SQL            | 180.25   | 2026-04-01   |
+        ...
     """
+    from app.services.gcp_billing_service import set_test_services
+
     context.memo = getattr(context, "memo", {})
-    context.memo["bq_stub_rows"] = [dict(row.as_dict()) for row in context.table]
+
+    # 轉換 feature table 資料格式
+    services_list = []
+    for row in context.table:
+        services_list.append({
+            "service_name": row.get("service") or row.get("service_name"),
+            "cost_usd": Decimal(row.get("cost_usd", "0")),
+        })
+
+    # 注入到 GcpBillingService
+    set_test_services(services_list)
+    context.memo["bq_services"] = services_list
 
 
 @given('有 {count:d} 筆資源狀態為 "{status}"')

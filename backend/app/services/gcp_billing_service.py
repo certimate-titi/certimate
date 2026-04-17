@@ -58,8 +58,12 @@ class GcpBillingUnavailable(Exception):
     """
 
 
-# Test injection hook (BDD only) — see `set_test_override` below.
-_TEST_OVERRIDE: dict = {"total": None}
+# Test injection hooks (BDD only)
+_TEST_OVERRIDE: dict = {
+    "total": None,  # Monthly total override
+    "services": None,  # Services list override（from BigQuery table in feature）
+    "daily_series": None,  # Daily trend override
+}
 
 
 def set_test_override(total_usd: Decimal | None) -> None:
@@ -68,6 +72,33 @@ def set_test_override(total_usd: Decimal | None) -> None:
     Pass `None` to reset.
     """
     _TEST_OVERRIDE["total"] = total_usd
+
+
+def set_test_services(services: list[dict] | None) -> None:
+    """BDD test hook: inject services list from feature table.
+
+    Expected format:
+        [
+            {"service_name": "Cloud Run", "cost_usd": 120.00},
+            {"service_name": "Cloud SQL", "cost_usd": 180.25},
+            ...
+        ]
+    Pass `None` to reset.
+    """
+    _TEST_OVERRIDE["services"] = services
+
+
+def set_test_daily_series(daily_series: list[dict] | None) -> None:
+    """BDD test hook: inject daily trend data from feature table.
+
+    Expected format:
+        [
+            {"billing_date": "2026-04-01", "cost_usd": 15.00},
+            ...
+        ]
+    Pass `None` to reset.
+    """
+    _TEST_OVERRIDE["daily_series"] = daily_series
 
 
 # ---------------------------------------------------------------------------
@@ -111,23 +142,25 @@ class GcpBillingService:
     4. 將本檔案的 stub 方法替換為真實查詢
     """
 
-    _DATASET_TABLE_TEMPLATE = (
-        "`{project}.{dataset}.gcp_billing_export_v1_*`"
-    )
+    # GCP Billing Export 標準表名模板
+    # 實際表名通常為 gcp_billing_export_v1_{YYYYMM} 格式
+    # 使用通配符 * 查詢當月所有分區
+    _DATASET_TABLE_TEMPLATE = "`{project}.{dataset}.{table_prefix}_*`"
 
     def __init__(
         self,
         project_id: str | None = None,
         dataset: str | None = None,
+        table_prefix: str | None = None,
         credentials_path: str | None = None,
     ) -> None:
-        self.project_id = project_id or os.getenv("GCP_PROJECT_ID")
-        self.dataset = dataset or os.getenv(
-            "GCP_BILLING_EXPORT_DATASET", "billing_export"
-        )
-        self.credentials_path = credentials_path or os.getenv(
-            "GCP_BQ_CREDENTIALS_PATH"
-        )
+        from app.core.config import get_settings
+        settings = get_settings()
+
+        self.project_id = project_id or settings.GCP_PROJECT_ID
+        self.dataset = dataset or settings.GCP_BILLING_EXPORT_DATASET
+        self.table_prefix = table_prefix or settings.GCP_BILLING_EXPORT_TABLE
+        self.credentials_path = credentials_path or settings.GCP_BQ_CREDENTIALS_PATH
         self._cache = _TTLCache(ttl_seconds=3600)
         self._bq_client = None  # Layer 3 填入 google.cloud.bigquery.Client
 
@@ -157,7 +190,7 @@ class GcpBillingService:
         """Load monthly cost summary.
 
         Real mode (GCP_BILLING_MODE=real) → BigQuery billing_export query.
-        Otherwise → stub data (with optional set_test_override).
+        Otherwise → stub data (with optional test_override injections).
         """
         # Real mode
         if os.getenv("GCP_BILLING_MODE", "fake") == "real":
@@ -169,7 +202,26 @@ class GcpBillingService:
         period_start = date(year, month, 1)
         period_end = date.today()
 
-        # 測試 hook
+        # 測試 hook #1: 若有注入的 services 列表（來自 feature table），使用它
+        injected_services = _TEST_OVERRIDE.get("services")
+        if injected_services is not None:
+            services = [
+                GcpServiceCost(
+                    service_name=s.get("service_name") or s.get("service") or "unknown",
+                    cost_usd=Decimal(str(s.get("cost_usd") or 0)),
+                )
+                for s in injected_services
+            ]
+            total = sum((s.cost_usd for s in services), Decimal("0"))
+            return GcpBillingSummary(
+                total_usd=total,
+                services=services,
+                cached_at=datetime.now(timezone.utc),
+                period_start=period_start,
+                period_end=period_end,
+            )
+
+        # 測試 hook #2: 若有注入的 monthly total，使用它
         override_total = _TEST_OVERRIDE.get("total")
         if override_total is not None:
             services = [GcpServiceCost("TEST_OVERRIDE", override_total)]
@@ -181,6 +233,7 @@ class GcpBillingService:
                 period_end=period_end,
             )
 
+        # 默認 stub 資料
         services = [
             GcpServiceCost("Cloud SQL", Decimal("180.25")),
             GcpServiceCost("Cloud Run", Decimal("120.00")),
@@ -215,20 +268,31 @@ class GcpBillingService:
     # ------------------------------------------------------------------
 
     def _load_monthly_summary_real(self, year: int, month: int) -> GcpBillingSummary:
+        """從 BigQuery Billing Export 查詢當月成本彙總（按服務分類）。
+
+        GCP Billing Export 表結構：
+        - service.description: 服務名稱（如 "Cloud Run", "Cloud SQL"）
+        - cost: 成本金額（float）
+        - currency: 貨幣代碼（通常 "USD"）
+        - usage_start_time / usage_end_time: 使用時段
+        - export_time: 導出時間（分區欄位，TIMESTAMP）
+        """
         period_start = date(year, month, 1)
         period_end = date.today()
         table = self._DATASET_TABLE_TEMPLATE.format(
-            project=self.project_id, dataset=self.dataset
+            project=self.project_id,
+            dataset=self.dataset,
+            table_prefix=self.table_prefix,
         )
         sql = f"""
         SELECT
           service.description AS service_name,
-          SUM(cost) AS cost_usd
+          ROUND(SUM(cost), 2) AS cost_usd
         FROM {table}
-        WHERE DATE(_PARTITIONTIME) >= DATE('{period_start.isoformat()}')
-          AND DATE(_PARTITIONTIME) <= DATE('{period_end.isoformat()}')
+        WHERE DATE(export_time) >= DATE('{period_start.isoformat()}')
+          AND DATE(export_time) <= DATE('{period_end.isoformat()}')
           AND currency = 'USD'
-        GROUP BY service_name
+        GROUP BY service.description
         ORDER BY cost_usd DESC
         """
         rows = self._run_query(sql)
@@ -240,6 +304,13 @@ class GcpBillingService:
             for row in rows
         ]
         total = sum((s.cost_usd for s in services), Decimal("0"))
+        logger.info(
+            "GCP Billing Export: loaded %d services for %d-%02d, total: $%.2f",
+            len(services),
+            year,
+            month,
+            total,
+        )
         return GcpBillingSummary(
             total_usd=total,
             services=services,
@@ -249,23 +320,27 @@ class GcpBillingService:
         )
 
     def _load_daily_trend_real(self, days: int) -> list[GcpDailyCost]:
+        """從 BigQuery Billing Export 查詢最近 N 天的每日成本趨勢。"""
         end = date.today()
         start = end - timedelta(days=days)
         table = self._DATASET_TABLE_TEMPLATE.format(
-            project=self.project_id, dataset=self.dataset
+            project=self.project_id,
+            dataset=self.dataset,
+            table_prefix=self.table_prefix,
         )
         sql = f"""
         SELECT
-          DATE(_PARTITIONTIME) AS billing_date,
-          SUM(cost) AS cost_usd
+          DATE(export_time) AS billing_date,
+          ROUND(SUM(cost), 2) AS cost_usd
         FROM {table}
-        WHERE DATE(_PARTITIONTIME) >= DATE('{start.isoformat()}')
-          AND DATE(_PARTITIONTIME) <= DATE('{end.isoformat()}')
+        WHERE DATE(export_time) >= DATE('{start.isoformat()}')
+          AND DATE(export_time) <= DATE('{end.isoformat()}')
           AND currency = 'USD'
         GROUP BY billing_date
-        ORDER BY billing_date
+        ORDER BY billing_date ASC
         """
         rows = self._run_query(sql)
+        logger.info("GCP Billing Export: loaded %d daily records for %d days", len(rows), days)
         return [
             GcpDailyCost(
                 billing_date=row.get("billing_date") or end,
@@ -280,38 +355,76 @@ class GcpBillingService:
         Activated when GCP_BILLING_MODE=real and google-cloud-bigquery is installed.
         Layer 3b 真實實作。
         """
-        if os.getenv("GCP_BILLING_MODE", "fake") != "real":
+        from app.core.config import get_settings
+        settings = get_settings()
+
+        if settings.GCP_BILLING_MODE != "real":
             raise NotImplementedError(
                 "GCP_BILLING_MODE!=real; using stub data. Set GCP_BILLING_MODE=real "
                 "and pip install google-cloud-bigquery to enable."
             )
+
+        # 檢查必要的配置
+        if not self.project_id:
+            raise GcpBillingUnavailable("GCP_PROJECT_ID 未設定")
+        if not self.dataset:
+            raise GcpBillingUnavailable("GCP_BILLING_EXPORT_DATASET 未設定")
+
         try:
             from google.cloud import bigquery  # type: ignore[import-not-found]
             from google.oauth2 import service_account  # type: ignore[import-not-found]
         except ImportError as exc:
             raise GcpBillingUnavailable(
-                f"google-cloud-bigquery 未安裝: {exc}"
+                f"google-cloud-bigquery 未安裝。請執行：pip install google-cloud-bigquery {exc}"
             )
 
         if self._bq_client is None:
-            if not self.credentials_path or not os.path.exists(self.credentials_path):
+            if not self.credentials_path:
                 raise GcpBillingUnavailable(
-                    "GCP_BQ_CREDENTIALS_PATH 未設定或檔案不存在"
+                    "GCP_BQ_CREDENTIALS_PATH 未設定。請提供 GCP service account JSON 檔案路徑"
                 )
-            creds = service_account.Credentials.from_service_account_file(
-                self.credentials_path
-            )
-            self._bq_client = bigquery.Client(
-                project=self.project_id, credentials=creds
-            )
+            if not os.path.exists(self.credentials_path):
+                raise GcpBillingUnavailable(
+                    f"GCP_BQ_CREDENTIALS_PATH 檔案不存在: {self.credentials_path}"
+                )
+            try:
+                creds = service_account.Credentials.from_service_account_file(
+                    self.credentials_path
+                )
+                self._bq_client = bigquery.Client(
+                    project=self.project_id, credentials=creds
+                )
+                logger.info(
+                    "GCP BigQuery client initialized for project %s, dataset %s",
+                    self.project_id,
+                    self.dataset,
+                )
+            except Exception as exc:  # noqa: BLE001
+                raise GcpBillingUnavailable(
+                    f"無法初始化 GCP BigQuery client: {exc}"
+                )
 
         try:
-            return [dict(row) for row in self._bq_client.query(sql).result()]
+            logger.debug("Executing BigQuery query: %s", sql)
+            result = self._bq_client.query(sql).result()
+            rows = [dict(row) for row in result]
+            logger.debug("BigQuery query returned %d rows", len(rows))
+            return rows
         except Exception as exc:  # noqa: BLE001
+            logger.error("BigQuery 查詢失敗: %s", exc)
             raise GcpBillingUnavailable(f"BigQuery 查詢失敗: {exc}")
 
     def _is_configured(self) -> bool:
-        return bool(
-            self.project_id and self.dataset and self.credentials_path
-            and os.path.exists(self.credentials_path)
-        )
+        """檢查是否已正確配置 GCP Billing Export。"""
+        has_project = bool(self.project_id)
+        has_dataset = bool(self.dataset)
+        has_creds = bool(self.credentials_path) and os.path.exists(self.credentials_path)
+
+        if not (has_project and has_dataset and has_creds):
+            logger.debug(
+                "GCP Billing not fully configured: project=%s, dataset=%s, creds=%s",
+                has_project,
+                has_dataset,
+                has_creds,
+            )
+        return has_project and has_dataset and has_creds

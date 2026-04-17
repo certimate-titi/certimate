@@ -135,6 +135,13 @@ class CostMonitorService(BaseService):
     # ------------------------------------------------------------------
 
     def get_gcp_services(self) -> dict:
+        """取得 GCP 當月服務分類成本。
+
+        需要：
+        - GCP_BILLING_MODE=real
+        - GCP_PROJECT_ID、GCP_BILLING_EXPORT_DATASET、GCP_BQ_CREDENTIALS_PATH 正確設定
+        - google-cloud-bigquery 已安裝
+        """
         now = datetime.now(timezone.utc)
         try:
             summary = self.gcp.get_monthly_summary(now.year, now.month)
@@ -143,14 +150,14 @@ class CostMonitorService(BaseService):
                 "error": True,
                 "status_code": 503,
                 "code": "GCP_BILLING_TEMPORARILY_UNAVAILABLE",
-                "message": f"GCP billing 暫時無法取得: {exc}",
+                "message": f"GCP billing 暫時無法取得: {str(exc)}",
             }
-        except NotImplementedError:
+        except NotImplementedError as exc:
             return {
                 "error": True,
                 "status_code": 503,
                 "code": "GCP_BILLING_NOT_CONFIGURED",
-                "message": "GCP billing 整合尚未完成",
+                "message": f"GCP billing 未正確配置。{str(exc)}",
             }
 
         services_sorted = sorted(

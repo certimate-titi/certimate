@@ -251,6 +251,15 @@ def after_scenario(context, scenario):
     except ImportError:
         pass
 
+    # 重設 GcpBillingService 的測試 hook（Feature 33）
+    try:
+        from app.services.gcp_billing_service import set_test_override, set_test_services, set_test_daily_series
+        set_test_override(None)
+        set_test_services(None)
+        set_test_daily_series(None)
+    except ImportError:
+        pass
+
     # Feature 33: 重設 GCP billing test override + GCP budget sync factory
     try:
         from app.services.gcp_billing_service import set_test_override
