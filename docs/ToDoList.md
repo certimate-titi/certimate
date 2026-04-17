@@ -19,6 +19,48 @@
 
 ## 完成事項
 
+### ✅ 11. Feature 32 節點練習模式 + Feature 33 成本監控中心 — 完成於 2026-04-15
+
+**完成範圍**（Feature 32 全部、Feature 33 全部）：
+
+**Feature 32 — 節點練習模式（`32-節點練習模式.feature`）**：
+- `backend/app/api/practice.py`：練習題查詢 + 作答 + 進度傳播 3 支 API
+- `backend/tests/features/steps/practice/`：完整 step definitions（Given/When/Then）
+- `frontend/lib/api/services.ts`：新增 `getNodePracticeQuestions` / `submitPracticeAnswer` 前端 API
+
+**Feature 33 — 成本監控中心（`33-成本監控中心.feature`）**：
+- `backend/app/models/ai_usage_ledger.py`：AI 呼叫 token 級用量明細
+- `backend/app/models/budget_config.py`：預算設定（四個 scope：AI_ANTHROPIC / AI_GEMINI / AI_VOYAGE / GCP_TOTAL）
+- `backend/app/models/budget_alert_log.py`：預算告警日誌
+- `backend/alembic/versions/048_add_cost_monitor_tables.py`：Migration 048
+- `backend/alembic/versions/049_add_embedding_provider_metadata.py`：Migration 049（Voyage 多 provider 支援）
+- `backend/alembic/versions/050_add_gcp_budget_sync_fields.py`：Migration 050（GCP Native Budget 同步欄位）
+- `backend/app/repositories/ai_usage_repository.py`
+- `backend/app/repositories/budget_config_repository.py`
+- `backend/app/repositories/budget_alert_log_repository.py`
+- `backend/app/services/cost_monitor_service.py`：成本總覽 + 趨勢圖
+- `backend/app/services/budget_service.py`：預算告警觸發 + 功能降級 + 解除停用
+- `backend/app/services/gcp_billing_service.py`：GCP BigQuery Billing Export 查詢
+- `backend/app/services/gcp_budget_sync_service.py`：GCP Native Budget API 單向同步
+- `backend/app/services/voyage_quota_service.py`：Voyage embedding 配額鎖 + 等待佇列
+- `backend/app/api/cost_monitor.py`：成本監控 REST API（super_admin 限定）
+- `backend/app/core/permissions.py`：`require_super_admin` 依賴注入
+- `backend/app/middleware/`：AI Budget 降級 Middleware
+- `backend/tests/features/steps/cost_monitor/`：完整 step definitions（Given/When/Then）
+- `frontend/app/super-admin/cost-monitor/`：成本監控前端頁面
+- `frontend/types/cost-monitor.ts`：前端型別定義
+- `project/specs/entity/erm.dbml`：新增 ai_usage_ledger / budget_config / budget_alert_log 三張表 + PENDING_BUDGET_RECOVERY enum + embedding_provider / embedding_model 欄位
+
+**待手動執行：**
+- `alembic upgrade head`（migration 048 / 049 / 050）
+- 設定 `GCP_BILLING_PROJECT_ID`、`GCP_BILLING_DATASET`、`GCP_BILLING_EXPORT_TABLE`（GCP BigQuery）
+- 設定 `GCP_BUDGET_PARENT`（billingbudgets.googleapis.com 同步用）
+- BDD 測試驗收（Feature 32 + Feature 33）
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-15T09-00-00.md`*
+
+---
+
 ### ✅ 10. LLM 防火牆 + 任務佇列隔離 — 完成於 2026-04-11
 
 **完成範圍**（階段二 1/1、階段三 1/1 剩餘項目）：

@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ShieldAlert, 
-  ShieldCheck, 
-  AlertTriangle, 
-  FileText, 
-  Image as ImageIcon, 
-  MessageSquare, 
-  User, 
-  CheckCircle2, 
+import {
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  FileText,
+  Image as ImageIcon,
+  MessageSquare,
+  User,
+  CheckCircle2,
   XCircle,
   Clock,
   Activity,
@@ -18,7 +18,10 @@ import {
   Filter,
   Search,
   MoreVertical,
-  ArrowRight
+  ArrowRight,
+  Mail,
+  Send,
+  Eye
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -37,6 +40,22 @@ export default function ModerationPage() {
   const [abuseMonitoring, setAbuseMonitoring] = useState<{ id: string; user: string; metric: string; count: string; status: string; time: string }[]>([]);
   const [contentReviewQueue, setContentReviewQueue] = useState<{ id: number; type: string; content: string; reporter: string; status: 'pending' | 'resolved'; date: string }[]>([]);
   const [detailModal, setDetailModal] = useState<{ type: string; content: string; user?: string; reason?: string; date?: string; reporter?: string; id?: string | number; source: 'content' | 'queue' } | null>(null);
+
+  // Feedback state
+  type FeedbackItem = { feedback_id: string; type: string; subject: string; content_preview: string; content: string; status: string; user_id: string; user_email: string; admin_reply: string; attachment_urls: string[]; created_at: string | null; resolved_at: string | null };
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [feedbackFilter, setFeedbackFilter] = useState('');
+  const [feedbackStats, setFeedbackStats] = useState<{ total_count: number; pending_count: number; reviewing_count: number; resolved_count: number; top_category: string | null; avg_resolve_hours: number } | null>(null);
+  const [feedbackModal, setFeedbackModal] = useState<FeedbackItem | null>(null);
+  const [adminReply, setAdminReply] = useState('');
+  const [feedbackUpdating, setFeedbackUpdating] = useState(false);
+
+  const loadFeedbacks = (status?: string) => {
+    superAdminService.getAdminFeedbacks(status || undefined).then(res => {
+      if (Array.isArray(res?.feedbacks)) setFeedbacks(res.feedbacks);
+    }).catch(() => {});
+  };
+
   const [reportStats, setReportStats] = useState([
     { label: '待處理檢舉', value: '--', color: 'rose' },
     { label: '今日自動標記', value: '--', color: 'amber' },
@@ -61,6 +80,10 @@ export default function ModerationPage() {
     }).catch(() => {});
     superAdminService.getContentReviewQueue().then(res => {
       if (Array.isArray(res?.items)) setContentReviewQueue(res.items);
+    }).catch(() => {});
+    loadFeedbacks();
+    superAdminService.getAdminFeedbackStats().then(stats => {
+      setFeedbackStats(stats);
     }).catch(() => {});
   }, []);
 
@@ -161,6 +184,215 @@ export default function ModerationPage() {
           ))}
         </div>
       </section>
+
+      {/* Feedback Management */}
+      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="font-bold text-slate-900 flex items-center gap-2">
+            <Mail className="h-5 w-5 text-emerald-500" /> 用戶反饋管理
+          </h2>
+          <div className="flex items-center gap-3">
+            {feedbackStats && (
+              <div className="hidden sm:flex items-center gap-3 text-xs">
+                <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-600 font-bold">待處理 {feedbackStats.pending_count}</span>
+                <span className="px-2 py-1 rounded-lg bg-blue-50 text-blue-600 font-bold">處理中 {feedbackStats.reviewing_count}</span>
+                <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 font-bold">已解決 {feedbackStats.resolved_count}</span>
+              </div>
+            )}
+            <select
+              value={feedbackFilter}
+              onChange={(e) => { setFeedbackFilter(e.target.value); loadFeedbacks(e.target.value); }}
+              className="bg-slate-50 border-transparent rounded-lg text-xs px-3 py-1.5 outline-none"
+            >
+              <option value="">全部</option>
+              <option value="PENDING">待處理</option>
+              <option value="REVIEWING">處理中</option>
+              <option value="RESOLVED">已解決</option>
+            </select>
+          </div>
+        </div>
+        {feedbacks.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-sm">暫無反饋紀錄</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {feedbacks.map((fb) => (
+              <div key={fb.feedback_id} className="p-5 hover:bg-slate-50/50 transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-mono font-bold text-slate-400">{fb.feedback_id}</span>
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase",
+                        fb.type === 'BUG' && "bg-rose-50 text-rose-600",
+                        fb.type === 'FEATURE_REQUEST' && "bg-blue-50 text-blue-600",
+                        fb.type === 'CONTENT_ERROR' && "bg-amber-50 text-amber-600",
+                        fb.type === 'OTHER' && "bg-slate-100 text-slate-600",
+                        !['BUG','FEATURE_REQUEST','CONTENT_ERROR','OTHER'].includes(fb.type) && "bg-slate-100 text-slate-600"
+                      )}>
+                        {fb.type === 'BUG' ? '錯誤回報' : fb.type === 'FEATURE_REQUEST' ? '功能建議' : fb.type === 'CONTENT_ERROR' ? '內容勘誤' : fb.type === 'OTHER' || fb.type === 'other' ? '其他' : fb.type}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-lg",
+                        fb.status === 'PENDING' && "bg-amber-50 text-amber-600",
+                        fb.status === 'REVIEWING' && "bg-blue-50 text-blue-600",
+                        fb.status === 'RESOLVED' && "bg-emerald-50 text-emerald-600"
+                      )}>
+                        {fb.status === 'PENDING' ? '待處理' : fb.status === 'REVIEWING' ? '處理中' : fb.status === 'RESOLVED' ? '已解決' : fb.status}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 mb-0.5">{fb.subject}</p>
+                    <p className="text-xs text-slate-500">
+                      {fb.user_email} &middot; {fb.created_at ? new Date(fb.created_at).toLocaleString('zh-TW') : '--'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {fb.status === 'PENDING' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await superAdminService.updateFeedback(fb.feedback_id, { status: 'REVIEWING' });
+                            loadFeedbacks(feedbackFilter || undefined);
+                            superAdminService.getAdminFeedbackStats().then(setFeedbackStats).catch(() => {});
+                          } catch { alert('操作失敗'); }
+                        }}
+                        className="px-3 py-1.5 bg-blue-500 text-white rounded-xl text-xs font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> 開始處理
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setFeedbackModal(fb); setAdminReply(fb.admin_reply || ''); }}
+                      className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-1.5"
+                    >
+                      <Search className="h-3.5 w-3.5" /> 詳情
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Feedback Detail Modal */}
+      {feedbackModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setFeedbackModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900">反饋詳情 — {feedbackModal.feedback_id}</h3>
+              <span className={cn(
+                "text-xs font-bold px-2 py-1 rounded-lg",
+                feedbackModal.status === 'PENDING' && "bg-amber-50 text-amber-600",
+                feedbackModal.status === 'REVIEWING' && "bg-blue-50 text-blue-600",
+                feedbackModal.status === 'RESOLVED' && "bg-emerald-50 text-emerald-600"
+              )}>
+                {feedbackModal.status === 'PENDING' ? '待處理' : feedbackModal.status === 'REVIEWING' ? '處理中' : '已解決'}
+              </span>
+            </div>
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">類型</span>
+                <span className="font-bold text-slate-900">
+                  {feedbackModal.type === 'BUG' ? '錯誤回報' : feedbackModal.type === 'FEATURE_REQUEST' ? '功能建議' : feedbackModal.type === 'CONTENT_ERROR' ? '內容勘誤' : feedbackModal.type === 'OTHER' || feedbackModal.type === 'other' ? '其他' : feedbackModal.type}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">主旨</span>
+                <span className="font-bold text-slate-900">{feedbackModal.subject}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">提交者</span>
+                <span className="font-bold text-slate-900">{feedbackModal.user_email}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">時間</span>
+                <span className="text-slate-900">{feedbackModal.created_at ? new Date(feedbackModal.created_at).toLocaleString('zh-TW') : '--'}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-slate-500 block mb-1">內容</span>
+                <p className="font-medium text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap">{feedbackModal.content}</p>
+              </div>
+              {feedbackModal.attachment_urls?.length > 0 && (
+                <div className="text-sm">
+                  <span className="text-slate-500 block mb-1">附件 ({feedbackModal.attachment_urls.length} 張)</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {feedbackModal.attachment_urls.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden border border-slate-200 hover:border-emerald-400 transition-all">
+                        <img src={url} alt={`附件 ${i + 1}`} className="w-full h-32 object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {feedbackModal.status !== 'RESOLVED' && (
+                <div className="text-sm">
+                  <span className="text-slate-500 block mb-1">管理員回覆</span>
+                  <textarea
+                    value={adminReply}
+                    onChange={(e) => setAdminReply(e.target.value)}
+                    placeholder="輸入回覆內容..."
+                    rows={3}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none"
+                  />
+                </div>
+              )}
+              {feedbackModal.admin_reply && feedbackModal.status === 'RESOLVED' && (
+                <div className="text-sm">
+                  <span className="text-slate-500 block mb-1">管理員回覆</span>
+                  <p className="font-medium text-slate-900 bg-emerald-50 p-3 rounded-xl border border-emerald-100 whitespace-pre-wrap">{feedbackModal.admin_reply}</p>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {feedbackModal.status !== 'RESOLVED' && (
+                <button
+                  disabled={feedbackUpdating}
+                  onClick={async () => {
+                    setFeedbackUpdating(true);
+                    try {
+                      await superAdminService.updateFeedback(feedbackModal.feedback_id, {
+                        status: 'RESOLVED',
+                        admin_reply: adminReply || undefined,
+                      });
+                      setFeedbackModal(null);
+                      loadFeedbacks(feedbackFilter || undefined);
+                      superAdminService.getAdminFeedbackStats().then(setFeedbackStats).catch(() => {});
+                    } catch { alert('操作失敗'); }
+                    setFeedbackUpdating(false);
+                  }}
+                  className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" /> {adminReply ? '回覆並解決' : '標記已解決'}
+                </button>
+              )}
+              {feedbackModal.status === 'PENDING' && (
+                <button
+                  disabled={feedbackUpdating}
+                  onClick={async () => {
+                    setFeedbackUpdating(true);
+                    try {
+                      await superAdminService.updateFeedback(feedbackModal.feedback_id, { status: 'REVIEWING' });
+                      setFeedbackModal(null);
+                      loadFeedbacks(feedbackFilter || undefined);
+                      superAdminService.getAdminFeedbackStats().then(setFeedbackStats).catch(() => {});
+                    } catch { alert('操作失敗'); }
+                    setFeedbackUpdating(false);
+                  }}
+                  className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Eye className="h-4 w-4" /> 開始處理
+                </button>
+              )}
+              <button
+                onClick={() => setFeedbackModal(null)}
+                className="py-2.5 px-4 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Moderation Queue */}

@@ -33,3 +33,8 @@ class VerifyEmailRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str

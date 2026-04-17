@@ -100,6 +100,31 @@ class EmailService:
         """
         return self._send(to_email, subject, html)
 
+    def send_password_reset_email(self, to_email: str, token: str) -> bool:
+        url = f"{self.settings.FRONTEND_URL}/reset-password?token={token}"
+        html = f"""
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="color:#10b981">CertiMate — 重設密碼</h2>
+            <p style="font-size:15px;line-height:1.6;color:#334155">
+                您收到這封信是因為有人對您的帳號提出了密碼重設請求。<br>
+                點擊下方按鈕來設定新密碼：
+            </p>
+            <a href="{url}"
+               style="display:inline-block;padding:12px 32px;background:#10b981;color:#fff;
+                      text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0">
+                重設我的密碼
+            </a>
+            <p style="color:#6b7280;font-size:14px">
+                此連結將於 1 小時後失效。<br>
+                若您未提出此請求，請忽略此信，您的密碼不會被更改。
+            </p>
+            <p style="color:#94a3b8;font-size:12px;margin-top:24px">
+                如果您是使用 Google 登入的用戶，設定密碼後可同時使用 Email 和 Google 兩種方式登入。
+            </p>
+        </div>
+        """
+        return self._send(to_email, "[CertiMate] 重設您的密碼", html)
+
     def send_verification_email(self, to_email: str, token: str) -> bool:
         url = f"{self.settings.FRONTEND_URL}/verify-email?token={token}"
         html = f"""

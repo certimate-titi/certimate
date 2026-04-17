@@ -90,6 +90,32 @@ def _decode_verification_token(token: str) -> dict | None:
         return None
 
 
+# --- Password reset token helpers ---
+
+def _generate_reset_token(user_id: str) -> str:
+    settings = get_settings()
+    payload = {
+        "sub": str(user_id),
+        "purpose": "password_reset",
+        "exp": datetime.utcnow() + timedelta(hours=1),
+        "iat": datetime.utcnow(),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def _decode_reset_token(token: str) -> dict | None:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            return None
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
 # --- Google ID token verification ---
 
 def _verify_google_id_token(id_token_str: str) -> dict | None:
@@ -276,6 +302,10 @@ class AuthService:
         if _enum_value(user.status) == "pending":
             return {"error": True, "status_code": 400, "message": "帳號尚未驗證，請查收啟用信件"}
 
+        # SSO user without password set
+        if not user.password_hash and _enum_value(user.auth_provider) == "google":
+            return {"error": True, "status_code": 400, "message": "此帳號使用 Google 登入，請點擊「以 Google 繼續」，或使用忘記密碼設定 Email 密碼。"}
+
         if not _verify_password(password, user.password_hash or ""):
             return {"error": True, "status_code": 400, "message": "帳號或密碼錯誤"}
 
@@ -352,12 +382,36 @@ class AuthService:
         }
 
     def forgot_password(self, email: str) -> dict:
+        # Always return success to prevent account enumeration
+        user = self.repo.find_by_email(email)
+        if user and self.email_service:
+            token = _generate_reset_token(str(user.id))
+            self.email_service.send_password_reset_email(email, token)
+
         return {
             "error": False,
             "reset_email_sent": True,
             "message": "密碼重設信已發送",
             "expires_in_hours": 1,
         }
+
+    def reset_password(self, token: str, new_password: str) -> dict:
+        payload = _decode_reset_token(token)
+        if payload is None:
+            return {"error": True, "status_code": 400, "message": "重設連結無效或已過期"}
+
+        user_id = payload.get("sub")
+        user = self.repo.find_by_id(user_id)
+        if user is None:
+            return {"error": True, "status_code": 400, "message": "重設連結無效或已過期"}
+
+        if not _is_password_strong_enough(new_password):
+            return {"error": True, "status_code": 400, "message": "密碼強度不足，需至少 8 字元，包含大小寫字母與數字"}
+
+        user.password_hash = _hash_password(new_password)
+        self.repo.save(user)
+
+        return {"error": False, "message": "密碼已成功重設，請使用新密碼登入"}
 
     def check_password_strength(self, password: str) -> dict:
         return {

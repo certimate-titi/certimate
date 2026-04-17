@@ -89,7 +89,7 @@ class FeedbackService:
             for att in attachments:
                 fa = FeedbackAttachment(
                     feedback_id=fb.id,
-                    file_path=att.get("file_path", f"/uploads/feedback/{fb_id}/{att.get('filename', 'file')}"),
+                    file_path=att["file_path"],
                     file_size=att.get("file_size", 0),
                     mime_type=att.get("mime_type", "image/png"),
                 )
@@ -150,7 +150,10 @@ class FeedbackService:
                 "feedback_id": fb.feedback_id,
                 "type": fb.type,
                 "subject": fb.subject,
+                "content": fb.content or "",
                 "status": fb.status,
+                "admin_reply": fb.admin_reply or "",
+                "resolved_at": fb.resolved_at.isoformat() if fb.resolved_at else None,
                 "created_at": fb.created_at.isoformat() if fb.created_at else None,
             })
         return {"feedbacks": items, "count": len(items)}
@@ -177,19 +180,33 @@ class FeedbackService:
 
     def admin_list_feedbacks(self, status_filter: str | None = None) -> dict:
         """管理員查看所有反饋。"""
-        query = self.db.query(Feedback)
+        from app.models.user import User
+
+        query = self.db.query(Feedback, User.email).outerjoin(
+            User, Feedback.user_id == User.id
+        )
         if status_filter:
-            query = query.filter_by(status=status_filter)
-        feedbacks = query.order_by(Feedback.created_at.desc()).all()
+            query = query.filter(Feedback.status == status_filter)
+        rows = query.order_by(Feedback.created_at.desc()).all()
         items = []
-        for fb in feedbacks:
+        for fb, user_email in rows:
+            content_preview = fb.content[:100] + "..." if fb.content and len(fb.content) > 100 else (fb.content or "")
+            # Fetch attachment URLs
+            att_rows = self.db.query(FeedbackAttachment).filter_by(feedback_id=fb.id).all()
+            attachment_urls = [a.file_path for a in att_rows]
             items.append({
                 "feedback_id": fb.feedback_id,
                 "type": fb.type,
                 "subject": fb.subject,
+                "content_preview": content_preview,
+                "content": fb.content or "",
                 "status": fb.status,
                 "user_id": str(fb.user_id),
+                "user_email": user_email or "unknown",
+                "admin_reply": fb.admin_reply or "",
+                "attachment_urls": attachment_urls,
                 "created_at": fb.created_at.isoformat() if fb.created_at else None,
+                "resolved_at": fb.resolved_at.isoformat() if fb.resolved_at else None,
             })
         return {"feedbacks": items, "count": len(items)}
 
@@ -236,6 +253,38 @@ class FeedbackService:
         )
         self.db.add(audit)
         self.db.commit()
+
+        # Send email notification to user when admin replies
+        if admin_reply:
+            try:
+                from app.services.email_service import EmailService
+                from app.models.user import User
+                user = self.db.query(User).filter_by(id=fb.user_id).first()
+                if user and user.email:
+                    email_svc = EmailService()
+                    status_label = {"PENDING": "待處理", "REVIEWING": "處理中", "RESOLVED": "已解決"}.get(new_status, new_status)
+                    html = (
+                        f'<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">'
+                        f'<h2 style="color:#10b981">CertiMate — 您的反饋已收到回覆</h2>'
+                        f'<table style="width:100%;border-collapse:collapse;margin:16px 0">'
+                        f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">編號</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{feedback_id}</td></tr>'
+                        f'<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:bold">主旨</td><td style="padding:8px;border-bottom:1px solid #e5e7eb">{fb.subject}</td></tr>'
+                        f'<tr><td style="padding:8px;font-weight:bold">狀態</td><td style="padding:8px">{status_label}</td></tr>'
+                        f'</table>'
+                        f'<div style="background:#f0fdf4;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #bbf7d0">'
+                        f'<p style="font-weight:bold;color:#15803d;margin:0 0 8px 0">管理員回覆：</p>'
+                        f'<p style="white-space:pre-wrap;margin:0;color:#334155">{admin_reply}</p></div>'
+                        f'<a href="https://certimate-titi.web.app/feedback" '
+                        f'style="display:inline-block;padding:10px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:16px">'
+                        f'查看我的反饋</a></div>'
+                    )
+                    email_svc._send(
+                        to_email=user.email,
+                        subject=f"[CertiMate] 您的反饋 {feedback_id} 已收到回覆",
+                        html_body=html,
+                    )
+            except Exception as e:
+                logger.warning("Feedback reply email failed: %s", e)
 
         return {
             "feedback_id": fb.feedback_id,

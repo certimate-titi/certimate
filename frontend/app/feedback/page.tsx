@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MessageSquarePlus, Upload, CheckCircle2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { MessageSquarePlus, Upload, CheckCircle2, ArrowLeft, Image as ImageIcon, X, Clock, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { feedbackService } from '@/lib/api/services';
 
 type FeedbackType = 'BUG' | 'FEATURE_REQUEST' | 'CONTENT_ERROR' | 'OTHER';
 
@@ -26,12 +27,24 @@ export default function FeedbackPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  type FeedbackRecord = { feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null };
+  const [myFeedbacks, setMyFeedbacks] = useState<FeedbackRecord[]>([]);
+  const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
+
+  const loadMyFeedbacks = useCallback(() => {
+    feedbackService.listMyFeedbacks().then(res => {
+      if (Array.isArray(res?.feedbacks)) setMyFeedbacks(res.feedbacks);
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       router.replace('/login?redirect=/feedback');
+      return;
     }
-  }, [authLoading, user, router]);
+    loadMyFeedbacks();
+  }, [authLoading, user, router, loadMyFeedbacks]);
 
   if (authLoading || !user) {
     return (
@@ -85,6 +98,7 @@ export default function FeedbackPage() {
       const { apiClient } = await import('@/lib/api/client');
       await apiClient.upload('/feedback', formData);
       setSubmitted(true);
+      loadMyFeedbacks();
     } catch (err) {
       setError('提交失敗，請稍後再試。');
     } finally {
@@ -232,12 +246,72 @@ export default function FeedbackPage() {
           </form>
         </div>
 
-        {/* My feedback history — loaded from API */}
+        {/* My feedback history */}
         <div className="mt-8 bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
           <h2 className="text-lg font-bold text-slate-900 mb-4">我的反饋紀錄</h2>
-          <div className="text-center py-8 text-slate-400 text-sm">
-            尚無反饋紀錄
-          </div>
+          {myFeedbacks.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm">
+              尚無反饋紀錄
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myFeedbacks.map(fb => {
+                const isExpanded = expandedFeedback === fb.feedback_id;
+                const statusLabel = fb.status === 'PENDING' ? '待處理' : fb.status === 'REVIEWING' ? '處理中' : fb.status === 'RESOLVED' ? '已解決' : fb.status;
+                const statusColor = fb.status === 'PENDING' ? 'bg-amber-50 text-amber-600' : fb.status === 'REVIEWING' ? 'bg-blue-50 text-blue-600' : fb.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600';
+                const typeLabel = fb.type === 'BUG' ? '錯誤回報' : fb.type === 'FEATURE_REQUEST' ? '功能建議' : fb.type === 'CONTENT_ERROR' ? '內容勘誤' : '其他';
+
+                return (
+                  <div key={fb.feedback_id} className="border border-slate-200 rounded-2xl overflow-hidden hover:border-slate-300 transition-all">
+                    <button
+                      onClick={() => setExpandedFeedback(isExpanded ? null : fb.feedback_id)}
+                      className="w-full p-4 flex items-center justify-between text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono text-slate-400">{fb.feedback_id}</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{typeLabel}</span>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${statusColor}`}>{statusLabel}</span>
+                          {fb.admin_reply && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" /> 已回覆
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 truncate">{fb.subject}</p>
+                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                          {fb.created_at ? new Date(fb.created_at).toLocaleString('zh-TW') : '--'}
+                        </p>
+                      </div>
+                      {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 mb-1">反饋內容</p>
+                          <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-xl whitespace-pre-wrap">{fb.content}</p>
+                        </div>
+                        {fb.admin_reply && (
+                          <div>
+                            <p className="text-xs font-medium text-emerald-600 mb-1">管理員回覆</p>
+                            <p className="text-sm text-slate-700 bg-emerald-50 p-3 rounded-xl border border-emerald-100 whitespace-pre-wrap">{fb.admin_reply}</p>
+                            {fb.resolved_at && (
+                              <p className="text-xs text-slate-400 mt-1">回覆於 {new Date(fb.resolved_at).toLocaleString('zh-TW')}</p>
+                            )}
+                          </div>
+                        )}
+                        {!fb.admin_reply && fb.status !== 'RESOLVED' && (
+                          <p className="text-xs text-slate-400 italic">尚未收到回覆，我們會盡快處理。</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

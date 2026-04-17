@@ -515,6 +515,20 @@ export const adminService = {
 };
 
 // ===========================
+// Feedback Service (User)
+// ===========================
+
+export const feedbackService = {
+  async listMyFeedbacks(): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null }[]; count: number }> {
+    return apiClient.get('/feedback');
+  },
+
+  async getFeedbackDetail(feedbackId: string): Promise<{ feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null }> {
+    return apiClient.get(`/feedback/${feedbackId}`);
+  },
+};
+
+// ===========================
 // Super Admin Service
 // ===========================
 
@@ -713,6 +727,20 @@ export const superAdminService = {
 
   async rejectContent(itemId: string): Promise<void> {
     await apiClient.post(`/admin/moderation/${itemId}/reject`);
+  },
+
+  // --- Feedback Admin ---
+  async getAdminFeedbacks(status?: string): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content_preview: string; content: string; status: string; user_id: string; user_email: string; admin_reply: string; attachment_urls: string[]; created_at: string | null; resolved_at: string | null }[]; count: number }> {
+    const params = status ? `?status=${status}` : '';
+    return apiClient.get(`/feedback/admin/list${params}`);
+  },
+
+  async getAdminFeedbackStats(): Promise<{ total_count: number; pending_count: number; reviewing_count: number; resolved_count: number; top_category: string | null; avg_resolve_hours: number }> {
+    return apiClient.get('/feedback/admin/stats');
+  },
+
+  async updateFeedback(feedbackId: string, data: { status: string; admin_reply?: string; close_reason?: string }): Promise<{ feedback_id: string; status: string; resolved_at: string | null }> {
+    return apiClient.put(`/feedback/admin/${feedbackId}`, data);
   },
 
   async getAuditLogs(): Promise<{ logs: { id: string; timestamp: string; admin_id: string; admin_email: string; action: string; target_type: string; target_id: string; details: string; ip_address: string }[] }> {

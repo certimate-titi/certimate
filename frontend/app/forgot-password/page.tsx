@@ -56,6 +56,9 @@ export default function ForgotPasswordPage() {
             <p className="text-xs text-slate-400">
               沒有收到？請檢查垃圾郵件匣，或稍待幾分鐘後再試。連結有效期為 1 小時。
             </p>
+            <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              如果您是使用 Google 登入的用戶，設定密碼後可同時使用 Email 和 Google 兩種方式登入。
+            </p>
             <Link
               href="/login"
               className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-500"

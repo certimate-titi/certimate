@@ -96,21 +96,27 @@ def submit_feedback(
     from app.models.feedback import FeedbackAttachment
     service = FeedbackService(db)
 
-    # Convert uploaded files to attachment metadata
+    # Upload files to GCS and collect metadata
     attachment_data = None
     if attachments:
+        from app.services.storage_service import upload_feedback_attachment
         attachment_data = []
         for f in attachments:
             if f.filename:
                 file_bytes = f.file.read()
-                # Store as base64 in DB for simplicity (small files ≤ 5MB)
-                import base64
-                attachment_data.append({
-                    "filename": f.filename,
-                    "content_type": f.content_type or "image/png",
-                    "size": len(file_bytes),
-                    "data_b64": base64.b64encode(file_bytes).decode("utf-8")[:500000],  # cap at ~375KB
-                })
+                if len(file_bytes) > 5 * 1024 * 1024:
+                    continue  # skip files > 5MB
+                gcs_url = upload_feedback_attachment(
+                    file_bytes=file_bytes,
+                    filename=f.filename,
+                    content_type=f.content_type or "image/png",
+                )
+                if gcs_url:
+                    attachment_data.append({
+                        "file_path": gcs_url,
+                        "file_size": len(file_bytes),
+                        "mime_type": f.content_type or "image/png",
+                    })
 
     result = service.submit_feedback(
         user_id=user_id,

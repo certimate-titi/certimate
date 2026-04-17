@@ -1,0 +1,30 @@
+{
+  "project": "certimate-titi",
+  "quarter": "2026-Q2",
+  "objectives": {
+    "O1": {
+      "title": "打造最強 AI 出題引擎",
+      "key_results": {
+        "KR1": { "description": "AI 生成答案正確率 ≥ 95%", "current": null, "target": 95, "unit": "%" },
+        "KR2": { "description": "50 題考試生成時間 ≤ 30 分鐘", "current": null, "target": 30, "unit": "分鐘" },
+        "KR3": { "description": "BDD 測試覆蓋率 ≥ 100%", "current": 60, "target": 100, "unit": "%" }
+      }
+    },
+    "O2": {
+      "title": "擴大使用者基礎",
+      "key_results": {
+        "KR1": { "description": "月活躍用戶數 ≥ 200", "current": 12, "target": 200, "unit": "人" },
+        "KR2": { "description": "7 日留存率 ≥ 8%", "current": null, "target": 8, "unit": "%" },
+        "KR3": { "description": "NPS 分數 ≥ 40", "current": null, "target": 40, "unit": "分" }
+      }
+    },
+    "O3": {
+      "title": "控制成本與維持品質",
+      "key_results": {
+        "KR1": { "description": "AI API 成本佔營收 ≤ 15%", "current": null, "target": 15, "unit": "%" },
+        "KR2": { "description": "P0 事故 ≤ 4 次/月", "current": null, "target": 4, "unit": "次/月" },
+        "KR3": { "description": "錯誤率 ≤ 15%", "current": null, "target": 15, "unit": "%" }
+      }
+    }
+  }
+}

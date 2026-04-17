@@ -10,7 +10,7 @@
       {
         "source": "/api/v1/**",
         "run": {
-          "serviceId": "certimate-titi",
+          "serviceId": "certimate",
           "region": "asia-east1"
         }
       },
