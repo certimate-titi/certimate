@@ -342,23 +342,3 @@ class AdminFinanceService:
             "original_amount": amount,
             "final_amount": final_amount,
         }
-
-    def get_coupon(self, actor_id: str, code: str) -> dict:
-        err = self._require_admin(actor_id)
-        if err:
-            return err
-
-        coupon = self.db.query(Coupon).filter_by(code=code).first()
-        if not coupon:
-            return {"error": True, "status_code": 404, "message": "優惠碼不存在"}
-
-        return {
-            "code": coupon.code,
-            "discount_type": coupon.discount_type,
-            "discount_value": float(coupon.discount_value),
-            "applicable_plans": coupon.applicable_plans,
-            "max_uses": coupon.max_uses,
-            "max_uses_per_user": coupon.max_uses_per_user,
-            "used_count": coupon.used_count,
-            "status": coupon.status,
-        }

@@ -3,7 +3,6 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -135,15 +134,3 @@ def get_node_detail(
     return _handle_result(result)
 
 
-# ========== Export Markdown with Sources ==========
-
-
-@router.get("/subjects/{subject_id}/knowledge-tree/markdown")
-def export_markdown_with_sources(
-    subject_id: str,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    service = KnowledgeMergeService(db)
-    content = service.export_markdown_with_sources(user_id, subject_id)
-    return PlainTextResponse(content=content, media_type="text/markdown")

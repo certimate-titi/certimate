@@ -197,7 +197,7 @@ FIREBASE_PROJECT_ID=certimate-titi
 **例外**（可免 Scenario）：
 - 純 health check / ping
 - debug-only endpoint（需加 `@router.include_in_schema=False`）
-- **運維/資料初始化 endpoint**（如 `/admin/seed-*`、`/admin/import-*`）：這類 endpoint 是 CLI 腳本的 HTTP 包裝，核心邏輯應以**單元測試**覆蓋 `app/scripts/`，endpoint 本身只要確認 200 即可。現存例外：`/admin/seed-subjects`、`/admin/seed-exam-codes`、`/admin/import-historical-questions`
+- **運維/資料初始化 endpoint**（如 `/admin/seed-*`、`/admin/import-*`、`/admin/sync-*`、`/admin/debug-*`、`/auth/seed-demo`）：這類 endpoint 是 CLI 腳本的 HTTP 包裝，核心邏輯應以**單元測試**覆蓋 `app/scripts/`，endpoint 本身只要確認 200 即可。現存例外：`/admin/seed-subjects`、`/admin/seed-exam-codes`、`/admin/import-historical-questions`、`/admin/sync-questions`、`/admin/debug-subject/{id}`、`/auth/seed-demo`。**這 6 個端點不納入前端覆蓋率統計**。
 
 **違反處理**：CTO Review 直接退回，不進 QA 驗收。
 

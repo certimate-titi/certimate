@@ -115,17 +115,6 @@ def create_coupon(
     return _handle_result(result)
 
 
-@router.get("/coupons/{code}")
-def get_coupon(
-    code: str,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    service = AdminFinanceService(db)
-    result = service.get_coupon(actor_id=user_id, code=code)
-    return _handle_result(result)
-
-
 # ── Finance Overview & MRR Trend ─────────────────────────────────────────────
 
 @router.get("/overview")
