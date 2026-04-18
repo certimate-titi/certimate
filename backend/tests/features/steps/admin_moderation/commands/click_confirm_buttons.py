@@ -5,19 +5,15 @@ from behave import when
 
 @when('點擊「確認移除」按鈕')
 def step_impl_confirm_remove(context):
-    """確認移除操作，執行實際刪除。"""
+    """確認移除 → 呼叫 /admin/moderation/{item_id}/reject。"""
     report_ref = context.memo.get("pending_delete_report")
     token = context.memo.get("admin_token")
     if report_ref and token:
-        response = context.api_client.patch(
-            f"/api/v1/admin/reports/{report_ref}/action",
-            json={"action": "delete_and_warn", "note": "確認移除"},
+        response = context.api_client.post(
+            f"/api/v1/admin/moderation/{report_ref}/reject",
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
-    else:
-        # No pending delete — fall through (Red phase 404 expected)
-        context.last_response = context.last_response
 
 
 @when('點擊「確認」按鈕')
@@ -39,7 +35,7 @@ def step_impl_switch_filter(context, status):
     token = context.memo.get("admin_token")
     if token:
         response = context.api_client.get(
-            f"/api/v1/admin/reports?status={status}",
+            f"/api/v1/admin/moderation/reports?status={status}",
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response

@@ -441,7 +441,6 @@ def _handle_chunked_result(result: dict):
 
 
 @router.post("/resources/chunked/init")
-@router.post("/resources/chunked-upload/init")
 def init_chunked_upload(
     body: InitChunkedUploadRequest,
     user_id: str = Depends(get_current_user_id),
@@ -472,7 +471,6 @@ async def upload_chunk(
 
 
 @router.get("/resources/chunked/{upload_id}/status")
-@router.get("/resources/chunked-upload/{upload_id}/progress")
 def get_chunked_upload_status(
     upload_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -485,7 +483,6 @@ def get_chunked_upload_status(
 
 
 @router.post("/resources/chunked/{upload_id}/merge")
-@router.post("/resources/chunked-upload/{upload_id}/complete")
 def merge_chunks(
     upload_id: str,
     user_id: str = Depends(get_current_user_id),

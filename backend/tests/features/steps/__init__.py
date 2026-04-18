@@ -28,6 +28,7 @@ from .auth.aggregate_given import user_google_sso  # noqa: F401
 from .auth.commands import check_password_strength  # noqa: F401
 from .auth.commands import auth_ui_actions  # noqa: F401
 from .auth.commands import forgot_password  # noqa: F401
+from .auth.commands import reset_password  # noqa: F401
 from .auth.commands import google_sso  # noqa: F401
 from .auth.commands import login  # noqa: F401
 from .auth.commands import login_by_email  # noqa: F401
@@ -86,6 +87,8 @@ from .resource.commands import init_chunked_upload  # noqa: F401
 from .resource.commands import query_chunked_progress  # noqa: F401
 from .resource.commands import complete_chunked_upload  # noqa: F401
 from .resource.commands import query_chunks  # noqa: F401
+from .resource.commands import resource_detail  # noqa: F401
+from .resource.commands import upload_chunk  # noqa: F401
 
 # Resource — readmodel_then
 from .resource.readmodel_then import resource_status  # noqa: F401
@@ -95,6 +98,7 @@ from .resource.readmodel_then import resource_type  # noqa: F401
 from .resource.readmodel_then import can_resume_upload  # noqa: F401
 from .resource.readmodel_then import resource_file_size  # noqa: F401
 from .resource.readmodel_then import chunk_count  # noqa: F401
+from .resource.readmodel_then import resource_detail_response  # noqa: F401
 
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
@@ -600,6 +604,7 @@ from .admin.aggregate_then import audit_log  # noqa: F401
 from .admin.aggregate_then import user_cannot_login  # noqa: F401
 from .admin.aggregate_then import user_role  # noqa: F401
 from .admin.aggregate_then import email_notify_admins  # noqa: F401
+from .admin.aggregate_then import email_user_notification  # noqa: F401
 
 # Admin Finance — aggregate_given
 from .admin_finance.aggregate_given import transactions  # noqa: F401
@@ -643,6 +648,7 @@ from .admin_moderation.commands import resolve_report  # noqa: F401
 from .admin_moderation.commands import click_report_action  # noqa: F401
 from .admin_moderation.commands import click_confirm_buttons  # noqa: F401
 from .admin_moderation.commands import system_ops_panel  # noqa: F401
+from .admin_moderation.commands import moderation_panel_queries  # noqa: F401
 
 # Admin Moderation — aggregate_then
 from .admin_moderation.aggregate_then import cooldown_unlocked  # noqa: F401
@@ -680,6 +686,7 @@ from .admin_settings.commands import create_admin_user  # noqa: F401
 from .admin_settings.commands import clear_cache  # noqa: F401
 from .admin_settings.commands import reset_ai_limits  # noqa: F401
 from .admin_settings.commands import settings_ui_actions  # noqa: F401
+from .admin_settings.commands import list_settings  # noqa: F401
 
 # Admin Settings — aggregate_then
 from .admin_settings.aggregate_then import model_routing_updated  # noqa: F401
@@ -1273,3 +1280,6 @@ from .mindmap_upgrade.aggregate_then import (  # noqa: F401
     assertions as mu_assertions,
     rerank_schema_assertions as mu_rerank_assertions,
 )
+
+# Coverage retrofit (Feature 35, ISS-015)
+from .coverage.commands import retrofit_calls  # noqa: F401

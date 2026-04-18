@@ -222,6 +222,47 @@ class AdminService:
             return err
         return {"settings": {}}
 
+    # ── Create User ──────────────────────────────────────────────────────────
+
+    def create_user(self, actor_id: str, email: str, password: str) -> dict:
+        """管理員手動建立使用者帳號。"""
+        err = self._require_super_admin(actor_id)
+        if err:
+            return err
+
+        if not email or not password:
+            return {"error": True, "status_code": 422, "message": "必要參數未提供"}
+
+        # 檢查 email 是否已存在
+        existing = self.db.query(User).filter(User.email == email).first()
+        if existing:
+            return {"error": True, "status_code": 409, "message": f"Email {email} 已被註冊"}
+
+        from app.services.auth_service import _hash_password, _is_password_strong_enough
+        if not _is_password_strong_enough(password):
+            return {"error": True, "status_code": 400, "message": "密碼強度不足，需至少 8 字元，包含大小寫字母與數字"}
+
+        new_user = User(
+            id=uuid.uuid4(),
+            email=email,
+            password_hash=_hash_password(password),
+            status=UserStatus.ACTIVE,
+            role=UserRole.USER,
+            subscription_plan=SubscriptionPlan.FREE,
+        )
+        self.db.add(new_user)
+        self.db.commit()
+
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="create_user",
+            target_type="user",
+            target_id=str(new_user.id),
+            details={"email": email, "summary": f"管理員建立帳號 {email}"},
+        )
+
+        return {"success": True, "user_id": str(new_user.id), "email": email}
+
     # ── User Search ──────────────────────────────────────────────────────────
 
     def search_users(self, actor_id: str, keyword: str | None = None, plan: str | None = None, role: str | None = None) -> dict:

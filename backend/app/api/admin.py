@@ -346,6 +346,27 @@ def get_system_settings(
 
 # ── User Management ──────────────────────────────────────────────────────────
 
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/users")
+def create_user(
+    body: CreateUserRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.create_user(
+        actor_id=user_id,
+        email=body.email,
+        password=body.password,
+    )
+    return _handle_result(result)
+
+
 @router.get("/users")
 def search_users(
     keyword: Optional[str] = None,

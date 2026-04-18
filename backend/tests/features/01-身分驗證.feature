@@ -151,6 +151,19 @@ Feature: 身分驗證
       Then 操作成功
       And 系統不應洩漏該帳號是否存在的資訊
 
+  @added-by:cto
+  Rule: 後置（狀態）- 以有效重設 Token 完成密碼變更；無效或過期 Token 應被拒絕
+
+    Example: 使用者以有效 Token 完成密碼重設
+      Given 使用者 "alice@example.com" 已取得有效的密碼重設 Token
+      When 使用者以該 Token 將密碼重設為 "NewPassw0rd!"
+      Then 操作成功
+      And 使用者應能以新密碼 "NewPassw0rd!" 成功登入
+
+    Example: 使用者以無效 Token 重設密碼應被拒絕
+      When 使用者以無效 Token "invalid-token" 將密碼重設為 "NewPassw0rd!"
+      Then HTTP 狀態碼應為 400
+
   Rule: 後置（狀態）- 支援第三方 OAuth 登入 (Google SSO)
 
     Example: 首次以 Google 帳號登入時系統應自動建立新帳號

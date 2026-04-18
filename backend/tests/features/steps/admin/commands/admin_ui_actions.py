@@ -93,6 +93,23 @@ def step_impl_click_submit(context):
         context.last_response = response
 
 
+@when('使用者 "{email}" 停權使用者 {user_id:d}，原因為 "{reason}"')
+def step_impl_suspend_user_direct(context, email, user_id, reason):
+    """直接呼叫停權 API（含自動通知信）。"""
+    from app.models.user import User
+    user = context.db_session.query(User).filter(User.email == email).first()
+    assert user, f"找不到使用者 {email}"
+    token = context.jwt_helper.create_token(str(user.id))
+    target_uuid = _resolve_target_user_uuid(context, user_id)
+    response = context.api_client.post(
+        "/api/v1/admin/users/suspend",
+        json={"target_user_id": target_uuid, "reason": reason},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context.last_response = response
+
+
+
 @when('使用者 "{email}" 於使用者 {user_id:d} 的操作選單點擊「停權」')
 def step_impl_click_suspend_user(context, email, user_id):
     """記錄停權動作（UI step，暫存 memo）。"""
@@ -189,7 +206,7 @@ def step_impl_search_user_by_keyword(context, email, keyword):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.get(
-        f"/api/v1/admin/users?search={keyword}",
+        f"/api/v1/admin/users?keyword={keyword}",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

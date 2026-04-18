@@ -11,7 +11,7 @@ def step_impl(context, email):
     assert upload_id is not None, "找不到分片上傳任務 ID"
 
     response = context.api_client.post(
-        f"/api/v1/resources/chunked-upload/{upload_id}/complete",
+        f"/api/v1/resources/chunked/{upload_id}/merge",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

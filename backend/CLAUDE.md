@@ -186,6 +186,25 @@ FIREBASE_PROJECT_ID=certimate-titi
 
 ---
 
+## 新 API 閘門（BDD 覆蓋硬性規定）
+
+**任何新增的 FastAPI endpoint，送交 CTO Code Review 前必須附帶：**
+
+1. 至少 **1 個 BDD Scenario** 呼叫該 endpoint（`backend/tests/features/steps/{subdomain}/commands/`）
+2. 對應的 Feature file 明示驗收條件（Given / When / Then）
+3. 成功情境 + 至少 1 個失敗情境（400/401/403/404/409/422）
+
+**例外**（可免 Scenario）：
+- 純 health check / ping
+- debug-only endpoint（需加 `@router.include_in_schema=False`）
+- **運維/資料初始化 endpoint**（如 `/admin/seed-*`、`/admin/import-*`）：這類 endpoint 是 CLI 腳本的 HTTP 包裝，核心邏輯應以**單元測試**覆蓋 `app/scripts/`，endpoint 本身只要確認 200 即可。現存例外：`/admin/seed-subjects`、`/admin/seed-exam-codes`、`/admin/import-historical-questions`
+
+**違反處理**：CTO Review 直接退回，不進 QA 驗收。
+
+**背景**：2026-04-18 BDD 覆蓋率靜態審計發現 289 個 endpoint 僅 ~26% 有 step 呼叫。此閘門防止進一步惡化，存量缺口由 ISS-002 ~ ISS-006 逐步補齊。
+
+---
+
 ## 錯誤回應模式
 
 API 層錯誤處理統一使用 `HTTPException`：

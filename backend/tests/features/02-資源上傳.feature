@@ -200,3 +200,40 @@ Feature: 資源上傳與隱性版權約定
     Example: 查詢不存在的資源分塊回傳 404
       When 使用者 "pro@example.com" 查詢不存在的資源分塊
       Then 操作失敗，錯誤為「資源不存在」
+
+  # ========== 資源詳情查詢與處理觸發 ==========
+  @added-by:cto
+
+  Rule: 後置（查詢）- 使用者可查詢自己資源的詳情
+
+    Example: 查詢自己資源詳情成功
+      Given 使用者 "pro@example.com" 已上傳資源 "我的講義.pdf"（科目 ID: 1）且有 1 個分塊
+      When 使用者 "pro@example.com" 查詢資源詳情
+      Then 操作成功
+      And 回應欄位 "filename" 應為 "我的講義.pdf"
+
+    Example: 查詢他人資源詳情應回傳 404
+      Given 使用者 "pro@example.com" 已上傳資源 "他的講義.pdf"（科目 ID: 1）且有 1 個分塊
+      When 使用者 "free@example.com" 查詢該資源詳情
+      Then 操作失敗，錯誤為「資源不存在」
+
+  Rule: 後置（狀態）- 使用者可觸發資源處理流程
+
+    Example: 觸發自己資源的處理流程
+      Given 使用者 "pro@example.com" 已上傳資源 "待處理.pdf"（科目 ID: 1）且有 1 個分塊
+      When 使用者 "pro@example.com" 觸發資源處理
+      Then 操作成功
+
+    Example: 觸發不存在的資源處理應回傳 404
+      When 使用者 "pro@example.com" 觸發不存在資源的處理
+      Then 操作失敗，錯誤為「資源不存在」
+
+  # ========== 分片上傳單片（ULTRA 實際上傳） ==========
+  @added-by:cto
+
+  Rule: 前置（行為）- 分片上傳支援單片上傳 API
+
+    Example: ULTRA 使用者上傳第 0 片
+      Given 使用者 "ultra@example.com" 已初始化分片上傳任務，總共 60 片
+      When 使用者 "ultra@example.com" 上傳第 0 片（大小為 1024 bytes）
+      Then 操作成功

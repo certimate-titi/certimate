@@ -97,6 +97,7 @@ class SaveAnswerRequest(BaseModel):
     selected_answer: str | None = None
     user_choice: str | None = None  # frontend sends this
     marked_for_review: bool | None = None
+    confidence: str | None = None
 
 
 @router.post("/{exam_id}/start")
@@ -124,6 +125,7 @@ def save_answer(
         question_id=body.question_id,
         selected_answer=body.selected_answer or body.user_choice,
         marked_for_review=body.marked_for_review,
+        confidence=body.confidence,
     )
     return _handle_result(result)
 
@@ -352,47 +354,6 @@ def get_prompt_template_history(
 
 
 # ── 信心度校準 (Feature 20) ──────────────────────────────────────────
-
-@router.post("/answers")
-def save_answer_with_confidence(
-    body: dict,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db_with_tenant),
-):
-    """提交答案（含信心度標記）。"""
-    from app.models.answer import Answer
-    from app.models.question import Question
-    import uuid as uuid_mod
-
-    question_id = body.get("question_id")
-    selected = body.get("selected_answer")
-    confidence = body.get("confidence", "somewhat")
-
-    q = db.query(Question).filter(Question.id == question_id).first()
-    if not q:
-        return {"error": True, "status_code": 404, "message": "題目不存在"}
-
-    is_correct = selected == q.correct_answer if selected and q.correct_answer else None
-
-    answer = Answer(
-        id=uuid_mod.uuid4(),
-        exam_id=q.exam_id,
-        question_id=q.id,
-        user_id=uuid_mod.UUID(user_id),
-        selected_answer=selected,
-        is_correct=is_correct,
-        confidence=confidence,
-    )
-    db.merge(answer)
-    db.commit()
-
-    return {
-        "ok": True,
-        "question_id": str(q.id),
-        "selected_answer": selected,
-        "confidence": confidence,
-    }
-
 
 @router.get("/{exam_id}/confidence-analysis")
 def get_confidence_analysis(

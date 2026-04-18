@@ -220,6 +220,16 @@ def before_scenario(context, scenario):
     context.repos = SimpleNamespace()
     context.services = SimpleNamespace()
 
+    # Email spy：攔截 AdminService._send_email，記錄到 context.sent_emails
+    from app.services.admin_service import AdminService
+    context.sent_emails = []
+    sent_emails_ref = context.sent_emails
+
+    def _spy_send_email(self, method, *args, **kwargs):
+        sent_emails_ref.append({"method": method, "args": args, "kwargs": kwargs})
+
+    AdminService._send_email = _spy_send_email
+
 
 def after_scenario(context, scenario):
     """每個 Scenario 執行後清理。"""

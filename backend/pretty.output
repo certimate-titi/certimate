@@ -1,0 +1,674 @@
+Feature: 信心度校準 # tests/features/20-信心度校準.feature:1
+
+  Feature: 信心度校準  # tests/features/20-信心度校準.feature:1
+
+  Rule: 後置（狀態）- 使用者選擇答案後可標記對該題的信心程度  # tests/features/20-信心度校準.feature:27
+
+    Example: 選擇答案後標記信心度為「非常確定」                                        # tests/features/20-信心度校準.feature:29
+      Given 系統中有以下使用者帳號：                                              # tests/features/steps/auth/aggregate_given/users.py:64
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                                   # tests/features/steps/mock_exam/aggregate_given/exams.py:20
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                                # tests/features/steps/mock_exam/aggregate_given/questions.py:17
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                             # tests/features/steps/confidence_calibration/aggregate_given/exam_with_answers.py:11
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已開始測驗 1                             # tests/features/steps/mock_exam/aggregate_given/exam_started.py:10
+      When 使用者 "pro@example.com" 在題目 101 選擇答案 "C" 並標記信心度為 "confident" # tests/features/steps/mock_exam/commands/select_answer.py:8
+      Traceback (most recent call last):
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+          self.dialect.do_execute(
+          ~~~~~~~~~~~~~~~~~~~~~~~^
+              cursor, str_statement, effective_parameters, context
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+          cursor.execute(statement, parameters)
+          ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+          raise ex.with_traceback(None)
+      psycopg.errors.StringDataRightTruncation: value too long for type character varying(10)
+      
+      The above exception was the direct cause of the following exception:
+      
+      Traceback (most recent call last):
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+          match.run(runner.context)
+          ~~~~~~~~~^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+          self.func(context, *args, **kwargs)
+          ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/tests/features/steps/mock_exam/commands/select_answer.py", line 17, in step_impl
+          response = context.api_client.post(
+              f"/api/v1/exams/{exam_id}/answers",
+          ...<4 lines>...
+              },
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/testclient.py", line 546, in post
+          return super().post(
+                 ~~~~~~~~~~~~^
+              url,
+              ^^^^
+          ...<10 lines>...
+              extensions=extensions,
+              ^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+          return self.request(
+                 ~~~~~~~~~~~~^
+              "POST",
+              ^^^^^^^
+          ...<11 lines>...
+              extensions=extensions,
+              ^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/testclient.py", line 445, in request
+          return super().request(
+                 ~~~~~~~~~~~~~~~^
+              method,
+              ^^^^^^^
+          ...<11 lines>...
+              extensions=extensions,
+              ^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+          return self.send(request, auth=auth, follow_redirects=follow_redirects)
+                 ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+          response = self._send_handling_auth(
+              request,
+          ...<2 lines>...
+              history=[],
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+          response = self._send_handling_redirects(
+              request,
+              follow_redirects=follow_redirects,
+              history=history,
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+          response = self._send_single_request(request)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+          response = transport.handle_request(request)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/testclient.py", line 348, in handle_request
+          raise exc
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/testclient.py", line 345, in handle_request
+          portal.call(self.app, scope, receive, send)
+          ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+          return cast(T_Retval, self.start_task_soon(func, *args).result())
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+        File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+          return self.__get_result()
+                 ~~~~~~~~~~~~~~~~~^^
+        File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+          raise self._exception
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+          retval = await retval_or_awaitable
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+          await super().__call__(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+          await self.middleware_stack(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+          raise exc
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+          await self.app(scope, receive, _send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+          with recv_stream, send_stream, collapse_excgroups():
+                                         ~~~~~~~~~~~~~~~~~~^^
+        File "/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+          self.gen.throw(value)
+          ~~~~~~~~~~~~~~^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+          raise exc
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+          response = await self.dispatch_func(request, call_next)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/app/core/rate_limit.py", line 331, in dispatch
+          response = await call_next(request)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+          raise app_exc from app_exc.__cause__ or app_exc.__context__
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+          await self.app(scope, receive_or_disconnect, send_no_error)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+          await self.app(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+          await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+          raise exc
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+          await app(scope, receive, sender)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+          await self.app(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+          await self.middleware_stack(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+          await route.handle(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+          await self.app(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+          await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+          raise exc
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+          await app(scope, receive, sender)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+          response = await f(request)
+                     ^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+          raw_response = await run_endpoint_function(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          ...<3 lines>...
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/fastapi/routing.py", line 330, in run_endpoint_function
+          return await run_in_threadpool(dependant.call, **values)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+          return await anyio.to_thread.run_sync(func)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/anyio/to_thread.py", line 63, in run_sync
+          return await get_async_backend().run_sync_in_worker_thread(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+          return await future
+                 ^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+          result = context.run(func, *args)
+        File "/Users/simon/certimate/project/backend/app/api/exam.py", line 122, in save_answer
+          result = service.save_answer(
+              exam_id=exam_id,
+          ...<4 lines>...
+              confidence=body.confidence,
+          )
+        File "/Users/simon/certimate/project/backend/app/services/mock_exam_service.py", line 86, in save_answer
+          q = self.db.query(Question).filter_by(id=qid).first()
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+          return self.limit(1)._iter().first()  # type: ignore
+                 ~~~~~~~~~~~~~~~~~~~^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+          result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                        ~~~~~~~~~~~~~~~~~~~~^
+              statement,
+              ^^^^^^^^^^
+              params,
+              ^^^^^^^
+              execution_options={"_sa_orm_load_options": self.load_options},
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+          return self._execute_internal(
+                 ~~~~~~~~~~~~~~~~~~~~~~^
+              statement,
+              ^^^^^^^^^^
+          ...<4 lines>...
+              _add_event=_add_event,
+              ^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2228, in _execute_internal
+          ) = compile_state_cls.orm_pre_session_exec(
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+              self,
+              ^^^^^
+          ...<4 lines>...
+              False,
+              ^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/context.py", line 577, in orm_pre_session_exec
+          session._autoflush()
+          ~~~~~~~~~~~~~~~~~~^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 3051, in _autoflush
+          raise e.with_traceback(sys.exc_info()[2])
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 3040, in _autoflush
+          self.flush()
+          ~~~~~~~~~~^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4331, in flush
+          self._flush(objects)
+          ~~~~~~~~~~~^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4466, in _flush
+          with util.safe_reraise():
+               ~~~~~~~~~~~~~~~~~^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py", line 121, in __exit__
+          raise exc_value.with_traceback(exc_tb)
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4427, in _flush
+          flush_context.execute()
+          ~~~~~~~~~~~~~~~~~~~~~^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+          rec.execute(self)
+          ~~~~~~~~~~~^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+          util.preloaded.orm_persistence.save_obj(
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+              self.mapper,
+              ^^^^^^^^^^^^
+              uow.states_for_mapper_hierarchy(self.mapper, False, False),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              uow,
+              ^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py", line 93, in save_obj
+          _emit_insert_statements(
+          ~~~~~~~~~~~~~~~~~~~~~~~^
+              base_mapper,
+              ^^^^^^^^^^^^
+          ...<3 lines>...
+              insert,
+              ^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py", line 1233, in _emit_insert_statements
+          result = connection.execute(
+              statement,
+              params,
+              execution_options=execution_options,
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+          return meth(
+              self,
+              distilled_parameters,
+              execution_options or NO_OPTIONS,
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+          return connection._execute_clauseelement(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+              self, distilled_params, execution_options
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+          ret = self._execute_context(
+              dialect,
+          ...<8 lines>...
+              cache_hit=cache_hit,
+          )
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+          return self._exec_single_context(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~^
+              dialect, context, statement, parameters
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+          self._handle_dbapi_exception(
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+              e, str_statement, effective_parameters, cursor, context
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+          raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+          self.dialect.do_execute(
+          ~~~~~~~~~~~~~~~~~~~~~~~^
+              cursor, str_statement, effective_parameters, context
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          )
+          ^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+          cursor.execute(statement, parameters)
+          ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/simon/certimate/project/backend/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+          raise ex.with_traceback(None)
+      sqlalchemy.exc.DataError: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)
+      (psycopg.errors.StringDataRightTruncation) value too long for type character varying(10)
+      [SQL: INSERT INTO answers (id, exam_id, question_id, user_id, selected_answer, is_correct, confidence, marked_for_review, answered_at, is_answer_encrypted, encrypted_at, tenant_id) VALUES (%(id)s::UUID, %(exam_id)s::UUID, %(question_id)s::UUID, %(user_id)s::UUID, %(selected_answer)s::VARCHAR, %(is_correct)s, %(confidence)s::VARCHAR, %(marked_for_review)s, %(answered_at)s::TIMESTAMP WITH TIME ZONE, %(is_answer_encrypted)s, %(encrypted_at)s::TIMESTAMP WITH TIME ZONE, %(tenant_id)s::UUID)]
+      [parameters: {'id': UUID('4a097790-237f-4fbf-8a60-e7bbf5f0996c'), 'exam_id': UUID('00000000-0000-0000-0000-000000000001'), 'question_id': UUID('00000000-0000-0000-0000-000000000065'), 'user_id': UUID('a3d21523-2627-4144-a2b5-a0afe5992237'), 'selected_answer': 'C" 並標記信心度為 "confident', 'is_correct': None, 'confidence': None, 'marked_for_review': False, 'answered_at': datetime.datetime(2026, 4, 18, 3, 58, 43, 758433, tzinfo=datetime.timezone.utc), 'is_answer_encrypted': False, 'encrypted_at': None, 'tenant_id': UUID('00000000-0000-0000-0000-000000b2cb2c')}]
+      (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+      Then 題目 101 的暫存作答應為 "C"                                         # None
+      And 題目 101 的信心度應為 "confident"                                   # None
+
+    Example: 選擇答案後標記信心度為「完全猜測」                                       # tests/features/20-信心度校準.feature:35
+      Given 系統中有以下使用者帳號：                                             # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                                  # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                               # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                            # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已開始測驗 1                            # None
+      When 使用者 "pro@example.com" 在題目 102 選擇答案 "A" 並標記信心度為 "guessing" # None
+      Then 題目 102 的信心度應為 "guessing"                                  # None
+
+    Example: 未標記信心度時預設為「有點把握」                             # tests/features/20-信心度校準.feature:40
+      Given 系統中有以下使用者帳號：                                  # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                       # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                    # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                 # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已開始測驗 1                 # None
+      When 使用者 "pro@example.com" 在題目 103 選擇答案 "B" 且未標記信心度 # None
+      Then 題目 103 的信心度應預設為 "somewhat"                     # None
+
+  Rule: 前置（參數）- 信心度分為三個等級  # tests/features/20-信心度校準.feature:47
+
+    Example: 系統支援的信心度等級   # tests/features/20-信心度校準.feature:49
+      Given 系統中有以下使用者帳號：  # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：       # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：    # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度： # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Then 信心度等級應包含：      # None
+        | 等級        | 顯示文字 | 圖示 |
+        | guessing  | 完全猜測 | 😰  |
+        | somewhat  | 有點把握 | 😐  |
+        | confident | 非常確定 | 😎  |
+
+  Rule: 後置（回應）- 測驗結果頁應提供信心度四象限分析  # tests/features/20-信心度校準.feature:58
+
+    Example: 測驗結果顯示信心度四象限統計                    # tests/features/20-信心度校準.feature:60
+      Given 系統中有以下使用者帳號：                       # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                            # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                         # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                      # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      When 使用者 "pro@example.com" 查看測驗 2 的信心度分析 # None
+      Then 結果應包含四象限統計：                         # None
+        | 象限                  | 信心度       | 作答結果 | 題數 | 說明     |
+        | confident_correct   | confident | 正確   | 1  | 真正掌握   |
+        | confident_incorrect | confident | 錯誤   | 1  | 危險盲點   |
+        | guessing_correct    | guessing  | 正確   | 1  | 幸運猜對   |
+        | guessing_incorrect  | guessing  | 錯誤   | 1  | 預期中的弱點 |
+
+    Example: 「危險盲點」題目應以紅色警示標記並優先排入複習                         # tests/features/20-信心度校準.feature:69
+      Given 系統中有以下使用者帳號：                                     # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                          # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                       # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                    # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      When 使用者 "pro@example.com" 查看測驗 2 的信心度分析               # None
+      Then "confident_incorrect" 象限應標示為紅色警示                  # None
+      And 該象限的題目應標記為「高優先複習」                                  # None
+      And AI 教練應針對「危險盲點」題目提供額外說明：「您對這題很有把握但答錯了，這是最需要釐清的認知盲點」 # None
+
+    Example: 「幸運猜對」題目應建議加強學習                   # tests/features/20-信心度校準.feature:75
+      Given 系統中有以下使用者帳號：                       # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                            # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                         # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                      # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      When 使用者 "pro@example.com" 查看測驗 2 的信心度分析 # None
+      Then "guessing_correct" 象限應標示為黃色提醒       # None
+      And AI 教練應建議：「這些題目雖然答對，但您不太確定，建議加強相關知識點」 # None
+
+  Rule: 後置（排程）- 信心度影響間隔複習排程的優先級  # tests/features/20-信心度校準.feature:82
+
+    Example: 「危險盲點」題目的複習間隔應縮短                                        # tests/features/20-信心度校準.feature:84
+      Given 系統中有以下使用者帳號：                                             # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                                  # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                               # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                            # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 完成測驗，題目 202 為 confident + 錯誤（危險盲點） # None
+      When 系統計算下次複習排程                                                # None
+      Then 題目 202 的下次複習間隔應為 12 小時（比標準 24 小時更短）                       # None
+      And 題目 202 的 ease_factor 應額外降低 0.3（因為存在認知偏誤）                   # None
+
+    Example: 「幸運猜對」題目應排入複習（雖然答對）                                    # tests/features/20-信心度校準.feature:90
+      Given 系統中有以下使用者帳號：                                            # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                                 # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                              # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                           # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 完成測驗，題目 203 為 guessing + 正確（幸運猜對） # None
+      When 系統計算下次複習排程                                               # None
+      Then 題目 203 應排入複習排程（不因答對而跳過）                                  # None
+      And 題目 203 的下次複習間隔應為 48 小時                                    # None
+
+    Example: 「真正掌握」題目維持標準間隔複習                                        # tests/features/20-信心度校準.feature:96
+      Given 系統中有以下使用者帳號：                                             # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                                  # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                                               # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                                            # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 完成測驗，題目 201 為 confident + 正確（真正掌握） # None
+      When 系統計算下次複習排程                                                # None
+      Then 題目 201 的下次複習間隔應為標準間隔（依 SM-2 演算法）                          # None
+
+  Rule: 後置（回應）- 儀表板應顯示信心度校準趨勢  # tests/features/20-信心度校準.feature:103
+
+    Example: 個人儀表板顯示近期測驗的信心校準率                   # tests/features/20-信心度校準.feature:105
+      Given 系統中有以下使用者帳號：                         # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                              # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                           # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                        # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已完成 5 場含信心度的測驗 # None
+      When 使用者查看個人儀表板的信心校準區塊                     # None
+      Then 應顯示「信心校準率」指標（confident 且答對的比例）        # None
+      And 應顯示近 5 場測驗的校準率趨勢折線圖                    # None
+      And 校準率超過 80% 時應標示為「校準良好」                  # None
+
+  Rule: 後置（回應）- 信心度標記 UI 應簡潔不干擾作答節奏  # tests/features/20-信心度校準.feature:114
+
+    Example: 信心度標記以三個小圖示呈現在答案選項下方                 # tests/features/20-信心度校準.feature:116
+      Given 系統中有以下使用者帳號：                          # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                               # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                            # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                         # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已開始測驗 1         # None
+      When 使用者 "pro@example.com" 在題目 101 選擇答案 "C" # None
+      Then 答案選項下方應出現信心度標記列：😰 😐 😎                  # None
+      And 預設選中 😐（有點把握）                            # None
+      And 點擊圖示即可切換信心度，無需額外確認                      # None
+
+  Rule: 後置（回應）- 題號導覽網格應以不同底色標示信心度  # tests/features/20-信心度校準.feature:123
+
+    Example: 題號導覽網格顯示信心度顏色                         # tests/features/20-信心度校準.feature:125
+      Given 系統中有以下使用者帳號：                           # None
+        | 使用者 ID | Email            | 訂閱方案    |
+        | 1      | pro@example.com  | PRO_199 |
+        | 2      | free@example.com | FREE    |
+      And 系統中有以下測驗：                                # None
+        | 測驗 ID | 使用者 ID | 狀態        | 總題數 | 考試時長（分鐘） |
+        | 1     | 1      | READY     | 10  | 30       |
+        | 2     | 1      | SUBMITTED | 10  | 30       |
+      And 測驗 1 包含以下題目：                             # None
+        | 題目 ID | 題號 | 題目內容                | 正確答案 |
+        | 101   | 1  | AWS S3 的儲存類型何者最便宜？  | C    |
+        | 102   | 2  | EC2 定價模式中何者最具彈性？    | A    |
+        | 103   | 3  | IAM Policy 的評估順序為何？ | B    |
+      And 測驗 2 的作答記錄含信心度：                          # None
+        | 題目 ID | 選擇答案 | 正確答案 | 作答正確 | 信心度       |
+        | 201   | A    | A    | 是    | confident |
+        | 202   | B    | C    | 否    | confident |
+        | 203   | C    | C    | 是    | guessing  |
+        | 204   | A    | B    | 否    | guessing  |
+        | 205   | D    | D    | 是    | somewhat  |
+      Given 使用者 "pro@example.com" 已開始測驗 1          # None
+      And 使用者已作答題目 101（confident）和題目 102（guessing） # None
+      When 使用者查看題號導覽網格                             # None
+      Then 題目 101 的題號應帶有綠色底框（confident）            # None
+      And 題目 102 的題號應帶有橘色底框（guessing）              # None
+      And 題目 103 的題號應為灰色（未作答）                      # None
+

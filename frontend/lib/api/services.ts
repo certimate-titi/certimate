@@ -556,6 +556,10 @@ export const superAdminService = {
     return res.blob();
   },
 
+  async createUser(email: string, password: string): Promise<{ user_id: string; email: string }> {
+    return apiClient.post('/admin/users', { email, password });
+  },
+
   async suspendUser(userId: string, reason?: string): Promise<void> {
     await apiClient.post('/admin/users/suspend', { target_user_id: userId, reason });
   },
