@@ -672,6 +672,46 @@ export const adminService = {
   async createStudentRemediation(studentId: string, data: { question_count: number; competency_weights: { label: string; weight: number }[] }) {
     return apiClient.post(`/b2b/students/${studentId}/remediation-exam`, data);
   },
+
+  // ── Institution-level (platform admin oversight) ──
+  async getAdminDashboard() {
+    return apiClient.get('/b2b/admin-dashboard');
+  },
+  async getInstitutionDpa(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/dpa`);
+  },
+  async getInstitutionStudents(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/students`);
+  },
+  async removeInstitutionStudent(instId: string, email: string) {
+    return apiClient.delete(`/b2b/institutions/${instId}/students/${encodeURIComponent(email)}`);
+  },
+  async cancelInstitutionSubscription(instId: string) {
+    return apiClient.post(`/b2b/institutions/${instId}/cancel-subscription`, {});
+  },
+  async getInstitutionErrorRanking(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/error-ranking`);
+  },
+  async getInstitutionHealthKpi(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/health-kpi`);
+  },
+  async getInstitutionEarlyWarnings(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/early-warnings`);
+  },
+  async updateInstitutionWarningRules(instId: string, rules: unknown) {
+    return apiClient.put(`/b2b/institutions/${instId}/warning-rules`, rules);
+  },
+
+  // ── Group-level ──
+  async getGroupStudents(groupId: string) {
+    return apiClient.get(`/b2b/groups/${groupId}/students`);
+  },
+  async assignGroupExam(groupId: string, data: unknown) {
+    return apiClient.post(`/b2b/groups/${groupId}/assign-exam`, data);
+  },
+  async getGroupHeatmap(groupId: string) {
+    return apiClient.get(`/b2b/groups/${groupId}/heatmap`);
+  },
 };
 
 // ===========================
@@ -1125,6 +1165,41 @@ export const promptTemplateService = {
   async listAbTests(): Promise<{ ab_tests: PromptAbTest[]; total: number }> {
     return apiClient.get('/admin/prompt-templates/ab-tests');
   },
+};
+
+// ─── Resource Library Service ───────────────────────────────────────────────
+
+export interface LibraryResource {
+  resource_id: string;
+  name: string;
+  type: string;
+  status: string;
+}
+
+export const resourceLibraryService = {
+  async list(keyword?: string): Promise<{ resources: LibraryResource[] }> {
+    const q = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+    return apiClient.get(`/resource-library${q}`);
+  },
+  async delete(resourceId: string): Promise<{ message: string }> {
+    return apiClient.delete(`/resource-library/${resourceId}`);
+  },
+  async reparse(resourceId: string): Promise<{ message: string }> {
+    return apiClient.post(`/resource-library/${resourceId}/reparse`, {});
+  },
+};
+
+// ─── Retirement & Result Notification Service (super_admin) ────────────────
+
+export const retirementService = {
+  async scan() { return apiClient.post('/admin/retirement/scan', {}); },
+  async hardDelete() { return apiClient.post('/admin/retirement/hard-delete', {}); },
+  async postResultScan() { return apiClient.post('/admin/retirement/post-result', {}); },
+  async recalculate() { return apiClient.post('/admin/subjects/recalculate', {}); },
+  async notifyResultDay() { return apiClient.post('/admin/notifications/result-day', {}); },
+  async notifyResultReminder() { return apiClient.post('/admin/notifications/result-reminder', {}); },
+  async notifyResultDefault() { return apiClient.post('/admin/notifications/result-default', {}); },
+  async crossRecommend() { return apiClient.post('/admin/notifications/cross-recommend', {}); },
 };
 
 // ─── Practice Service ───────────────────────────────────────────────────────
