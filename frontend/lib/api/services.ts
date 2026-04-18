@@ -447,6 +447,43 @@ export const subscriptionService = {
 };
 
 // ===========================
+// Community Service
+// ===========================
+
+export interface CommunityBanner {
+  type: string;
+  message: string;
+}
+
+export interface WeeklyReportItem {
+  id: string;
+  week_start: string;
+  week_end: string;
+  study_hours: number;
+  exams_completed: number;
+  questions_answered: number;
+  progress_summary: string;
+}
+
+export interface ExamCoaching {
+  coaching_triggered: boolean;
+  coach_name?: string;
+  message?: Record<string, string>;
+}
+
+export const communityService = {
+  async getDashboard(): Promise<{ banner: CommunityBanner | null }> {
+    return apiClient.get('/community/dashboard');
+  },
+  async getWeeklyReports(): Promise<{ reports: WeeklyReportItem[] }> {
+    return apiClient.get('/community/weekly-reports');
+  },
+  async getExamCoaching(): Promise<ExamCoaching> {
+    return apiClient.get('/community/exam-results/coaching');
+  },
+};
+
+// ===========================
 // Learning Journey Service
 // ===========================
 
