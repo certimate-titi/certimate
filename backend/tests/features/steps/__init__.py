@@ -659,6 +659,7 @@ from .admin_moderation.aggregate_then import warn_notification_sent  # noqa: F40
 
 # Admin Moderation — readmodel_then
 from .admin_moderation.readmodel_then import cooldown_users  # noqa: F401
+from .admin_moderation.readmodel_then import abuse_items  # noqa: F401
 from .admin_moderation.readmodel_then import report_count  # noqa: F401
 from .admin_moderation.readmodel_then import confirm_dialog  # noqa: F401
 from .admin_moderation.readmodel_then import filtered_reports  # noqa: F401

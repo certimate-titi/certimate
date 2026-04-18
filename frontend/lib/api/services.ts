@@ -737,6 +737,10 @@ export const superAdminService = {
     await apiClient.post(`/admin/moderation/${itemId}/reject`);
   },
 
+  async unlockCooldown(targetUserId: string): Promise<{ message: string }> {
+    return apiClient.post(`/admin/moderation/ai-abuse/${targetUserId}/unlock`);
+  },
+
   // --- Feedback Admin ---
   async getAdminFeedbacks(status?: string): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content_preview: string; content: string; status: string; user_id: string; user_email: string; admin_reply: string; attachment_urls: string[]; created_at: string | null; resolved_at: string | null }[]; count: number }> {
     const params = status ? `?status=${status}` : '';

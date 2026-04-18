@@ -500,6 +500,11 @@ export default function ModerationPage() {
               <Zap className="h-5 w-5 text-amber-500" /> AI 濫用監控
             </h2>
             <div className="space-y-4">
+              {abuseMonitoring.length === 0 && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center">
+                  <p className="text-sm text-slate-400">目前無冷卻中使用者</p>
+                </div>
+              )}
               {abuseMonitoring.map((abuse) => (
                 <div key={abuse.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all group">
                   <div className="flex justify-between items-start mb-2">
@@ -519,12 +524,27 @@ export default function ModerationPage() {
                   <p className="text-xs text-slate-500 mb-1">{abuse.metric}</p>
                   <div className="flex justify-between items-end">
                     <p className="text-sm font-bold text-slate-900">{abuse.count}</p>
-                    <button
-                      onClick={() => router.push('/super-admin/audit-logs')}
-                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
-                    >
-                      查看日誌
-                    </button>
+                    <div className="flex gap-3">
+                      {abuse.status === 'cooling' && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`確定要解除 ${abuse.user} 的冷卻？`)) return;
+                            await superAdminService.unlockCooldown(abuse.id);
+                            const res = await superAdminService.getAbuseMonitoring();
+                            if (Array.isArray(res?.items)) setAbuseMonitoring(res.items);
+                          }}
+                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-all"
+                        >
+                          解除冷卻
+                        </button>
+                      )}
+                      <button
+                        onClick={() => router.push('/super-admin/audit-logs')}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                      >
+                        查看日誌
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

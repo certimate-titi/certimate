@@ -159,13 +159,13 @@ def get_abuse_monitoring(
     if result.get("error"):
         return _handle_result(result)
     items = []
-    for u in result.get("cooled_users", []):
+    for u in result.get("cooling_users", []):
         items.append({
             "id": u.get("user_id", ""),
             "user": u.get("email", "unknown"),
-            "metric": "AI 超綱提問",
-            "count": str(u.get("cooldown_count", 0)),
-            "status": "cooled",
+            "metric": u.get("reason") or "AI 超綱提問",
+            "count": str(u.get("remaining_seconds", 0)),
+            "status": "cooling",
             "time": u.get("cooldown_until", ""),
         })
     return {"items": items}

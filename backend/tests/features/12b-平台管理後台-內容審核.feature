@@ -145,6 +145,13 @@ Feature: 平台管理後台 — 內容與安全審核
       Then 操作成功
       And 回應應包含 "items" 欄位
 
+    Example: 前端濫用監控應帶出冷卻原因與狀態
+      When 使用者 "ops@certimate.com" 查詢前端濫用監控
+      Then 操作成功
+      And 前端濫用監控清單應包含至少一筆冷卻紀錄
+      And 前端濫用監控第一筆的 status 應為 "cooling"
+      And 前端濫用監控第一筆的 metric 欄位不應為空
+
   @added-by:cto
   Rule: 後置（回應）- 內容審核佇列應回傳結構化清單
 
