@@ -17,7 +17,8 @@ import {
   Search,
   History,
   FileText,
-  DollarSign
+  DollarSign,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -39,6 +40,7 @@ const sidebarItems = [
   { name: '審計日誌', href: '/super-admin/audit-logs', icon: History },
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },
   { name: '成本監控', href: '/super-admin/cost-monitor', icon: DollarSign },
+  { name: '放榜與退場', href: '/super-admin/retirement', icon: Zap },
 ];
 
 export default function SuperAdminLayout({
