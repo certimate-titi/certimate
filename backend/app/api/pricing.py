@@ -50,14 +50,3 @@ def check_upload_limit(
     return result
 
 
-@router.post("/check-ai-chat")
-def check_ai_chat_limit(
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    service = PricingService(db)
-    result = service.check_ai_chat_limit(user_id=user_id)
-    if result.get("error"):
-        status_code = result.pop("status_code", 400)
-        raise HTTPException(status_code=status_code, detail=result)
-    return result

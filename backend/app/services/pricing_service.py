@@ -140,54 +140,6 @@ class PricingService:
 
         return {"error": False, "allowed": True}
 
-    def check_ai_chat_limit(self, user_id: str) -> dict:
-        """Check if user has reached daily AI chat limit."""
-        uid = uuid.UUID(user_id)
-        user = self.db.query(User).filter_by(id=uid).first()
-        if not user:
-            return {"error": True, "status_code": 404, "message": "使用者不存在"}
-
-        plan_val = user.subscription_plan.value if hasattr(user.subscription_plan, 'value') else str(user.subscription_plan)
-        plan_display = PLAN_DB_TO_DISPLAY.get(plan_val, plan_val)
-
-        quota = self.db.query(PlanQuota).filter_by(plan=plan_display).first()
-        if not quota:
-            quota = self.db.query(PlanQuota).filter_by(plan=plan_val).first()
-
-        limit = quota.daily_ai_chats if quota else 3
-        if limit is None:
-            return {"error": False, "allowed": True}
-
-        period = datetime.now().strftime("%Y-%m")
-        usage = self.db.query(UserUsage).filter_by(user_id=uid, period=period).first()
-        used = usage.daily_ai_chats_used if usage else 0
-
-        if used >= limit:
-            upgrade_to = UPGRADE_PATH.get(plan_display)
-            upgrade_quota = None
-            upgrade_fee = None
-            if upgrade_to:
-                uq = self.db.query(PlanQuota).filter_by(plan=upgrade_to).first()
-                upgrade_quota = uq.daily_ai_chats if uq else None
-                upgrade_fee = PLAN_FEES.get(upgrade_to)
-
-            result = {
-                "error": True, "status_code": 400,
-                "message": "已達今日 AI 對話上限",
-                "upgrade_guidance": {
-                    "current_plan": plan_display,
-                    "limit_type": "daily_ai_chat",
-                    "current_limit": limit,
-                },
-            }
-            if upgrade_to:
-                result["upgrade_guidance"]["upgrade_to"] = upgrade_to
-                result["upgrade_guidance"]["upgrade_limit"] = upgrade_quota
-                result["upgrade_guidance"]["monthly_fee"] = upgrade_fee
-            return result
-
-        return {"error": False, "allowed": True}
-
     def check_feature_access(self, user_id: str, feature: str) -> dict:
         """Check if user can access a premium feature."""
         uid = uuid.UUID(user_id)
