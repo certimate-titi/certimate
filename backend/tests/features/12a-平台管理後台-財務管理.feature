@@ -104,6 +104,64 @@ Feature: 平台管理後台 — 財務與訂閱管理
       And 優惠碼 "LAUNCH2026" 的狀態應為 "active"
       And 優惠碼 "LAUNCH2026" 的已使用次數應為 0
 
+  @added-by:cto
+  Rule: 後置（回應）- 管理員可列出退款申請佇列並依狀態篩選
+
+    Example: 列出待審退款成功
+      When 使用者 "ops@certimate.com" 查詢待審退款清單
+      Then 操作成功
+      And 退款清單應包含退款 "REF-001"
+      And 退款清單應包含退款 "REF-002"
+
+    Example: 非管理員查詢退款清單應被拒絕
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email             | 訂閱方案 | 角色 |
+        | 30       | guest@example.com | FREE     | user |
+      When 使用者 "guest@example.com" 查詢待審退款清單
+      Then 操作失敗，狀態碼為 403
+
+  @added-by:cto
+  Rule: 後置（回應）- 管理員可列出所有優惠碼
+
+    Example: 列出優惠碼成功
+      Given 系統中有以下優惠碼：
+        | 代碼        | 折扣類型 | 折扣值 |
+        | LAUNCH2026  | percent  | 20     |
+      When 使用者 "ops@certimate.com" 查詢優惠碼清單
+      Then 操作成功
+      And 優惠碼清單應包含代碼 "LAUNCH2026"
+
+  @added-by:cto
+  Rule: 命令（申請）- 使用者可對自己的交易申請退款
+
+    Example: 使用者申請退款成功
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email             | 訂閱方案 |
+        | 99       | alice@example.com | PRO_199  |
+      And 系統中有以下交易紀錄：
+        | 交易 ID    | 使用者 ID | 金額 | 方案    | 狀態    | 交易時間            |
+        | TXN-ALICE | 99       | 199  | PRO_199 | success | 2026-03-01 10:00:00 |
+      When 使用者 "alice@example.com" 對交易 "TXN-ALICE" 申請退款，金額為 199，理由為 "不再使用"
+      Then 操作成功
+      And 回應應包含 refund_id 欄位
+      And 回應的 status 應為 "pending"
+
+  @added-by:cto
+  Rule: 命令（驗證）- 使用者結帳前可驗證優惠碼並取得試算金額
+
+    Example: 驗證有效優惠碼取得折扣試算
+      Given 系統中有以下優惠碼：
+        | 代碼        | 折扣類型 | 折扣值 |
+        | WELCOME10   | percent  | 10     |
+      When 使用者 "ops@certimate.com" 驗證優惠碼 "WELCOME10"，方案為 "PRO_199"，金額為 199
+      Then 操作成功
+      And 回應的 discount_amount 應為 19.9
+      And 回應的 final_amount 應為 179.1
+
+    Example: 驗證無效優惠碼應回傳 404
+      When 使用者 "ops@certimate.com" 驗證優惠碼 "NOTEXIST"，方案為 "PRO_199"，金額為 199
+      Then 操作失敗，狀態碼為 404
+
   # ========== UI 互動情境 ==========
 
   Rule: 後置（回應）- 匯出財務報告應觸發 JSON 檔案下載

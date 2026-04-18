@@ -444,6 +444,20 @@ export const subscriptionService = {
   async checkFup() {
     return apiClient.get('/subscriptions/fup/check');
   },
+
+  async requestRefund(transactionId: string, amount: number, reason?: string) {
+    return apiClient.post<{ refund_id: string; status: string }>(
+      '/subscriptions/refund-request',
+      { transaction_id: transactionId, amount, reason }
+    );
+  },
+
+  async validateCoupon(code: string, plan: string, amount: number) {
+    return apiClient.post<{ discount_amount: number; final_amount: number; code: string }>(
+      '/subscriptions/coupons/validate',
+      { code, plan, amount }
+    );
+  },
 };
 
 // ===========================
@@ -820,6 +834,27 @@ export const superAdminService = {
     }
     // Already array (future-proof)
     return { distribution: (dist as Array<{ name: string; value: number; color: string }>) || [] };
+  },
+
+  async listRefunds(status?: string): Promise<{ refunds: Array<{ refund_id: string; user_id: string; user_email?: string; transaction_id: string; amount: number; status: string; reason?: string; created_at?: string }> }> {
+    const q = status ? `?status=${status}` : '';
+    return apiClient.get(`/admin/finance/refunds${q}`);
+  },
+
+  async approveRefund(refundId: string): Promise<{ status: string }> {
+    return apiClient.post(`/admin/finance/refunds/${refundId}/approve`);
+  },
+
+  async rejectRefund(refundId: string, reason: string): Promise<{ status: string }> {
+    return apiClient.post(`/admin/finance/refunds/${refundId}/reject`, { reason });
+  },
+
+  async listCoupons(): Promise<{ coupons: Array<{ code: string; discount_type: string; discount_value: number; status: string; used_count?: number; max_uses?: number }> }> {
+    return apiClient.get('/admin/finance/coupons');
+  },
+
+  async createCoupon(data: { code: string; discount_type: string; discount_value: number; applicable_plans?: string; max_uses?: number; max_uses_per_user?: number }): Promise<{ code: string; status: string }> {
+    return apiClient.post('/admin/finance/coupons', data);
   },
 
   async getModerationQueue(): Promise<{ items: { id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[] }> {

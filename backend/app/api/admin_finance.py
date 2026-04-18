@@ -45,6 +45,17 @@ def list_transactions(
 
 # ── Refunds ───────────────────────────────────────────────────────────────────
 
+@router.get("/refunds")
+def list_refunds(
+    status: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminFinanceService(db)
+    result = service.list_refunds(actor_id=user_id, status=status)
+    return _handle_result(result)
+
+
 @router.post("/refunds/{refund_id}/approve")
 def approve_refund(
     refund_id: str,
@@ -81,6 +92,16 @@ class CreateCouponRequest(BaseModel):
     applicable_plans: Optional[str] = None
     max_uses: Optional[int] = None
     max_uses_per_user: Optional[int] = None
+
+
+@router.get("/coupons")
+def list_coupons(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminFinanceService(db)
+    result = service.list_coupons(actor_id=user_id)
+    return _handle_result(result)
 
 
 @router.post("/coupons")

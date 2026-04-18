@@ -77,6 +77,18 @@ export default function FinancePage() {
   const [txnStatusFilter, setTxnStatusFilter] = useState('all');
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
   const [visibleSeries, setVisibleSeries] = useState({ new: true, expansion: true, churn: true });
+  const [refunds, setRefunds] = useState<Array<{ refund_id: string; user_id: string; user_email?: string; transaction_id: string; amount: number; status: string; reason?: string; created_at?: string }>>([]);
+  const [coupons, setCoupons] = useState<Array<{ code: string; discount_type: string; discount_value: number; status: string; used_count?: number; max_uses?: number }>>([]);
+  const [refundLoading, setRefundLoading] = useState<string | null>(null);
+  const [newCoupon, setNewCoupon] = useState({ code: '', discount_type: 'percent', discount_value: 10, max_uses: 100 });
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+
+  const loadRefunds = () => {
+    superAdminService.listRefunds('pending').then(res => setRefunds(res.refunds || [])).catch(() => setRefunds([]));
+  };
+  const loadCoupons = () => {
+    superAdminService.listCoupons().then(res => setCoupons(res.coupons || [])).catch(() => setCoupons([]));
+  };
 
   useEffect(() => {
     superAdminService.getFinanceOverview().then(setOverview).catch(() => {});
@@ -89,7 +101,52 @@ export default function FinancePage() {
     superAdminService.getFinanceTransactions().then(res => {
       if (Array.isArray(res.transactions)) setTransactions(res.transactions);
     }).catch(() => {});
+    loadRefunds();
+    loadCoupons();
   }, []);
+
+  const handleApproveRefund = async (refundId: string) => {
+    if (!confirm(`確認核准退款 ${refundId}？將觸發 Stripe 退款並自動降級用戶訂閱。`)) return;
+    setRefundLoading(refundId);
+    try {
+      await superAdminService.approveRefund(refundId);
+      loadRefunds();
+    } catch (e) {
+      alert(`核准失敗：${e instanceof Error ? e.message : '未知錯誤'}`);
+    } finally {
+      setRefundLoading(null);
+    }
+  };
+
+  const handleRejectRefund = async (refundId: string) => {
+    const reason = prompt('請輸入駁回理由：');
+    if (!reason) return;
+    setRefundLoading(refundId);
+    try {
+      await superAdminService.rejectRefund(refundId, reason);
+      loadRefunds();
+    } catch (e) {
+      alert(`駁回失敗：${e instanceof Error ? e.message : '未知錯誤'}`);
+    } finally {
+      setRefundLoading(null);
+    }
+  };
+
+  const handleCreateCoupon = async () => {
+    setCouponMsg(null);
+    if (!newCoupon.code || !newCoupon.discount_value) {
+      setCouponMsg('請填寫代碼與折扣值');
+      return;
+    }
+    try {
+      await superAdminService.createCoupon(newCoupon);
+      setCouponMsg(`✓ 已建立 ${newCoupon.code}`);
+      setNewCoupon({ code: '', discount_type: 'percent', discount_value: 10, max_uses: 100 });
+      loadCoupons();
+    } catch (e) {
+      setCouponMsg(`建立失敗：${e instanceof Error ? e.message : '未知錯誤'}`);
+    }
+  };
 
   const financeKpis = buildFinanceKpis(overview);
 
@@ -341,6 +398,125 @@ export default function FinancePage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Refund Queue */}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4">待審退款佇列</h2>
+        {refunds.length === 0 ? (
+          <p className="text-sm text-slate-500">目前無待審退款。</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-2 text-left">退款 ID</th>
+                  <th className="px-4 py-2 text-left">用戶</th>
+                  <th className="px-4 py-2 text-left">交易</th>
+                  <th className="px-4 py-2 text-right">金額</th>
+                  <th className="px-4 py-2 text-left">理由</th>
+                  <th className="px-4 py-2 text-right">動作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {refunds.map(r => (
+                  <tr key={r.refund_id} className="border-t border-slate-100">
+                    <td className="px-4 py-2 font-mono text-xs">{r.refund_id}</td>
+                    <td className="px-4 py-2">{r.user_email || r.user_id}</td>
+                    <td className="px-4 py-2 font-mono text-xs">{r.transaction_id}</td>
+                    <td className="px-4 py-2 text-right">NT$ {r.amount}</td>
+                    <td className="px-4 py-2 text-slate-600">{r.reason || '—'}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button
+                        disabled={refundLoading === r.refund_id}
+                        onClick={() => handleApproveRefund(r.refund_id)}
+                        className="px-3 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 mr-2"
+                      >核准</button>
+                      <button
+                        disabled={refundLoading === r.refund_id}
+                        onClick={() => handleRejectRefund(r.refund_id)}
+                        className="px-3 py-1 text-xs bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50"
+                      >駁回</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Coupons */}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4">優惠碼管理</h2>
+
+        <div className="bg-slate-50 rounded-xl p-4 mb-4">
+          <h3 className="text-sm font-semibold mb-3">建立新優惠碼</h3>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+            <input
+              type="text" placeholder="代碼 LAUNCH2026"
+              value={newCoupon.code}
+              onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+            />
+            <select
+              value={newCoupon.discount_type}
+              onChange={e => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+            >
+              <option value="percent">百分比（%）</option>
+              <option value="fixed">固定金額（TWD）</option>
+            </select>
+            <input
+              type="number" placeholder="折扣值"
+              value={newCoupon.discount_value}
+              onChange={e => setNewCoupon({ ...newCoupon, discount_value: Number(e.target.value) })}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+            />
+            <input
+              type="number" placeholder="可用次數"
+              value={newCoupon.max_uses}
+              onChange={e => setNewCoupon({ ...newCoupon, max_uses: Number(e.target.value) })}
+              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+            />
+            <button
+              onClick={handleCreateCoupon}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+            >建立</button>
+          </div>
+          {couponMsg && <p className={`text-xs mt-2 ${couponMsg.startsWith('✓') ? 'text-emerald-600' : 'text-rose-600'}`}>{couponMsg}</p>}
+        </div>
+
+        {coupons.length === 0 ? (
+          <p className="text-sm text-slate-500">目前無優惠碼。</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-2 text-left">代碼</th>
+                  <th className="px-4 py-2 text-left">類型</th>
+                  <th className="px-4 py-2 text-right">折扣值</th>
+                  <th className="px-4 py-2 text-right">已使用 / 上限</th>
+                  <th className="px-4 py-2 text-center">狀態</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map(c => (
+                  <tr key={c.code} className="border-t border-slate-100">
+                    <td className="px-4 py-2 font-mono font-semibold">{c.code}</td>
+                    <td className="px-4 py-2">{c.discount_type === 'percent' ? '百分比' : '固定金額'}</td>
+                    <td className="px-4 py-2 text-right">{c.discount_type === 'percent' ? `${c.discount_value}%` : `NT$ ${c.discount_value}`}</td>
+                    <td className="px-4 py-2 text-right">{c.used_count ?? 0} / {c.max_uses ?? '∞'}</td>
+                    <td className="px-4 py-2 text-center">
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${c.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{c.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
