@@ -54,6 +54,8 @@ Feature: 個人儀表板與成就系統
         | radar_chart       | 各知識節點的能力分布         |
         | quick_upload      | 快速上傳資源入口             |
         | todo_reminders    | 待複習錯題與未完成考卷       |
+        | streak            | 連勝天數與凍結剩餘狀態       |
+        | activityItems     | 最近可操作事項（錯題/未完考卷/新資源） |
 
   # ========== 個人資料 ==========
 

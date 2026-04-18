@@ -258,18 +258,34 @@ def daily_login(
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
 
     now = datetime.now(timezone.utc)
-    streak = getattr(user, "streak_days", 0) or 0
+    today = now.date()
 
-    # 更新連勝
-    if body and body.action == "complete_exam":
-        streak += 1
-        if hasattr(user, "streak_days"):
-            user.streak_days = streak
+    # Gap-day streak logic with freeze fallback.
+    last = user.last_active_date
+    user.freeze_consumed_today = False
+    if last == today:
+        pass  # already counted today
+    elif last is None:
+        user.current_streak = 1
+    else:
+        gap = (today - last).days
+        if gap == 1:
+            user.current_streak = (user.current_streak or 0) + 1
+        elif gap == 2 and (user.freezes_remaining or 0) > 0:
+            # Consume one freeze to bridge a single missed day.
+            user.freezes_remaining = (user.freezes_remaining or 0) - 1
+            user.freeze_consumed_today = True
+            user.current_streak = (user.current_streak or 0) + 1
+        else:
+            user.current_streak = 1
 
+    if (user.current_streak or 0) > (user.longest_streak or 0):
+        user.longest_streak = user.current_streak
+
+    user.last_active_date = today
     user.last_login_at = now
     db.commit()
 
-    # 產生 1-3 個微任務
     quests = [
         {"id": "q1", "type": "review", "title": "複習 3 個弱點知識節點", "status": "pending"},
         {"id": "q2", "type": "quiz", "title": "完成一份 15 題測驗", "status": "pending"},
@@ -277,7 +293,10 @@ def daily_login(
 
     return {
         "ok": True,
-        "streak_days": streak,
+        "streak_days": user.current_streak or 0,
+        "longest_streak": user.longest_streak or 0,
+        "freezes_remaining": user.freezes_remaining or 0,
+        "freeze_consumed_today": bool(user.freeze_consumed_today),
         "quests": quests,
         "message": "歡迎回來！",
     }

@@ -65,7 +65,6 @@ export default function DashboardPage() {
   }, [authLoading, isAuthenticated, onboardingCompleted]);
 
   // Merge main dashboard response with quests + review-calendar endpoints.
-  // streak + activityItems have no backend yet — fall back to safe defaults.
   const loadDashboardData = useCallback(async (subjectId?: string) => {
     const [d, questsRes, calRes] = await Promise.all([
       dashboardService.get(subjectId),
@@ -86,12 +85,8 @@ export default function DashboardPage() {
     }));
     return {
       ...d,
-      streak: d.streak || { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
       dailyQuests: quests,
-      activityItems: d.activityItems || [],
       reviewCalendar: calendar,
-      stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-      domainStrengths: d.domainStrengths || [],
     };
   }, []);
 
