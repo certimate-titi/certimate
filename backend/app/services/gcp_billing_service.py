@@ -284,14 +284,16 @@ class GcpBillingService:
             dataset=self.dataset,
             table_prefix=self.table_prefix,
         )
+        # Billing export costs are in the billing account's local currency
+        # (e.g. TWD for TW accounts). currency_conversion_rate is USD -> local,
+        # so USD cost = cost / rate. Guard against null/zero rate.
         sql = f"""
         SELECT
           service.description AS service_name,
-          ROUND(SUM(cost), 2) AS cost_usd
+          ROUND(SUM(SAFE_DIVIDE(cost, currency_conversion_rate)), 2) AS cost_usd
         FROM {table}
         WHERE DATE(export_time) >= DATE('{period_start.isoformat()}')
           AND DATE(export_time) <= DATE('{period_end.isoformat()}')
-          AND currency = 'USD'
         GROUP BY service.description
         ORDER BY cost_usd DESC
         """
@@ -331,11 +333,10 @@ class GcpBillingService:
         sql = f"""
         SELECT
           DATE(export_time) AS billing_date,
-          ROUND(SUM(cost), 2) AS cost_usd
+          ROUND(SUM(SAFE_DIVIDE(cost, currency_conversion_rate)), 2) AS cost_usd
         FROM {table}
         WHERE DATE(export_time) >= DATE('{start.isoformat()}')
           AND DATE(export_time) <= DATE('{end.isoformat()}')
-          AND currency = 'USD'
         GROUP BY billing_date
         ORDER BY billing_date ASC
         """
