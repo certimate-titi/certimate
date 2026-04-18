@@ -447,6 +447,40 @@ export const subscriptionService = {
 };
 
 // ===========================
+// Difficulty Progression Service
+// ===========================
+
+export interface NextStrategyResponse {
+  action?: string;
+  next_node_id?: string;
+  target_difficulty?: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
+export const difficultyProgressionService = {
+  async start(subjectId: string): Promise<{ message: string; status: string }> {
+    return apiClient.post(`/difficulty-progression/subjects/${subjectId}/start`);
+  },
+
+  async nextStrategy(
+    subjectId: string,
+    params: {
+      current_node_id: string;
+      original_node_id?: string;
+      consecutive_wrong?: number;
+      consecutive_correct?: number;
+    }
+  ): Promise<NextStrategyResponse> {
+    return apiClient.post(`/difficulty-progression/subjects/${subjectId}/next-strategy`, params);
+  },
+
+  async getTrail(subjectId: string): Promise<{ trail: Array<Record<string, unknown>> }> {
+    return apiClient.get(`/difficulty-progression/subjects/${subjectId}/trail`);
+  },
+};
+
+// ===========================
 // Community Service
 // ===========================
 
