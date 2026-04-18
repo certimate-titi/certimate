@@ -447,6 +447,44 @@ export const subscriptionService = {
 };
 
 // ===========================
+// Learning Journey Service
+// ===========================
+
+export interface PendingJourneyItem {
+  id: string;
+  subject_id: string;
+  subject_name: string;
+  exam_date: string | null;
+  result_date: string | null;
+  exam_result_status: string | null;
+}
+
+export const learningJourneyService = {
+  async listPending(): Promise<{ items: PendingJourneyItem[] }> {
+    return apiClient.get('/learning-journeys/pending');
+  },
+
+  async confirmResult(journeyId: string, status: 'passed' | 'failed'): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/exam-result`, { status });
+  },
+
+  async retake(journeyId: string, examDate?: string, resultDate?: string): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/retake`, {
+      exam_date: examDate,
+      result_date: resultDate,
+    });
+  },
+
+  async quit(journeyId: string): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/quit`);
+  },
+
+  async updateResultDate(journeyId: string, resultDate: string): Promise<Record<string, unknown>> {
+    return apiClient.put(`/learning-journeys/${journeyId}/result-date`, { result_date: resultDate });
+  },
+};
+
+// ===========================
 // B2B Admin Service
 // ===========================
 

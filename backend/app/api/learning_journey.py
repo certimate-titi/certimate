@@ -20,6 +20,16 @@ def _handle_result(result: dict):
     return result
 
 
+@router.get("/pending")
+def list_pending(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = LearningJourneyService(db)
+    result = service.list_pending(user_id=user_id)
+    return _handle_result(result)
+
+
 class ExamResultRequest(BaseModel):
     status: str
 

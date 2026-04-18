@@ -12,6 +12,7 @@ import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import PendingJourneysBanner from '@/components/PendingJourneysBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
@@ -301,6 +302,9 @@ export default function DashboardPage() {
     <>
       {/* System Announcements */}
       <AnnouncementBanner />
+
+      {/* Pending exam result confirmations */}
+      <PendingJourneysBanner />
 
       {/* Subject Switcher */}
       {subjects.length > 0 ? (

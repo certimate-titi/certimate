@@ -216,6 +216,21 @@ Feature: AI 考題退場與放榜確認 (AI Question Retirement & Exam Result Co
       Then 操作成功
       And 學習歷程的 result_date 應更新為 "2026-06-05"
 
+  @added-by:cto
+  Rule: 後置（查詢）- 使用者可查詢待確認的放榜結果清單
+
+    Example: 放榜日已到但尚未確認者出現在待確認清單
+      Given 使用者 "alice@example.com" 的科目 "證券商業務員" 放榜日為昨天
+      When 使用者 "alice@example.com" 查詢待確認放榜清單
+      Then 操作成功
+      And 待確認清單應包含科目 "證券商業務員"
+
+    Example: 已確認考取者不出現在待確認清單
+      Given 使用者 "alice@example.com" 已確認科目 "證券商業務員" 考試結果為 "passed"
+      When 使用者 "alice@example.com" 查詢待確認放榜清單
+      Then 操作成功
+      And 待確認清單不應包含科目 "證券商業務員"
+
   # ==========================================================================
   # 八、放榜推送通知
   # ==========================================================================

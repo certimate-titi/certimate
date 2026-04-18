@@ -902,6 +902,7 @@ from .question_retirement.aggregate_given import dangerous_blind_spot  # noqa: F
 from .question_retirement.aggregate_given import expires_at_passed  # noqa: F401
 from .question_retirement.aggregate_given import knowledge_node_mastery  # noqa: F401
 from .question_retirement.aggregate_given import learning_journey_with_result_date  # noqa: F401
+from .question_retirement.aggregate_given import result_date_yesterday  # noqa: F401
 from .question_retirement.aggregate_given import result_notification_state  # noqa: F401
 from .question_retirement.aggregate_given import sm2_completed  # noqa: F401
 from .question_retirement.aggregate_given import sm2_stage  # noqa: F401
@@ -911,6 +912,7 @@ from .question_retirement.aggregate_given import subject_question_counts  # noqa
 from .question_retirement.commands import ai_consent  # noqa: F401
 from .question_retirement.commands import ai_generate  # noqa: F401
 from .question_retirement.commands import confirm_result  # noqa: F401
+from .question_retirement.commands import list_pending  # noqa: F401
 from .question_retirement.commands import quality_gate  # noqa: F401
 from .question_retirement.commands import result_notification  # noqa: F401
 from .question_retirement.commands import retirement_scan  # noqa: F401
@@ -927,6 +929,7 @@ from .question_retirement.aggregate_then import retirement_state  # noqa: F401
 from .question_retirement.readmodel_then import ai_consent_response  # noqa: F401
 from .question_retirement.readmodel_then import notification_content  # noqa: F401
 from .question_retirement.readmodel_then import onboarding_result_date  # noqa: F401
+from .question_retirement.readmodel_then import pending_list  # noqa: F401
 from .question_retirement.readmodel_then import retirement_scan_stats  # noqa: F401
 
 # Subscription Trial — commands
