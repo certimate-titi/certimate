@@ -379,26 +379,32 @@ class GcpBillingService:
             )
 
         if self._bq_client is None:
-            if not self.credentials_path:
-                raise GcpBillingUnavailable(
-                    "GCP_BQ_CREDENTIALS_PATH 未設定。請提供 GCP service account JSON 檔案路徑"
-                )
-            if not os.path.exists(self.credentials_path):
-                raise GcpBillingUnavailable(
-                    f"GCP_BQ_CREDENTIALS_PATH 檔案不存在: {self.credentials_path}"
-                )
             try:
-                creds = service_account.Credentials.from_service_account_file(
-                    self.credentials_path
-                )
-                self._bq_client = bigquery.Client(
-                    project=self.project_id, credentials=creds
-                )
+                if self.credentials_path:
+                    if not os.path.exists(self.credentials_path):
+                        raise GcpBillingUnavailable(
+                            f"GCP_BQ_CREDENTIALS_PATH 檔案不存在: {self.credentials_path}"
+                        )
+                    creds = service_account.Credentials.from_service_account_file(
+                        self.credentials_path
+                    )
+                    self._bq_client = bigquery.Client(
+                        project=self.project_id, credentials=creds
+                    )
+                    auth_source = f"file={self.credentials_path}"
+                else:
+                    # Fall back to Application Default Credentials
+                    # (Cloud Run service account / gcloud auth application-default)
+                    self._bq_client = bigquery.Client(project=self.project_id)
+                    auth_source = "ADC"
                 logger.info(
-                    "GCP BigQuery client initialized for project %s, dataset %s",
+                    "GCP BigQuery client initialized for project %s, dataset %s, auth=%s",
                     self.project_id,
                     self.dataset,
+                    auth_source,
                 )
+            except GcpBillingUnavailable:
+                raise
             except Exception as exc:  # noqa: BLE001
                 raise GcpBillingUnavailable(
                     f"無法初始化 GCP BigQuery client: {exc}"
