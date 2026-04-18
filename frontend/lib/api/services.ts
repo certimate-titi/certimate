@@ -570,6 +570,43 @@ export const learningJourneyService = {
 };
 
 // ===========================
+// Anomaly Service (Admin)
+// ===========================
+
+export interface AnomalyItem {
+  error_id: string;
+  error_type: string;
+  occurrence_count: number;
+  status: string;
+  impact_scope: string | null;
+  assigned_to: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  classified: boolean;
+}
+
+export const anomalyService = {
+  async listAnomalies(): Promise<{ items: AnomalyItem[] }> {
+    return apiClient.get('/admin/anomalies');
+  },
+  async updateAnomaly(errorId: string, status: string, assignedTo?: string): Promise<{ status: string; error_id: string }> {
+    return apiClient.put(`/admin/anomalies/${errorId}`, { status, assigned_to: assignedTo });
+  },
+  async createMaintenanceTask(data: { name: string; priority: string; related_error?: string; estimated_hours?: number }): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-tasks', data);
+  },
+  async updateTaskStatus(taskId: string, status: string): Promise<Record<string, unknown>> {
+    return apiClient.put(`/admin/maintenance-tasks/${taskId}/status`, { status });
+  },
+  async createMaintenanceSchedule(data: { name: string; starts_at: string; ends_at: string; notify_channels?: string; notify_targets?: string; notify_before?: string }): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-schedules', data);
+  },
+  async activateMaintenanceMode(reason: string, estimatedRecovery: string): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-mode', { reason, estimated_recovery: estimatedRecovery });
+  },
+};
+
+// ===========================
 // B2B Admin Service
 // ===========================
 
