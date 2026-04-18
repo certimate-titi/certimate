@@ -346,6 +346,18 @@ export const dashboardService = {
   async completeDailyQuest(req: CompleteDailyQuestRequest): Promise<void> {
     await apiClient.post(`/dashboard/quests/${req.questId}/complete`);
   },
+
+  async getDailyQuests(): Promise<{ quests: Array<{ id: string; type: string; title: string; status: string; quest_type?: string; tooltip?: string }> }> {
+    return apiClient.get('/dashboard/daily-quests');
+  },
+
+  async getReviewCalendar(subject?: string, month?: string): Promise<{ calendar: Array<{ date: string; count: number }>; subject: string | null; month: string | null }> {
+    const qs = new URLSearchParams();
+    if (subject) qs.set('subject', subject);
+    if (month) qs.set('month', month);
+    const q = qs.toString();
+    return apiClient.get(`/dashboard/review-calendar${q ? '?' + q : ''}`);
+  },
 };
 
 // ===========================

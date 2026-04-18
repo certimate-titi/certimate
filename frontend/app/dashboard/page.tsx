@@ -64,41 +64,60 @@ export default function DashboardPage() {
     }).catch(() => setSubjects([]));
   }, [authLoading, isAuthenticated, onboardingCompleted]);
 
+  // Merge main dashboard response with quests + review-calendar endpoints.
+  // streak + activityItems have no backend yet — fall back to safe defaults.
+  const loadDashboardData = useCallback(async (subjectId?: string) => {
+    const [d, questsRes, calRes] = await Promise.all([
+      dashboardService.get(subjectId),
+      dashboardService.getDailyQuests().catch(() => ({ quests: [] })),
+      dashboardService.getReviewCalendar().catch(() => ({ calendar: [], subject: null, month: null })),
+    ]);
+    const quests = (questsRes.quests || []).map((q) => ({
+      id: q.id,
+      type: (q.type as 'review' | 'explore' | 'quiz') || 'review',
+      description: q.title,
+      completed: q.status === 'completed',
+      xpReward: 0,
+    }));
+    const calendar = (calRes.calendar || []).map((c) => ({
+      date: c.date,
+      reviewCount: c.count,
+      topics: [] as string[],
+    }));
+    return {
+      ...d,
+      streak: d.streak || { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
+      dailyQuests: quests,
+      activityItems: d.activityItems || [],
+      reviewCalendar: calendar,
+      stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+      domainStrengths: d.domainStrengths || [],
+    };
+  }, []);
+
   // Load dashboard data
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
-    // User hasn't completed onboarding or has no active subject:
-    // stop the skeleton loader and render empty state with CTA.
     if (!onboardingCompleted || !activeSubjectId) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    dashboardService.get(activeSubjectId).then(d => {
-      // Ensure all expected fields have defaults for backend compatibility
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
+    loadDashboardData(activeSubjectId)
+      .then((merged) => { setData(merged); setLoading(false); })
+      .catch(() => {
+        setData({
+          user: null as any,
+          streak: { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
+          dailyQuests: [],
+          activityItems: [],
+          reviewCalendar: [],
+          stats: { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+          domainStrengths: [],
+        });
+        setLoading(false);
       });
-      setLoading(false);
-    }).catch(() => {
-      setData({
-        user: null as any,
-        streak: { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
-        dailyQuests: [],
-        activityItems: [],
-        reviewCalendar: [],
-        stats: { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: [],
-      });
-      setLoading(false);
-    });
-  }, [activeSubjectId, isAuthenticated, onboardingCompleted]);
+  }, [activeSubjectId, isAuthenticated, onboardingCompleted, loadDashboardData]);
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -152,16 +171,7 @@ export default function DashboardPage() {
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadStatus('completed');
-      const d = await dashboardService.get();
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
-      });
+      setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
@@ -169,7 +179,7 @@ export default function DashboardPage() {
     } finally {
       setUploading(false);
     }
-  }, [activeSubjectId]);
+  }, [activeSubjectId, loadDashboardData]);
 
   const handleYoutubeSubmit = useCallback(async () => {
     if (!youtubeUrl.trim()) return;
@@ -194,16 +204,7 @@ export default function DashboardPage() {
       setUploadProgress(100);
       setUploadStatus('completed');
       setYoutubeUrl('');
-      const d = await dashboardService.get();
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
-      });
+      setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
@@ -211,7 +212,7 @@ export default function DashboardPage() {
     } finally {
       setUploading(false);
     }
-  }, [youtubeUrl, activeSubjectId]);
+  }, [youtubeUrl, activeSubjectId, loadDashboardData]);
 
 
   const handleAddSubject = useCallback(async (selected: SelectedSubject[]) => {
