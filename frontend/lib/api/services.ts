@@ -130,6 +130,10 @@ export const documentService = {
     await apiClient.delete(`/resources/${documentId}`);
   },
 
+  async getHistoricalMarkdown(historicalExamId: string): Promise<{ historical_exam_id: string; name: string; content: string; question_count: number }> {
+    return apiClient.get(`/resources/historical/${historicalExamId}/markdown`);
+  },
+
   async initChunkedUpload(filename: string, fileSize: number) {
     return apiClient.post<{ upload_id: string; chunk_size: number; total_chunks: number }>(
       '/resources/chunked/init',

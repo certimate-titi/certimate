@@ -227,6 +227,24 @@ class KnowledgeNavService:
             for r in resources
         ]
 
+        # 合併預載考古題（嚴守科目隔離 — 僅用該 subject 自己的 exam_subject_codes）
+        try:
+            from app.services.historical_markdown_service import HistoricalMarkdownService
+            for h in HistoricalMarkdownService(self.db).list_for_subject(subject_id):
+                result_resources.append({
+                    "id": f"hist:{h['id']}",
+                    "name": h["name"],
+                    "type": "historical_exam",
+                    "status": "completed",
+                    "error_message": None,
+                    "created_at": None,
+                    "historical_exam_id": h["id"],
+                    "total_questions": h["total_questions"],
+                    "year": h["year"],
+                })
+        except Exception:
+            pass
+
         return {"error": False, "nodes": roots, "resources": result_resources}
 
     def get_node_detail(self, node_id: str, user_id: str) -> dict:

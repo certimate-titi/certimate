@@ -29,28 +29,71 @@ def _get_knowledge_map_service(db: Session = Depends(get_db)) -> KnowledgeMapSer
 
 @router.get("/resources")
 def list_resources(
+    subject_id: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """列出使用者的所有資源。"""
-    repo = ResourceRepository(db)
+    """列出使用者的所有資源。
+
+    若提供 subject_id，會額外把該科目預載的考古題以虛擬資源（type=historical_exam）形式合併回傳。
+    """
     from app.models.resource import Resource
-    resources = db.query(Resource).filter(Resource.user_id == user_id).order_by(Resource.created_at.desc()).all()
-    return {
-        "resources": [
-            {
-                "id": str(r.id),
-                "filename": r.name or "",
-                "resource_type": r.type.value if hasattr(r.type, 'value') else r.type,
-                "status": r.status.value if hasattr(r.status, 'value') else r.status,
-                "subject_id": str(r.subject_id) if r.subject_id else None,
-                "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
-                "youtube_url": r.youtube_url or "",
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            }
-            for r in resources
-        ]
-    }
+    from app.services.historical_markdown_service import HistoricalMarkdownService
+
+    q = db.query(Resource).filter(Resource.user_id == user_id)
+    if subject_id:
+        q = q.filter(Resource.subject_id == subject_id)
+    resources = q.order_by(Resource.created_at.desc()).all()
+
+    items = [
+        {
+            "id": str(r.id),
+            "filename": r.name or "",
+            "resource_type": r.type.value if hasattr(r.type, 'value') else r.type,
+            "status": r.status.value if hasattr(r.status, 'value') else r.status,
+            "subject_id": str(r.subject_id) if r.subject_id else None,
+            "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
+            "youtube_url": r.youtube_url or "",
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in resources
+    ]
+
+    if subject_id:
+        try:
+            historical = HistoricalMarkdownService(db).list_for_subject(subject_id)
+            for h in historical:
+                items.append({
+                    "id": f"hist:{h['id']}",
+                    "filename": h["name"],
+                    "resource_type": "historical_exam",
+                    "status": "ready",
+                    "subject_id": subject_id,
+                    "file_size_mb": None,
+                    "youtube_url": "",
+                    "created_at": None,
+                    "historical_exam_id": h["id"],
+                    "total_questions": h["total_questions"],
+                    "year": h["year"],
+                })
+        except Exception:
+            pass
+
+    return {"resources": items}
+
+
+@router.get("/resources/historical/{historical_exam_id}/markdown")
+def get_historical_markdown(
+    historical_exam_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """動態 render 單場考古題為 markdown 字串。"""
+    from app.services.historical_markdown_service import HistoricalMarkdownService
+    result = HistoricalMarkdownService(db).render_markdown(historical_exam_id)
+    if result.get("error"):
+        raise HTTPException(status_code=result.get("status_code", 400), detail={"message": result["message"]})
+    return result
 
 
 @router.get("/resources/{resource_id}")

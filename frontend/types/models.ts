@@ -10,7 +10,7 @@ export type UserRole = 'USER' | 'ADMIN' | 'STUDENT';
 
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIAL';
 
-export type DocumentSourceType = 'PDF' | 'MARKDOWN' | 'YOUTUBE_URL' | 'IMAGE_MATH' | 'OFFICE' | 'AUDIO' | 'VIDEO';
+export type DocumentSourceType = 'PDF' | 'MARKDOWN' | 'YOUTUBE_URL' | 'IMAGE_MATH' | 'OFFICE' | 'AUDIO' | 'VIDEO' | 'HISTORICAL_EXAM' | 'historical_exam';
 
 export type DocumentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'RATE_LIMITED';
 

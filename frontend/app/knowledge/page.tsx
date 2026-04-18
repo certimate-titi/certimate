@@ -317,6 +317,8 @@ export default function KnowledgeBasePage() {
     MARKDOWN: { icon: FileText, color: 'text-slate-500' },
     YOUTUBE_URL: { icon: Youtube, color: 'text-red-500' },
     IMAGE_MATH: { icon: FileText, color: 'text-purple-500' },
+    HISTORICAL_EXAM: { icon: ClipboardList, color: 'text-emerald-600' },
+    historical_exam: { icon: ClipboardList, color: 'text-emerald-600' },
   };
 
   const quickChips = ['用簡單的話解釋', '給我一個例子', '轉成 1 題小測驗'];
@@ -463,6 +465,19 @@ export default function KnowledgeBasePage() {
                                       ? '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。'
                                       : '（尚無可顯示內容）';
 
+                                  // Historical exam virtual resource — render markdown from backend
+                                  if (doc.sourceType === 'historical_exam' || doc.id.startsWith('hist:')) {
+                                    const hid = doc.id.startsWith('hist:') ? doc.id.slice(5) : doc.id;
+                                    try {
+                                      const md = await documentService.getHistoricalMarkdown(hid);
+                                      setDocFullText(md.content || '（無題目內容）');
+                                    } catch {
+                                      setDocFullText('❌ 載入考古題內容失敗');
+                                    }
+                                    setDocFullTitle(doc.title);
+                                    setCenterView('document');
+                                    return;
+                                  }
                                   // Fetch chunks if not cached
                                   let fullText = '';
                                   if (!docChunks[doc.id]) {
