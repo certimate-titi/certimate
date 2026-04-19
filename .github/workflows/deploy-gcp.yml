@@ -139,7 +139,6 @@ jobs:
       - name: Build frontend
         env:
           NEXT_PUBLIC_API_URL: ${{ steps.backend.outputs.url }}/api/v1
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
         run: |
           cd frontend
           npm ci
