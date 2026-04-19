@@ -68,8 +68,8 @@ export default function ExamImportForm({ onSuccess, onError }: ExamImportFormPro
 
     try {
       const result = await importService.submitAsync({
-        questionPdfPath: files.question!.name,
-        answerPdfPath: files.answer!.name,
+        questionPdf: files.question!,
+        answerPdf: files.answer!,
         examCode: metadata.examCode,
         categoryCode: metadata.categoryCode,
         subjectCode: metadata.subjectCode,

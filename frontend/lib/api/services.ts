@@ -1202,19 +1202,23 @@ export const importService = {
   // --- Task Submission ---
 
   async submitAsync(data: {
-    questionPdfPath: string;
-    answerPdfPath: string;
+    questionPdf: File;
+    answerPdf: File;
     examCode: string;
     categoryCode: string;
     subjectCode: string;
+    examName?: string;
     skipExisting?: boolean;
   }): Promise<{ task_id: string; status: string; message: string }> {
     const formData = new FormData();
-    formData.append('question_pdf', data.questionPdfPath);
-    formData.append('answer_pdf', data.answerPdfPath);
+    formData.append('question_pdf', data.questionPdf, data.questionPdf.name);
+    formData.append('answer_pdf', data.answerPdf, data.answerPdf.name);
     formData.append('exam_code', data.examCode);
     formData.append('category_code', data.categoryCode);
     formData.append('subject_code', data.subjectCode);
+    if (data.examName) {
+      formData.append('exam_name', data.examName);
+    }
     if (data.skipExisting !== undefined) {
       formData.append('skip_existing', String(data.skipExisting));
     }
