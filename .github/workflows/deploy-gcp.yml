@@ -160,6 +160,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: certimate-titi
+          entryPoint: ./frontend
 
       # ========================================
       # 9. Run Smoke Tests
