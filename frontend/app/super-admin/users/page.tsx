@@ -42,7 +42,7 @@ export default function UserManagementPage() {
           name: (rec.display_name as string) || (rec.name as string) || (rec.email as string) || '--',
           email: (rec.email as string) || '',
           tier: (rec.plan as string) || (rec.tier as string) || 'FREE',
-          status: (rec.status as string) || 'active',
+          status: ((rec.status as string) || 'active').toLowerCase(),
           lastLogin: (rec.last_login_at as string) || (rec.lastLogin as string) || '--',
           joined: (rec.created_at as string) || (rec.joined as string) || '--',
           tokens: (rec.tokens as string) || '--',

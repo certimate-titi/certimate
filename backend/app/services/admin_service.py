@@ -297,6 +297,7 @@ class AdminService:
                     "id": str(u.id),
                     "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
                     "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "tokens": "0",
                 }
                 for u in users
             ]
