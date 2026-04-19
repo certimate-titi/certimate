@@ -451,38 +451,63 @@ export default function FinancePage() {
         <h2 className="text-lg font-bold text-slate-900 mb-4">優惠碼管理</h2>
 
         <div className="bg-slate-50 rounded-xl p-4 mb-4">
-          <h3 className="text-sm font-semibold mb-3">建立新優惠碼</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-            <input
-              type="text" placeholder="代碼 LAUNCH2026"
-              value={newCoupon.code}
-              onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
-              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
-            />
-            <select
-              value={newCoupon.discount_type}
-              onChange={e => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
-              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
-            >
-              <option value="percent">百分比（%）</option>
-              <option value="fixed">固定金額（TWD）</option>
-            </select>
-            <input
-              type="number" placeholder="折扣值"
-              value={newCoupon.discount_value}
-              onChange={e => setNewCoupon({ ...newCoupon, discount_value: Number(e.target.value) })}
-              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
-            />
-            <input
-              type="number" placeholder="可用次數"
-              value={newCoupon.max_uses}
-              onChange={e => setNewCoupon({ ...newCoupon, max_uses: Number(e.target.value) })}
-              className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
-            />
-            <button
-              onClick={handleCreateCoupon}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-            >建立</button>
+          <h3 className="text-sm font-semibold mb-1">建立新優惠碼</h3>
+          <p className="text-xs text-slate-500 mb-3">用戶結帳時輸入代碼即可套用折扣，例：LAUNCH2026 = 上線優惠 9 折。</p>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-700">優惠代碼</label>
+              <input
+                type="text" placeholder="如 LAUNCH2026"
+                value={newCoupon.code}
+                onChange={e => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+              />
+              <span className="text-[11px] text-slate-400">自動轉大寫，不區分大小寫。</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-700">折扣類型</label>
+              <select
+                value={newCoupon.discount_type}
+                onChange={e => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+              >
+                <option value="percent">百分比（%）</option>
+                <option value="fixed">固定金額（TWD）</option>
+              </select>
+              <span className="text-[11px] text-slate-400">百分比打折或直接扣除金額。</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-700">
+                折扣值{newCoupon.discount_type === 'percent' ? '（%）' : '（TWD）'}
+              </label>
+              <input
+                type="number"
+                placeholder={newCoupon.discount_type === 'percent' ? '如 10 代表 9 折' : '如 100 代表折抵 NT$100'}
+                value={newCoupon.discount_value}
+                onChange={e => setNewCoupon({ ...newCoupon, discount_value: Number(e.target.value) })}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+              />
+              <span className="text-[11px] text-slate-400">
+                {newCoupon.discount_type === 'percent' ? '輸入 1-100 的整數百分比' : '輸入折抵的 TWD 金額'}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-700">可用總次數</label>
+              <input
+                type="number" placeholder="如 100"
+                value={newCoupon.max_uses}
+                onChange={e => setNewCoupon({ ...newCoupon, max_uses: Number(e.target.value) })}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm"
+              />
+              <span className="text-[11px] text-slate-400">全站累計兌換上限，達到後自動停用。</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-700 invisible">送出</label>
+              <button
+                onClick={handleCreateCoupon}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+              >建立</button>
+            </div>
           </div>
           {couponMsg && <p className={`text-xs mt-2 ${couponMsg.startsWith('✓') ? 'text-emerald-600' : 'text-rose-600'}`}>{couponMsg}</p>}
         </div>
