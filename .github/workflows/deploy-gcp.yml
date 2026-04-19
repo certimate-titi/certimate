@@ -107,7 +107,7 @@ jobs:
             --concurrency=80 \
             --timeout=300 \
             --add-cloudsql-instances=${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }} \
-            --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},SMTP_HOST=smtp.gmail.com,SMTP_USER=${{ secrets.SMTP_USER }},SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }},GCP_BILLING_MODE=real,GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},GCP_BILLING_EXPORT_DATASET=billing_export,GCP_BILLING_EXPORT_TABLE=gcp_billing_export_v1_0126A9_3FE882_C325F3" \
+            --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},SMTP_HOST=smtp.gmail.com,SMTP_USER=${{ secrets.SMTP_USER }},SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }},GCP_BILLING_MODE=real,GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},GCP_BILLING_EXPORT_DATASET=billing_export,GCP_BILLING_EXPORT_TABLE=gcp_billing_export_v1" \
             --quiet
 
       # ========================================
