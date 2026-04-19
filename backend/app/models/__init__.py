@@ -55,6 +55,7 @@ from app.models.merge_history import MergeHistory  # noqa: F401, E402
 from app.models.tenant import Tenant  # noqa: F401, E402
 from app.models.historical_exam import HistoricalExam  # noqa: F401, E402
 from app.models.syllabus_topic import SyllabusTopic  # noqa: F401, E402
+from app.models.import_task import ImportTask, ImportTaskStatus  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -104,4 +105,6 @@ __all__ = [
     "Tenant",
     "HistoricalExam",
     "SyllabusTopic",
+    "ImportTask",
+    "ImportTaskStatus",
 ]
