@@ -83,6 +83,7 @@ class AdminFinanceService:
             count = (
                 self.db.query(User)
                 .filter(User.subscription_plan == plan)
+                .filter(User.role.notin_([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
                 .count()
             )
             display_key = _PLAN_DISPLAY.get(plan, plan.value)
