@@ -15,15 +15,15 @@
         }
       },
       {
-        "source": "/super-admin/users/*",
+        "source": "/super-admin/users/**",
         "destination": "/super-admin/users/detail/index.html"
       },
       {
-        "source": "/super-admin/prompt-templates/*",
+        "source": "/super-admin/prompt-templates/**",
         "destination": "/super-admin/prompt-templates/detail/index.html"
       },
       {
-        "source": "/edu-console/student/*",
+        "source": "/edu-console/student/**",
         "destination": "/edu-console/student/detail/index.html"
       },
       {
@@ -42,5 +42,10 @@
         ]
       }
     ]
+  },
+  "emulators": {
+    "hosting": {
+      "port": 5010
+    }
   }
 }
