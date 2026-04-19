@@ -15,6 +15,18 @@
         }
       },
       {
+        "source": "/super-admin/users/*",
+        "destination": "/super-admin/users/detail/index.html"
+      },
+      {
+        "source": "/super-admin/prompt-templates/*",
+        "destination": "/super-admin/prompt-templates/detail/index.html"
+      },
+      {
+        "source": "/edu-console/student/*",
+        "destination": "/edu-console/student/detail/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
