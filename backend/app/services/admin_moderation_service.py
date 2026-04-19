@@ -90,15 +90,24 @@ class AdminModerationService:
             query = query.filter(ContentReport.status == status)
 
         reports = query.all()
+        reporter_ids = {r.reporter_id for r in reports if r.reporter_id}
+        reporter_emails: dict = {}
+        if reporter_ids:
+            rows = self.db.query(User.id, User.email).filter(User.id.in_(reporter_ids)).all()
+            reporter_emails = {str(uid): email for uid, email in rows}
+
         result = []
         for r in reports:
             result.append({
                 "id": str(r.id),
                 "report_ref": r.report_ref,
-                "reporter_id": r.reporter_id,
+                "reporter_id": str(r.reporter_id) if r.reporter_id else None,
+                "reporter_email": reporter_emails.get(str(r.reporter_id), "unknown"),
                 "report_type": r.report_type,
+                "content_type": r.target_type,
                 "target_type": r.target_type,
                 "target_id": r.target_id,
+                "reason": r.resolution_note or "",
                 "status": r.status,
                 "resolution_action": r.resolution_action,
                 "resolution_note": r.resolution_note,
