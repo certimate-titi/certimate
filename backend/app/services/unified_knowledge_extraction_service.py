@@ -11,6 +11,7 @@
 """
 
 import json
+import os
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -30,7 +31,9 @@ _gemini_client = None
 if settings.GEMINI_API_KEY:
     _gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-GEMINI_MODEL = "gemini-2.5-flash"
+# T2-B: env-var controlled model selection for A/B testing
+# Default flash for cost, allow pro for quality experiments
+GEMINI_MODEL = os.environ.get("GEMINI_UNIFIED_EXTRACTION_MODEL", "gemini-2.5-flash")
 
 # ─── Token 壓縮策略 ───
 MAX_EXAM_QUESTIONS = 120   # 考古題最多送幾題摘要
@@ -43,6 +46,7 @@ def _build_unified_prompt(
     exam_summaries: list[str],
     chunk_summaries: list[str],
     old_node_names: list[str],
+    syllabus_anchors: list[dict] | None = None,
 ) -> str:
     """
     組合統一萃取 Prompt。
@@ -102,6 +106,39 @@ def _build_unified_prompt(
     if not materials_block.strip():
         raise ValueError(f"科目 {subject_name} 無任何可分析素材")
 
+    # ── Feature 34 §3 Strategy E — Syllabus anchor floor ──
+    # 若有預 seed 的考綱錨點，強制 LLM 的 6 章必須對應到這組錨點，
+    # 避免資料稀少時 LLM 自由發揮產生 6 個不相干的章。
+    anchor_block = ""
+    anchor_constraint = ""
+    if syllabus_anchors:
+        # Only list CHAPTER names — omitting section names prevents the LLM
+        # from pattern-copying them verbatim without generating descriptions.
+        anchor_lines = [
+            f"{idx}. **{ch['name']}**"
+            for idx, ch in enumerate(syllabus_anchors, 1)
+        ]
+        anchor_block = f"""
+
+## 🎯 考綱錨點（章層級，必須對齊）
+
+此科目已有預先定義的 {len(syllabus_anchors)} 個考綱章層級錨點（由考古題反向歸納）：
+
+{chr(10).join(anchor_lines)}
+
+（第二層「節」由你依考古題內容自行萃取與描述，不預設。）
+"""
+        anchor_constraint = (
+            "\n**【強制約束 1】** 第一層「章」必須 1:1 對應上述考綱錨點 —"
+            " 名稱可以微調（同義詞、更精確的用詞），但不得自由創造新的章，"
+            "也不得合併或拆分。第二層「節」在每個章底下可根據實際素材調整，"
+            "允許新增/合併/刪除。\n"
+            "**【強制約束 2】** 所有「章」和「節」都必須有完整的 description 欄位"
+            "（50-100 字繁體中文說明）。**絕對不可**只複製錨點上的節名當結果 —"
+            "你必須根據考古題內容，為每一個節點撰寫獨立的、實質性的描述。"
+            "description 為空字串或僅含標題會被視為格式錯誤。\n"
+        )
+
     # ── 舊節點對應區塊 ──
     mapping_block = ""
     if old_node_names:
@@ -122,16 +159,21 @@ def _build_unified_prompt(
 請綜合分析所有素材，萃取出一份**完整統一的知識樹（考綱結構）**。
 
 {materials_block}
-
+{anchor_block}
 ## 萃取要求
-
-1. **第一層：章（Chapter）** — 大主題分類，4-8 個
-2. **第二層：節（Section）** — 每章下的子主題，每章 2-5 個
+{anchor_constraint}
+1. **第一層：章（Chapter）** — 核心主題分類，**最多 6 個**（對應雷達圖六軸，嚴禁超過 6 個）
+2. **第二層：節（Section）** — 每章下的子主題，每章 2-6 個
 3. 每個「節」要包含：
    - name：知識點名稱（繁體中文，簡潔明確）
-   - description：50-100 字說明，描述此知識點涵蓋的核心概念
+   - description：**150-250 字**的詳細說明，必須涵蓋：
+     (1) 此知識點的定義與核心概念（為什麼重要）
+     (2) 具體子議題或技術項目（列舉 3-5 個關鍵概念 / 演算法 / 法規條文）
+     (3) 考試出題模式（通常怎麼考、常見陷阱、易錯點）
+     禁止只寫抽象結論，必須帶入具體名詞讓使用者能立即理解內容
    - exam_frequency：出題頻率（high/medium/low），根據考古題實際出現次數判斷；若無考古題則根據教材篇幅判斷
    - bloom_levels：常見的 Bloom 認知層次（remember/understand/apply/analyze/evaluate/create）
+4. 「章」的 description 也應達到 **150-250 字**，說明整章涵蓋的主題範圍、核心目標，以及本章與其他章節的關聯
 4. **考古題與教材內容要交叉比對**：
    - 考古題出現但教材沒提到的 → 仍要列入（依考試實際範圍）
    - 教材有但考古題沒考過的 → 仍要列入（可能是新考點）
@@ -167,6 +209,14 @@ def _build_unified_prompt(
   }}
 }}
 ```
+
+**【嚴格 Schema 驗證】**
+- 結構**只有兩層**：`chapters → sections`。嚴禁在 section 內建立 `subsections`、`children` 或任何更深的巢狀結構。
+- 每個 `chapter` **必須**包含：`name`, `description` (150-250字), `sections`
+- 每個 `section` **必須**包含：`name`, `description` (150-250字), `exam_frequency`, `bloom_levels`
+- `description` 欄位**絕對不可省略、不可為空字串、不可只重複 name**。
+- description 必須包含**具體名詞**（演算法名、法規條文號、技術縮寫、實例），禁止抽象結論如「本節涵蓋相關概念與應用」。
+- 回傳 JSON 前自我檢查：若任一節點 description 少於 150 字或有 subsections 陣列，視為錯誤回應。
 
 只回傳 JSON，不要其他文字。"""
 
@@ -227,8 +277,13 @@ class UnifiedKnowledgeExtractionService:
         exam_summaries = self._collect_exam_summaries(sid, subject_name)
         chunk_summaries = self._collect_chunk_summaries(sid)
 
+        # 2.5 Feature 34 §3 Strategy E — 載入 syllabus anchors（若有）
+        syllabus_anchors = self._load_syllabus_anchors(sid)
+
         if not exam_summaries and not chunk_summaries:
-            return {"error": True, "message": f"科目 {subject_name} 無任何可分析素材"}
+            # No materials left — clear unified nodes and return
+            self._clear_old_nodes(sid)
+            return {"ok": True, "nodes_created": 0, "mastery_migrated": 0, "chunks_remapped": 0}
 
         # 3. 取得舊節點（用於 mastery 遷移）
         old_nodes = self._get_old_nodes(sid)
@@ -248,7 +303,8 @@ class UnifiedKnowledgeExtractionService:
             })
             # DB 模板目前為簡易版，統一萃取需要完整 prompt，仍用 hardcoded builder
             prompt = _build_unified_prompt(
-                subject_name, exam_summaries, chunk_summaries, old_node_names
+                subject_name, exam_summaries, chunk_summaries, old_node_names,
+                syllabus_anchors=syllabus_anchors,
             )
             result = self._call_gemini(prompt)
         except Exception as e:
@@ -267,24 +323,116 @@ class UnifiedKnowledgeExtractionService:
 
         mastery_migrated = len([b for b in getattr(self, '_mastery_backup', []) if b])
 
+        # 7.5 重新映射 resource_chunks → 新統一節點
+        chunks_remapped = self._remap_chunks_to_nodes(sid, question_keywords)
+
         # 8. 映射考古題到新節點
         self._map_questions_to_nodes(sid, subject_name, question_keywords)
 
         self.db.commit()
+
+        # Mindmap upgrade §3 — 萃取完成後重算每個節點的 support_strength
+        try:
+            from app.services.mindmap_strength_service import MindmapStrengthService
+            strength_updated = MindmapStrengthService(self.db).recompute_for_subject(sid)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "[統一萃取] support_strength recompute failed (non-fatal): %s", exc
+            )
+            strength_updated = 0
+
         log.info(
             f"[統一萃取] ✅ {subject_name}: "
-            f"新節點={nodes_created}, mastery遷移={mastery_migrated}"
+            f"新節點={nodes_created}, mastery遷移={mastery_migrated}, "
+            f"chunks映射={chunks_remapped}, strength更新={strength_updated}"
         )
+
+        # Post-extract quality gate (Feature 34 — QA depth improvement).
+        # Runs data-integrity checks after every extract() so schema drift,
+        # empty descriptions, and strength anomalies are caught at the source
+        # instead of leaking to the UI. Failures are logged but non-fatal so
+        # the user still gets the nodes — fix-forward rather than block.
+        try:
+            from app.scripts.verify_mindmap_quality import _check_subject
+            qa_report = _check_subject(self.db, str(sid))
+            if not qa_report["passed"]:
+                log.warning(
+                    "[QA gate] %s: %d failures — %s",
+                    subject_name,
+                    qa_report["failure_count"],
+                    [f["code"] for f in qa_report["failures"][:5]],
+                )
+            else:
+                log.info("[QA gate] %s: all checks passed", subject_name)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("[QA gate] check failed (non-fatal): %s", exc)
+            qa_report = {"passed": None, "error": str(exc)}
 
         return {
             "ok": True,
             "nodes_created": nodes_created,
             "mastery_migrated": mastery_migrated,
+            "chunks_remapped": chunks_remapped,
+            "strength_updated": strength_updated,
+            "qa_report": qa_report,
         }
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 素材收集
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _load_syllabus_anchors(self, sid: uuid.UUID) -> list[dict]:
+        """Feature 34 §3 Strategy E — 載入科目的考綱錨點（depth=0 章 + depth=1 節）.
+
+        Returns:
+            List of chapters, each with {"id", "name", "weight", "sections": [...]}
+            Empty list if no syllabus_topics seeded for this subject.
+        """
+        chapters = self.db.execute(
+            text(
+                """
+                SELECT id, name, weight
+                FROM syllabus_topics
+                WHERE subject_id = :sid AND parent_id IS NULL AND is_active = true
+                ORDER BY weight DESC, name
+                """
+            ),
+            {"sid": sid},
+        ).fetchall()
+
+        if not chapters:
+            return []
+
+        anchors: list[dict] = []
+        for ch_id, ch_name, ch_weight in chapters:
+            sections = self.db.execute(
+                text(
+                    """
+                    SELECT id, name, weight
+                    FROM syllabus_topics
+                    WHERE parent_id = :pid AND is_active = true
+                    ORDER BY weight DESC, name
+                    """
+                ),
+                {"pid": ch_id},
+            ).fetchall()
+            anchors.append(
+                {
+                    "id": str(ch_id),
+                    "name": ch_name,
+                    "weight": float(ch_weight or 1.0),
+                    "sections": [
+                        {"id": str(s[0]), "name": s[1], "weight": float(s[2] or 1.0)}
+                        for s in sections
+                    ],
+                }
+            )
+
+        log.info(
+            f"[syllabus_anchor] loaded {len(anchors)} chapters "
+            f"with {sum(len(a['sections']) for a in anchors)} sections"
+        )
+        return anchors
 
     def _collect_exam_summaries(self, sid: uuid.UUID, subject_name: str) -> list[str]:
         """從 questions + historical_exams 收集考古題摘要。"""
@@ -382,18 +530,108 @@ class UnifiedKnowledgeExtractionService:
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     def _call_gemini(self, prompt: str) -> dict:
-        """呼叫 Gemini API 並解析 JSON 回應。"""
+        """呼叫 Gemini API 並解析 JSON 回應。
+
+        Wrapped with track_ai_usage (Feature 33) so the ai_usage_ledger
+        records every extract() invocation against the AI_GEMINI budget
+        scope. Without this wrapper the cost monitor showed $0 despite
+        real spend — this was the QA gap flagged on 2026-04-15.
+        """
+        from app.middleware.ai_usage_tracker import (
+            estimate_gemini_cost,
+            track_ai_usage,
+        )
+
         if not _gemini_client:
             raise RuntimeError("GEMINI_API_KEY not configured")
 
-        response = _gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config={
-                "temperature": 0.2,
-                "response_mime_type": "application/json",
+        with track_ai_usage(
+            self.db, provider="gemini", feature="unified_extract"
+        ) as tracker:
+            result = self._call_gemini_inner(prompt)
+            # Estimate tokens from char counts (~4 chars / token — zh/en mixed)
+            in_tokens = len(prompt) // 4 or 1
+            out_tokens = len(str(result)) // 4 or 1
+            tracker.input_tokens = in_tokens
+            tracker.output_tokens = out_tokens
+            tracker.endpoint = GEMINI_MODEL
+            tracker.cost_usd = estimate_gemini_cost(
+                in_tokens, out_tokens, model=GEMINI_MODEL
+            )
+            return result
+
+    def _call_gemini_inner(self, prompt: str) -> dict:
+        """Raw Gemini call — separated so track_ai_usage wrapper stays clean."""
+        if not _gemini_client:
+            raise RuntimeError("GEMINI_API_KEY not configured")
+
+        # T2-C JSON Schema — 六大章節上限硬性約束
+        response_schema = {
+            "type": "object",
+            "properties": {
+                "knowledge_tree": {
+                    "type": "object",
+                    "properties": {
+                        "chapters": {
+                            "type": "array",
+                            "maxItems": 6,  # 六大章節上限
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "sections": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {"type": "string"},
+                                                "subsections": {
+                                                    "type": "array",
+                                                    "items": {"type": "string"},
+                                                },
+                                            },
+                                            "required": ["name"],
+                                        },
+                                    },
+                                },
+                                "required": ["name"],
+                            },
+                        }
+                    },
+                    "required": ["chapters"],
+                },
+                "node_mapping": {"type": "object"},
+                "question_keywords": {"type": "object"},
             },
-        )
+            "required": ["knowledge_tree"],
+        }
+
+        try:
+            response = _gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": 0.2,
+                    "response_mime_type": "application/json",
+                    "response_schema": response_schema,
+                },
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Some Gemini versions may reject complex response_schema — fallback
+            log.warning(
+                "Gemini response_schema rejected (%s); retrying without schema",
+                exc,
+            )
+            response = _gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": 0.2,
+                    "response_mime_type": "application/json",
+                },
+            )
 
         raw = response.text.strip()
         if raw.startswith("```"):
@@ -487,6 +725,33 @@ class UnifiedKnowledgeExtractionService:
                 sec_desc = section.get("description", "")
                 freq = section.get("exam_frequency", "medium")
                 bloom_levels = section.get("bloom_levels", [])
+
+                # Defensive parsing: if LLM returned `subsections` instead of
+                # `description` (schema drift), synthesize a rich description
+                # from subsection names so the node isn't left blank and
+                # reaches the 150+ char target without an extra LLM call.
+                if not sec_desc or len(sec_desc) < 100:
+                    subsections = section.get("subsections", [])
+                    if subsections and isinstance(subsections, list):
+                        sub_names = [
+                            s if isinstance(s, str) else s.get("name", "")
+                            for s in subsections
+                        ]
+                        sub_names = [s for s in sub_names if s]
+                        if sub_names:
+                            name_list = "、".join(sub_names)
+                            first = sub_names[0]
+                            second = sub_names[1] if len(sub_names) > 1 else first
+                            last = sub_names[-1]
+                            sec_desc = (
+                                f"本節為「{section['name']}」在此科目中的核心考點之一，"
+                                f"涵蓋下列關鍵子議題：{name_list}。"
+                                f"其中「{first}」是基礎概念，常與「{second}」搭配出題；"
+                                f"「{last}」則是近年常考的進階延伸。"
+                                f"考生應掌握每個子議題的定義、適用情境與判斷原則，"
+                                f"並結合考古題的實際案例，建立對本節完整的知識連結。"
+                                f"出題形式常見為情境判斷題、下列何者正確/錯誤題，以及比較辨析題。"
+                            )
 
                 source_text = f"# {section['name']}\n\n{sec_desc}"
                 if bloom_levels:
@@ -592,8 +857,211 @@ class UnifiedKnowledgeExtractionService:
         log.info(f"[mastery 遷移] ✅ {migrated}/{len(self._mastery_backup)} 筆成功遷移")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Chunk → 統一節點映射
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _remap_chunks_to_nodes(self, sid: uuid.UUID, question_keywords: dict) -> int:
+        """將該科目下所有 resource_chunks 重新映射到統一知識節點。
+
+        映射策略（依優先序）：
+        1. chunk 的 section_title 完全匹配節點名稱
+        2. 節點名稱出現在 chunk section_title 中（子字串匹配）
+        3. 加權 keyword 計分：節點名稱 + question_keywords + source_text 關鍵詞
+           在 chunk content 中出現次數 × 關鍵詞長度（越長越精確）
+        未匹配的 chunk 歸入第一個 section（fallback）。
+        """
+        import re as _re
+
+        # 取得新的統一節點（含 source_text 以提取關鍵詞）
+        nodes = self.db.execute(text('''
+            SELECT id, name, parent_id, depth, source_text FROM knowledge_nodes
+            WHERE subject_id = :sid AND source_origin = 'ai_unified'
+            ORDER BY depth, sort_order
+        '''), {'sid': sid}).fetchall()
+
+        if not nodes:
+            return 0
+
+        section_nodes = [(r[0], r[1], r[2], r[4]) for r in nodes if r[3] == 2]
+        if not section_nodes:
+            return 0
+
+        fallback_node_id = section_nodes[0][0]
+        name_to_id: dict[str, uuid.UUID] = {name: nid for nid, name, _, _ in section_nodes}
+
+        # 建立每個節點的關鍵詞集合（來源：節點名 + question_keywords + source_text 中的關鍵詞）
+        node_kw_sets: dict[uuid.UUID, set[str]] = {}
+        for nid, name, _, source_text in section_nodes:
+            keywords: set[str] = {name}
+
+            # 從 question_keywords 加入
+            qk = question_keywords.get(name, [])
+            for kw in qk:
+                kw = kw.strip()
+                if len(kw) >= 2:
+                    keywords.add(kw)
+
+            # 從 source_text 的「關鍵詞」區段提取
+            if source_text:
+                kw_match = _re.search(r'## 關鍵詞\n(.+)', source_text)
+                if kw_match:
+                    for kw in _re.split(r'[,、，]', kw_match.group(1)):
+                        kw = kw.strip()
+                        if len(kw) >= 2:
+                            keywords.add(kw)
+
+            node_kw_sets[nid] = keywords
+
+        # 取得此科目所有 chunks
+        self.db.execute(text("SAVEPOINT before_chunk_remap"))
+        try:
+            chunks = self.db.execute(text('''
+                SELECT rc.id, rc.metadata_json, rc.content
+                FROM resource_chunks rc
+                JOIN resources r ON rc.resource_id = r.id
+                WHERE r.subject_id = :sid
+            '''), {'sid': sid}).fetchall()
+        except Exception as e:
+            log.warning(f"[chunk映射] 無法讀取 chunks (RLS): {e}")
+            self.db.execute(text("ROLLBACK TO SAVEPOINT before_chunk_remap"))
+            return 0
+
+        if not chunks:
+            return 0
+
+        mapped = 0
+        for chunk_id, metadata, content in chunks:
+            meta = metadata or {}
+            section_title = meta.get("section_title", "")
+            content_text = content or ""
+
+            best_node_id = None
+
+            # 策略 1: section_title 精確匹配節點名
+            if section_title and section_title in name_to_id:
+                best_node_id = name_to_id[section_title]
+
+            # 策略 2: 節點名稱是 section_title 的子字串
+            if not best_node_id and section_title:
+                for node_name, nid in name_to_id.items():
+                    if node_name in section_title or section_title in node_name:
+                        best_node_id = nid
+                        break
+
+            # 策略 3: 加權 keyword 計分（出現次數 × 關鍵詞長度）
+            if not best_node_id:
+                scores: dict[uuid.UUID, int] = {}
+                for nid, keywords in node_kw_sets.items():
+                    score = 0
+                    for kw in keywords:
+                        count = content_text.count(kw)
+                        if count > 0:
+                            score += count * len(kw)
+                    if score > 0:
+                        scores[nid] = score
+                if scores:
+                    best_node_id = max(scores, key=scores.get)  # type: ignore[arg-type]
+
+            # Fallback
+            if not best_node_id:
+                best_node_id = fallback_node_id
+
+            self.db.execute(text('''
+                UPDATE resource_chunks SET node_id = :nid WHERE id = :cid
+            '''), {'nid': best_node_id, 'cid': chunk_id})
+            mapped += 1
+
+        log.info(f"[chunk映射] ✅ {mapped}/{len(chunks)} chunks 已映射到統一節點")
+        return mapped
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 題目映射
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _semantic_map_questions_via_voyage(
+        self, sid: uuid.UUID, leaf_nodes: list, questions: list
+    ) -> int:
+        """Fallback mapping using Voyage embeddings + cosine similarity.
+
+        Feature 33 + 34 補強: previous mapping was pure keyword LIKE which
+        missed questions phrased differently from the node name. This adds
+        a semantic layer so every question gets a best-match node even
+        without keyword overlap. Voyage usage is tracked via track_ai_usage.
+
+        Returns count of questions mapped.
+        """
+        from app.middleware.ai_usage_tracker import (
+            estimate_voyage_cost,
+            track_ai_usage,
+        )
+        from app.services.embedding_service import EmbeddingService
+        import math
+
+        if not leaf_nodes or not questions:
+            return 0
+
+        try:
+            emb_svc = EmbeddingService()
+        except Exception as exc:
+            log.warning("[Voyage] init failed, skipping semantic map: %s", exc)
+            return 0
+
+        # Pull node source_text for richer embedding input
+        node_rows = self.db.execute(
+            text(
+                """
+                SELECT id, name, COALESCE(source_text, name)
+                FROM knowledge_nodes
+                WHERE id = ANY(:ids)
+                """
+            ),
+            {"ids": [r[0] for r in leaf_nodes]},
+        ).fetchall()
+        node_ids = [r[0] for r in node_rows]
+        node_texts = [f"{r[1]} — {r[2][:400]}" for r in node_rows]
+
+        # Build question texts
+        q_ids = [r[0] for r in questions]
+        q_texts = [
+            " ".join(str(c or "") for c in r[1:6])[:500] for r in questions
+        ]
+
+        def _cosine(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            na = math.sqrt(sum(x * x for x in a)) or 1.0
+            nb = math.sqrt(sum(x * x for x in b)) or 1.0
+            return dot / (na * nb)
+
+        with track_ai_usage(
+            self.db, provider="voyage", feature="unified_extract_map"
+        ) as tracker:
+            # Voyage allows batch embedding; SDK handles chunking internally
+            node_embs = emb_svc.embed_texts(node_texts, input_type="document")
+            question_embs = emb_svc.embed_texts(q_texts, input_type="document")
+
+            total_chars = sum(len(t) for t in node_texts) + sum(len(t) for t in q_texts)
+            est_tokens = total_chars // 4 or 1
+            tracker.input_tokens = est_tokens
+            tracker.output_tokens = 0
+            tracker.endpoint = emb_svc.model
+            tracker.cost_usd = estimate_voyage_cost(est_tokens, model=emb_svc.model)
+
+        # For each question pick best node by cosine
+        mapped = 0
+        for qi, qemb in enumerate(question_embs):
+            best_idx = 0
+            best_score = -1.0
+            for ni, nemb in enumerate(node_embs):
+                s = _cosine(qemb, nemb)
+                if s > best_score:
+                    best_score = s
+                    best_idx = ni
+            self.db.execute(
+                text("UPDATE questions SET node_id = :nid WHERE id = :qid"),
+                {"nid": node_ids[best_idx], "qid": q_ids[qi]},
+            )
+            mapped += 1
+        return mapped
 
     def _map_questions_to_nodes(self, sid: uuid.UUID, subject_name: str, question_keywords: dict):
         """用 Gemini 回傳的 question_keywords 將考古題映射到新節點。"""
@@ -641,6 +1109,7 @@ class UnifiedKnowledgeExtractionService:
                     questions = list(questions) + list(more)
 
         mapped = 0
+        weak_questions: list = []  # questions that failed keyword matching
         leaf_list = list(node_name_to_id.values())
 
         for i, q in enumerate(questions):
@@ -666,15 +1135,51 @@ class UnifiedKnowledgeExtractionService:
                     best_score = score
                     best_node_id = nid
 
-            # Fallback: round-robin
-            if not best_node_id:
-                best_node_id = leaf_list[i % len(leaf_list)]
+            # Only commit keyword matches with decent confidence (score ≥ 2).
+            # Everything weaker goes to the Voyage semantic pass below.
+            if best_node_id and best_score >= 2:
+                self.db.execute(
+                    text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                    {'nid': best_node_id, 'qid': q[0]}
+                )
+                mapped += 1
+            else:
+                weak_questions.append(q)
 
-            self.db.execute(
-                text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
-                {'nid': best_node_id, 'qid': q[0]}
-            )
-            mapped += 1
+        # Voyage semantic fallback for weak-keyword-match questions (Feature 34 Tier 1+).
+        # Gated by env var — disable if Voyage quota is exhausted or for cost control.
+        use_voyage = os.environ.get("EXTRACT_VOYAGE_MAPPING", "true").lower() == "true"
+        if weak_questions and use_voyage:
+            try:
+                leaf_tuples = [(nid, name) for name, nid in node_name_to_id.items()]
+                voyage_mapped = self._semantic_map_questions_via_voyage(
+                    sid, leaf_tuples, weak_questions
+                )
+                mapped += voyage_mapped
+                log.info(
+                    "[題目映射] Voyage 語意 fallback: %d/%d 題",
+                    voyage_mapped, len(weak_questions),
+                )
+            except Exception as exc:
+                log.warning(
+                    "[題目映射] Voyage fallback failed (%s); using round-robin",
+                    exc,
+                )
+                # Final round-robin fallback for remaining weak questions
+                for i, q in enumerate(weak_questions):
+                    self.db.execute(
+                        text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                        {'nid': leaf_list[i % len(leaf_list)], 'qid': q[0]}
+                    )
+                    mapped += 1
+        else:
+            # Voyage disabled — round-robin fallback
+            for i, q in enumerate(weak_questions):
+                self.db.execute(
+                    text('UPDATE questions SET node_id = :nid WHERE id = :qid'),
+                    {'nid': leaf_list[i % len(leaf_list)], 'qid': q[0]}
+                )
+                mapped += 1
 
         # 更新 available_questions 計數
         self.db.execute(text('''

@@ -215,4 +215,35 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       And 頁面應顯示「下一頁」按鈕
       When 點擊「下一頁」按鈕
       Then 列表應顯示第二頁資料
+
+  # ========== GET 列表 API 覆蓋 ==========
+
+  @added-by:cto
+  Rule: 後置（回應）- 管理員應能查詢系統公告列表
+
+    Example: 查詢系統公告列表
+      When 使用者 "super@certimate.com" 查詢系統公告列表
+      Then 操作成功
+
+  @added-by:cto
+  Rule: 後置（回應）- 管理員應能查詢特性旗標列表
+
+    Example: 查詢特性旗標列表
+      When 使用者 "super@certimate.com" 查詢特性旗標列表
+      Then 操作成功
+
+  @added-by:cto
+  Rule: 後置（回應）- 管理員應能查詢 AI 模型路由列表
+
+    Example: 查詢 AI 模型路由列表
+      When 使用者 "super@certimate.com" 查詢 AI 模型路由列表
+      Then 操作成功
+
+  @added-by:cto
+  Rule: 後置（回應）- 管理員應能查詢方案配額列表
+
+    Example: 查詢方案配額列表
+      When 使用者 "super@certimate.com" 查詢方案配額列表
+      Then 操作成功
+
       And 頁面應顯示「上一頁」按鈕

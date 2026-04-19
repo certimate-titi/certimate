@@ -1,0 +1,77 @@
+
+### 一、 核心設計理念
+1.  **結構化提煉**：從雜亂的多模態資料中，強制歸納出 **6 大頂級章節** 心智圖。
+2.  **物理級跳轉**：點擊心智圖節點，精確定位並高亮原文 Markdown 內容。
+3.  **動態增刪**：支援使用者隨時新增或刪除來源，索引與心智圖需即時增量更新。
+4.  **權威優先**：區分官方考綱（權威）與影音/筆記（輔助），確保學習地圖不偏移。
+
+---
+
+### 二、 技術棧選型 (Tech Stack)
+* **語言**：Python 3.11+
+* **大腦 (LLM)**：**Gemini 3.1 Pro** (負責骨架分析) / **Gemini 3.1 Flash** (負責 MD 轉化)
+* **多模態處理**：**Vertex AI Document AI** (PDF/佈局) & **Gemini 3.1 Flash** (影音原生解析)
+* **向量引擎**：**Voyage Multimodal 3.5** (1024 維向量空間)
+* **重排序器**：**Voyage Reranker 2.5** (解決一對多引用與精確度)
+* **資料庫**：**PostgreSQL + pgvector** (儲存 MD 與向量)
+
+---
+
+### 三、 資料流與任務分發 (The Task Dispatcher)
+當使用者上傳檔案時，系統會根據副檔名進行「邏輯路由」：
+
+| 檔案類型 | 處理工具 | 產出目標 |
+| :--- | :--- | :--- |
+| **官方 PDF / 掃描檔** | **Document AI (Layout Parser)** | 具備精確座標與標題階層的 Markdown。 |
+| **教學影片 / 音訊** | **Gemini 3.1 Flash (File Search)** | 帶有時間戳記、關鍵畫面描述的 Markdown。 |
+| **圖片 / 個人筆記** | **Gemini 3.1 Flash** | 視覺推理後的結構化文字 Markdown。 |
+
+
+
+---
+
+### 四、 Python 後端核心實作邏輯
+
+#### 1. 索引寫入 (Indexing with Metadata)
+在 `pgvector` 中，我們不只存向量，還要存入「權威性」與「處理器類型」：
+
+```python
+# 概念範例：存入 pgvector 的資料結構
+metadata = {
+    "source_id": "uuid-123",
+    "processor_type": "document_ai", # 或是 gemini_flash
+    "is_authority": True,            # 官方考綱標記為 True
+    "anchor_ids": ["ch1_s2", "p15"], # 用於物理跳轉的 ID
+    "authority_score": 1.0           # 用於權重排序
+}
+```
+
+#### 2. 二階段檢索 (Retrieval & Rerank)
+當生成心智圖節點時，確保抓取到所有相關的原文出處：
+
+```python
+# 第一階段：使用 Voyage 進行向量搜尋 (Recall)
+# 第二階段：使用 Voyage Reranker 2.5 進行精篩與多源聚合
+def get_node_references(query_text, top_k=20):
+    # 呼叫 Voyage 取得相關片段
+    # 呼叫 Reranker 對片段進行評分
+    # 門檻過濾：Score > 0.7 的片段全部綁定到該心智圖節點
+    pass
+```
+
+---
+
+### 五、 心智圖運行機制：骨架與填充
+1.  **骨架生成**：利用 **Gemini 3.1 Pro** 的長文本能力，讀取 `is_authority: True` 的 Markdown 資料，定義出固定的 **6 個頂級章節**。
+2.  **動態填充**：
+    * **新增資料**：計算新資料與 6 大章節的向量重心距離，自動路由歸類。
+    * **刪除資料**：執行 SQL 邏輯刪除，心智圖前端立即「修剪」失去支撐的節點。
+3.  **錨點導航**：節點封裝 `references` 陣列（包含 `source_id` 與 `anchor_id`），點擊後觸發前端 Markdown 高亮跳轉。
+
+---
+
+### 六、 進度與記憶整合 (TiTi Mastery Engine)
+* **測驗導向**：僅在「正式模擬考」後更新資料庫中的節點掌握度，平時練習不更新，以維持心智圖狀態的穩定性。
+* **視覺反饋**：前端 Mermaid.js 根據掌握度數據為節點著色（綠/黃/紅）。
+
+---

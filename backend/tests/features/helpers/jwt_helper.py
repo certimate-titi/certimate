@@ -43,6 +43,9 @@ class JwtHelper:
 
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
+    # Alias — 大量 step definitions 使用 create_token，保留向後相容
+    create_token = generate_token
+
     def decode_token(self, token: str) -> dict:
         """解碼 JWT Token（用於測試驗證）。"""
         return jwt.decode(token, self.secret_key, algorithms=[self.algorithm])

@@ -292,6 +292,25 @@ Feature: 平台管理後台 — 權限驗證與用戶管理
       Then 操作成功
       And 使用者 5 的狀態應為 "suspended"
 
+  @added-by:cto
+  Rule: 後置（狀態）- 停權/恢復後系統自動發送通知信
+
+    Example: 停權後系統自動發送停權通知信
+      When 使用者 "ops@certimate.com" 停權使用者 5，原因為 "違反使用條款"
+      Then 操作成功
+      And 系統應向使用者 5 發送停權通知信，原因包含 "違反使用條款"
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | suspend_user         |
+
+    Example: 恢復帳號後系統自動發送恢復通知信
+      When 使用者 "ops@certimate.com" 恢復使用者 "bob@example.com" 的帳號
+      Then 操作成功
+      And 系統應向 "bob@example.com" 發送帳號恢復通知信
+      And 系統應記錄審計日誌：
+        | 欄位     | 值                   |
+        | action   | activate_user        |
+
   Rule: 後置（狀態）- 刪除使用者帳號需確認輸入使用者名稱
 
     Example: 刪除使用者帳號需確認名稱

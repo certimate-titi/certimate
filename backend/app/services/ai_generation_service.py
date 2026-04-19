@@ -247,14 +247,16 @@ class AiGenerationService:
         # Build user context
         user_context = self._build_user_context(user)
 
-        # Retrieve RAG context if enabled
+        # Retrieve RAG context if enabled (Mastery-aware: skip already-mastered nodes)
         rag_context = ""
         if self._rag_enabled and self._retrieval:
             resource_ids = list({n.resource_id for n in nodes if n.resource_id})
             if resource_ids:
                 try:
                     query = f"考點分析：{', '.join(n.name for n in nodes[:5])}"
-                    chunks = self._retrieval.retrieve(query, resource_ids)
+                    chunks = self._retrieval.retrieve(
+                        query, resource_ids, user_id=user.id if user else None
+                    )
                     rag_context = self._retrieval.build_context_string(chunks)
                 except Exception as e:
                     logger.warning("RAG retrieval failed, falling back to mock: %s", e, exc_info=True)

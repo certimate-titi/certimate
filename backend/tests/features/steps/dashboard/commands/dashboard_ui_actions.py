@@ -51,10 +51,12 @@ def step_impl_first_upload(context, email):
 @when('使用者 "{email}" 上傳新頭像')
 def step_impl_upload_avatar(context, email):
     """呼叫 API 上傳頭像。"""
+    import io
     token = _get_token(context, email)
+    files = {"file": ("avatar.png", io.BytesIO(b"fakepng"), "image/png")}
     response = context.api_client.post(
-        "/api/v1/users/avatar",
-        json={"avatar_data": "mock_base64_image"},
+        "/api/v1/dashboard/profile/avatar",
+        files=files,
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -158,12 +160,14 @@ def step_impl_view_daily_quests(context, email):
 @when('使用者 "{email}" 在帳戶頁面上傳新大頭貼：')
 def step_impl_upload_avatar_account_page(context, email):
     """呼叫 API 從帳戶頁面上傳大頭貼。"""
+    import io
     token = _get_token(context, email)
-    files = [{"filename": row["檔名"], "type": row["格式"], "size": row["大小"]}
-             for row in context.table]
+    first_row = context.table[0] if context.table else {}
+    filename = first_row.get("檔名", "avatar.png")
+    mime = f"image/{first_row.get('格式', 'png').lower()}"
     response = context.api_client.post(
-        "/api/v1/users/avatar",
-        json={"files": files},
+        "/api/v1/dashboard/profile/avatar",
+        files={"file": (filename, io.BytesIO(b"fakepng"), mime)},
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -175,7 +179,7 @@ def step_impl_upgrade_subscription(context, email, plan):
     """呼叫 API 升級訂閱方案。"""
     token = _get_token(context, email)
     response = context.api_client.post(
-        "/api/v1/account/subscription/upgrade",
+        "/api/v1/subscriptions/upgrade",
         json={"plan": plan},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -189,7 +193,7 @@ def step_impl_cancel_subscription(context, email):
     """呼叫 API 取消訂閱。"""
     token = _get_token(context, email)
     response = context.api_client.post(
-        "/api/v1/account/subscription/cancel",
+        "/api/v1/subscriptions/cancel",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

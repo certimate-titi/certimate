@@ -3,6 +3,7 @@
 import os
 import sys
 import subprocess
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -33,19 +34,53 @@ def _get_git_commit() -> str:
 _CACHED_COMMIT = _get_git_commit()
 
 
+# Container startup time — best-effort fallback when DEPLOYED_AT env var unset
+_STARTUP_TIME = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
 @router.get("/version")
-def get_version():
-    """公開版本資訊端點（不需認證）。"""
+def get_version(db: Session = Depends(get_db)):
+    """公開版本資訊端點（不需認證）。
+
+    Real-time values:
+    - alembic_head: queried from alembic_version table (never stale)
+    - backend_commit: BUILD_COMMIT env var (set by Cloud Build), fallback to git
+    - deployed_at: DEPLOYED_AT env var (set by Cloud Build), fallback to
+      container startup time which is a reasonable proxy
+    """
+    from sqlalchemy import text as _sql_text
+
     database_url = os.environ.get("DATABASE_URL", "")
     environment = "production" if "cloudsql" in database_url else "development"
 
+    # Real alembic head from DB
+    try:
+        alembic_head = db.execute(
+            _sql_text("SELECT version_num FROM alembic_version LIMIT 1")
+        ).scalar() or "unknown"
+    except Exception:
+        alembic_head = "unknown"
+
+    # Commit: prefer env var (Cloud Build sets BUILD_COMMIT=$SHORT_SHA),
+    # fall back to git (works in dev), then "dev"
+    commit = (
+        os.environ.get("BUILD_COMMIT")
+        or _CACHED_COMMIT
+        or "dev"
+    )
+
+    # Deployed at: env var (Cloud Build sets DEPLOYED_AT=$BUILD_TIMESTAMP)
+    # or container startup time (reasonable proxy — Cloud Run restarts on
+    # each deploy so startup ≈ deploy).
+    deployed_at = os.environ.get("DEPLOYED_AT") or _STARTUP_TIME
+
     return {
-        "backend_version": "0.3.1",
-        "backend_commit": _CACHED_COMMIT,
+        "backend_version": os.environ.get("BACKEND_VERSION", "0.3.1"),
+        "backend_commit": commit,
         "api_prefix": "/api/v1",
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        "alembic_head": "034",
-        "deployed_at": os.environ.get("DEPLOYED_AT", "unknown"),
+        "alembic_head": alembic_head,
+        "deployed_at": deployed_at,
         "environment": environment,
     }
 
@@ -134,7 +169,7 @@ def get_dashboard_charts(
         ]
         return {"models": models}
 
-    # ── 預設：月份 user_growth + ai_cost（舊格式向下相容）─────────────────
+    # ── 預設：月份 user_growth + ai_cost ─────────────────
     user_growth = []
     for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -150,21 +185,39 @@ def get_dashboard_charts(
             "mau": max(1, min(total_users, exams_in_month * 3)),
         })
 
+    # AI cost — real data from ai_usage_ledger (Feature 33)
+    from sqlalchemy import text as _text
+    try:
+        rows = db.execute(_text("""
+            SELECT DATE_TRUNC('month', created_at) AS month,
+                   provider,
+                   SUM(cost_usd) AS total_cost
+            FROM ai_usage_ledger
+            WHERE created_at >= :start_date
+            GROUP BY month, provider
+            ORDER BY month
+        """), {"start_date": now - timedelta(days=180)}).fetchall()
+    except Exception:
+        rows = []
+
+    # Pivot: month → {gemini, claude, voyage, gpt4}
+    by_month: dict = {}
+    for month, provider, cost in rows:
+        key = month.strftime("%m月") if month else ""
+        if key not in by_month:
+            by_month[key] = {"name": key, "gemini": 0.0, "claude": 0.0, "gpt4": 0.0, "voyage": 0.0}
+        prov_key = "claude" if provider == "anthropic" else provider
+        if prov_key in by_month[key]:
+            by_month[key][prov_key] = round(float(cost or 0), 4)
+
+    # Build last 6 months in order, fill zeros for empty months
     ai_cost = []
     for i in [5, 4, 3, 2, 1, 0]:
         month_start = (now - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_name = month_start.strftime("%m月")
-        exams = db.query(func.count(Exam.id)).filter(
-            Exam.created_at >= month_start,
-            Exam.created_at < month_start + timedelta(days=31),
-            Exam.status.in_([ExamStatus.READY, ExamStatus.SUBMITTED]),
-        ).scalar() or 0
-        ai_cost.append({
-            "name": month_name,
-            "gemini": round(exams * 0.01, 2),
-            "claude": round(exams * 0.003, 2),
-            "gpt4": 0,
-        })
+        ai_cost.append(by_month.get(month_name, {
+            "name": month_name, "gemini": 0.0, "claude": 0.0, "gpt4": 0.0, "voyage": 0.0,
+        }))
 
     return {"user_growth": user_growth, "ai_cost": ai_cost}
 
@@ -174,30 +227,49 @@ def get_system_load(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """系統負載（從 DB 連線池 + 資源處理佇列推算）。"""
-    from app.models.resource import Resource, ResourceStatus
-    from sqlalchemy import func
+    """系統負載（真實值）。
 
-    # DB connection usage: estimate from active queries
-    processing = db.query(func.count(Resource.id)).filter(
-        Resource.status == ResourceStatus.PROCESSING
-    ).scalar() or 0
-    total_resources = db.query(func.count(Resource.id)).scalar() or 1
+    - cpu_percent: 當前 backend process CPU 使用率（psutil, 無 GCP API 費用）
+    - db_connections_percent: PostgreSQL pg_stat_activity / max_connections
+    - queue_depth_percent: 佇列深度（處理中資源 / 上限）— 取代原本的 Redis 假指標
+    """
+    from sqlalchemy import text as _text
 
-    # Estimate CPU from processing load
-    cpu_percent = min(90, max(5, processing * 15 + 10))
-    # DB connections: based on processing tasks
-    db_connections_percent = min(80, max(10, processing * 10 + 15))
-    # Cache hit rate: higher with more completed resources
-    completed = db.query(func.count(Resource.id)).filter(
-        Resource.status == ResourceStatus.COMPLETED
-    ).scalar() or 0
-    cache_hit_rate = min(99, max(50, 85 + (completed * 2)))
+    # CPU — psutil reads this process's CPU sample
+    try:
+        import psutil
+        cpu_percent = int(psutil.cpu_percent(interval=0.1))
+    except Exception:
+        cpu_percent = 0
+
+    # DB connections — SELECT count + max_connections
+    try:
+        rows = db.execute(_text("""
+            SELECT
+                (SELECT count(*) FROM pg_stat_activity WHERE state IS NOT NULL)::int AS active,
+                current_setting('max_connections')::int AS maxc
+        """)).first()
+        active = rows[0] if rows else 0
+        max_conn = rows[1] if rows and rows[1] else 100
+        db_connections_percent = min(100, int(active * 100 / max_conn))
+    except Exception:
+        db_connections_percent = 0
+
+    # Queue depth — processing resources vs 10 (small pool assumption)
+    try:
+        from app.models.resource import Resource, ResourceStatus
+        from sqlalchemy import func
+        processing = db.query(func.count(Resource.id)).filter(
+            Resource.status == ResourceStatus.PROCESSING
+        ).scalar() or 0
+        queue_depth_percent = min(100, int(processing * 10))
+    except Exception:
+        queue_depth_percent = 0
 
     return {
         "cpu_percent": cpu_percent,
         "db_connections_percent": db_connections_percent,
-        "cache_hit_rate": cache_hit_rate,
+        "queue_depth_percent": queue_depth_percent,
     }
 
 
@@ -230,7 +302,36 @@ def get_dashboard_alerts(
             "time": "剛剛",
         })
 
-    return {"alerts": alerts, "system_alerts": []}
+    # System alerts — real infrastructure checks
+    system_alerts = []
+
+    # Cloud SQL connection check
+    try:
+        from sqlalchemy import text as _text
+        active_conn = db.execute(_text("SELECT count(*) FROM pg_stat_activity WHERE state IS NOT NULL")).scalar() or 0
+        max_conn = int(db.execute(_text("SELECT current_setting('max_connections')")).scalar() or 25)
+        if active_conn > max_conn * 0.8:
+            system_alerts.append({
+                "severity": "critical",
+                "message": f"Cloud SQL 連線數 {active_conn}/{max_conn} (>{int(max_conn*0.8)})",
+                "time": "即時",
+            })
+    except Exception:
+        pass
+
+    # Processing queue stuck check
+    from app.models.resource import Resource, ResourceStatus
+    stuck = db.query(func.count(Resource.id)).filter(
+        Resource.status == ResourceStatus.PROCESSING,
+    ).scalar() or 0
+    if stuck > 5:
+        system_alerts.append({
+            "severity": "warning",
+            "message": f"{stuck} 個資源處理卡住（PROCESSING 狀態）",
+            "time": "即時",
+        })
+
+    return {"alerts": alerts, "system_alerts": system_alerts}
 
 
 @router.get("/settings")
@@ -244,6 +345,27 @@ def get_system_settings(
 
 
 # ── User Management ──────────────────────────────────────────────────────────
+
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/users")
+def create_user(
+    body: CreateUserRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminService(db)
+    result = service.create_user(
+        actor_id=user_id,
+        email=body.email,
+        password=body.password,
+    )
+    return _handle_result(result)
+
 
 @router.get("/users")
 def search_users(

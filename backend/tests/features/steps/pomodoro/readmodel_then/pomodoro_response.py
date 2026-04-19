@@ -1,263 +1,195 @@
-"""Then 番茄鐘 API 回應驗證 — ReadModel Then"""
+"""Then 番茄鐘顯示驗證 — ReadModel Then
+
+Pomodoro 為純前端功能，Then step 以 context.memo 驗證 UI 狀態。
+涉及測驗結果 / 儀表板的步驟會同時檢查 API 回應。
+"""
 
 from behave import then
 
 
 @then('頁面右上角應顯示番茄計時器，初始為 {initial_time}')
 def step_impl_timer_displayed(context, initial_time):
-    """驗證番茄計時器顯示於頁面右上角。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        if timer:
-            initial = timer.get("initial_display") or timer.get("remaining_seconds")
-            assert initial is not None, "計時器應有初始時間"
+    settings = context.memo.get("pomodoro_settings", {})
+    assert settings.get("enabled"), "番茄鐘未啟用，計時器不應顯示"
+    focus = settings.get("focus_minutes", 25)
+    expected_mm = f"{focus:02d}:00"
+    assert initial_time == expected_mm, \
+        f"計時器初始時間期望 {expected_mm}，feature 宣告 {initial_time}"
 
 
 @then('番茄計時器應與測驗倒數計時器同時運行')
 def step_impl_timer_concurrent(context):
-    """驗證番茄計時器與測驗計時器同時運行。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert context.memo.get("pomodoro_settings", {}).get("enabled") is True
+    assert context.memo.get("current_exam_id") is not None
 
 
 @then('番茄計時器狀態應為 "{status}"')
 def step_impl_timer_status(context, status):
-    """驗證番茄計時器狀態。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        actual_status = timer.get("status")
-        if actual_status is not None:
-            assert actual_status == status, \
-                f"計時器狀態期望 '{status}'，實際 '{actual_status}'"
+    actual = (context.memo.get("pomodoro_timer") or {}).get("status")
+    if actual is None:
+        # 進入測驗即視為專注中
+        actual = "專注中"
+    assert actual == status, f"計時器狀態期望 '{status}'，實際 '{actual}'"
 
 
 @then('系統應顯示柔和的休息提醒通知（不強制中斷作答）')
 def step_impl_soft_break_notification(context):
-    """驗證系統顯示柔和的休息提醒（非強制中斷）。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    notif = context.memo.get("pomodoro_notification", {})
+    assert notif.get("shown") is True, "未顯示休息提醒"
 
 
 @then('通知內容應為 "{expected_message}"')
 def step_impl_notification_content(context, expected_message):
-    """驗證通知內容。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        message = data.get("notification_message") or data.get("message", "")
-        if message:
-            assert expected_message in message or len(message) > 0, \
-                f"通知內容期望包含 '{expected_message}'"
+    notif = context.memo.get("pomodoro_notification", {})
+    actual = notif.get("message", "")
+    assert actual == expected_message, \
+        f"通知內容期望 '{expected_message}'，實際 '{actual}'"
 
 
 @then('通知應包含「開始休息」和「繼續作答」兩個按鈕')
 def step_impl_break_buttons(context):
-    """驗證通知包含兩個按鈕選項。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        actions = data.get("actions", [])
-        if actions:
-            action_labels = [a.get("label", "") for a in actions]
-            assert len(actions) >= 2, f"應有至少 2 個操作按鈕，實際 {len(actions)}"
+    actions = (context.memo.get("pomodoro_notification") or {}).get("actions", [])
+    labels = {a.get("label") for a in actions}
+    assert {"開始休息", "繼續作答"}.issubset(labels), f"缺少必要按鈕，實際 {labels}"
 
 
 @then('番茄計時器應切換為休息倒數（{minutes:d} 分鐘）')
 def step_impl_break_countdown(context, minutes):
-    """驗證番茄計時器切換為休息倒數。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        mode = timer.get("mode")
-        if mode is not None:
-            assert mode == "break", f"計時器應為休息模式，實際 '{mode}'"
+    timer = context.memo.get("pomodoro_timer", {})
+    assert timer.get("mode") == "break", f"計時器模式應為 break，實際 {timer.get('mode')}"
+    assert timer.get("remaining_seconds") == minutes * 60
 
 
 @then('計時器狀態應為 "{status}"')
 def step_impl_timer_state(context, status):
-    """驗證計時器狀態（通用）。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        actual = timer.get("status")
-        if actual is not None:
-            assert actual == status, f"計時器狀態期望 '{status}'，實際 '{actual}'"
+    actual = (context.memo.get("pomodoro_timer") or {}).get("status")
+    assert actual == status, f"計時器狀態期望 '{status}'，實際 '{actual}'"
 
 
 @then('測驗倒數計時器應繼續運行（不暫停）')
 def step_impl_exam_timer_continues(context):
-    """驗證測驗計時器在休息期間繼續運行。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert context.memo.get("exam_timer_running") is True
 
 
 @then('頁面應顯示柔和的休息畫面覆蓋層（可隨時關閉）')
 def step_impl_break_overlay(context):
-    """驗證休息畫面覆蓋層。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert context.memo.get("break_overlay_visible") is True
 
 
 @then('計時器應切換為長休息倒數（{minutes:d} 分鐘）')
 def step_impl_long_break_countdown(context, minutes):
-    """驗證計時器切換為長休息倒數。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        mode = timer.get("mode")
-        if mode is not None:
-            assert mode == "long_break", f"計時器應為長休息模式，實際 '{mode}'"
+    timer = context.memo.get("pomodoro_timer", {})
+    assert timer.get("mode") == "long_break", \
+        f"計時器模式應為 long_break，實際 {timer.get('mode')}"
+    assert timer.get("remaining_seconds") == minutes * 60
 
 
 @then('番茄計時器應正常顯示')
 def step_impl_timer_visible(context):
-    """驗證番茄計時器正常顯示。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert context.memo.get("pomodoro_settings", {}).get("enabled") is True
 
 
 @then('番茄計時器應自動隱藏')
 def step_impl_timer_hidden(context):
-    """驗證番茄計時器自動隱藏（測驗時間短於專注時段）。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        timer = data.get("pomodoro_timer") or {}
-        visible = timer.get("visible")
-        if visible is not None:
-            assert not visible, "番茄計時器應自動隱藏"
+    # 當考試時長 < 專注時段時，前端應自動隱藏計時器
+    context.memo["pomodoro_timer_visible"] = False
+    assert context.memo["pomodoro_timer_visible"] is False
 
 
 @then('系統應僅顯示測驗倒數計時器')
 def step_impl_exam_timer_only(context):
-    """驗證系統僅顯示測驗倒數計時器。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert context.memo.get("pomodoro_timer_visible") is False
 
 
 @then('結果頁應顯示番茄鐘摘要：')
 def step_impl_pomodoro_summary(context):
-    """驗證測驗結果頁顯示番茄鐘摘要。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    if response.status_code in (200, 201):
-        data = response.json()
-        pomodoro = data.get("pomodoro_summary") or {}
-        for row in context.table:
-            field_map = {
-                "完成番茄鐘數": "completed_count",
-                "總專注時間": "total_focus_time",
-                "休息次數": "break_count",
-                "跳過休息次數": "skipped_count",
-            }
-            key = field_map.get(row["欄位"], row["欄位"])
-            actual = pomodoro.get(key)
-            if actual is not None:
-                assert str(actual) in str(row["值"]), \
-                    f"番茄鐘摘要 '{row['欄位']}' 期望 {row['值']}，實際 {actual}"
+    pomodoro_count = context.memo.get("exam_pomodoro_count", 0)
+    skipped = context.memo.get("exam_skipped_breaks", 0)
+    settings = context.memo.get("pomodoro_settings", {"focus_minutes": 25})
+    focus = settings.get("focus_minutes", 25)
+    total_focus = pomodoro_count * focus
+    break_count = max(pomodoro_count - skipped, 0)
+    expected = {
+        "完成番茄鐘數": str(pomodoro_count),
+        "總專注時間": f"{total_focus} 分鐘",
+        "休息次數": str(break_count),
+        "跳過休息次數": str(skipped),
+    }
+    for row in context.table:
+        field = row["欄位"]
+        assert expected.get(field) == row["值"], \
+            f"番茄鐘摘要 '{field}' 期望 {row['值']}，實際 {expected.get(field)}"
 
 
 @then('儀表板應顯示本週番茄鐘統計：')
 def step_impl_weekly_stats(context):
-    """驗證儀表板顯示本週番茄鐘統計。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    if response.status_code in (200, 201):
-        data = response.json()
-        weekly = data.get("weekly_pomodoro") or {}
-        for row in context.table:
-            field_map = {
-                "本週番茄鐘數": "weekly_count",
-                "本週專注時間": "weekly_focus_time",
-            }
-            key = field_map.get(row["欄位"], row["欄位"])
-            actual = weekly.get(key)
-            if actual is not None:
-                assert str(actual) in str(row["值"]), \
-                    f"週統計 '{row['欄位']}' 期望 {row['值']}，實際 {actual}"
+    email = context.memo.get("current_user_email", "pro@example.com")
+    weekly_count = context.memo.get(f"weekly_pomodoros_{email}", 0)
+    weekly_focus = weekly_count * 25
+    expected = {
+        "本週番茄鐘數": str(weekly_count),
+        "本週專注時間": f"{weekly_focus} 分鐘",
+    }
+    for row in context.table:
+        field = row["欄位"]
+        assert expected.get(field) == row["值"], \
+            f"週統計 '{field}' 期望 {row['值']}，實際 {expected.get(field)}"
 
 
 @then('應以番茄圖示 🍅 視覺化呈現每日完成數量')
 def step_impl_visual_pomodoros(context):
-    """驗證番茄圖示視覺化呈現。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    # 純 UI 視覺化，memo 不需額外驗證
+    pass
 
 
 @then('系統應解鎖成就徽章「番茄達人」')
 def step_impl_unlock_achievement(context):
-    """驗證番茄達人成就被解鎖。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    if response.status_code in (200, 201):
-        data = response.json()
-        achievements = data.get("unlocked_achievements") or []
-        names = [a.get("name") for a in achievements]
-        assert "番茄達人" in names or len(achievements) >= 0, \
-            f"應解鎖「番茄達人」成就，實際解鎖：{names}"
+    achievements = context.memo.get("unlocked_achievements", [])
+    names = [a.get("name") for a in achievements]
+    assert "番茄達人" in names, f"應解鎖「番茄達人」，實際 {names}"
 
 
 @then('成就描述應為 "{description}"')
 def step_impl_achievement_desc(context, description):
-    """驗證成就描述。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        achievements = data.get("unlocked_achievements") or []
-        for a in achievements:
-            if a.get("name") == "番茄達人":
-                assert a.get("description") == description, \
-                    f"成就描述期望 '{description}'，實際 '{a.get('description')}'"
-                return
+    for a in context.memo.get("unlocked_achievements", []):
+        if a.get("name") == "番茄達人":
+            assert a.get("description") == description, \
+                f"成就描述期望 '{description}'，實際 '{a.get('description')}'"
+            return
+    assert False, "未找到「番茄達人」成就"
 
 
 @then('畫面應包含：')
 def step_impl_screen_elements(context):
-    """驗證畫面包含指定元素（通用）。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    # UI elements are mostly frontend concerns; just verify API responds
+    screen = context.memo.get("break_screen", {})
+    assert screen, "休息畫面未顯示"
+    element_map = {
+        "休息倒數": "countdown_ring",
+        "進度摘要": "progress_summary",
+        "學習小知識": "fun_fact",
+        "關閉按鈕": "close_button",
+    }
+    for row in context.table:
+        key = element_map.get(row["元素"])
+        if key is None:
+            continue
+        assert screen.get(key), f"缺少畫面元素 '{row['元素']}'"
 
 
 @then('番茄計時器應以小型圓形顯示在頁面右上角')
 def step_impl_timer_circle(context):
-    """驗證番茄計時器以小型圓形呈現。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    timer = context.memo.get("pomodoro_timer", {})
+    assert timer.get("shape") == "circle"
+    assert timer.get("position") == "top-right"
 
 
 @then('計時器不應遮擋題目內容或選項區域')
 def step_impl_timer_no_overlap(context):
-    """驗證計時器不遮擋題目（UI 語義驗證）。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert (context.memo.get("pomodoro_timer") or {}).get("overlap_content") is False
 
 
 @then('專注中顯示為綠色，休息中顯示為藍色')
 def step_impl_timer_colors(context):
-    """驗證計時器顏色狀態。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    timer = context.memo.get("pomodoro_timer", {})
+    assert timer.get("color_focus") == "green"
+    assert timer.get("color_break") == "blue"

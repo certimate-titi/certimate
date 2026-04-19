@@ -5,24 +5,17 @@ from behave import when
 
 @when('使用者在登入頁面勾選「記住我」')
 def step_impl_check_remember_me(context):
-    """記錄勾選「記住我」狀態（UI step，暫存 memo）。"""
+    """記錄勾選「記住我」狀態（純前端 UI，不呼叫 API）。"""
     context.memo["remember_me"] = True
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get("/api/v1/auth/remember-me-options")
-    context.last_response = response
 
 
 @when('使用者點擊密碼欄位的顯示/隱藏切換按鈕')
 def step_impl_toggle_password_visibility(context):
-    """切換密碼欄位顯示/隱藏（UI step，暫存 memo）。"""
+    """切換密碼欄位顯示/隱藏（純前端 UI，不呼叫 API）。"""
     current_mode = context.memo.get("password_field_mode", "masked")
-    if current_mode == "masked":
-        context.memo["password_field_mode"] = "plaintext"
-    else:
-        context.memo["password_field_mode"] = "masked"
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get("/api/v1/auth/password-visibility-toggle")
-    context.last_response = response
+    context.memo["password_field_mode"] = (
+        "plaintext" if current_mode == "masked" else "masked"
+    )
 
 
 @when('使用者在註冊頁面輸入密碼 "{password}"')
@@ -38,41 +31,33 @@ def step_impl_register_input_password(context, password):
 
 @when('使用者在註冊頁面點擊「服務條款」連結')
 def step_impl_click_terms_link(context):
-    """觸發服務條款彈窗顯示（UI step）。"""
-    response = context.api_client.get("/api/v1/auth/terms-of-service")
-    context.last_response = response
+    """觸發服務條款彈窗顯示（純前端 UI，不呼叫 API）。"""
+    context.memo["terms_dialog_open"] = True
 
 
 @when('使用者點擊彈窗的關閉按鈕')
 def step_impl_close_dialog(context):
-    """關閉彈窗（UI step）。"""
-    response = context.api_client.get("/api/v1/auth/close-dialog")
-    context.last_response = response
+    """關閉彈窗（純前端 UI，不呼叫 API）。"""
     context.memo["terms_dialog_open"] = False
     context.memo["privacy_dialog_open"] = False
 
 
 @when('使用者在註冊頁面點擊「隱私權政策」連結')
 def step_impl_click_privacy_link(context):
-    """觸發隱私權政策彈窗顯示（UI step）。"""
-    response = context.api_client.get("/api/v1/auth/privacy-policy")
-    context.last_response = response
+    """觸發隱私權政策彈窗顯示（純前端 UI，不呼叫 API）。"""
+    context.memo["privacy_dialog_open"] = True
 
 
 @when('使用者在忘記密碼頁面未輸入任何 Email')
 def step_impl_forgot_password_no_email(context):
-    """模擬忘記密碼頁面無 Email 輸入狀態（UI step）。"""
+    """模擬忘記密碼頁面無 Email 輸入狀態（純前端 UI，不呼叫 API）。"""
     context.memo["forgot_password_email"] = ""
-    response = context.api_client.get("/api/v1/auth/forgot-password-state?email=")
-    context.last_response = response
 
 
 @when('使用者清空 Email 欄位')
 def step_impl_clear_email_field(context):
-    """清空 Email 欄位（UI step）。"""
+    """清空 Email 欄位（純前端 UI，不呼叫 API）。"""
     context.memo["forgot_password_email"] = ""
-    response = context.api_client.get("/api/v1/auth/forgot-password-state?email=")
-    context.last_response = response
 
 
 @when('使用者在登入頁面點擊「以 Google 帳號登入」按鈕')

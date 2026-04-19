@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList } from 'lucide-react';
+import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X } from 'lucide-react';
 import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
+import { useIsMobile } from '@/hooks/use-mobile';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
@@ -55,7 +56,21 @@ export default function KnowledgeBasePage() {
   const [docFullTitle, setDocFullTitle] = useState<string>('');
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const isMobile = useIsMobile();
+  const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // On mobile, collapse both panels by default
+  useEffect(() => {
+    if (isMobile) {
+      setShowLeftPanel(false);
+      setShowRightPanel(false);
+    } else {
+      setShowLeftPanel(true);
+      setShowRightPanel(true);
+    }
+    setMobileDrawer(null);
+  }, [isMobile]);
 
   // V3: 轉換 MindMapNode[] → GraphNode[] for ForceGraph
   const graphNodes: GraphNode[] = (() => {
@@ -114,19 +129,28 @@ export default function KnowledgeBasePage() {
 
     knowledgeService.getMap(targetSubjectId).then((mapRes: Record<string, unknown>) => {
       const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
-      const allDocuments: Document[] = rawResources.map(r => ({
-        id: r.id,
-        userId: '',
-        title: r.name || r.title || '',
-        sourceType: (r.type || r.resource_type || 'pdf') as Document['sourceType'],
-        subjectId: targetSubjectId,
-        sourceUrl: r.source_url || '',
-        mcpParsedTranscriptUrl: null,
-        status: 'COMPLETED' as Document['status'],
-        fileSizeBytes: 0,
-        visionRequired: false,
-        createdAt: r.created_at || new Date().toISOString(),
-      }));
+      const allDocuments: Document[] = rawResources.map(r => {
+        // Map backend status → frontend Document status
+        // Backend ResourceStatus enum: pending / processing / completed / failed / completed_no_map
+        const backendStatus = (r.status || 'pending').toString().toLowerCase();
+        let feStatus: Document['status'] = 'PROCESSING';
+        if (backendStatus === 'completed' || backendStatus === 'completed_no_map') feStatus = 'COMPLETED';
+        else if (backendStatus === 'failed') feStatus = 'FAILED';
+        else if (backendStatus === 'pending' || backendStatus === 'processing') feStatus = 'PROCESSING';
+        return {
+          id: r.id,
+          userId: '',
+          title: r.name || r.title || '',
+          sourceType: (r.type || r.resource_type || 'pdf') as Document['sourceType'],
+          subjectId: targetSubjectId,
+          sourceUrl: r.source_url || '',
+          mcpParsedTranscriptUrl: null,
+          status: feStatus,
+          fileSizeBytes: 0,
+          visionRequired: false,
+          createdAt: r.created_at || new Date().toISOString(),
+        };
+      });
       const allNodes = ((mapRes.nodes || []) as KnowledgeNode[]);
       setDocuments(allDocuments);
       setNodes(allNodes);
@@ -136,6 +160,46 @@ export default function KnowledgeBasePage() {
     }).catch(() => setLoadingDocs(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSubjectId]);
+
+  // Polling: refresh resource statuses every 5s while any are PROCESSING.
+  // Stops automatically once all resources are COMPLETED or FAILED.
+  useEffect(() => {
+    const hasPending = documents.some(d => d.status === 'PROCESSING');
+    if (!hasPending || !activeSubjectId) return;
+    const activeSubject = subjects.find(s => s.id === activeSubjectId);
+    const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+    const timer = setInterval(() => {
+      knowledgeService.getMap(targetSubjectId).then((mapRes: Record<string, unknown>) => {
+        const rawResources = (mapRes.resources || mapRes.documents || []) as Array<Record<string, string>>;
+        setDocuments(prev => {
+          const updated = rawResources.map(r => {
+            const backendStatus = (r.status || 'pending').toString().toLowerCase();
+            let feStatus: Document['status'] = 'PROCESSING';
+            if (backendStatus === 'completed' || backendStatus === 'completed_no_map') feStatus = 'COMPLETED';
+            else if (backendStatus === 'failed') feStatus = 'FAILED';
+            const existing = prev.find(d => d.id === r.id);
+            return existing ? { ...existing, status: feStatus } : existing;
+          }).filter(Boolean) as Document[];
+          // Keep order from previous list, append new ones
+          const existingIds = new Set(updated.map(d => d.id));
+          return [...updated, ...prev.filter(d => !existingIds.has(d.id))];
+        });
+        // If extraction just finished, also refresh nodes
+        const justCompleted = rawResources.some(r => {
+          const bs = (r.status || '').toString().toLowerCase();
+          const prev = documents.find(d => d.id === r.id);
+          return (bs === 'completed' || bs === 'completed_no_map') && prev?.status === 'PROCESSING';
+        });
+        if (justCompleted) {
+          const newNodes = (mapRes.nodes || []) as KnowledgeNode[];
+          setNodes(newNodes);
+          setMindMapNodes(newNodes as unknown as MindMapNode[]);
+        }
+      }).catch(() => { /* silent — next tick retries */ });
+    }, 5000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents.map(d => `${d.id}:${d.status}`).join(','), activeSubjectId]);
 
   const handleNodeClick = async (nodeId: string) => {
     setLoadingDetail(true);
@@ -253,12 +317,14 @@ export default function KnowledgeBasePage() {
     MARKDOWN: { icon: FileText, color: 'text-slate-500' },
     YOUTUBE_URL: { icon: Youtube, color: 'text-red-500' },
     IMAGE_MATH: { icon: FileText, color: 'text-purple-500' },
+    HISTORICAL_EXAM: { icon: ClipboardList, color: 'text-emerald-600' },
+    historical_exam: { icon: ClipboardList, color: 'text-emerald-600' },
   };
 
   const quickChips = ['用簡單的話解釋', '給我一個例子', '轉成 1 題小測驗'];
 
   const showSubjectSwitcher = subjects.length > 0;
-  const containerHeightClass = showSubjectSwitcher ? 'h-[calc(100vh-64px-48px)]' : 'h-[calc(100vh-64px)]';
+  const containerHeightClass = showSubjectSwitcher ? 'h-[calc(100dvh-64px-48px)]' : 'h-[calc(100dvh-64px)]';
 
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
     return (
@@ -281,39 +347,71 @@ export default function KnowledgeBasePage() {
       )}
       <div className={`flex-1 flex flex-col ${containerHeightClass} overflow-hidden bg-slate-50`}>
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">知識庫</h1>
-            <p className="text-xs text-slate-500">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
+        <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
+          <div className="min-w-0">
+            <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">知識庫</h1>
+            <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            {/* Mobile drawer toggles */}
+            {isMobile && (
+              <>
+                <button
+                  onClick={() => setMobileDrawer(mobileDrawer === 'left' ? null : 'left')}
+                  className={`p-1.5 rounded-lg transition-colors ${mobileDrawer === 'left' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}
+                  title="資料列表"
+                >
+                  <BookOpen className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setMobileDrawer(mobileDrawer === 'right' ? null : 'right')}
+                  className={`p-1.5 rounded-lg transition-colors ${mobileDrawer === 'right' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}
+                  title="說明 & AI 教練"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+              </>
+            )}
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜尋知識點..."
-                className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-48"
+                className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36 lg:w-48"
               />
             </div>
-            <Link href="/dashboard" className="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-sm font-medium hover:bg-emerald-600 transition-colors">
+            <Link href="/dashboard" className="bg-emerald-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap">
               + 新增資源
             </Link>
           </div>
         </header>
 
         {/* ===== THREE-COLUMN RESIZABLE LAYOUT ===== */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+
+          {/* Mobile overlay backdrop */}
+          {isMobile && mobileDrawer && (
+            <div
+              className="absolute inset-0 bg-black/30 z-20"
+              onClick={() => setMobileDrawer(null)}
+            />
+          )}
 
           {/* ── LEFT: Resource List ── */}
-          {showLeftPanel && (
-            <div className="w-[280px] shrink-0 border-r border-slate-200">
+          {(showLeftPanel || (isMobile && mobileDrawer === 'left')) && (
+            <div className={`${isMobile ? 'absolute left-0 top-0 bottom-0 z-30 w-[85vw] max-w-[320px] shadow-xl' : 'w-[240px] lg:w-[280px]'} shrink-0 border-r border-slate-200`}>
               <div className="h-full flex flex-col bg-white">
                 <div className="p-3 border-b border-slate-100 flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-emerald-500" />
                   <h2 className="text-sm font-semibold text-slate-700">資料列表</h2>
                   <span className="ml-auto text-[10px] text-slate-400">{documents.length} 筆</span>
+                  {isMobile && (
+                    <button onClick={() => setMobileDrawer(null)} className="p-1 rounded hover:bg-slate-100">
+                      <X className="h-4 w-4 text-slate-400" />
+                    </button>
+                  )}
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {loadingDocs ? (
@@ -333,9 +431,95 @@ export default function KnowledgeBasePage() {
                             className="group p-2.5 cursor-pointer"
                           >
                             <div className="flex items-center gap-2">
-                              {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" /> : <ChevronRight className="h-3 w-3 shrink-0 text-slate-400" />}
                               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-                              <div className="flex-1 min-w-0"><h3 className="text-xs font-medium truncate">{doc.title}</h3><p className="text-[10px] text-slate-400">{doc.sourceType}</p></div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xs font-medium truncate">{doc.title}</h3>
+                                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                  {doc.sourceType}
+                                  {doc.status === 'PROCESSING' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-medium">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                      處理中
+                                    </span>
+                                  )}
+                                  {doc.status === 'FAILED' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-medium">
+                                      失敗
+                                    </span>
+                                  )}
+                                  {doc.status === 'COMPLETED' && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-medium">
+                                      ✓ 完成
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setSelectedDocId(doc.id);
+                                  // Status-aware fallback messages
+                                  const statusMsg = doc.status === 'PROCESSING'
+                                    ? '⏳ 此資源仍在處理中（PDF 解析 → 文字切塊 → 向量化）。系統每 5 秒自動更新狀態，請稍後再試。'
+                                    : doc.status === 'FAILED'
+                                      ? '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。'
+                                      : '（尚無可顯示內容）';
+
+                                  // Historical exam virtual resource — render markdown from backend
+                                  if (doc.sourceType === 'historical_exam' || doc.id.startsWith('hist:')) {
+                                    const hid = doc.id.startsWith('hist:') ? doc.id.slice(5) : doc.id;
+                                    try {
+                                      const md = await documentService.getHistoricalMarkdown(hid);
+                                      setDocFullText(md.content || '（無題目內容）');
+                                    } catch {
+                                      setDocFullText('❌ 載入考古題內容失敗');
+                                    }
+                                    setDocFullTitle(doc.title);
+                                    setCenterView('document');
+                                    return;
+                                  }
+                                  // Fetch chunks if not cached
+                                  let fullText = '';
+                                  if (!docChunks[doc.id]) {
+                                    setLoadingChunks(doc.id);
+                                    try {
+                                      const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
+                                      const chunks = res.chunks || [];
+                                      setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
+                                      const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+                                      fullText = sorted.map(c => c.content).join('\n\n');
+                                    } catch {
+                                      fullText = '';
+                                    } finally {
+                                      setLoadingChunks(null);
+                                    }
+                                  } else {
+                                    const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
+                                    fullText = sorted.map(c => c.content).join('\n\n');
+                                  }
+
+                                  // Fallback: system-generated resources (e.g. 考古題題庫) have no
+                                  // chunks but the backend exposes a rolled-up summary via
+                                  // /knowledge-map/resources/{id}/summary that walks the
+                                  // synthetic knowledge_nodes subtree and returns a readable doc.
+                                  if (!fullText || fullText.length < 20) {
+                                    try {
+                                      const summary = await knowledgeService.getResourceSummary(doc.id);
+                                      if (summary?.content && summary.content.length > 20) {
+                                        fullText = summary.content;
+                                      }
+                                    } catch { /* silent */ }
+                                  }
+
+                                  setDocFullText(fullText || statusMsg);
+                                  setDocFullTitle(doc.title);
+                                  setCenterView('document');
+                                }}
+                                className="text-[10px] font-medium text-blue-600 hover:text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-50 shrink-0 whitespace-nowrap"
+                                title="查看原文"
+                              >
+                                📖 原文
+                              </button>
                               <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"><Trash2 className="h-3 w-3" /></button>
                             </div>
                           </div>
@@ -405,17 +589,19 @@ export default function KnowledgeBasePage() {
           <div className="flex-1 min-w-0">
             <div className="h-full flex flex-col overflow-hidden bg-white">
               {/* Toolbar */}
-              <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowLeftPanel(!showLeftPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors ${showLeftPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                    {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
-                  </button>
+              <div className="flex items-center justify-between px-2 md:px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-1 overflow-x-auto">
+                <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                  {!isMobile && (
+                    <button onClick={() => setShowLeftPanel(!showLeftPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showLeftPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
+                    </button>
+                  )}
                   <div className="flex bg-slate-100 rounded-md p-0.5">
-                    <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
-                    <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
-                    {docFullText && <button onClick={() => setCenterView('document')} className={`px-2 py-0.5 text-[10px] rounded font-medium ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
+                    <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
+                    <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
+                    {docFullText && <button onClick={() => setCenterView('document')} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
                   </div>
-                  <div className="flex items-center gap-2 text-[9px] text-slate-400 ml-2">
+                  <div className="hidden md:flex items-center gap-2 text-[9px] text-slate-400 ml-2">
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />精熟</span>
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />部分</span>
                     <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />弱</span>
@@ -444,7 +630,7 @@ export default function KnowledgeBasePage() {
                       }
                     }}
                     disabled={extracting || !activeSubjectId}
-                    className={`flex items-center gap-1 px-2 py-0.5 text-[10px] rounded font-medium ml-2 transition-colors ${
+                    className={`flex items-center gap-1 px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium ml-1 md:ml-2 transition-colors whitespace-nowrap ${
                       extracting
                         ? 'bg-blue-100 text-blue-500 cursor-wait'
                         : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
@@ -458,19 +644,19 @@ export default function KnowledgeBasePage() {
                     <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
                   )}
                 </div>
-                <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                  {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
-                </button>
+                {!isMobile && (
+                  <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                    {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
+                  </button>
+                )}
               </div>
               {/* Graph / Document */}
               <div className="flex-1 overflow-hidden">
                 {centerView === 'document' ? (
-                  <div className="h-full overflow-y-auto p-6">
-                    <div className="max-w-3xl mx-auto">
-                      <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                      <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                        {docFullText}
-                      </div>
+                  <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
+                    <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
+                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                      {docFullText}
                     </div>
                   </div>
                 ) : graphView === 'force' ? (
@@ -489,8 +675,8 @@ export default function KnowledgeBasePage() {
           </div>
 
           {/* ── RIGHT: 節點說明 + AI 教練 ── */}
-          {showRightPanel && (
-            <div className="w-[320px] shrink-0 border-l border-slate-200">
+          {(showRightPanel || (isMobile && mobileDrawer === 'right')) && (
+            <div className={`${isMobile ? 'absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] shadow-xl' : 'w-[280px] lg:w-[320px]'} shrink-0 border-l border-slate-200`}>
               <div className="h-full flex flex-col bg-white">
 
                 {/* ━━ 上：節點說明 ━━ */}
@@ -502,6 +688,11 @@ export default function KnowledgeBasePage() {
                   ) : selectedNodeDetail ? (
                     <div>
                       <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                        {isMobile && (
+                          <button onClick={() => setMobileDrawer(null)} className="p-1 rounded hover:bg-slate-100 shrink-0">
+                            <X className="h-4 w-4 text-slate-400" />
+                          </button>
+                        )}
                         <FileText className="h-3.5 w-3.5 text-blue-500" />
                         <h3 className="text-xs font-bold text-slate-700 truncate">{selectedNodeDetail.node?.label || '節點說明'}</h3>
                         <button onClick={() => { const nid = (selectedNodeDetail as unknown as Record<string, unknown>)?.node_id as string || selectedNodeDetail?.node?.id || ''; const nname = selectedNodeDetail?.node?.label || ''; router.push(`/practice?nodeId=${nid}&nodeName=${encodeURIComponent(nname)}`); }} className="ml-auto text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>

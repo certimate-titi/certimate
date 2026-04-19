@@ -90,88 +90,98 @@ def _decode_verification_token(token: str) -> dict | None:
         return None
 
 
+# --- Password reset token helpers ---
+
+def _generate_reset_token(user_id: str) -> str:
+    settings = get_settings()
+    payload = {
+        "sub": str(user_id),
+        "purpose": "password_reset",
+        "exp": datetime.utcnow() + timedelta(hours=1),
+        "iat": datetime.utcnow(),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def _decode_reset_token(token: str) -> dict | None:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            return None
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
 # --- Google ID token verification ---
 
 def _verify_google_id_token(id_token_str: str) -> dict | None:
-    """Verify Firebase ID token and return claims (email, name, picture).
+    """Verify Google token and return claims (email, name, picture).
 
-    Firebase signInWithPopup returns a Firebase ID token (aud = project ID).
-    Uses google-auth library with fallback to manual JWT decode.
+    Supports three token types (tried in order):
+    1. Google OAuth2 ID token (from @react-oauth/google credential flow)
+    2. Google access_token (from @react-oauth/google implicit flow) — verified
+       by calling Google's userinfo endpoint
+    3. Legacy Firebase ID token (backward compatibility)
     """
     settings = get_settings()
 
-    # Strategy 1: Full cryptographic verification via google-auth
-    try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as google_requests
-
-        request = google_requests.Request()
-
+    # Strategy 1: Google OAuth2 ID token (JWT with 3 parts)
+    if id_token_str.count(".") == 2:
         try:
-            claims = google_id_token.verify_firebase_token(
-                id_token_str, request,
-                audience=settings.FIREBASE_PROJECT_ID,
-            )
-        except Exception:
-            claims = google_id_token.verify_oauth2_token(
-                id_token_str, request,
-                audience=settings.GOOGLE_CLIENT_ID,
-            )
+            from google.oauth2 import id_token as google_id_token
+            from google.auth.transport import requests as google_requests
 
-        email = claims.get("email")
-        if email:
-            return {
-                "email": email,
-                "name": claims.get("name", ""),
-                "picture": claims.get("picture", ""),
-                "email_verified": claims.get("email_verified", False),
-            }
-    except Exception as e:
-        logger.warning("google-auth verification failed: %s: %s", type(e).__name__, str(e)[:200])
+            request = google_requests.Request()
+            # Try as standard Google OAuth2 token first
+            try:
+                claims = google_id_token.verify_oauth2_token(
+                    id_token_str, request,
+                    audience=settings.GOOGLE_CLIENT_ID,
+                )
+            except Exception:
+                # Fallback to Firebase token (backward compat)
+                claims = google_id_token.verify_firebase_token(
+                    id_token_str, request,
+                    audience=settings.FIREBASE_PROJECT_ID,
+                )
 
-    # Strategy 2: Decode JWT payload without signature verification
-    # Safe because Firebase signInWithPopup is a trusted frontend flow
+            email = claims.get("email")
+            if email:
+                return {
+                    "email": email,
+                    "name": claims.get("name", ""),
+                    "picture": claims.get("picture", ""),
+                    "email_verified": claims.get("email_verified", False),
+                }
+        except Exception as e:
+            logger.warning("google-auth JWT verification failed: %s: %s", type(e).__name__, str(e)[:200])
+
+    # Strategy 2: Google access_token (opaque string, not a JWT)
+    # Verify by calling Google's userinfo endpoint — if it returns email, token is valid.
     try:
-        import json
-        import base64
-
-        parts = id_token_str.split(".")
-        if len(parts) != 3:
-            logger.error("Invalid JWT structure: expected 3 parts, got %d", len(parts))
-            return None
-
-        payload_b64 = parts[1]
-        # Add padding
-        payload_b64 += "=" * (4 - len(payload_b64) % 4)
-        payload_bytes = base64.urlsafe_b64decode(payload_b64)
-        claims = json.loads(payload_bytes)
-
-        # Verify issuer is Firebase
-        issuer = claims.get("iss", "")
-        expected_issuer = f"https://securetoken.google.com/{settings.FIREBASE_PROJECT_ID}"
-        if issuer != expected_issuer:
-            logger.error("Invalid issuer: %s (expected %s)", issuer, expected_issuer)
-            return None
-
-        # Verify audience
-        if claims.get("aud") != settings.FIREBASE_PROJECT_ID:
-            logger.error("Invalid audience: %s", claims.get("aud"))
-            return None
-
-        email = claims.get("email")
-        if not email:
-            logger.error("No email in token claims")
-            return None
-
-        logger.info("Firebase token verified via payload decode for: %s", email)
-        return {
-            "email": email,
-            "name": claims.get("name", ""),
-            "picture": claims.get("picture", ""),
-            "email_verified": claims.get("email_verified", False),
-        }
+        import requests as _requests
+        resp = _requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {id_token_str}"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            info = resp.json()
+            email = info.get("email")
+            if email:
+                logger.info("Google access_token verified via userinfo for: %s", email)
+                return {
+                    "email": email,
+                    "name": info.get("name", ""),
+                    "picture": info.get("picture", ""),
+                    "email_verified": info.get("email_verified", False),
+                }
     except Exception as e:
-        logger.error("JWT payload decode failed: %s: %s", type(e).__name__, str(e)[:200])
+        logger.warning("Google userinfo call failed: %s: %s", type(e).__name__, str(e)[:200])
         return None
 
 
@@ -292,6 +302,10 @@ class AuthService:
         if _enum_value(user.status) == "pending":
             return {"error": True, "status_code": 400, "message": "帳號尚未驗證，請查收啟用信件"}
 
+        # SSO user without password set
+        if not user.password_hash and _enum_value(user.auth_provider) == "google":
+            return {"error": True, "status_code": 400, "message": "此帳號使用 Google 登入，請點擊「以 Google 繼續」，或使用忘記密碼設定 Email 密碼。"}
+
         if not _verify_password(password, user.password_hash or ""):
             return {"error": True, "status_code": 400, "message": "帳號或密碼錯誤"}
 
@@ -368,12 +382,36 @@ class AuthService:
         }
 
     def forgot_password(self, email: str) -> dict:
+        # Always return success to prevent account enumeration
+        user = self.repo.find_by_email(email)
+        if user and self.email_service:
+            token = _generate_reset_token(str(user.id))
+            self.email_service.send_password_reset_email(email, token)
+
         return {
             "error": False,
             "reset_email_sent": True,
             "message": "密碼重設信已發送",
             "expires_in_hours": 1,
         }
+
+    def reset_password(self, token: str, new_password: str) -> dict:
+        payload = _decode_reset_token(token)
+        if payload is None:
+            return {"error": True, "status_code": 400, "message": "重設連結無效或已過期"}
+
+        user_id = payload.get("sub")
+        user = self.repo.find_by_id(user_id)
+        if user is None:
+            return {"error": True, "status_code": 400, "message": "重設連結無效或已過期"}
+
+        if not _is_password_strong_enough(new_password):
+            return {"error": True, "status_code": 400, "message": "密碼強度不足，需至少 8 字元，包含大小寫字母與數字"}
+
+        user.password_hash = _hash_password(new_password)
+        self.repo.save(user)
+
+        return {"error": False, "message": "密碼已成功重設，請使用新密碼登入"}
 
     def check_password_strength(self, password: str) -> dict:
         return {

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { BrainCircuit, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { apiClient } from '@/lib/api/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -20,16 +19,11 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await apiClient.post('/auth/forgot-password', { email: email.trim() });
       setSent(true);
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/invalid-email') {
-        setError('請輸入有效的電子郵件地址。');
-      } else {
-        // Always show success to prevent account enumeration
-        setSent(true);
-      }
+    } catch (err: unknown) {
+      // Always show success to prevent account enumeration
+      setSent(true);
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +55,9 @@ export default function ForgotPasswordPage() {
             </div>
             <p className="text-xs text-slate-400">
               沒有收到？請檢查垃圾郵件匣，或稍待幾分鐘後再試。連結有效期為 1 小時。
+            </p>
+            <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              如果您是使用 Google 登入的用戶，設定密碼後可同時使用 Email 和 Google 兩種方式登入。
             </p>
             <Link
               href="/login"

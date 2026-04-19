@@ -16,6 +16,12 @@ export interface MindMapNode {
   // V3 有機生長欄位
   progress_percentage?: number;
   status?: string;
+  // Mindmap upgrade §3 — 骨架失焦處理
+  support_strength?: number;
+  strength_tier?: 'empty' | 'sparse' | 'partial' | 'full';
+  strength_label?: string;
+  needs_supplement?: boolean;
+  node_source?: 'syllabus' | 'user_data' | 'hybrid';
 }
 
 interface MindMapTreeProps {
@@ -30,10 +36,16 @@ const MASTERY_COLORS: Record<string, { dot: string; bg: string; text: string }> 
   yellow: { dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-600' },
   red: { dot: 'bg-rose-500', bg: 'bg-rose-50 border-rose-200', text: 'text-rose-700' },
   gray: { dot: 'bg-slate-300', bg: 'bg-white border-slate-200', text: 'text-slate-600' },
+  // §3 new tiers
+  empty: { dot: 'bg-slate-200', bg: 'bg-slate-50 border-dashed border-slate-300', text: 'text-slate-400' },
+  sparse: { dot: 'bg-slate-400', bg: 'bg-slate-50 border-slate-200', text: 'text-slate-500' },
 };
 
-// V3: 純 progress 驅動顏色
+// V3 + §3: support strength overrides mastery color when node has no data
 function getNodeColor(node: MindMapNode): string {
+  // Empty/sparse nodes get §3 colors regardless of mastery
+  if (node.strength_tier === 'empty') return 'empty';
+  if (node.strength_tier === 'sparse') return 'sparse';
   return node.mastery_color || 'gray';
 }
 
@@ -128,8 +140,15 @@ function TreeNode({
             <span className="text-[10px] text-slate-400 shrink-0">p.{node.source_page}</span>
           )}
 
-          {/* Mastery percentage */}
-          {displayRate > 0 && (
+          {/* §3: 待補充標籤（優先於 mastery 顯示） */}
+          {node.needs_supplement && (
+            <span className="text-[10px] font-medium shrink-0 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+              {node.strength_label || '待補充'}
+            </span>
+          )}
+
+          {/* Mastery percentage — 只在有資料時顯示 */}
+          {!node.needs_supplement && displayRate > 0 && (
             <span className={`text-[10px] font-medium shrink-0 ${colors.text}`}>
               {displayRate}%
             </span>
@@ -207,11 +226,12 @@ export default function MindMapTree({ nodes, selectedNodeId, onNodeClick }: Mind
       ))}
 
       {/* Legend */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-4 text-[10px] text-slate-400">
+      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-3 flex-wrap text-[10px] text-slate-400">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> 精熟</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 部分</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> 需加強</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300" /> 未測驗</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-200 border border-dashed border-slate-400" /> 待補充</span>
       </div>
     </div>
   );

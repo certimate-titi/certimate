@@ -8,6 +8,7 @@ import {
   Users,
   CreditCard,
   ShieldAlert,
+  AlertTriangle,
   Settings,
   Menu,
   X,
@@ -16,7 +17,9 @@ import {
   Search,
   History,
   FileText,
-  Upload
+  Upload,
+  DollarSign,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -34,9 +37,12 @@ const sidebarItems = [
   { name: '財務與訂閱', href: '/super-admin/finance', icon: CreditCard },
   { name: '內容與安全', href: '/super-admin/moderation', icon: ShieldAlert },
   { name: '考古題匯入', href: '/super-admin/exam-import', icon: Upload },
+  { name: '異常維修', href: '/super-admin/anomaly', icon: AlertTriangle },
   { name: '系統設定', href: '/super-admin/settings', icon: Settings },
   { name: '審計日誌', href: '/super-admin/audit-logs', icon: History },
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },
+  { name: '成本監控', href: '/super-admin/cost-monitor', icon: DollarSign },
+  { name: '放榜與退場', href: '/super-admin/retirement', icon: Zap },
 ];
 
 export default function SuperAdminLayout({

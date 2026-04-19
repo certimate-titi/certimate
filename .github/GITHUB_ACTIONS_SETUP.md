@@ -111,7 +111,7 @@ gcloud iam service-accounts add-iam-policy-binding ${SA_EMAIL} \
   --project=${PROJECT_ID} \
   --role="roles/iam.workloadIdentityUser" \
   --condition=None \
-  --member="principalSet://iam.googleapis.com/${WIP}/attribute.repository/son1202/certimate"
+  --member="principalSet://iam.googleapis.com/${WIP}/attribute.repository/certimate-titi/certimate"
 ```
 
 ### Step 4: 取得 GitHub 所需的 Secrets 值

@@ -352,7 +352,8 @@ class WrongAnswerService:
     def _generate_coach_reply(self, question: Question, message: str, tone: str,
                               history_context: str | None = None,
                               conversation_history: list | None = None,
-                              confidence_quadrant: str | None = None) -> str | dict:
+                              confidence_quadrant: str | None = None,
+                              user_id: uuid.UUID | None = None) -> str | dict:
         """生成蘇格拉底式 AI 教練回覆。
 
         設計原則（白皮書 #8）：
@@ -455,13 +456,14 @@ class WrongAnswerService:
 
             user_prompt += f"【學生最新提問】{message}"
 
-            # Try RAG if resource exists
+            # Try RAG if resource exists (Mastery-aware: skip already-mastered chunks)
             if node and node.resource_id and settings.VOYAGE_API_KEY:
                 retrieval = RetrievalService(self.db)
                 chunks = retrieval.retrieve(
                     f"{node_name}: {message}",
                     [node.resource_id],
                     top_k=5,
+                    user_id=user_id,
                 )
                 context = retrieval.build_context_string(chunks, max_tokens=2000)
 
@@ -657,6 +659,7 @@ class WrongAnswerService:
                 question, message, tone, history_context,
                 conversation_history=conversation_history,
                 confidence_quadrant=confidence_quadrant,
+                user_id=user_uuid,
             )
             # _generate_coach_reply may return a dict with "rejected" or "error" flag
             if isinstance(result, dict):

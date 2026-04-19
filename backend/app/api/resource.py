@@ -29,28 +29,71 @@ def _get_knowledge_map_service(db: Session = Depends(get_db)) -> KnowledgeMapSer
 
 @router.get("/resources")
 def list_resources(
+    subject_id: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """列出使用者的所有資源。"""
-    repo = ResourceRepository(db)
+    """列出使用者的所有資源。
+
+    若提供 subject_id，會額外把該科目預載的考古題以虛擬資源（type=historical_exam）形式合併回傳。
+    """
     from app.models.resource import Resource
-    resources = db.query(Resource).filter(Resource.user_id == user_id).order_by(Resource.created_at.desc()).all()
-    return {
-        "resources": [
-            {
-                "id": str(r.id),
-                "filename": r.name or "",
-                "resource_type": r.type.value if hasattr(r.type, 'value') else r.type,
-                "status": r.status.value if hasattr(r.status, 'value') else r.status,
-                "subject_id": str(r.subject_id) if r.subject_id else None,
-                "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
-                "youtube_url": r.youtube_url or "",
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            }
-            for r in resources
-        ]
-    }
+    from app.services.historical_markdown_service import HistoricalMarkdownService
+
+    q = db.query(Resource).filter(Resource.user_id == user_id)
+    if subject_id:
+        q = q.filter(Resource.subject_id == subject_id)
+    resources = q.order_by(Resource.created_at.desc()).all()
+
+    items = [
+        {
+            "id": str(r.id),
+            "filename": r.name or "",
+            "resource_type": r.type.value if hasattr(r.type, 'value') else r.type,
+            "status": r.status.value if hasattr(r.status, 'value') else r.status,
+            "subject_id": str(r.subject_id) if r.subject_id else None,
+            "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
+            "youtube_url": r.youtube_url or "",
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in resources
+    ]
+
+    if subject_id:
+        try:
+            historical = HistoricalMarkdownService(db).list_for_subject(subject_id)
+            for h in historical:
+                items.append({
+                    "id": f"hist:{h['id']}",
+                    "filename": h["name"],
+                    "resource_type": "historical_exam",
+                    "status": "ready",
+                    "subject_id": subject_id,
+                    "file_size_mb": None,
+                    "youtube_url": "",
+                    "created_at": None,
+                    "historical_exam_id": h["id"],
+                    "total_questions": h["total_questions"],
+                    "year": h["year"],
+                })
+        except Exception:
+            pass
+
+    return {"resources": items}
+
+
+@router.get("/resources/historical/{historical_exam_id}/markdown")
+def get_historical_markdown(
+    historical_exam_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """動態 render 單場考古題為 markdown 字串。"""
+    from app.services.historical_markdown_service import HistoricalMarkdownService
+    result = HistoricalMarkdownService(db).render_markdown(historical_exam_id)
+    if result.get("error"):
+        raise HTTPException(status_code=result.get("status_code", 400), detail={"message": result["message"]})
+    return result
 
 
 @router.get("/resources/{resource_id}")
@@ -154,6 +197,8 @@ def delete_resource(
         raise HTTPException(status_code=404, detail="資源不存在")
 
     rid = resource.id
+    subject_id = str(resource.subject_id) if resource.subject_id else None
+
     # Delete chunks
     db.query(ResourceChunk).filter_by(resource_id=rid).delete()
     # Delete knowledge nodes
@@ -169,6 +214,20 @@ def delete_resource(
             storage.delete_file(resource.gcs_path)
         except Exception:
             pass
+
+    # Rebuild unified knowledge tree (remaining resources may have changed)
+    if subject_id:
+        try:
+            from app.services.unified_knowledge_extraction_service import (
+                UnifiedKnowledgeExtractionService,
+            )
+            extractor = UnifiedKnowledgeExtractionService(db)
+            extractor.extract(subject_id)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Unified re-extraction after delete skipped: %s", e
+            )
 
     return {"message": "資源已刪除"}
 
@@ -260,6 +319,7 @@ async def upload_resource_file(
     subject_id: str = Form(...),
     filename: Optional[str] = Form(None),
     resource_type: Optional[str] = Form(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     user_id: str = Depends(get_current_user_id),
     service: ResourceService = Depends(_get_resource_service),
     db: Session = Depends(get_db),
@@ -305,12 +365,41 @@ async def upload_resource_file(
 
     result["gcs_path"] = storage_path
     result["file_size_bytes"] = len(file_data)
+
+    # 自動觸發背景文件處理（解析→切塊→embedding→知識樹）
+    background_tasks.add_task(_process_resource_background, resource_id, user_id)
+
     return result
+
+
+def _process_resource_background(resource_id: str, user_id: str):
+    """背景執行文件處理 pipeline（獨立 DB session）。"""
+    import logging
+    logger = logging.getLogger(__name__)
+    from app.core.deps import _SessionLocal
+    if _SessionLocal is None:
+        logger.error("[BG Process] Session factory not initialized")
+        return
+
+    db = _SessionLocal()
+    try:
+        from app.services.document_processing_service import DocumentProcessingService
+        svc = DocumentProcessingService(db)
+        result = svc.process_resource(uuid.UUID(resource_id))
+        if result.get("error"):
+            logger.error(f"[BG Process] resource={resource_id} failed: {result.get('message')}")
+        else:
+            logger.info(f"[BG Process] resource={resource_id} completed: {result.get('chunks_created', 0)} chunks")
+    except Exception as e:
+        logger.exception(f"[BG Process] resource={resource_id} exception: {e}")
+    finally:
+        db.close()
 
 
 @router.post("/resources/youtube")
 def submit_youtube(
     request: SubmitYoutubeRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
@@ -321,6 +410,11 @@ def submit_youtube(
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
+
+    # 自動觸發背景文件處理
+    if result.get("id"):
+        background_tasks.add_task(_process_resource_background, result["id"], user_id)
+
     return result
 
 
@@ -390,7 +484,6 @@ def _handle_chunked_result(result: dict):
 
 
 @router.post("/resources/chunked/init")
-@router.post("/resources/chunked-upload/init")
 def init_chunked_upload(
     body: InitChunkedUploadRequest,
     user_id: str = Depends(get_current_user_id),
@@ -421,7 +514,6 @@ async def upload_chunk(
 
 
 @router.get("/resources/chunked/{upload_id}/status")
-@router.get("/resources/chunked-upload/{upload_id}/progress")
 def get_chunked_upload_status(
     upload_id: str,
     user_id: str = Depends(get_current_user_id),
@@ -434,7 +526,6 @@ def get_chunked_upload_status(
 
 
 @router.post("/resources/chunked/{upload_id}/merge")
-@router.post("/resources/chunked-upload/{upload_id}/complete")
 def merge_chunks(
     upload_id: str,
     user_id: str = Depends(get_current_user_id),

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.deps import get_db, get_current_user_id
+from app.core.permissions import require_ai_budget_available
 from app.services.ai_question_service import AiQuestionService
 from app.services.retirement_service import RetirementService
 
@@ -31,6 +32,7 @@ def generate(
     body: GenerateRequest,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
+    _gate: None = Depends(require_ai_budget_available),
 ):
     service = AiQuestionService(db)
     result = service.generate(

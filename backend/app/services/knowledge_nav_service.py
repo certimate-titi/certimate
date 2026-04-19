@@ -8,6 +8,7 @@ from app.models.knowledge_node import KnowledgeNode
 from app.models.node_mastery import NodeMastery
 from app.models.learning_journey import LearningJourney
 from app.models.resource import Resource
+from app.models.resource_chunk import ResourceChunk
 from app.models.subject import Subject
 from app.models.ai_chat import AiChatSession, AiChatMessage
 from app.models.user import User
@@ -84,8 +85,20 @@ class KnowledgeNavService:
             return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
 
         # 確保考古題 Resource 存在（並 commit 以持久化）
-        self._ensure_exam_bank_resource(sid)
-        self.db.commit()
+        # Defensive: 任何錯誤都不該讓整個 endpoint 回 500 — 使用者至少該看到
+        # 已存在的 knowledge_nodes，即使 synthetic resource 創建失敗。
+        try:
+            self._ensure_exam_bank_resource(sid)
+            self.db.commit()
+        except Exception as exc:
+            import logging
+            logging.getLogger("knowledge_nav").warning(
+                "[ensure_exam_bank] failed for subject %s: %s", sid, exc,
+            )
+            try:
+                self.db.rollback()
+            except Exception:
+                pass
 
         # 只查詢此科目自己的知識節點，不混入父科目的節點
         subject_ids = [sid]
@@ -94,18 +107,11 @@ class KnowledgeNavService:
         resources = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids)).all()
         resource_ids = [r.id for r in resources]
 
-        # 找所有知識節點（by resource_id OR by subject_id）
-        from sqlalchemy import or_
-        conditions = []
-        if resource_ids:
-            conditions.append(KnowledgeNode.resource_id.in_(resource_ids))
-        conditions.append(KnowledgeNode.subject_id.in_(subject_ids))
-
-        if not conditions:
-            return {"error": False, "nodes": [], "resources": []}
-
+        # 只查統一知識樹節點（resource_id IS NULL）
+        # per-resource 節點是文件處理的中間產物，不應出現在知識庫列表
         nodes = self.db.query(KnowledgeNode).filter(
-            or_(*conditions)
+            KnowledgeNode.subject_id.in_(subject_ids),
+            KnowledgeNode.resource_id.is_(None),
         ).order_by(KnowledgeNode.sort_order).all()
 
         # 找掌握度
@@ -161,6 +167,15 @@ class KnowledgeNavService:
                 status = "UNSEEN"
                 decay_status = "unseen"
 
+            # Mindmap upgrade §3 — support_strength display hints
+            from app.services.mindmap_strength_service import MindmapStrengthService
+            strength_value = getattr(node, "support_strength", 1.0) or 0.0
+            strength_hint = MindmapStrengthService.strength_to_display(strength_value)
+
+            # Empty/sparse nodes override decay color with gray "待補充"
+            if strength_hint["needs_supplement"]:
+                display_color = strength_hint["color"]
+
             flat_nodes[str(node.id)] = {
                 "id": str(node.id),
                 "name": node.name,
@@ -175,6 +190,12 @@ class KnowledgeNavService:
                 "status": status,
                 "decay_status": decay_status,
                 "progress_percentage": round(progress, 4),
+                # §3 新增
+                "support_strength": round(float(strength_value), 3),
+                "strength_tier": strength_hint["tier"],
+                "strength_label": strength_hint["label"],
+                "needs_supplement": strength_hint["needs_supplement"],
+                "node_source": getattr(node, "node_source", "user_data"),
                 "children": [],
             }
 
@@ -195,9 +216,34 @@ class KnowledgeNavService:
         sort_tree(roots)
 
         result_resources = [
-            {"id": str(r.id), "name": r.name, "type": r.type.value if hasattr(r.type, 'value') else r.type}
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "type": r.type.value if hasattr(r.type, 'value') else r.type,
+                "status": r.status.value if hasattr(r.status, 'value') else (r.status or "pending"),
+                "error_message": r.error_message,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
             for r in resources
         ]
+
+        # 合併預載考古題（嚴守科目隔離 — 僅用該 subject 自己的 exam_subject_codes）
+        try:
+            from app.services.historical_markdown_service import HistoricalMarkdownService
+            for h in HistoricalMarkdownService(self.db).list_for_subject(subject_id):
+                result_resources.append({
+                    "id": f"hist:{h['id']}",
+                    "name": h["name"],
+                    "type": "historical_exam",
+                    "status": "completed",
+                    "error_message": None,
+                    "created_at": None,
+                    "historical_exam_id": h["id"],
+                    "total_questions": h["total_questions"],
+                    "year": h["year"],
+                })
+        except Exception:
+            pass
 
         return {"error": False, "nodes": roots, "resources": result_resources}
 
@@ -248,8 +294,34 @@ class KnowledgeNavService:
         }
 
     def get_node_source(self, node_id: str, user_id: str) -> dict:
-        """取得節點溯源內容。"""
-        return self.get_node_detail(node_id, user_id)
+        """取得節點溯源內容（含物理級跳轉資訊）。"""
+        result = self.get_node_detail(node_id, user_id)
+        if result.get("error"):
+            return result
+
+        # 查詢關聯的 chunk，取得物理級跳轉資訊
+        nid = uuid.UUID(node_id)
+        chunk = (
+            self.db.query(ResourceChunk)
+            .filter_by(node_id=nid, is_deleted=False)
+            .order_by(ResourceChunk.chunk_index)
+            .first()
+        )
+
+        if chunk:
+            result["highlight"] = {
+                "anchor_id": chunk.anchor_id,
+                "line_start": chunk.highlight_line_start,
+                "line_end": chunk.highlight_line_end,
+                "char_start": chunk.highlight_char_start,
+                "char_end": chunk.highlight_char_end,
+                "page_start": chunk.source_page_start,
+                "page_end": chunk.source_page_end,
+            }
+        else:
+            result["highlight"] = None
+
+        return result
 
     def get_layout(self, user_id: str) -> dict:
         """取得知識心智圖頁面佈局。"""

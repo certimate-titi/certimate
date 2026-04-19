@@ -47,7 +47,8 @@ class MockExamService:
 
     def save_answer(self, exam_id: str, user_id: str, question_id: str,
                     selected_answer: str | None = None,
-                    marked_for_review: bool | None = None) -> dict:
+                    marked_for_review: bool | None = None,
+                    confidence: str | None = None) -> dict:
         uid = uuid.UUID(user_id)
         eid = uuid.UUID(exam_id)
         qid = uuid.UUID(question_id)
@@ -81,9 +82,16 @@ class MockExamService:
         if selected_answer is not None:
             answer.selected_answer = selected_answer
             answer.answered_at = datetime.now(timezone.utc)
+            # Compute is_correct if question has correct_answer
+            q = self.db.query(Question).filter_by(id=qid).first()
+            if q and q.correct_answer:
+                answer.is_correct = selected_answer == q.correct_answer
 
         if marked_for_review is not None:
             answer.marked_for_review = marked_for_review
+
+        if confidence is not None:
+            answer.confidence = confidence
 
         self.db.commit()
 
@@ -92,6 +100,7 @@ class MockExamService:
             "question_id": str(qid),
             "selected_answer": answer.selected_answer,
             "marked_for_review": answer.marked_for_review,
+            "confidence": answer.confidence,
         }
 
     def submit_exam(self, exam_id: str, user_id: str) -> dict:

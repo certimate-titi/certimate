@@ -1,68 +1,68 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, doc, getDocFromServer } from 'firebase/firestore';
+/**
+ * Firebase utilities — DEPRECATED for Auth, kept only for:
+ * 1. AdminAction enum (used by super-admin audit log UI)
+ * 2. logAdminAction() — writes to backend API (was Firestore, migrated 2026-04-16)
+ *
+ * Google SSO now uses @react-oauth/google (Google Identity Services) directly,
+ * not Firebase Auth SDK. See lib/google-oauth-wrapper.tsx + lib/auth-context.tsx.
+ */
 
-// Firebase config from environment variables (not hardcoded in git)
-const config = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "dummy-api-key-for-build",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "certimate-titi.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "certimate-titi",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "certimate-titi.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
-};
-const firestoreDatabaseId = process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID || "";
+import { apiClient } from '@/lib/api/client';
 
-const app = initializeApp(config);
-export const db = getFirestore(app, firestoreDatabaseId);
-export const auth = getAuth();
-export const googleProvider = new GoogleAuthProvider();
-
-// Test Connection (only when Firebase is properly configured)
-async function testConnection() {
-  if (!config.apiKey || config.apiKey === 'dummy-api-key-for-build') {
-    // Firebase not configured — skip connection test (using JWT auth instead)
-    return;
-  }
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Firebase connection unavailable. JWT auth is unaffected.");
-    }
-  }
-}
-testConnection();
-
-// Audit Logging Utility
 export enum AdminAction {
-  CREATE_ADMIN = 'CREATE_ADMIN',
+  // 使用者管理
+  CREATE_ADMIN = 'create_admin',
   EDIT_ADMIN = 'EDIT_ADMIN',
-  DELETE_ADMIN = 'DELETE_ADMIN',
+  DELETE_USER = 'delete_user',
+  DELETE_ADMIN = 'delete_user', // backward compat alias
+  SUSPEND_USER = 'suspend_user',
+  ACTIVATE_USER = 'activate_user',
+  ADJUST_ROLE = 'adjust_role',
+  NOTIFY_USER = 'notify_user',
+  // 訂閱 & 財務
+  ADJUST_SUBSCRIPTION = 'adjust_subscription',
+  SUBSCRIPTION_UPGRADE = 'subscription_upgrade',
+  APPROVE_REFUND = 'approve_refund',
+  REJECT_REFUND = 'reject_refund',
+  // 系統設定
   UPDATE_SETTINGS = 'UPDATE_SETTINGS',
-  SUSPEND_USER = 'SUSPEND_USER',
-  ACTIVATE_USER = 'ACTIVATE_USER',
-  ADJUST_SUBSCRIPTION = 'ADJUST_SUBSCRIPTION'
+  UPDATE_MODEL_ROUTING = 'update_model_routing',
+  RESET_AI_LIMITS = 'reset_ai_limits',
+  CLEAR_CACHE = 'clear_cache',
+  // 成本監控
+  COST_MONITOR_VIEWED = 'COST_MONITOR_VIEWED',
+  BUDGET_UPDATED = 'BUDGET_UPDATED',
+  BUDGET_OVERRIDE = 'BUDGET_OVERRIDE',
+  // 內容審核
+  RESOLVE_REPORT = 'resolve_report',
+  UNLOCK_COOLDOWN = 'unlock_cooldown',
+  APPROVE_CONTENT = 'approve',
+  REJECT_CONTENT = 'reject',
+  UPDATE_FEEDBACK = 'update_feedback_status',
+  UPDATE_ANOMALY = 'update_anomaly_status',
+  // AI & Prompt
+  CREATE_PROMPT = 'create_prompt_template',
+  UPDATE_PROMPT = 'update_prompt_template',
+  DEACTIVATE_PROMPT = 'deactivate_prompt_template',
+  ROLLBACK_PROMPT = 'rollback_prompt_template',
+  CREATE_AB_TEST = 'create_ab_test',
+  COMPLETE_AB_TEST = 'complete_ab_test',
+  FUP_SOFT_CAP = 'fup_soft_cap_triggered',
+  // 知識庫
+  EXTRACT_KNOWLEDGE = 'extract_knowledge',
 }
 
 export async function logAdminAction(
   action: AdminAction,
   targetId: string,
   details: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ) {
-  const user = auth.currentUser;
-  if (!user) return;
-
   try {
-    await addDoc(collection(db, 'admin_audit_logs'), {
-      adminId: user.uid,
-      adminEmail: user.email,
+    await apiClient.post('/admin/audit-log', {
       action,
-      targetId,
+      target_id: targetId,
       details,
-      timestamp: serverTimestamp(),
       metadata: {
         ...metadata,
         userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',

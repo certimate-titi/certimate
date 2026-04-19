@@ -12,6 +12,8 @@ import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import PendingJourneysBanner from '@/components/PendingJourneysBanner';
+import StudyBuddyBanner from '@/components/StudyBuddyBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
@@ -62,35 +64,55 @@ export default function DashboardPage() {
     }).catch(() => setSubjects([]));
   }, [authLoading, isAuthenticated, onboardingCompleted]);
 
+  // Merge main dashboard response with quests + review-calendar endpoints.
+  const loadDashboardData = useCallback(async (subjectId?: string) => {
+    const [d, questsRes, calRes] = await Promise.all([
+      dashboardService.get(subjectId),
+      dashboardService.getDailyQuests().catch(() => ({ quests: [] })),
+      dashboardService.getReviewCalendar().catch(() => ({ calendar: [], subject: null, month: null })),
+    ]);
+    const quests = (questsRes.quests || []).map((q) => ({
+      id: q.id,
+      type: (q.type as 'review' | 'explore' | 'quiz') || 'review',
+      description: q.title,
+      completed: q.status === 'completed',
+      xpReward: 0,
+    }));
+    const calendar = (calRes.calendar || []).map((c) => ({
+      date: c.date,
+      reviewCount: c.count,
+      topics: [] as string[],
+    }));
+    return {
+      ...d,
+      dailyQuests: quests,
+      reviewCalendar: calendar,
+    };
+  }, []);
+
   // Load dashboard data
   useEffect(() => {
-    if (authLoading || !isAuthenticated || !onboardingCompleted || !activeSubjectId) return;
+    if (authLoading || !isAuthenticated) return;
+    if (!onboardingCompleted || !activeSubjectId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    dashboardService.get(activeSubjectId).then(d => {
-      // Ensure all expected fields have defaults for backend compatibility
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
+    loadDashboardData(activeSubjectId)
+      .then((merged) => { setData(merged); setLoading(false); })
+      .catch(() => {
+        setData({
+          user: null as any,
+          streak: { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
+          dailyQuests: [],
+          activityItems: [],
+          reviewCalendar: [],
+          stats: { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
+          domainStrengths: [],
+        });
+        setLoading(false);
       });
-      setLoading(false);
-    }).catch(() => {
-      setData({
-        user: null as any,
-        streak: { currentStreak: 0, longestStreak: 0, freezesRemaining: 0, freezesPerWeek: 0, lastActiveDate: new Date().toISOString() },
-        dailyQuests: [],
-        activityItems: [],
-        reviewCalendar: [],
-        stats: { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: [],
-      });
-      setLoading(false);
-    });
-  }, [activeSubjectId, isAuthenticated, onboardingCompleted]);
+  }, [activeSubjectId, isAuthenticated, onboardingCompleted, loadDashboardData]);
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -144,16 +166,7 @@ export default function DashboardPage() {
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadStatus('completed');
-      const d = await dashboardService.get();
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
-      });
+      setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
@@ -161,7 +174,7 @@ export default function DashboardPage() {
     } finally {
       setUploading(false);
     }
-  }, [activeSubjectId]);
+  }, [activeSubjectId, loadDashboardData]);
 
   const handleYoutubeSubmit = useCallback(async () => {
     if (!youtubeUrl.trim()) return;
@@ -186,16 +199,7 @@ export default function DashboardPage() {
       setUploadProgress(100);
       setUploadStatus('completed');
       setYoutubeUrl('');
-      const d = await dashboardService.get();
-      setData({
-        ...d,
-        streak: d.streak || { currentStreak: 0, freezeCount: 2, lastActiveDate: new Date().toISOString() },
-        dailyQuests: d.dailyQuests || [],
-        activityItems: d.activityItems || [],
-        reviewCalendar: d.reviewCalendar || [],
-        stats: d.stats || { overallAccuracy: 0, totalMocksCompleted: 0, totalQuestionsAnswered: 0, predictedPassRate: 0, examCountdown: null },
-        domainStrengths: d.domainStrengths || [],
-      });
+      setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
     } catch {
       clearInterval(progressInterval);
@@ -203,7 +207,7 @@ export default function DashboardPage() {
     } finally {
       setUploading(false);
     }
-  }, [youtubeUrl, activeSubjectId]);
+  }, [youtubeUrl, activeSubjectId, loadDashboardData]);
 
 
   const handleAddSubject = useCallback(async (selected: SelectedSubject[]) => {
@@ -227,11 +231,45 @@ export default function DashboardPage() {
     setShowAddSubject(false);
   }, [activeSubjectId]);
 
-  if (authLoading || !isAuthenticated || !onboardingCompleted) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // User logged in but hasn't picked a subject yet — show an explicit CTA
+  // instead of an infinite skeleton. Uses the in-app SubjectPickerModal
+  // (NOT /onboarding) because onboardingCompleted may already be true
+  // for admin users — navigating to /onboarding would just bounce back.
+  if (!activeSubjectId || subjects.length === 0) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-8 text-center">
+            <div className="text-5xl mb-4">📚</div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">歡迎使用 TiTi</h2>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              你還沒有選擇備考科目。請先新增一個科目，我們會為你準備考古題題庫、
+              知識心智圖與 AI 教練。
+            </p>
+            <button
+              onClick={() => setShowAddSubject(true)}
+              className="w-full bg-emerald-500 text-white py-3 rounded-full font-medium hover:bg-emerald-600 transition-colors"
+            >
+              開始選擇科目
+            </button>
+          </div>
+        </div>
+        {showAddSubject && (
+          <SubjectPickerModal
+            excludeSubjectIds={subjects.map(s => s.subjectId)}
+            onConfirm={handleAddSubject}
+            onClose={() => setShowAddSubject(false)}
+          />
+        )}
+      </>
     );
   }
 
@@ -261,6 +299,12 @@ export default function DashboardPage() {
     <>
       {/* System Announcements */}
       <AnnouncementBanner />
+
+      {/* Study buddy (ULTRA only) */}
+      <StudyBuddyBanner />
+
+      {/* Pending exam result confirmations */}
+      <PendingJourneysBanner />
 
       {/* Subject Switcher */}
       {subjects.length > 0 ? (

@@ -17,16 +17,6 @@ def _handle_result(result: dict):
     return result
 
 
-@router.get("/status")
-def get_status(
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    service = OnboardingService(db)
-    result = service.get_status(user_id=user_id)
-    return _handle_result(result)
-
-
 @router.get("/step/{step}")
 def get_step(
     step: int,
@@ -35,6 +25,16 @@ def get_step(
 ):
     service = OnboardingService(db)
     result = service.get_step(user_id=user_id, step=step)
+    return _handle_result(result)
+
+
+@router.get("/status")
+def get_status(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = OnboardingService(db)
+    result = service.get_status(user_id=user_id)
     return _handle_result(result)
 
 

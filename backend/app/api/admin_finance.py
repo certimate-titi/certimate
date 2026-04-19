@@ -45,6 +45,17 @@ def list_transactions(
 
 # ── Refunds ───────────────────────────────────────────────────────────────────
 
+@router.get("/refunds")
+def list_refunds(
+    status: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminFinanceService(db)
+    result = service.list_refunds(actor_id=user_id, status=status)
+    return _handle_result(result)
+
+
 @router.post("/refunds/{refund_id}/approve")
 def approve_refund(
     refund_id: str,
@@ -83,6 +94,16 @@ class CreateCouponRequest(BaseModel):
     max_uses_per_user: Optional[int] = None
 
 
+@router.get("/coupons")
+def list_coupons(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminFinanceService(db)
+    result = service.list_coupons(actor_id=user_id)
+    return _handle_result(result)
+
+
 @router.post("/coupons")
 def create_coupon(
     body: CreateCouponRequest,
@@ -91,17 +112,6 @@ def create_coupon(
 ):
     service = AdminFinanceService(db)
     result = service.create_coupon(actor_id=user_id, data=body.model_dump())
-    return _handle_result(result)
-
-
-@router.get("/coupons/{code}")
-def get_coupon(
-    code: str,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    service = AdminFinanceService(db)
-    result = service.get_coupon(actor_id=user_id, code=code)
     return _handle_result(result)
 
 
@@ -132,7 +142,18 @@ def get_finance_overview(
 
     arpu = round(mrr / max(paid_users, 1))
     ltv = arpu * 12  # estimate 12 months average retention
-    churn_rate = round(max(0, 5 - paid_users * 0.5), 1)  # simplified estimate
+
+    # Churn: users who downgraded to FREE in last 30 days / paid users last month
+    # Real data from audit_logs where action='adjust_subscription' and details contains '→ FREE'
+    from sqlalchemy import text as _text
+    try:
+        churned = db.execute(_text(
+            "SELECT count(*) FROM admin_audit_logs WHERE action='adjust_subscription' "
+            "AND details LIKE '%→ FREE%' AND created_at >= NOW() - INTERVAL '30 days'"
+        )).scalar() or 0
+        churn_rate = round(churned * 100 / max(paid_users, 1), 1)
+    except Exception:
+        churn_rate = 0.0
 
     return {
         "mrr": mrr,

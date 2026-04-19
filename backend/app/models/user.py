@@ -5,6 +5,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Enum,
     Integer,
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Text,
     func,
 )
+from datetime import date as date_type
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid
@@ -127,6 +129,12 @@ class User(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True)
     )
+    current_streak: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    longest_streak: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    freezes_remaining: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
+    freezes_per_week: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
+    last_active_date: Mapped[date_type | None] = mapped_column(Date)
+    freeze_consumed_today: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

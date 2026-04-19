@@ -155,6 +155,15 @@ class DocumentProcessingService:
             if not extracted.get("sections"):
                 raise ValueError("文件解析未產出任何內容")
 
+            # Step 1.7: PDF 4-tier structure analysis (replaces raw page splits)
+            if resource_type == "pdf":
+                pdf_path = file_path  # set in Step 0 copyright check above
+                pdf_structured = self._analyze_pdf_structure(
+                    pdf_path, extracted["sections"], extracted.get("title", "")
+                )
+                if pdf_structured:
+                    extracted["sections"] = pdf_structured
+
             # Step 2: Clean text (PDF/DOCX page-based formats)
             if resource_type in ("pdf", "docx", "doc"):
                 extracted["sections"] = self._clean_page_texts(extracted["sections"])
@@ -165,8 +174,9 @@ class DocumentProcessingService:
                 if structured:
                     extracted["sections"] = structured
 
-            # Step 4: Delete old data (for reprocessing)
-            self.chunk_repo.delete_by_resource_id(resource_id)
+            # Step 4: Delete old data (for reprocessing) — use hard delete to
+            # avoid chunk_index unique conflicts with soft-deleted rows
+            self.chunk_repo.delete_by_resource_id(resource_id, hard=True)
             self.db.query(KnowledgeNode).filter_by(resource_id=resource_id).delete()
             self.db.flush()
 
@@ -176,12 +186,61 @@ class DocumentProcessingService:
             # Step 6: Smart chunking
             chunks_data = self._chunk_sections(extracted["sections"])
 
-            # Step 7: Embed
+            # Step 7: Embed (with Voyage quota gate — Feature 33)
             chunk_texts = [c["content"] for c in chunks_data]
             embeddings = [None] * len(chunk_texts)
+
+            # Voyage 配額鎖：在實際呼叫 Voyage API 前檢查當月預算
+            from app.services.voyage_quota_service import (
+                VoyageQuotaDegraded,
+                VoyageQuotaExceeded,
+                VoyageQuotaService,
+            )
+            from app.middleware.ai_usage_tracker import (
+                estimate_voyage_cost,
+                track_ai_usage,
+            )
+            from decimal import Decimal
+
+            est_tokens = sum(len(t) for t in chunk_texts) // 4 or 1
+            est_cost = estimate_voyage_cost(est_tokens)
+            quota_svc = VoyageQuotaService(self.db)
+
+            try:
+                quota_svc.check_and_reserve(est_cost)
+            except VoyageQuotaDegraded:
+                # 達 80% 降級門檻：標記資源為 PENDING_BUDGET_RECOVERY 並中止本次處理
+                resource.status = ResourceStatus.PENDING_BUDGET_RECOVERY
+                self.db.commit()
+                logger.warning(
+                    "Resource %s queued for budget recovery (Voyage degraded)",
+                    resource_id,
+                )
+                return {
+                    "ok": True,
+                    "status": "PENDING_BUDGET_RECOVERY",
+                    "resource_id": resource_id,
+                    "message": "AI 資源處理已排隊，因本月 embedding 預算已達降級門檻",
+                }
+            except VoyageQuotaExceeded:
+                resource.status = ResourceStatus.FAILED
+                resource.error_message = "Voyage 月度預算已耗盡（100%），請聯繫管理員擴充預算"
+                self.db.commit()
+                logger.error(
+                    "Resource %s failed: Voyage quota exhausted",
+                    resource_id,
+                )
+                raise
+
             if self.embedding_service:
                 try:
-                    embeddings = self.embedding_service.embed_texts(chunk_texts)
+                    with track_ai_usage(
+                        self.db, provider="voyage", feature="document_embedding"
+                    ) as tracker:
+                        embeddings = self.embedding_service.embed_texts(chunk_texts)
+                        tracker.input_tokens = est_tokens
+                        tracker.cost_usd = est_cost
+                        tracker.endpoint = "voyage/embed"
                 except Exception as e:
                     logger.warning("Embedding failed: %s", e)
 
@@ -291,7 +350,8 @@ class DocumentProcessingService:
         )
 
         # Layer 2: K-01 LLM structuring (for formats that benefit from it)
-        needs_llm_structuring = resource_type not in ("markdown", "txt")
+        # PDF already has page-level sections from pymupdf; skip K-01 to avoid truncation
+        needs_llm_structuring = resource_type not in ("markdown", "txt", "pdf")
         if needs_llm_structuring and result.raw_text and self._llm:
             structured = self._apply_k01_structuring(result)
             if structured:
@@ -446,6 +506,389 @@ class DocumentProcessingService:
         }]
 
     # ================================================================
+    # Step 1.7: 4-Tier PDF Structure Analysis
+    # ================================================================
+
+    # Regex patterns for structural title detection (Tier 3)
+    _TITLE_PATTERNS = [
+        # Chinese chapter/section markers
+        (re.compile(r'^第[一二三四五六七八九十\d]+[章篇]'), 1),
+        (re.compile(r'^第[一二三四五六七八九十\d]+[節节]'), 2),
+        # Chinese ordinal markers (壹貳參...)
+        (re.compile(r'^[壹貳參肆伍陸柒捌玖拾][\s、．.]'), 1),
+        # Chinese parenthesized ordinals: （一）（二）...
+        (re.compile(r'^（[一二三四五六七八九十]+）'), 2),
+        (re.compile(r'^\([一二三四五六七八九十]+\)'), 2),
+        # Numbered patterns: 1. / 1.1 / 1.1.1
+        (re.compile(r'^\d+\.\d+\.\d+[\s\.、]'), 3),
+        (re.compile(r'^\d+\.\d+[\s\.、]'), 2),
+        (re.compile(r'^\d+\.[\s]'), 1),
+        # Letter patterns: A. / (1)
+        (re.compile(r'^[A-Z]\.[\s]'), 2),
+        (re.compile(r'^\(\d+\)[\s]'), 3),
+        # English chapter/section
+        (re.compile(r'^Chapter\s+\d+', re.IGNORECASE), 1),
+        (re.compile(r'^Section\s+\d+', re.IGNORECASE), 2),
+        (re.compile(r'^Appendix\b', re.IGNORECASE), 1),
+        # Chinese appendix
+        (re.compile(r'^附錄'), 1),
+    ]
+
+    # Quiz/answer content detection patterns
+    _QUIZ_PATTERNS = [
+        re.compile(r'Ans[\s（(]?[A-Da-d][\s）)]'),
+        re.compile(r'^\s*\([A-D]\)\s', re.MULTILINE),
+        re.compile(r'^\s*（[A-D]）\s', re.MULTILINE),
+        re.compile(r'^\s*\d+\.\s*\([A-D]\)', re.MULTILINE),
+    ]
+
+    def _analyze_pdf_structure(
+        self, pdf_path: str, raw_sections: list[dict], doc_title: str
+    ) -> list[dict] | None:
+        """4-tier fallback strategy for PDF structure analysis.
+
+        Tries each tier in order, returns structured sections from the first
+        successful tier, or None if all fail (pipeline falls back to default).
+
+        Tier 1: PDF bookmarks/outline (zero cost)
+        Tier 2: LLM TOC extraction (1 API call)
+        Tier 3: Regex title detection + cross-page merge (zero cost)
+        Tier 4: Page-based + LLM batch naming (fallback)
+        """
+        # Build page_num → content map from raw sections
+        page_map: dict[int, str] = {}
+        for s in raw_sections:
+            pn = s.get("page_start")
+            if pn is not None:
+                page_map[pn] = s.get("content", "")
+
+        if not page_map:
+            return None
+
+        max_page = max(page_map.keys())
+
+        # --- Tier 1: PDF Bookmarks ---
+        result = self._tier1_bookmarks(pdf_path, page_map, max_page)
+        if result:
+            logger.info("PDF structure: Tier 1 (bookmarks) produced %d sections", len(result))
+            return result
+
+        # --- Tier 2: LLM TOC Extraction ---
+        result = self._tier2_llm_toc(page_map, max_page, doc_title)
+        if result:
+            logger.info("PDF structure: Tier 2 (LLM TOC) produced %d sections", len(result))
+            return result
+
+        # --- Tier 3: Regex Title Detection ---
+        result = self._tier3_regex_titles(page_map, max_page)
+        if result:
+            logger.info("PDF structure: Tier 3 (regex titles) produced %d sections", len(result))
+            return result
+
+        # --- Tier 4: LLM Batch Naming ---
+        result = self._tier4_llm_batch_naming(raw_sections)
+        if result:
+            logger.info("PDF structure: Tier 4 (LLM batch naming) produced %d sections", len(result))
+            return result
+
+        logger.info("PDF structure: all tiers failed, using raw page sections")
+        return None
+
+    # --- Tier 1: PDF Bookmarks/Outline ---
+
+    def _tier1_bookmarks(
+        self, pdf_path: str, page_map: dict[int, str], max_page: int
+    ) -> list[dict] | None:
+        """Extract structure from PDF bookmarks/outline (TOC)."""
+        try:
+            import fitz
+            doc = fitz.open(pdf_path)
+            toc = doc.get_toc()  # list of [level, title, page_number]
+            doc.close()
+        except Exception as e:
+            logger.debug("Tier 1: cannot read PDF TOC: %s", e)
+            return None
+
+        if not toc or len(toc) < 2:
+            return None
+
+        # Convert TOC entries to sections
+        sections: list[dict] = []
+        for i, entry in enumerate(toc):
+            level, title, page_num = entry[0], entry[1], entry[2]
+            if not title or not title.strip():
+                continue
+
+            # Determine page range: from this entry's page to next entry's page - 1
+            if i + 1 < len(toc):
+                page_end = toc[i + 1][2] - 1
+                if page_end < page_num:
+                    page_end = page_num
+            else:
+                page_end = max_page
+
+            # Merge content from pages in range
+            content = "\n\n".join(
+                page_map[p] for p in range(page_num, page_end + 1) if p in page_map
+            )
+
+            if content.strip():
+                depth = min(level, 3)  # cap at depth 3
+                sections.append({
+                    "title": title.strip()[:60],
+                    "content": content,
+                    "page_start": page_num,
+                    "page_end": page_end,
+                    "depth": depth,
+                })
+
+        return sections if len(sections) >= 2 else None
+
+    # --- Tier 2: LLM TOC Extraction ---
+
+    def _tier2_llm_toc(
+        self, page_map: dict[int, str], max_page: int, doc_title: str
+    ) -> list[dict] | None:
+        """Send first 3 pages + last page to LLM to extract TOC structure."""
+        if not self._llm:
+            return None
+
+        # Gather sample pages: first 3 + last
+        sample_pages = sorted(page_map.keys())[:3]
+        last_page = max(page_map.keys())
+        if last_page not in sample_pages:
+            sample_pages.append(last_page)
+
+        sample_text = ""
+        for pn in sample_pages:
+            content = page_map.get(pn, "")[:1500]  # limit per page
+            sample_text += f"\n--- 第 {pn} 頁 ---\n{content}\n"
+
+        system_prompt = (
+            "你是文件結構分析專家。根據提供的文件頁面（首3頁+末頁），推斷文件的目錄結構。\n"
+            "回傳 JSON 格式，不要 markdown code block。\n"
+            "如果無法判斷目錄結構（例如文件太短或無明顯章節），回傳 {\"chapters\": []}。\n\n"
+            "使用語意階層萃取（Semantic Hierarchy Extraction）三層結構：\n"
+            "  depth 1 = 核心主題（章）— 例如「信託法規」「No Code / Low Code 概念」\n"
+            "  depth 2 = 次要概念（節）— 例如「信託契約要素」「生成式AI 應用領域」\n"
+            "  depth 3 = 細節知識點（考點）— 例如「忠實義務範圍」「自動化行銷文案生成」\n\n"
+            "格式範例：\n"
+            '{"chapters": [\n'
+            '  {"title": "第一章 概論", "page_start": 1, "page_end": 10, "depth": 1},\n'
+            '  {"title": "1.1 背景", "page_start": 1, "page_end": 3, "depth": 2},\n'
+            '  {"title": "1.1.1 歷史沿革", "page_start": 1, "page_end": 2, "depth": 3},\n'
+            '  {"title": "1.2 目的", "page_start": 4, "page_end": 5, "depth": 2},\n'
+            '  {"title": "第二章 方法", "page_start": 6, "page_end": 10, "depth": 1},\n'
+            '  {"title": "練習題：第一章", "page_start": 11, "page_end": 12, "depth": 2, "type": "quiz"}\n'
+            "]}\n\n"
+            "規則：\n"
+            "- title 要簡短（15字內），使用該主題的專業術語\n"
+            "- 盡量產出 3 層結構（至少 2 層）\n"
+            f"- 文件共 {max_page} 頁\n"
+            "- 如果頁面內容主要是考題/選擇題，標記 type: quiz，標題加「練習題」前綴"
+        )
+        user_prompt = f"文件：{doc_title}\n{sample_text}"
+
+        try:
+            result = self._llm.generate(
+                system_prompt,
+                user_prompt,
+                model="gemini-flash",
+                max_tokens=4096,
+            )
+            parsed = self._parse_json_response(result)
+            chapters = parsed.get("chapters", [])
+            if not chapters:
+                return None
+
+            # Convert to sections with merged page content
+            sections: list[dict] = []
+            for ch in chapters:
+                page_start = ch.get("page_start", 1)
+                page_end = ch.get("page_end", page_start)
+                depth = ch.get("depth", 1)
+                title = ch.get("title", f"p.{page_start}")
+
+                content = "\n\n".join(
+                    page_map[p] for p in range(page_start, page_end + 1) if p in page_map
+                )
+                if content.strip():
+                    sections.append({
+                        "title": title.strip()[:60],
+                        "content": content,
+                        "page_start": page_start,
+                        "page_end": page_end,
+                        "depth": depth,
+                        "chunk_type": "quiz" if ch.get("type") == "quiz" else "text",
+                    })
+
+            return sections if len(sections) >= 2 else None
+
+        except Exception as e:
+            logger.warning("Tier 2: LLM TOC extraction failed: %s", e)
+            return None
+
+    # --- Tier 3: Regex Title Detection + Cross-page Merge ---
+
+    def _tier3_regex_titles(
+        self, page_map: dict[int, str], max_page: int
+    ) -> list[dict] | None:
+        """Detect structural titles via regex, merge untitled pages into previous section."""
+        # Scan each page for title patterns
+        page_titles: dict[int, tuple[str, int]] = {}  # page_num → (title, depth)
+
+        for pn in sorted(page_map.keys()):
+            content = page_map[pn]
+            # Check if page is primarily quiz content — mark but don't skip
+            is_quiz = self._is_quiz_page(content)
+
+            # Look at first 5 non-empty lines for title patterns
+            lines = [l.strip() for l in content.split("\n") if l.strip()][:5]
+            for line in lines:
+                for pattern, depth in self._TITLE_PATTERNS:
+                    if pattern.match(line):
+                        # Use the matching line as title (truncate)
+                        title = line[:60].rstrip("。，、；：")
+                        if is_quiz:
+                            title = f"{title}（練習題）"
+                        page_titles[pn] = (title, depth)
+                        break
+                if pn in page_titles:
+                    break
+
+        if len(page_titles) < 2:
+            return None
+
+        # Build sections: pages with titles start new sections;
+        # pages without titles merge UP into previous section
+        sections: list[dict] = []
+        current_title = None
+        current_depth = 1
+        current_pages: list[int] = []
+        current_start = None
+
+        for pn in sorted(page_map.keys()):
+            if pn in page_titles:
+                # Save previous section
+                if current_title and current_pages:
+                    content = "\n\n".join(
+                        page_map[p] for p in current_pages if p in page_map
+                    )
+                    if content.strip():
+                        sections.append({
+                            "title": current_title,
+                            "content": content,
+                            "page_start": current_start,
+                            "page_end": current_pages[-1],
+                            "depth": current_depth,
+                        })
+
+                # Start new section
+                current_title, current_depth = page_titles[pn]
+                current_start = pn
+                current_pages = [pn]
+            else:
+                if current_title:
+                    # Merge into current section
+                    current_pages.append(pn)
+                else:
+                    # No section yet — create an "intro" section
+                    current_title = "前言"
+                    current_depth = 1
+                    current_start = pn
+                    current_pages = [pn]
+
+        # Don't forget the last section
+        if current_title and current_pages:
+            content = "\n\n".join(
+                page_map[p] for p in current_pages if p in page_map
+            )
+            if content.strip():
+                sections.append({
+                    "title": current_title,
+                    "content": content,
+                    "page_start": current_start,
+                    "page_end": current_pages[-1],
+                    "depth": current_depth,
+                })
+
+        return sections if len(sections) >= 2 else None
+
+    # --- Tier 4: Page-based + LLM Batch Naming ---
+
+    def _tier4_llm_batch_naming(self, raw_sections: list[dict]) -> list[dict] | None:
+        """Keep page-based splitting but ask LLM to generate semantic titles in batches."""
+        if not self._llm:
+            return None
+
+        if not raw_sections:
+            return None
+
+        system_prompt = (
+            "為以下文件段落各生成一個簡短的語義標題（15字以內）。\n"
+            "使用該段落涵蓋的核心主題或專業術語作為標題，避免使用段落首句。\n"
+            "如果段落主要是考題/選擇題，標題格式為「練習題：{主題}」。\n"
+            "如果段落是答案解析，標題格式為「解答：{主題}」。\n"
+            "回傳 JSON 陣列，每個元素是一個標題字串。\n"
+            "不要 markdown code block，只回傳 JSON。\n"
+            '範例：["No Code 基本概念","生成式AI 應用領域","練習題：第三章"]'
+        )
+
+        result_sections = list(raw_sections)  # copy
+        batch_size = 10
+
+        for batch_start in range(0, len(raw_sections), batch_size):
+            batch = raw_sections[batch_start:batch_start + batch_size]
+
+            # Build summaries for this batch
+            summaries = []
+            for i, s in enumerate(batch):
+                content = s.get("content", "")
+                preview = content[:200].replace("\n", " ").strip()
+                page = s.get("page_start", "?")
+                summaries.append(f"段落{batch_start + i + 1} (p.{page}): {preview}")
+
+            user_prompt = "\n\n".join(summaries)
+
+            try:
+                response = self._llm.generate(
+                    system_prompt,
+                    user_prompt,
+                    model="gemini-flash",
+                    max_tokens=1024,
+                )
+                titles = json.loads(response.strip())
+                if isinstance(titles, list):
+                    for i, title in enumerate(titles):
+                        idx = batch_start + i
+                        if idx < len(result_sections) and isinstance(title, str) and title.strip():
+                            result_sections[idx] = {
+                                **result_sections[idx],
+                                "title": title.strip()[:60],
+                            }
+            except Exception as e:
+                logger.warning("Tier 4: LLM batch naming failed for batch %d: %s", batch_start, e)
+                # Continue with remaining batches
+
+        # Check if we got any meaningful titles
+        meaningful = sum(
+            1 for s in result_sections
+            if not re.match(r'^p\.?\d+$', s.get("title", ""), re.IGNORECASE)
+        )
+
+        return result_sections if meaningful > 0 else None
+
+    # --- Helper: Quiz page detection ---
+
+    def _is_quiz_page(self, content: str) -> bool:
+        """Detect if a page is primarily quiz/answer content."""
+        matches = sum(
+            len(pattern.findall(content)) for pattern in self._QUIZ_PATTERNS
+        )
+        # If 3+ quiz patterns found, it's likely a quiz page
+        return matches >= 3
+
+    # ================================================================
     # Step 2: Text Cleaning
     # ================================================================
 
@@ -590,14 +1033,14 @@ class DocumentProcessingService:
                             sub_page = sub.get("page_start", sec_start)
                             sub_content = page_content.get(sub_page, "")
                             result.append({
-                                "title": sub.get("title", f"p.{sub_page}"),
+                                "title": sub.get("title") or f"p.{sub_page}",
                                 "content": sub_content,
                                 "page_start": sub_page, "page_end": sub_page,
                                 "depth": 3, "parent_title": sec.get("title", ""),
                             })
                     else:
                         result.append({
-                            "title": sec.get("title", f"p.{sec_start}"),
+                            "title": sec.get("title") or f"p.{sec_start}",
                             "content": sec_content,
                             "page_start": sec_start, "page_end": sec_end,
                             "depth": 2, "parent_title": ch.get("title", ""),
@@ -605,7 +1048,7 @@ class DocumentProcessingService:
             else:
                 # No sub-sections: chapter is a leaf
                 result.append({
-                    "title": ch.get("title", f"p.{page_start}"),
+                    "title": ch.get("title") or f"p.{page_start}",
                     "content": ch_content,
                     "page_start": page_start, "page_end": page_end,
                     "depth": 1,
@@ -724,7 +1167,23 @@ class DocumentProcessingService:
         # Track parents at each depth level for tree building
         parent_stack = {0: root}  # depth → node
 
+        import re
+        _page_title_re = re.compile(r"^p\.?\d+$|^段落\s*\d+$|^第?\d+頁$|^page\s*\d+$", re.IGNORECASE)
+
         for i, section in enumerate(extracted.get("sections", [])):
+            title = section.get("title", f"段落 {i + 1}")
+
+            # If title is just a page number, derive a title from content instead
+            if _page_title_re.match(title.strip()):
+                content = section.get("content", "").strip()
+                if not content:
+                    continue  # Skip truly empty sections
+                # Use first non-empty line (up to 30 chars) as title
+                first_line = content.split("\n")[0].strip()[:30].rstrip("。，、；：")
+                if not first_line or len(first_line) < 2:
+                    continue
+                title = first_line
+
             depth = section.get("depth", 1)
             parent_depth = depth - 1
             parent = parent_stack.get(parent_depth, root)
@@ -732,7 +1191,7 @@ class DocumentProcessingService:
             node = KnowledgeNode(
                 resource_id=resource.id,
                 parent_id=parent.id,
-                name=section.get("title", f"段落 {i + 1}"),
+                name=title,
                 depth=depth,
                 sort_order=i + 1,
                 source_page_number=section.get("page_start"),
@@ -767,16 +1226,30 @@ class DocumentProcessingService:
                         node_id = nid
                         break
 
+            # 生成物理級跳轉錨點 ID
+            page_start = cd.get("source_page_start")
+            anchor_id = f"page_{page_start}" if page_start else f"chunk_{cd['chunk_index']}"
+
+            # 計算高亮位置（基於 content 在原文中的行號）
+            content_text = cd["content"]
+            line_count = content_text.count("\n") + 1
+
             chunk = ResourceChunk(
                 resource_id=resource.id, node_id=node_id,
-                chunk_index=cd["chunk_index"], content=cd["content"],
+                chunk_index=cd["chunk_index"], content=content_text,
                 token_count=cd["token_count"],
-                source_page_start=cd.get("source_page_start"),
+                source_page_start=page_start,
                 source_page_end=cd.get("source_page_end"),
+                anchor_id=anchor_id,
+                highlight_line_start=cd.get("source_line_start"),
+                highlight_line_end=cd.get("source_line_end"),
+                highlight_char_start=cd.get("source_char_start"),
+                highlight_char_end=cd.get("source_char_end"),
                 metadata_json={
                     "section_title": cd.get("section_title", ""),
                     "depth": cd.get("depth", 1),
                     "chunk_type": cd.get("chunk_type", "text"),
+                    "line_count": line_count,
                 },
                 embedding=embeddings[i] if i < len(embeddings) else None,
             )

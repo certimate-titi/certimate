@@ -211,19 +211,19 @@ function PracticePage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header */}
       <div className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BookOpen className="h-5 w-5 text-emerald-600" />
-            <h1 className="text-lg font-bold text-slate-800">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <BookOpen className="h-5 w-5 text-emerald-600 shrink-0" />
+            <h1 className="text-sm sm:text-lg font-bold text-slate-800 truncate">
               {phase === 'select-node' ? '節點練習' : selectedNodeName || '練習模式'}
             </h1>
             {totalAnswered > 0 && (
-              <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-[10px] sm:text-xs bg-emerald-50 text-emerald-700 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 whitespace-nowrap">
                 {correctCount}/{totalAnswered} 正確
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <SubjectSwitcher
               subjects={subjects}
               activeSubjectId={activeSubjectId}
@@ -248,7 +248,7 @@ function PracticePage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Phase: Select Node */}
         {phase === 'select-node' && (
           <div>
@@ -259,7 +259,7 @@ function PracticePage() {
                   <BarChart3 className="h-5 w-5 text-emerald-600" />
                   <h2 className="font-bold text-slate-800">練習完成</h2>
                 </div>
-                <div className="flex gap-6 text-sm">
+                <div className="flex gap-4 sm:gap-6 text-sm flex-wrap">
                   <div>
                     <span className="text-slate-500">答對</span>
                     <span className="ml-1 font-bold text-emerald-700">{correctCount}</span>
@@ -297,7 +297,7 @@ function PracticePage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 {leafNodes.map((node) => (
                   <button
                     key={node.id}
@@ -363,7 +363,7 @@ function PracticePage() {
             </div>
 
             {/* Question card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-4">
               <div className="flex items-center gap-2 mb-4">
                 <span
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${

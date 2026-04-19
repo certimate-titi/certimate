@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
@@ -28,6 +28,27 @@ class ResourceChunk(Base):
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
     source_page_start: Mapped[int | None] = mapped_column(Integer)
     source_page_end: Mapped[int | None] = mapped_column(Integer)
+    # 物理級跳轉：精確定位到文件中的段落
+    anchor_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True,
+        comment="文件內錨點 ID（PDF: page_N, HTML: heading ID, YouTube: timestamp）",
+    )
+    highlight_line_start: Mapped[int | None] = mapped_column(
+        Integer, nullable=True,
+        comment="原文高亮起始行（1-based）",
+    )
+    highlight_line_end: Mapped[int | None] = mapped_column(
+        Integer, nullable=True,
+        comment="原文高亮結束行（1-based, inclusive）",
+    )
+    highlight_char_start: Mapped[int | None] = mapped_column(
+        Integer, nullable=True,
+        comment="原文高亮起始字元偏移（0-based）",
+    )
+    highlight_char_end: Mapped[int | None] = mapped_column(
+        Integer, nullable=True,
+        comment="原文高亮結束字元偏移（0-based, exclusive）",
+    )
     metadata_json: Mapped[dict | None] = mapped_column(JSON)
     embedding = mapped_column(Vector(1024))
     tenant_id = mapped_column(
@@ -35,6 +56,15 @@ class ResourceChunk(Base):
         comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）— RLS 強制啟用",
         index=True,
     )
+    # T2-A 軟刪剪枝
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false",
+        comment="軟刪標記 — true 時從檢索與強度計算排除",
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

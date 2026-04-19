@@ -23,6 +23,15 @@ import {
   PromptAbTest,
 } from '@/lib/api/services';
 
+const AVAILABLE_MODELS = [
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
+  { value: 'claude-3.5-haiku', label: 'Claude 3.5 Haiku' },
+  { value: 'gpt-4o', label: 'GPT-4o' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+] as const;
+
 export default function PromptTemplateDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -41,6 +50,7 @@ export default function PromptTemplateDetailPage() {
   const [systemPrompt, setSystemPrompt] = useState('');
   const [userPrompt, setUserPrompt] = useState('');
   const [temperature, setTemperature] = useState(0.5);
+  const [model, setModel] = useState('gemini-2.5-flash');
   const [changeNote, setChangeNote] = useState('');
 
   // A/B test form
@@ -63,6 +73,7 @@ export default function PromptTemplateDetailPage() {
       setSystemPrompt(tpl.system_prompt);
       setUserPrompt(tpl.user_prompt);
       setTemperature(tpl.temperature);
+      setModel(tpl.model || 'gemini-2.5-flash');
 
       const ab = await promptTemplateService.listAbTests();
       setAbTests(ab.ab_tests.filter((t) => t.template_id === (tpl as any).id || true));
@@ -86,6 +97,7 @@ export default function PromptTemplateDetailPage() {
         system_prompt: systemPrompt,
         user_prompt: userPrompt,
         temperature,
+        model,
         change_note: changeNote || undefined,
       });
       setSuccessMsg('已成功更新並建立新版本');
@@ -264,6 +276,20 @@ export default function PromptTemplateDetailPage() {
           </div>
 
           <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                AI Model
+              </label>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                {AVAILABLE_MODELS.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Temperature

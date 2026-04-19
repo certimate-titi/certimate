@@ -10,7 +10,7 @@ def step_impl(context, email, filename, size, subject_id):
     subject_uuid = context.ids.get(f"subject_{subject_id}")
 
     response = context.api_client.post(
-        "/api/v1/resources/chunked-upload/init",
+        "/api/v1/resources/chunked/init",
         headers={"Authorization": f"Bearer {token}"},
         json={
             "filename": filename,

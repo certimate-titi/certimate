@@ -164,3 +164,33 @@ def get_storage_service() -> BaseStorageService:
     if backend == "gcs":
         return GCSStorageService()
     return LocalStorageService()
+
+
+def upload_feedback_attachment(
+    file_bytes: bytes,
+    filename: str,
+    content_type: str = "image/png",
+) -> str | None:
+    """Upload a feedback attachment to GCS and return the public URL.
+
+    Files are stored under feedback/{uuid}_{filename} and auto-deleted
+    after 15 days by the bucket lifecycle policy.
+    """
+    try:
+        bucket_name = os.environ.get("GCS_BUCKET", "certimate-titi-data")
+        from google.cloud import storage as gcs
+        client = gcs.Client()
+        bucket = client.bucket(bucket_name)
+
+        unique_name = f"{uuid.uuid4().hex[:8]}_{filename}"
+        blob_path = f"feedback/{unique_name}"
+        blob = bucket.blob(blob_path)
+
+        blob.upload_from_string(file_bytes, content_type=content_type)
+        blob.make_public()
+
+        logger.info("Uploaded feedback attachment: %s (%d bytes)", blob_path, len(file_bytes))
+        return blob.public_url
+    except Exception:
+        logger.exception("Failed to upload feedback attachment: %s", filename)
+        return None

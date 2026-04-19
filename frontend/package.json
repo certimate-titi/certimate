@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:prod": "mv .env.local .env.local.bak 2>/dev/null; NEXT_PUBLIC_API_URL=https://certimate-63018063271.asia-east1.run.app/api/v1 NEXT_PUBLIC_BUILD_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo dev) NEXT_PUBLIC_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) NODE_ENV=production next build; mv .env.local.bak .env.local 2>/dev/null; true",
+    "deploy:prod": "npm run build:prod && firebase deploy --only hosting --project certimate-titi",
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean",
@@ -15,13 +17,13 @@
   "dependencies": {
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.1",
+    "@react-oauth/google": "^0.13.5",
     "@types/d3": "^7.4.3",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
-    "firebase": "^12.10.0",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
     "next": "^15.4.9",

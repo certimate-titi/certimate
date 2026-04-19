@@ -3,6 +3,15 @@
 from behave import when
 
 
+def _resolve_target_user_uuid(context, user_seq_id: int) -> str:
+    """將 Background table 序號轉成真實 UUID。"""
+    from app.models.user import User
+    all_users = context.db_session.query(User).order_by(User.created_at).all()
+    if user_seq_id <= len(all_users):
+        return str(all_users[user_seq_id - 1].id)
+    return str(user_seq_id)
+
+
 @when('使用者 "{email}" 於用戶管理頁面點擊「匯出 CSV」按鈕')
 def step_impl_click_export_csv(context, email):
     """呼叫 API 匯出使用者 CSV。"""
@@ -56,13 +65,11 @@ def step_impl_click_notify_user(context, email, user_id):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     context.memo["admin_token"] = token
-    context.memo["target_user_id"] = user_id
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get(
-        f"/api/v1/admin/users/{user_id}/notify-dialog",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    context.last_response = response
+    # 從 Background table 的序號找到目標用戶的真實 UUID
+    all_users = context.db_session.query(User).order_by(User.created_at).all()
+    target_user = all_users[user_id - 1] if user_id <= len(all_users) else None
+    target_uuid = str(target_user.id) if target_user else str(user_id)
+    context.memo["target_user_id"] = target_uuid
 
 
 @when('在通知輸入框中輸入訊息 "{message}"')
@@ -86,6 +93,23 @@ def step_impl_click_submit(context):
         context.last_response = response
 
 
+@when('使用者 "{email}" 停權使用者 {user_id:d}，原因為 "{reason}"')
+def step_impl_suspend_user_direct(context, email, user_id, reason):
+    """直接呼叫停權 API（含自動通知信）。"""
+    from app.models.user import User
+    user = context.db_session.query(User).filter(User.email == email).first()
+    assert user, f"找不到使用者 {email}"
+    token = context.jwt_helper.create_token(str(user.id))
+    target_uuid = _resolve_target_user_uuid(context, user_id)
+    response = context.api_client.post(
+        "/api/v1/admin/users/suspend",
+        json={"target_user_id": target_uuid, "reason": reason},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context.last_response = response
+
+
+
 @when('使用者 "{email}" 於使用者 {user_id:d} 的操作選單點擊「停權」')
 def step_impl_click_suspend_user(context, email, user_id):
     """記錄停權動作（UI step，暫存 memo）。"""
@@ -94,13 +118,7 @@ def step_impl_click_suspend_user(context, email, user_id):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     context.memo["admin_token"] = token
-    context.memo["target_user_id"] = user_id
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get(
-        f"/api/v1/admin/users/{user_id}/suspend-dialog",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    context.last_response = response
+    context.memo["target_user_id"] = _resolve_target_user_uuid(context, user_id)
 
 
 @when('輸入停權原因為 "{reason}" 並點擊「確認」')
@@ -111,8 +129,8 @@ def step_impl_input_suspend_reason(context, reason):
     assert token, "未取得 admin_token"
     assert user_id, "未取得 target_user_id"
     response = context.api_client.post(
-        f"/api/v1/admin/users/{user_id}/suspend",
-        json={"reason": reason},
+        "/api/v1/admin/users/suspend",
+        json={"target_user_id": user_id, "reason": reason},
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -126,13 +144,7 @@ def step_impl_click_delete_user(context, email, user_id):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     context.memo["admin_token"] = token
-    context.memo["target_user_id"] = user_id
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get(
-        f"/api/v1/admin/users/{user_id}/delete-dialog",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    context.last_response = response
+    context.memo["target_user_id"] = _resolve_target_user_uuid(context, user_id)
 
 
 @when('輸入確認名稱為 "{name}" 並點擊「確認刪除」')
@@ -142,9 +154,9 @@ def step_impl_input_confirm_delete(context, name):
     user_id = context.memo.get("target_user_id")
     assert token, "未取得 admin_token"
     assert user_id, "未取得 target_user_id"
-    response = context.api_client.delete(
-        f"/api/v1/admin/users/{user_id}",
-        json={"confirm_name": name},
+    response = context.api_client.post(
+        "/api/v1/admin/users/delete",
+        json={"target_user_id": user_id, "confirm_name": name},
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -158,13 +170,7 @@ def step_impl_click_adjust_subscription(context, email, user_id):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     context.memo["admin_token"] = token
-    context.memo["target_user_id"] = user_id
-    # Simulate GET to trigger 404 in Red phase
-    response = context.api_client.get(
-        f"/api/v1/admin/users/{user_id}/subscription-modal",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    context.last_response = response
+    context.memo["target_user_id"] = _resolve_target_user_uuid(context, user_id)
 
 
 @when('在 Modal 中選擇方案為 "{plan}"，起始日期為 "{start_date}"，結束日期為 "{end_date}"')
@@ -184,8 +190,8 @@ def step_impl_click_confirm_adjust(context):
     start_date = context.memo.get("subscription_start_date")
     end_date = context.memo.get("subscription_end_date")
     if token and user_id and plan:
-        response = context.api_client.put(
-            f"/api/v1/admin/users/{user_id}/subscription",
+        response = context.api_client.post(
+            f"/api/v1/admin/users/{user_id}/adjust-subscription",
             json={"plan": plan, "start_date": start_date, "end_date": end_date},
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -200,7 +206,7 @@ def step_impl_search_user_by_keyword(context, email, keyword):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.get(
-        f"/api/v1/admin/users?search={keyword}",
+        f"/api/v1/admin/users?keyword={keyword}",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

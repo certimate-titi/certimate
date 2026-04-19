@@ -74,9 +74,9 @@ export default function OperationsDashboard() {
   const [dashData, setDashData] = useState<DashboardData | null>(null);
   const [alerts, setAlerts] = useState<{ id: number; type: string; message: string; time: string }[]>([]);
   const [systemAlerts, setSystemAlerts] = useState<{ severity: string; message: string; time: string }[]>([]);
-  const [systemLoad, setSystemLoad] = useState({ cpu_percent: 0, db_connections_percent: 0, cache_hit_rate: 0 });
+  const [systemLoad, setSystemLoad] = useState({ cpu_percent: 0, db_connections_percent: 0, queue_depth_percent: 0 });
   const [userGrowthData, setUserGrowthData] = useState<{ name: string; dau: number; mau: number }[]>([]);
-  const [aiCostData, setAiCostData] = useState<{ name: string; gemini: number; claude: number; gpt4: number }[]>([]);
+  const [aiCostData, setAiCostData] = useState<{ name: string; gemini: number; claude: number; gpt4: number; voyage: number }[]>([]);
   const [timeRange, setTimeRange] = useState('30d');
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function OperationsDashboard() {
             }}
             className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all"
           >
-            匯出報表
+            匯出用戶 CSV
           </button>
           <button
             onClick={() => {
@@ -228,6 +228,7 @@ export default function OperationsDashboard() {
                   <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px' }} />
                   <Bar dataKey="gemini" name="Gemini" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="claude" name="Claude" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="voyage" name="Voyage" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="gpt4" name="GPT-4" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -324,9 +325,9 @@ export default function OperationsDashboard() {
             </h2>
             <div className="space-y-6">
               {[
-                { label: 'Cloud Run CPU', value: systemLoad.cpu_percent, color: 'emerald' },
+                { label: 'Backend CPU', value: systemLoad.cpu_percent, color: 'emerald' },
                 { label: 'Cloud SQL 連線數', value: systemLoad.db_connections_percent, color: 'amber' },
-                { label: 'Redis 快取命中率', value: systemLoad.cache_hit_rate, color: 'indigo' },
+                { label: '資源處理佇列', value: systemLoad.queue_depth_percent, color: 'indigo' },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">

@@ -3,7 +3,8 @@ name: exam-crawler
 description: >
   台灣證照考古題爬蟲 Skill——自動爬取金融證照、不動產證照、iPAS、高普考等考古題，
   並依照 Bloom 認知層次（記憶/理解/應用/分析/評估/創造）進行題目分類，
-  輸出標準化 JSON 供 CertiMate 題庫系統匯入。
+  輸出標準化 JSON 供 CertiMate 題庫系統匯入。匯入後可選擇性串接 preseed-mindmaps
+  skill 用本地端 Claude Code 當 LLM 批次預生知識節點樹（零 API 費用）。
   當使用者提到「考古題爬蟲」、「爬取考古題」、「題庫匯入」、「批次抓題」、「金融證照題庫」、
   「不動產考古題」、「iPAS 考題」、「高普考題庫」、「題目分類佔比」時，務必觸發此 skill。
 ---
@@ -32,13 +33,15 @@ description: >
 
 位置：`backend/scripts/crawlers/`
 
-| 工具 | 說明 |
-|------|------|
-| `moex_simple.py` | 高普考爬蟲（download + parse），支援 Unicode 選項標記 |
-| `auto_catalog_generator.py` | 自動探測考選部考試/類科/科目組合 |
-| `normalize_json.py` | 將舊格式 JSON（ipas/finance/real_estate）轉換為統一格式 |
-| `exam_catalog.yaml` | 114 年考試目錄 |
-| `exam_catalog_complete.yaml` | 112-114 年完整目錄 |
+| 工具 | 位置 | 說明 |
+|------|------|------|
+| `moex_simple.py` | `backend/scripts/crawlers/` | 高普考爬蟲（download + parse），支援 Unicode 選項標記 |
+| `auto_catalog_generator.py` | `backend/scripts/crawlers/` | 自動探測考選部考試/類科/科目組合 |
+| `normalize_json.py` | `backend/scripts/crawlers/` | 將舊格式 JSON（ipas/finance/real_estate）轉換為統一格式 |
+| `claude_cli_converter.py` | `exam-bank/parsers/` | **PDF → JSON 轉換器**（Claude CLI，不需 API KEY） |
+| `gemini_pdf_converter.py` | `exam-bank/parsers/` | PDF → JSON 轉換器（Gemini API，需 GEMINI_API_KEY） |
+| `exam_catalog.yaml` | `backend/scripts/crawlers/` | 114 年考試目錄 |
+| `exam_catalog_complete.yaml` | `backend/scripts/crawlers/` | 112-114 年完整目錄 |
 
 匯入工具：`backend/app/scripts/import_exam_questions.py`
 
@@ -161,6 +164,55 @@ import pdfplumber
 # 爬取 → 解析 → 輸出標準 JSON
 ```
 
+### Step 2.5 — PDF → JSON 轉換（Claude CLI 版）
+
+使用本地 Claude Code CLI 將 PDF 考題轉換為標準 JSON（不需要 Gemini API KEY）：
+
+```bash
+cd exam-bank/parsers
+
+# 轉換單一 PDF
+python3 claude_cli_converter.py --pdf /path/to/exam.pdf
+
+# 指定答案卷 PDF（高普考等分卷格式）
+python3 claude_cli_converter.py --pdf Q_0101.pdf --answer-pdf S_0101.pdf
+
+# 自訂輸出路徑
+python3 claude_cli_converter.py --pdf exam.pdf --output ../backend/data/historical_questions/ipas/ai/exam.json
+
+# 批次轉換所有未處理 PDF
+python3 claude_cli_converter.py
+
+# 只偵測內容類型（不轉換）
+python3 claude_cli_converter.py --dry-run
+
+# 忽略 manifest 強制重轉
+python3 claude_cli_converter.py --force
+
+# 跳過 4 層驗證（加速）
+python3 claude_cli_converter.py --skip-validation
+```
+
+**轉換流程**：pymupdf 萃取 PDF 文字 → Stage 0 內容偵測（7 種類型）→ Claude CLI 結構化轉換 → MD 解析 → 答案匹配 → 4 層品質驗證 → 輸出標準 JSON
+
+**特點**：
+- 使用本地 Claude Code CLI（OAuth 登入），**不需要任何 API KEY**
+- 輸出 JSON 格式與 Gemini 版 `gemini_pdf_converter.py` 完全一致
+- 支援 7 種內容類型（exam/regulation/textbook/summary/formula/syllabus/general）
+- 4 層品質驗證：結構完整性 / 答案覆蓋率 / Claude 抽樣覆核 / 統計異常偵測
+- Manifest 機制（PDF fingerprint 避免重複轉換）
+
+**與 Gemini 版比較**：
+
+| 項目 | `gemini_pdf_converter.py` | `claude_cli_converter.py` |
+|------|--------------------------|--------------------------|
+| LLM | Gemini 2.5 Flash API | 本地 Claude Code CLI |
+| 費用 | ~$0.005/份（API 計費） | $0（含在 Claude Code 訂閱） |
+| PDF 讀取 | 原生 PDF 上傳 | pymupdf 文字萃取 |
+| 速度 | 2-5 秒/份 | ~250 秒/份 |
+| 答案正確率 | baseline | 100% 一致 |
+| 需要 API KEY | 是（GEMINI_API_KEY） | 否（OAuth 登入） |
+
 ### Step 3 — 格式正規化
 
 如果產出的 JSON 不符合標準格式，使用正規化工具：
@@ -213,6 +265,34 @@ cd backend
 - 建立 `historical_exams` 記錄（依 exam_code + category_code + subject_code 去重）
 - 建立 `questions` 記錄（`exam_id=NULL`, `historical_exam_id=<對應 ID>`）
 - 跳過已存在的題目（依 historical_exam_id + question_number 去重）
+
+### Step 6 — （可選）預生知識節點心智圖 → 串接 `preseed-mindmaps` skill
+
+匯入完考古題後，**強烈建議**立刻串接 `preseed-mindmaps` skill 把心智圖預生好，這樣使用者第一次選科目時就能立即看到節點樹，**不需要任何 LLM API 呼叫**。
+
+**為什麼放在爬蟲 skill 尾端**：
+- 考古題是靜態資料，匯入完後結構就固定了
+- 心智圖節點樹跟考古題內容 1:1 對應，批次預生比 on-demand 合適
+- 走 `preseed-mindmaps` 的「本地 Claude Code 當 LLM」路徑，**零 API 費用**（對比 Gemini Flash ~$0.3 / Claude Sonnet ~$3-5 每輪）
+
+**執行方式**：
+```bash
+# 匯入完 → 切換到 preseed-mindmaps skill → 對剛匯入的 subject 跑預生
+# Phase 1：蒐集考古題摘要 → /tmp/preseed_input_*.json
+# Phase 2：Claude Code 本地分析 → /tmp/preseed_output_*.json（不呼叫外部 API）
+# Phase 3：寫入 knowledge_nodes + 映射 questions.node_id
+# Phase 4：驗證覆蓋率 + support_strength 分布
+```
+
+完整規範見 `.claude/skills/preseed-mindmaps/SKILL.md`，其中明定：
+- 只動 `node_source='HISTORICAL_QA'`，不碰使用者上傳資源產生的 `RESOURCE_EXTRACTION`
+- 重跑前備份 `knowledge_nodes_backup_YYYYMMDD`
+- Production 前必須先在 local dev 驗證通過
+- FK 處理（`questions.node_id` 非 CASCADE 要先 NULL-out）
+
+**不使用此路徑的時機**：
+- 使用者已上傳資源（走 `document_processing_service` → `UnifiedKnowledgeExtractionService`，會同時綜合 chunks + 考古題）
+- 該科目沒有 `exam_subject_codes` 對應（空殼科目，需先補 catalog）
 
 ---
 

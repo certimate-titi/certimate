@@ -27,6 +27,9 @@ from app.models.answer import Answer  # noqa: F401, E402
 from app.models.invoice import Invoice  # noqa: F401, E402
 from app.models.question_stat import QuestionStat  # noqa: F401, E402
 from app.models.audit_log import AdminAuditLog  # noqa: F401, E402
+from app.models.ai_usage_ledger import AiUsageLedger  # noqa: F401, E402
+from app.models.budget_config import BudgetConfig  # noqa: F401, E402
+from app.models.budget_alert_log import BudgetAlertLog  # noqa: F401, E402
 from app.models.content_report import ContentReport  # noqa: F401, E402
 from app.models.transaction import Transaction  # noqa: F401, E402
 from app.models.refund import Refund  # noqa: F401, E402

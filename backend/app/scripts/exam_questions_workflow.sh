@@ -79,9 +79,33 @@ python3 -m app.scripts.import_exam_questions \
     exit 1
 }
 
-# Step 7: 執行 BDD 測試
+# Step 7: 重新處理 embedding + anchor_id
 echo ""
-echo "🧪 Step 6: 執行 BDD 測試"
+echo "🔄 Step 6: 重新處理 anchor_id + embedding 向量"
+echo "═══════════════════════════════════════════════════════"
+echo "  先確認 migration 056 已套用..."
+python3 -m alembic upgrade head || {
+    echo "⚠️  Alembic migration 失敗"
+    exit 1
+}
+
+echo "  更新 anchor_id..."
+python3 -m app.scripts.reprocess_embeddings --anchor-only || {
+    echo "⚠️  Anchor ID 更新失敗"
+}
+
+if [ "$SKIP_EMBED" != "true" ]; then
+    echo "  重新生成 embedding..."
+    python3 -m app.scripts.reprocess_embeddings --embed-only --batch-size 64 || {
+        echo "⚠️  Embedding 重新生成失敗（可稍後重試）"
+    }
+else
+    echo "  ⏭ 跳過 embedding（SKIP_EMBED=true）"
+fi
+
+# Step 8: 執行 BDD 測試
+echo ""
+echo "🧪 Step 7: 執行 BDD 測試"
 echo "═══════════════════════════════════════════════════════"
 python3 -m behave tests/features/04-測驗設定.feature --tags=~@ignore || {
     echo "⚠️  BDD 測試未通過"
@@ -95,6 +119,7 @@ echo "╠═══════════════════════�
 echo "║ 📊 統計：                                              ║"
 echo "║   - JSON 檔案：$JSON_COUNT                            ║"
 echo "║   - 已匯入資料庫                                       ║"
+echo "║   - anchor_id + embedding 已更新                       ║"
 echo "║   - BDD 測試通過                                       ║"
 echo "╚════════════════════════════════════════════════════════╝"
 
@@ -102,7 +127,11 @@ echo ""
 echo "後續步驟："
 echo "  1. 查看匯入統計："
 echo "     python -m app.scripts.import_exam_questions --json-dir $JSON_DIR"
-echo "  2. 執行完整 BDD 測試："
+echo "  2. 僅重新生成 embedding（跳過匯入）："
+echo "     python -m app.scripts.reprocess_embeddings --embed-only"
+echo "  3. 僅更新 anchor_id（不動 embedding）："
+echo "     python -m app.scripts.reprocess_embeddings --anchor-only"
+echo "  4. 執行完整 BDD 測試："
 echo "     python -m behave tests/features/ --tags=~@ignore"
-echo "  3. 啟動 API 伺服器："
+echo "  5. 啟動 API 伺服器："
 echo "     python -m uvicorn app.main:app --reload"

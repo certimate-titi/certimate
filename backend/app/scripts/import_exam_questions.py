@@ -121,11 +121,18 @@ class QuestionImporter:
                 f"({len(questions_data)} 題)"
             )
 
+            # Defensive import: ORM add + IntegrityError catch.
+            # UNIQUE (historical_exam_id, question_number) index from migration 055
+            # guarantees no duplicates. On conflict we skip silently.
+            # Note: pg_insert().on_conflict_do_nothing() was tried but fails on
+            # production SA 2.0 because session.bind is None (SA 2.0 deprecation).
+            from sqlalchemy.exc import IntegrityError
+
             imported_in_file = 0
             for q_data in questions_data:
                 q_num = q_data.get("question_number")
 
-                # 檢查是否已存在
+                # Pre-check (fast path — avoids SA object creation for existing rows)
                 existing = (
                     self.db.query(Question)
                     .filter(
@@ -156,9 +163,14 @@ class QuestionImporter:
                     source_type="historical",
                     tenant_id=tenant_id,
                 )
-                self.db.add(question)
-                imported_in_file += 1
-                self.imported_count += 1
+                try:
+                    self.db.add(question)
+                    self.db.flush()
+                    imported_in_file += 1
+                    self.imported_count += 1
+                except IntegrityError:
+                    self.db.rollback()
+                    self.skipped_count += 1
 
             if not self.dry_run:
                 self.db.commit()

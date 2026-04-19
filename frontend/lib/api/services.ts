@@ -11,6 +11,7 @@ import type {
   DocumentSourceType,
   DocumentStatus,
   ImportTask,
+  ImportTaskStatus,
   ImportDashboardStats,
   RecentJob,
   FailedJob,
@@ -138,6 +139,10 @@ export const documentService = {
 
   async delete(documentId: string): Promise<void> {
     await apiClient.delete(`/resources/${documentId}`);
+  },
+
+  async getHistoricalMarkdown(historicalExamId: string): Promise<{ historical_exam_id: string; name: string; content: string; question_count: number }> {
+    return apiClient.get(`/resources/historical/${historicalExamId}/markdown`);
   },
 
   async initChunkedUpload(filename: string, fileSize: number) {
@@ -356,6 +361,18 @@ export const dashboardService = {
   async completeDailyQuest(req: CompleteDailyQuestRequest): Promise<void> {
     await apiClient.post(`/dashboard/quests/${req.questId}/complete`);
   },
+
+  async getDailyQuests(): Promise<{ quests: Array<{ id: string; type: string; title: string; status: string; quest_type?: string; tooltip?: string }> }> {
+    return apiClient.get('/dashboard/daily-quests');
+  },
+
+  async getReviewCalendar(subject?: string, month?: string): Promise<{ calendar: Array<{ date: string; count: number }>; subject: string | null; month: string | null }> {
+    const qs = new URLSearchParams();
+    if (subject) qs.set('subject', subject);
+    if (month) qs.set('month', month);
+    const q = qs.toString();
+    return apiClient.get(`/dashboard/review-calendar${q ? '?' + q : ''}`);
+  },
 };
 
 // ===========================
@@ -372,6 +389,10 @@ export const knowledgeService = {
 
   async getNodeDetail(nodeId: string): Promise<GetNodeDetailResponse> {
     return apiClient.get<GetNodeDetailResponse>(`/knowledge-map/nodes/${nodeId}`);
+  },
+
+  async getResourceSummary(resourceId: string): Promise<{ title: string; content: string; node_count: number }> {
+    return apiClient.get(`/knowledge-map/resources/${resourceId}/summary`);
   },
 
   async extractKnowledgeTree(subjectId: string): Promise<Record<string, unknown>> {
@@ -450,6 +471,166 @@ export const subscriptionService = {
   async checkFup() {
     return apiClient.get('/subscriptions/fup/check');
   },
+
+  async requestRefund(transactionId: string, amount: number, reason?: string) {
+    return apiClient.post<{ refund_id: string; status: string }>(
+      '/subscriptions/refund-request',
+      { transaction_id: transactionId, amount, reason }
+    );
+  },
+
+  async validateCoupon(code: string, plan: string, amount: number) {
+    return apiClient.post<{ discount_amount: number; final_amount: number; code: string }>(
+      '/subscriptions/coupons/validate',
+      { code, plan, amount }
+    );
+  },
+};
+
+// ===========================
+// Difficulty Progression Service
+// ===========================
+
+export interface NextStrategyResponse {
+  action?: string;
+  next_node_id?: string;
+  target_difficulty?: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
+export const difficultyProgressionService = {
+  async start(subjectId: string): Promise<{ message: string; status: string }> {
+    return apiClient.post(`/difficulty-progression/subjects/${subjectId}/start`);
+  },
+
+  async nextStrategy(
+    subjectId: string,
+    params: {
+      current_node_id: string;
+      original_node_id?: string;
+      consecutive_wrong?: number;
+      consecutive_correct?: number;
+    }
+  ): Promise<NextStrategyResponse> {
+    return apiClient.post(`/difficulty-progression/subjects/${subjectId}/next-strategy`, params);
+  },
+
+  async getTrail(subjectId: string): Promise<{ trail: Array<Record<string, unknown>> }> {
+    return apiClient.get(`/difficulty-progression/subjects/${subjectId}/trail`);
+  },
+};
+
+// ===========================
+// Community Service
+// ===========================
+
+export interface CommunityBanner {
+  type: string;
+  message: string;
+}
+
+export interface WeeklyReportItem {
+  id: string;
+  week_start: string;
+  week_end: string;
+  study_hours: number;
+  exams_completed: number;
+  questions_answered: number;
+  progress_summary: string;
+}
+
+export interface ExamCoaching {
+  coaching_triggered: boolean;
+  coach_name?: string;
+  message?: Record<string, string>;
+}
+
+export const communityService = {
+  async getDashboard(): Promise<{ banner: CommunityBanner | null }> {
+    return apiClient.get('/community/dashboard');
+  },
+  async getWeeklyReports(): Promise<{ reports: WeeklyReportItem[] }> {
+    return apiClient.get('/community/weekly-reports');
+  },
+  async getExamCoaching(): Promise<ExamCoaching> {
+    return apiClient.get('/community/exam-results/coaching');
+  },
+};
+
+// ===========================
+// Learning Journey Service
+// ===========================
+
+export interface PendingJourneyItem {
+  id: string;
+  subject_id: string;
+  subject_name: string;
+  exam_date: string | null;
+  result_date: string | null;
+  exam_result_status: string | null;
+}
+
+export const learningJourneyService = {
+  async listPending(): Promise<{ items: PendingJourneyItem[] }> {
+    return apiClient.get('/learning-journeys/pending');
+  },
+
+  async confirmResult(journeyId: string, status: 'passed' | 'failed'): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/exam-result`, { status });
+  },
+
+  async retake(journeyId: string, examDate?: string, resultDate?: string): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/retake`, {
+      exam_date: examDate,
+      result_date: resultDate,
+    });
+  },
+
+  async quit(journeyId: string): Promise<Record<string, unknown>> {
+    return apiClient.post(`/learning-journeys/${journeyId}/quit`);
+  },
+
+  async updateResultDate(journeyId: string, resultDate: string): Promise<Record<string, unknown>> {
+    return apiClient.put(`/learning-journeys/${journeyId}/result-date`, { result_date: resultDate });
+  },
+};
+
+// ===========================
+// Anomaly Service (Admin)
+// ===========================
+
+export interface AnomalyItem {
+  error_id: string;
+  error_type: string;
+  occurrence_count: number;
+  status: string;
+  impact_scope: string | null;
+  assigned_to: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  classified: boolean;
+}
+
+export const anomalyService = {
+  async listAnomalies(): Promise<{ items: AnomalyItem[] }> {
+    return apiClient.get('/admin/anomalies');
+  },
+  async updateAnomaly(errorId: string, status: string, assignedTo?: string): Promise<{ status: string; error_id: string }> {
+    return apiClient.put(`/admin/anomalies/${errorId}`, { status, assigned_to: assignedTo });
+  },
+  async createMaintenanceTask(data: { name: string; priority: string; related_error?: string; estimated_hours?: number }): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-tasks', data);
+  },
+  async updateTaskStatus(taskId: string, status: string): Promise<Record<string, unknown>> {
+    return apiClient.put(`/admin/maintenance-tasks/${taskId}/status`, { status });
+  },
+  async createMaintenanceSchedule(data: { name: string; starts_at: string; ends_at: string; notify_channels?: string; notify_targets?: string; notify_before?: string }): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-schedules', data);
+  },
+  async activateMaintenanceMode(reason: string, estimatedRecovery: string): Promise<Record<string, unknown>> {
+    return apiClient.post('/admin/maintenance-mode', { reason, estimated_recovery: estimatedRecovery });
+  },
 };
 
 // ===========================
@@ -518,6 +699,60 @@ export const adminService = {
   async createStudentRemediation(studentId: string, data: { question_count: number; competency_weights: { label: string; weight: number }[] }) {
     return apiClient.post(`/b2b/students/${studentId}/remediation-exam`, data);
   },
+
+  // ── Institution-level (platform admin oversight) ──
+  async getAdminDashboard() {
+    return apiClient.get('/b2b/admin-dashboard');
+  },
+  async getInstitutionDpa(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/dpa`);
+  },
+  async getInstitutionStudents(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/students`);
+  },
+  async removeInstitutionStudent(instId: string, email: string) {
+    return apiClient.delete(`/b2b/institutions/${instId}/students/${encodeURIComponent(email)}`);
+  },
+  async cancelInstitutionSubscription(instId: string) {
+    return apiClient.post(`/b2b/institutions/${instId}/cancel-subscription`, {});
+  },
+  async getInstitutionErrorRanking(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/error-ranking`);
+  },
+  async getInstitutionHealthKpi(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/health-kpi`);
+  },
+  async getInstitutionEarlyWarnings(instId: string) {
+    return apiClient.get(`/b2b/institutions/${instId}/early-warnings`);
+  },
+  async updateInstitutionWarningRules(instId: string, rules: unknown) {
+    return apiClient.put(`/b2b/institutions/${instId}/warning-rules`, rules);
+  },
+
+  // ── Group-level ──
+  async getGroupStudents(groupId: string) {
+    return apiClient.get(`/b2b/groups/${groupId}/students`);
+  },
+  async assignGroupExam(groupId: string, data: unknown) {
+    return apiClient.post(`/b2b/groups/${groupId}/assign-exam`, data);
+  },
+  async getGroupHeatmap(groupId: string) {
+    return apiClient.get(`/b2b/groups/${groupId}/heatmap`);
+  },
+};
+
+// ===========================
+// Feedback Service (User)
+// ===========================
+
+export const feedbackService = {
+  async listMyFeedbacks(): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null }[]; count: number }> {
+    return apiClient.get('/feedback');
+  },
+
+  async getFeedbackDetail(feedbackId: string): Promise<{ feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null }> {
+    return apiClient.get(`/feedback/${feedbackId}`);
+  },
 };
 
 // ===========================
@@ -548,6 +783,10 @@ export const superAdminService = {
     return res.blob();
   },
 
+  async createUser(email: string, password: string): Promise<{ user_id: string; email: string }> {
+    return apiClient.post('/admin/users', { email, password });
+  },
+
   async suspendUser(userId: string, reason?: string): Promise<void> {
     await apiClient.post('/admin/users/suspend', { target_user_id: userId, reason });
   },
@@ -562,6 +801,10 @@ export const superAdminService = {
 
   async deleteUser(userId: string, confirmName: string): Promise<void> {
     await apiClient.post('/admin/users/delete', { target_user_id: userId, confirm_name: confirmName });
+  },
+
+  async notifyUser(userId: string, message: string): Promise<{ message: string }> {
+    return apiClient.post(`/admin/users/${userId}/notify`, { message });
   },
 
   async getSettings(): Promise<Record<string, unknown>> {
@@ -635,19 +878,87 @@ export const superAdminService = {
   },
 
   async getFinanceOverview(): Promise<{ mrr: number; arpu: number; churn_rate: number; ltv: number; mrr_trend: string; arpu_trend: string; churn_trend: string; ltv_trend: string }> {
-    return apiClient.get('/admin/finance/overview');
+    const raw = await apiClient.get<Record<string, unknown>>('/admin/finance/overview');
+    return {
+      mrr: Number(raw.mrr || 0),
+      arpu: Number(raw.arpu || 0),
+      churn_rate: Number(raw.churn_rate || 0),
+      ltv: Number(raw.ltv || 0),
+      mrr_trend: (raw.mrr_trend as string) || '--',
+      arpu_trend: (raw.arpu_trend as string) || '--',
+      churn_trend: (raw.churn_trend as string) || '--',
+      ltv_trend: (raw.ltv_trend as string) || '--',
+    };
   },
 
   async getFinanceTransactions(): Promise<{ transactions: { id: string; user: string; amount: string; plan: string; status: string; time: string }[] }> {
-    return apiClient.get('/admin/finance/transactions');
+    const raw = await apiClient.get<{ transactions: Array<Record<string, unknown>> }>('/admin/finance/transactions');
+    return {
+      transactions: (raw.transactions || []).map(t => ({
+        id: String(t.transaction_id || t.id || ''),
+        user: String(t.user_email || t.user_id || t.user || ''),
+        amount: `NT$${Number(t.amount || 0).toLocaleString()}`,
+        plan: String(t.target_plan || t.plan || ''),
+        status: String(t.status || ''),
+        time: String(t.created_at || t.time || ''),
+      })),
+    };
   },
 
   async getMrrTrend(): Promise<{ data: { name: string; new: number; expansion: number; churn: number }[] }> {
-    return apiClient.get('/admin/finance/mrr-trend');
+    const raw = await apiClient.get<{ trend?: Array<Record<string, unknown>>; data?: Array<Record<string, unknown>> }>('/admin/finance/mrr-trend');
+    const items = raw.trend || raw.data || [];
+    return {
+      data: items.map(r => ({
+        name: String(r.name || ''),
+        new: Number(r.mrr || r.new || 0),
+        expansion: Number(r.expansion || 0),
+        churn: Number(r.churn || 0),
+      })),
+    };
   },
 
   async getSubscriptionDistribution(): Promise<{ distribution: { name: string; value: number; color: string }[] }> {
-    return apiClient.get('/admin/finance/subscription-distribution');
+    const PLAN_COLORS: Record<string, string> = {
+      FREE: '#94a3b8', PRO_199: '#10b981', PRO_PLUS_399: '#6366f1', ULTRA_1599: '#f59e0b', EDU: '#06b6d4',
+    };
+    const raw = await apiClient.get<{ distribution: Record<string, number> | Array<Record<string, unknown>> }>('/admin/finance/subscription-distribution');
+    const dist = raw.distribution;
+    // Backend returns dict { "FREE": 3, "ULTRA_1599": 3 }; frontend needs array
+    if (dist && !Array.isArray(dist)) {
+      return {
+        distribution: Object.entries(dist)
+          .filter(([, v]) => v > 0)
+          .map(([name, value]) => ({
+            name,
+            value,
+            color: PLAN_COLORS[name] || '#94a3b8',
+          })),
+      };
+    }
+    // Already array (future-proof)
+    return { distribution: (dist as Array<{ name: string; value: number; color: string }>) || [] };
+  },
+
+  async listRefunds(status?: string): Promise<{ refunds: Array<{ refund_id: string; user_id: string; user_email?: string; transaction_id: string; amount: number; status: string; reason?: string; created_at?: string }> }> {
+    const q = status ? `?status=${status}` : '';
+    return apiClient.get(`/admin/finance/refunds${q}`);
+  },
+
+  async approveRefund(refundId: string): Promise<{ status: string }> {
+    return apiClient.post(`/admin/finance/refunds/${refundId}/approve`);
+  },
+
+  async rejectRefund(refundId: string, reason: string): Promise<{ status: string }> {
+    return apiClient.post(`/admin/finance/refunds/${refundId}/reject`, { reason });
+  },
+
+  async listCoupons(): Promise<{ coupons: Array<{ code: string; discount_type: string; discount_value: number; status: string; used_count?: number; max_uses?: number }> }> {
+    return apiClient.get('/admin/finance/coupons');
+  },
+
+  async createCoupon(data: { code: string; discount_type: string; discount_value: number; applicable_plans?: string; max_uses?: number; max_uses_per_user?: number }): Promise<{ code: string; status: string }> {
+    return apiClient.post('/admin/finance/coupons', data);
   },
 
   async getModerationQueue(): Promise<{ items: { id: string; user: string; type: string; content: string; reason: string; status: string; time: string }[] }> {
@@ -674,6 +985,24 @@ export const superAdminService = {
     await apiClient.post(`/admin/moderation/${itemId}/reject`);
   },
 
+  async unlockCooldown(targetUserId: string): Promise<{ message: string }> {
+    return apiClient.post(`/admin/moderation/ai-abuse/${targetUserId}/unlock`);
+  },
+
+  // --- Feedback Admin ---
+  async getAdminFeedbacks(status?: string): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content_preview: string; content: string; status: string; user_id: string; user_email: string; admin_reply: string; attachment_urls: string[]; created_at: string | null; resolved_at: string | null }[]; count: number }> {
+    const params = status ? `?status=${status}` : '';
+    return apiClient.get(`/feedback/admin/list${params}`);
+  },
+
+  async getAdminFeedbackStats(): Promise<{ total_count: number; pending_count: number; reviewing_count: number; resolved_count: number; top_category: string | null; avg_resolve_hours: number }> {
+    return apiClient.get('/feedback/admin/stats');
+  },
+
+  async updateFeedback(feedbackId: string, data: { status: string; admin_reply?: string; close_reason?: string }): Promise<{ feedback_id: string; status: string; resolved_at: string | null }> {
+    return apiClient.put(`/feedback/admin/${feedbackId}`, data);
+  },
+
   async getAuditLogs(): Promise<{ logs: { id: string; timestamp: string; admin_id: string; admin_email: string; action: string; target_type: string; target_id: string; details: string; ip_address: string }[] }> {
     return apiClient.get('/admin/system-settings/audit-logs');
   },
@@ -682,11 +1011,11 @@ export const superAdminService = {
     return apiClient.get('/admin/dashboard/alerts');
   },
 
-  async getSystemLoad(): Promise<{ cpu_percent: number; db_connections_percent: number; cache_hit_rate: number }> {
+  async getSystemLoad(): Promise<{ cpu_percent: number; db_connections_percent: number; queue_depth_percent: number }> {
     return apiClient.get('/admin/dashboard/system-load');
   },
 
-  async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number }[] }> {
+  async getDashboardCharts(): Promise<{ user_growth: { name: string; dau: number; mau: number }[]; ai_cost: { name: string; gemini: number; claude: number; gpt4: number; voyage: number }[] }> {
     return apiClient.get('/admin/dashboard/charts');
   },
 
@@ -945,7 +1274,7 @@ export const importService = {
       return (response.recent_jobs || []).map((job) => ({
         taskId: (job.task_id as string) || '',
         exam: (job.exam as string) || '',
-        status: (job.status as string) || '',
+        status: (job.status as ImportTaskStatus) || 'pending',
         progressPercent: ((job.progress_percent as number) || 0),
         questionsImported: ((job.questions_imported as number) || 0),
         totalQuestions: ((job.total_questions as number) || 0),
@@ -1032,6 +1361,41 @@ function normalizeImportTask(data: Record<string, unknown>): ImportTask {
     retryCount: ((data.retry_count as number) || 0),
   };
 }
+// ─── Resource Library Service ───────────────────────────────────────────────
+
+export interface LibraryResource {
+  resource_id: string;
+  name: string;
+  type: string;
+  status: string;
+}
+
+export const resourceLibraryService = {
+  async list(keyword?: string): Promise<{ resources: LibraryResource[] }> {
+    const q = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+    return apiClient.get(`/resource-library${q}`);
+  },
+  async delete(resourceId: string): Promise<{ message: string }> {
+    return apiClient.delete(`/resource-library/${resourceId}`);
+  },
+  async reparse(resourceId: string): Promise<{ message: string }> {
+    return apiClient.post(`/resource-library/${resourceId}/reparse`, {});
+  },
+};
+
+// ─── Retirement & Result Notification Service (super_admin) ────────────────
+
+export const retirementService = {
+  async scan() { return apiClient.post('/admin/retirement/scan', {}); },
+  async hardDelete() { return apiClient.post('/admin/retirement/hard-delete', {}); },
+  async postResultScan() { return apiClient.post('/admin/retirement/post-result', {}); },
+  async recalculate() { return apiClient.post('/admin/subjects/recalculate', {}); },
+  async notifyResultDay() { return apiClient.post('/admin/notifications/result-day', {}); },
+  async notifyResultReminder() { return apiClient.post('/admin/notifications/result-reminder', {}); },
+  async notifyResultDefault() { return apiClient.post('/admin/notifications/result-default', {}); },
+  async crossRecommend() { return apiClient.post('/admin/notifications/cross-recommend', {}); },
+};
+
 // ─── Practice Service ───────────────────────────────────────────────────────
 
 export interface PracticeQuestion {
@@ -1085,5 +1449,50 @@ export const practiceService = {
       question_id: questionId,
       selected_answer: selectedAnswer,
     });
+  },
+};
+
+// ===========================
+// Feature 33 — Cost Monitor Service
+// ===========================
+
+import type {
+  CostSummaryResponse,
+  ProviderDetailResponse,
+  GcpServicesResponse,
+  TrendsResponse,
+  UpdateBudgetRequest,
+  GlobalScaleRequest,
+  OverrideDisableRequest,
+  BudgetUpdateResponse,
+} from '@/types/cost-monitor';
+
+export const costMonitorService = {
+  async getSummary(): Promise<CostSummaryResponse> {
+    return apiClient.get('/admin/cost/summary');
+  },
+
+  async getProviderDetail(provider: 'anthropic' | 'gemini' | 'voyage'): Promise<ProviderDetailResponse> {
+    return apiClient.get(`/admin/cost/providers/${provider}`);
+  },
+
+  async getGcpServices(): Promise<GcpServicesResponse> {
+    return apiClient.get('/admin/cost/gcp/services');
+  },
+
+  async getTrends(days = 30): Promise<TrendsResponse> {
+    return apiClient.get(`/admin/cost/trends?days=${days}`);
+  },
+
+  async updateBudget(req: UpdateBudgetRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.put('/admin/cost/budget', req);
+  },
+
+  async globalScale(req: GlobalScaleRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.post('/admin/cost/budget/global-scale', req);
+  },
+
+  async overrideDisable(req: OverrideDisableRequest): Promise<BudgetUpdateResponse> {
+    return apiClient.post('/admin/cost/budget/override-disable', req);
   },
 };

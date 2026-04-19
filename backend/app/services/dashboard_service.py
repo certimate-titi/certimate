@@ -228,12 +228,31 @@ class DashboardService:
                 task_type = "unseen" if study_mode in ("sprint", "standard") else "review"
                 today_tasks.append({"title": (n[0] or "")[:40], "type": task_type})
 
+        streak = {
+            "currentStreak": user.current_streak or 0,
+            "longestStreak": user.longest_streak or 0,
+            "freezesRemaining": user.freezes_remaining if user.freezes_remaining is not None else 2,
+            "freezesPerWeek": user.freezes_per_week if user.freezes_per_week is not None else 2,
+            "lastActiveDate": user.last_active_date.isoformat() if user.last_active_date else None,
+            "freezeConsumedToday": bool(user.freeze_consumed_today),
+        }
+
+        activity_items = self._build_activity_items(
+            user_uuid=user_uuid,
+            subject_id=active_subject_id,
+            wrong_count=wrong_count,
+            incomplete_exams=incomplete_exams,
+            recent_resources=resources[:3],
+        )
+
         return {
             "subjects": subjects_list,
             "active_subject": active_subject_name,
             "add_subject_entry": True,
             "exam_countdown": exam_countdown,
             "stats": stats,
+            "streak": streak,
+            "activityItems": activity_items,
             "domainStrengths": domain_strengths,
             "radar_chart": {
                 "subject": active_subject_name,
@@ -244,6 +263,38 @@ class DashboardService:
             "quick_upload": {"enabled": True},
             "todo_reminders": {"wrong_answers": wrong_count, "incomplete_exams": incomplete_exams},
         }
+
+    def _build_activity_items(self, user_uuid, subject_id, wrong_count, incomplete_exams, recent_resources):
+        """Aggregate actionable reminders from existing data. No new table."""
+        items: list[dict] = []
+        if wrong_count > 0:
+            items.append({
+                "id": "act_wrong",
+                "type": "error_review",
+                "title": f"有 {wrong_count} 題錯題待複習",
+                "description": "針對錯題進行複習練習可提升正確率",
+                "link": "/review",
+                "linkLabel": "去複習",
+            })
+        if incomplete_exams > 0:
+            items.append({
+                "id": "act_incomplete",
+                "type": "incomplete_exam",
+                "title": f"有 {incomplete_exams} 份未完成測驗",
+                "description": "繼續作答以獲得完整成績分析",
+                "link": "/exam/workspace",
+                "linkLabel": "繼續作答",
+            })
+        for r in recent_resources[:2]:
+            items.append({
+                "id": f"act_res_{r.id}",
+                "type": "new_resource",
+                "title": f"新資源：{r.name}",
+                "description": "查看知識心智圖與題目",
+                "link": "/knowledge",
+                "linkLabel": "查看",
+            })
+        return items
 
     # ── 能力分佈：分組雷達圖資料 ─────────────────────────────────
 

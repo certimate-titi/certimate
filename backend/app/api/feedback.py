@@ -3,7 +3,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -85,17 +85,45 @@ def admin_update_feedback(
 
 @router.post("")
 def submit_feedback(
-    body: SubmitFeedbackRequest,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
+    # Accept both JSON body and multipart/form-data (frontend sends FormData for file uploads)
+    type: Optional[str] = Form(None),
+    subject: Optional[str] = Form(None),
+    content: Optional[str] = Form(None),
+    attachments: Optional[list[UploadFile]] = File(None),
 ):
+    from app.models.feedback import FeedbackAttachment
     service = FeedbackService(db)
+
+    # Upload files to GCS and collect metadata
+    attachment_data = None
+    if attachments:
+        from app.services.storage_service import upload_feedback_attachment
+        attachment_data = []
+        for f in attachments:
+            if f.filename:
+                file_bytes = f.file.read()
+                if len(file_bytes) > 5 * 1024 * 1024:
+                    continue  # skip files > 5MB
+                gcs_url = upload_feedback_attachment(
+                    file_bytes=file_bytes,
+                    filename=f.filename,
+                    content_type=f.content_type or "image/png",
+                )
+                if gcs_url:
+                    attachment_data.append({
+                        "file_path": gcs_url,
+                        "file_size": len(file_bytes),
+                        "mime_type": f.content_type or "image/png",
+                    })
+
     result = service.submit_feedback(
         user_id=user_id,
-        feedback_type=body.type or "",
-        subject=body.subject or "",
-        content=body.content or "",
-        attachments=body.attachments,
+        feedback_type=type or "",
+        subject=subject or "",
+        content=content or "",
+        attachments=attachment_data,
     )
     if result.get("error"):
         raise HTTPException(

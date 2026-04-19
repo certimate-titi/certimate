@@ -2,21 +2,134 @@
 
 ## 待辦事項
 
-### 階段二（未完成項目）
-* **[x] LLM 防火牆配置：** ~~導入意圖過濾器（如 Llama Guard），防止針對特定租戶題庫的 Prompt Injection 攻擊。~~  → **程式碼已完成（2026-04-11）：雙層防護（規則引擎 + Llama Guard 客戶端），待部署 LLAMA_GUARD_URL 推理服務端點**
-* **[x] 欄位級加密：** ~~針對 `Student_Answers` 表中的成績與個資實作應用層加密。（需選定 KMS 方案）~~ → **程式碼已完成，待部署 KMS 金鑰（2026-04-09）**
+### GCP Billing Export 配置部署（P1） — 2026-04-17 程式碼完成
+- ✅ **實現完成**：GcpBillingService BigQuery SQL 查詢、config 設定、錯誤處理、test hooks
+- ⏳ **待運維操作**（非程式碼）：
+  - [ ] Cloud Run：設定 `GCP_BILLING_MODE=real`
+  - [ ] Cloud Run：掛載 Service Account key（workload identity）
+  - [ ] 驗證 API：`GET /admin/cost/gcp/services` 回傳真實資料
 
-### 階段三（需外部基礎設施）
-* **[x] 語意快取 (Semantic Cache)：** ~~建立以 `tenant_id + semantic_hash` 為鍵值的 Redis 快取~~  → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
-* **[x] 多租戶限流 (Rate Limiting)：** ~~實作 Redis Token Bucket，依據租戶等級（B2C/B2B）設定不同的 QPS 限制~~ → **程式碼已完成，待 Redis 基礎設施（2026-04-09）**
-* **[x] 任務佇列隔離 (Queue Prioritization)：** ~~設定 Celery 優先權佇列，確保付費租戶的解析任務（OCR/STT）優先執行。~~ → **程式碼已完成（2026-04-11）：paid_priority / standard / background 三層佇列，待 Redis/Celery Worker 基礎設施**
+---
 
-### 階段四（未完成項目）
-* **[x] 全鏈路追蹤：** ~~導入 OpenTelemetry~~ → **程式碼已完成，待 OTLP Collector / Grafana Tempo 部署（2026-04-09）**
+### ✅ 用戶管理前端修復（P1） — 完成於 2026-04-17
+- ✅ 新增「發送通知」按鈕至 `users/[userId]/client.tsx`（彈窗輸入 → Email 發送）
+- ✅ 停權/恢復按鈕動態切換（active 顯示「停權」、suspended 顯示「恢復」）
+- ✅ 停權/恢復後自動發送通知信（`send_suspension_email` / `send_restoration_email`）
+- ✅ `notify_user` 後端實際發送 Email（`send_admin_notification_email`）
+- ✅ 前端 `services.ts` 新增 `notifyUser()` API 函式
+
+### ✅ Prompt 模板前端修復（P1） — 完成於 2026-04-17
+- ✅ 編輯表單新增 model 下拉選單（gemini-2.5-flash / gemini-2.5-pro / claude-3.5-sonnet / claude-3.5-haiku / gpt-4o / gpt-4o-mini）
+- ✅ 儲存時自動傳送 model 參數至後端 PATCH API
+- ~~prompt無法編輯~~ → ✅ 已確認可編輯（system_prompt / user_prompt / temperature）
+
+### ✅ SSO 密碼重設流程 — 已完成（驗證於 2026-04-17）
+- ✅ Backend：`forgot_password()` 生成 reset token + 發送 Email
+- ✅ Backend：`reset_password()` 驗證 token + 設定密碼
+- ✅ Backend：`login()` SSO 用戶無密碼時回傳專用錯誤訊息
+- ✅ Frontend：`/forgot-password` 頁面（含 SSO 提示）
+- ✅ Frontend：`/reset-password` 頁面（密碼強度驗證）
+- ✅ Email 模板：`send_password_reset_email`（含 SSO 提示）
+
+---
+
+### ✅ RAG 物理級跳轉完善（P2） — 完成於 2026-04-17
+- ✅ ResourceChunk model 新增 `anchor_id`、`highlight_line_start/end`、`highlight_char_start/end` 欄位
+- ✅ Alembic migration 056 建立
+- ✅ DBML (erm.dbml) 同步更新
+- ✅ `get_node_source()` API 增強 — 回傳 `highlight` 物件（anchor_id + line/char 範圍）
+
+### ✅ 向量快取機制（P2） — 完成於 2026-04-17
+- ✅ `EmbeddingService.embed_query()` 自動快取（LRU 1000 + TTL 24h）
+- ✅ 支援 Redis（優先）+ 記憶體 fallback
+- ✅ 新增 `get_cache_stats()` 供 admin 監控快取命中率
+- ✅ 環境變數：`EMBEDDING_CACHE_MAX_SIZE`、`EMBEDDING_CACHE_TTL`
+
+### ✅ 系統設定頁面重組（P3） — 完成於 2026-04-17
+- ✅ 拆分為 6 個獨立子頁面（含 shared layout + sidebar 導航）：
+  - `/super-admin/settings` — AI 模型路由
+  - `/super-admin/settings/plans` — 方案限額
+  - `/super-admin/settings/announcements` — 公告管理
+  - `/super-admin/settings/flags` — Feature Flags
+  - `/super-admin/settings/admins` — 管理員帳號
+  - `/super-admin/settings/version` — 版本資訊
 
 ---
 
 ## 完成事項
+
+### ✅ 13. GCP Billing Export 功能實現 — 完成於 2026-04-17
+
+**成本監控中心（Feature 33）的 BigQuery Billing Export 模組實現**：
+- ✅ `GcpBillingService` — SQL 查詢層（使用 `export_time` 欄位）
+- ✅ 環境變數配置（`config.py`）
+- ✅ 詳細錯誤處理與日誌
+- ✅ BDD 測試集成（test hooks）
+- ✅ 配置指南文檔（`GCP_BILLING_EXPORT_SETUP.md`）
+- ✅ 實現總結文檔（`BILLING_EXPORT_COMPLETION.md`）
+- [ ] **待部署**：Cloud Run 環境變數 + Service Account key 掛載
+
+**API 端點**：`GET /admin/cost/gcp/services` — 查詢當月 GCP 服務分類成本
+
+*詳細處理紀錄：`docs/BILLING_EXPORT_COMPLETION.md`*
+
+---
+
+### ✅ 12. RAG 資料流程差異分析 + 平台管理功能審查 — 完成於 2026-04-17
+
+**RAG 資料流程_修正版 vs 實作差異**（整體完成度 85-90%）：
+- ✅ 結構化提煉（6 章心智圖）、動態增刪、權威優先、二階段檢索、Mastery 引擎、配額控制 — 完全實現
+- ⚠️ 物理級跳轉（anchor_id 缺失）、向量快取（未實作）— 需補強
+
+**平台管理功能審查結果**：
+- ✅ 儀表板、財務、內容審核、審計日誌、成本監控 — 功能完整
+- ⚠️ 用戶管理：詳情頁已實作但需驗證、缺「發送通知」按鈕、停權未自動寄信
+- ⚠️ Prompt 模板：編輯功能已可用（非「無法編輯」）、缺 model 下拉選單
+- ⚠️ 系統設定頁面 6 Tab 過於龐雜，建議拆分
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-17T14-34-13.md`*
+
+### ✅ 11. Feature 32 節點練習模式 + Feature 33 成本監控中心 — 完成於 2026-04-15
+
+**完成範圍**（Feature 32 全部、Feature 33 全部）：
+
+**Feature 32 — 節點練習模式（`32-節點練習模式.feature`）**：
+- `backend/app/api/practice.py`：練習題查詢 + 作答 + 進度傳播 3 支 API
+- `backend/tests/features/steps/practice/`：完整 step definitions（Given/When/Then）
+- `frontend/lib/api/services.ts`：新增 `getNodePracticeQuestions` / `submitPracticeAnswer` 前端 API
+
+**Feature 33 — 成本監控中心（`33-成本監控中心.feature`）**：
+- `backend/app/models/ai_usage_ledger.py`：AI 呼叫 token 級用量明細
+- `backend/app/models/budget_config.py`：預算設定（四個 scope：AI_ANTHROPIC / AI_GEMINI / AI_VOYAGE / GCP_TOTAL）
+- `backend/app/models/budget_alert_log.py`：預算告警日誌
+- `backend/alembic/versions/048_add_cost_monitor_tables.py`：Migration 048
+- `backend/alembic/versions/049_add_embedding_provider_metadata.py`：Migration 049（Voyage 多 provider 支援）
+- `backend/alembic/versions/050_add_gcp_budget_sync_fields.py`：Migration 050（GCP Native Budget 同步欄位）
+- `backend/app/repositories/ai_usage_repository.py`
+- `backend/app/repositories/budget_config_repository.py`
+- `backend/app/repositories/budget_alert_log_repository.py`
+- `backend/app/services/cost_monitor_service.py`：成本總覽 + 趨勢圖
+- `backend/app/services/budget_service.py`：預算告警觸發 + 功能降級 + 解除停用
+- `backend/app/services/gcp_billing_service.py`：GCP BigQuery Billing Export 查詢
+- `backend/app/services/gcp_budget_sync_service.py`：GCP Native Budget API 單向同步
+- `backend/app/services/voyage_quota_service.py`：Voyage embedding 配額鎖 + 等待佇列
+- `backend/app/api/cost_monitor.py`：成本監控 REST API（super_admin 限定）
+- `backend/app/core/permissions.py`：`require_super_admin` 依賴注入
+- `backend/app/middleware/`：AI Budget 降級 Middleware
+- `backend/tests/features/steps/cost_monitor/`：完整 step definitions（Given/When/Then）
+- `frontend/app/super-admin/cost-monitor/`：成本監控前端頁面
+- `frontend/types/cost-monitor.ts`：前端型別定義
+- `project/specs/entity/erm.dbml`：新增 ai_usage_ledger / budget_config / budget_alert_log 三張表 + PENDING_BUDGET_RECOVERY enum + embedding_provider / embedding_model 欄位
+
+**待手動執行：**
+- `alembic upgrade head`（migration 048 / 049 / 050）
+- 設定 `GCP_BILLING_PROJECT_ID`、`GCP_BILLING_DATASET`、`GCP_BILLING_EXPORT_TABLE`（GCP BigQuery）
+- 設定 `GCP_BUDGET_PARENT`（billingbudgets.googleapis.com 同步用）
+- BDD 測試驗收（Feature 32 + Feature 33）
+
+*詳細處理紀錄：`docs/todo-processing-2026-04-15T09-00-00.md`*
+
+---
 
 ### ✅ 10. LLM 防火牆 + 任務佇列隔離 — 完成於 2026-04-11
 

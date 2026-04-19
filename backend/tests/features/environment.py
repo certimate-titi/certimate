@@ -220,6 +220,16 @@ def before_scenario(context, scenario):
     context.repos = SimpleNamespace()
     context.services = SimpleNamespace()
 
+    # Email spy：攔截 AdminService._send_email，記錄到 context.sent_emails
+    from app.services.admin_service import AdminService
+    context.sent_emails = []
+    sent_emails_ref = context.sent_emails
+
+    def _spy_send_email(self, method, *args, **kwargs):
+        sent_emails_ref.append({"method": method, "args": args, "kwargs": kwargs})
+
+    AdminService._send_email = _spy_send_email
+
 
 def after_scenario(context, scenario):
     """每個 Scenario 執行後清理。"""
@@ -248,6 +258,31 @@ def after_scenario(context, scenario):
     try:
         from app.services.ecpay_service import set_now_func
         set_now_func(None)
+    except ImportError:
+        pass
+
+    # 重設 GcpBillingService 的測試 hook（Feature 33）
+    try:
+        from app.services.gcp_billing_service import set_test_override, set_test_services, set_test_daily_series
+        set_test_override(None)
+        set_test_services(None)
+        set_test_daily_series(None)
+    except ImportError:
+        pass
+
+    # Feature 33: 重設 GCP billing test override + GCP budget sync factory
+    try:
+        from app.services.gcp_billing_service import set_test_override
+        set_test_override(None)
+    except ImportError:
+        pass
+    try:
+        import app.services.gcp_budget_sync_service as _gbs
+        if hasattr(_gbs, "_original_make_default_adapter"):
+            _gbs._make_default_adapter = _gbs._original_make_default_adapter
+        else:
+            # Cache the pristine factory the first time we see it
+            _gbs._original_make_default_adapter = _gbs._make_default_adapter
     except ImportError:
         pass
 

@@ -2,8 +2,11 @@
 
 import csv
 import io
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -59,9 +62,27 @@ def _get_status(user: User) -> str:
 class AdminService:
     def __init__(self, db: Session):
         self.db = db
+        try:
+            from app.services.email_service import EmailService
+            self._email_service = EmailService()
+        except Exception:
+            self._email_service = None
+
+    def _send_email(self, method: str, *args, **kwargs) -> None:
+        """安全地發送 Email，失敗不影響主流程。"""
+        if self._email_service is None:
+            return
+        try:
+            getattr(self._email_service, method)(*args, **kwargs)
+        except Exception:
+            logger.warning("Email 發送失敗 (%s): %s", method, args[0] if args else "", exc_info=True)
 
     def _get_user(self, user_id: str) -> User | None:
-        return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
+        try:
+            uid = uuid.UUID(user_id)
+        except (ValueError, AttributeError):
+            return None
+        return self.db.query(User).filter_by(id=uid).first()
 
     def _require_admin(self, user_id: str) -> dict | None:
         """Return error dict if not admin/super_admin, else None."""
@@ -163,7 +184,15 @@ class AdminService:
             )
             .scalar() or 0
         )
-        ai_token_today = round(ai_exams_today * 0.01, 2)  # ~$0.01 per exam
+        # Real AI cost from ai_usage_ledger (Feature 33)
+        try:
+            from sqlalchemy import text as _text
+            ai_token_today = float(self.db.execute(_text(
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM ai_usage_ledger WHERE created_at >= :start"
+            ), {"start": today_start}).scalar() or 0)
+            ai_token_today = round(ai_token_today, 4)
+        except Exception:
+            ai_token_today = round(ai_exams_today * 0.01, 2)  # fallback estimate
 
         # Queue depth: resources currently processing
         queue_depth = (
@@ -192,6 +221,47 @@ class AdminService:
         if err:
             return err
         return {"settings": {}}
+
+    # ── Create User ──────────────────────────────────────────────────────────
+
+    def create_user(self, actor_id: str, email: str, password: str) -> dict:
+        """管理員手動建立使用者帳號。"""
+        err = self._require_super_admin(actor_id)
+        if err:
+            return err
+
+        if not email or not password:
+            return {"error": True, "status_code": 422, "message": "必要參數未提供"}
+
+        # 檢查 email 是否已存在
+        existing = self.db.query(User).filter(User.email == email).first()
+        if existing:
+            return {"error": True, "status_code": 409, "message": f"Email {email} 已被註冊"}
+
+        from app.services.auth_service import _hash_password, _is_password_strong_enough
+        if not _is_password_strong_enough(password):
+            return {"error": True, "status_code": 400, "message": "密碼強度不足，需至少 8 字元，包含大小寫字母與數字"}
+
+        new_user = User(
+            id=uuid.uuid4(),
+            email=email,
+            password_hash=_hash_password(password),
+            status=UserStatus.ACTIVE,
+            role=UserRole.USER,
+            subscription_plan=SubscriptionPlan.FREE,
+        )
+        self.db.add(new_user)
+        self.db.commit()
+
+        self._write_audit_log(
+            admin_id=actor_id,
+            action="create_user",
+            target_type="user",
+            target_id=str(new_user.id),
+            details={"email": email, "summary": f"管理員建立帳號 {email}"},
+        )
+
+        return {"success": True, "user_id": str(new_user.id), "email": email}
 
     # ── User Search ──────────────────────────────────────────────────────────
 
@@ -361,6 +431,9 @@ class AdminService:
         self.db.add(log)
         self.db.commit()
 
+        # 自動發送停權通知信
+        self._send_email("send_suspension_email", target.email, reason)
+
         return {"success": True}
 
     # ── Activate User ─────────────────────────────────────────────────────────
@@ -389,6 +462,9 @@ class AdminService:
             target_id=target_user_id,
             details={"summary": "恢復用戶帳號"},
         )
+
+        # 自動發送帳號恢復通知信
+        self._send_email("send_restoration_email", target.email)
 
         return {"success": True}
 
@@ -472,13 +548,20 @@ class AdminService:
         if not message.strip():
             return {"error": True, "status_code": 400, "message": "通知訊息不可為空"}
 
-        # TODO: 實際發送通知（Email / 站內通知），目前先記錄 audit log
+        # 發送通知 Email
+        email_sent = False
+        if self._email_service:
+            try:
+                email_sent = self._email_service.send_admin_notification_email(target.email, message)
+            except Exception:
+                logger.warning("通知信發送失敗: %s", target.email, exc_info=True)
+
         self._write_audit_log(
             admin_id=actor_id,
             action="notify_user",
             target_type="user",
             target_id=target_user_id,
-            details={"message": message, "email": target.email},
+            details={"message": message, "email": target.email, "email_sent": email_sent},
         )
 
         return {"success": True, "message": f"通知已發送給 {target.email}"}

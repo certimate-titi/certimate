@@ -7,6 +7,7 @@ if "__package__" not in globals():
 # Common Then
 from .common_then import success  # noqa: F401
 from .common_then import failure  # noqa: F401
+from .common_then import failure_status_code  # noqa: F401
 from .common_then import failure_with_reason  # noqa: F401
 from .common_then import error_message  # noqa: F401
 from .common_then import failure_with_error  # noqa: F401
@@ -28,6 +29,7 @@ from .auth.aggregate_given import user_google_sso  # noqa: F401
 from .auth.commands import check_password_strength  # noqa: F401
 from .auth.commands import auth_ui_actions  # noqa: F401
 from .auth.commands import forgot_password  # noqa: F401
+from .auth.commands import reset_password  # noqa: F401
 from .auth.commands import google_sso  # noqa: F401
 from .auth.commands import login  # noqa: F401
 from .auth.commands import login_by_email  # noqa: F401
@@ -86,6 +88,8 @@ from .resource.commands import init_chunked_upload  # noqa: F401
 from .resource.commands import query_chunked_progress  # noqa: F401
 from .resource.commands import complete_chunked_upload  # noqa: F401
 from .resource.commands import query_chunks  # noqa: F401
+from .resource.commands import resource_detail  # noqa: F401
+from .resource.commands import upload_chunk  # noqa: F401
 
 # Resource — readmodel_then
 from .resource.readmodel_then import resource_status  # noqa: F401
@@ -95,6 +99,7 @@ from .resource.readmodel_then import resource_type  # noqa: F401
 from .resource.readmodel_then import can_resume_upload  # noqa: F401
 from .resource.readmodel_then import resource_file_size  # noqa: F401
 from .resource.readmodel_then import chunk_count  # noqa: F401
+from .resource.readmodel_then import resource_detail_response  # noqa: F401
 
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
@@ -600,10 +605,12 @@ from .admin.aggregate_then import audit_log  # noqa: F401
 from .admin.aggregate_then import user_cannot_login  # noqa: F401
 from .admin.aggregate_then import user_role  # noqa: F401
 from .admin.aggregate_then import email_notify_admins  # noqa: F401
+from .admin.aggregate_then import email_user_notification  # noqa: F401
 
 # Admin Finance — aggregate_given
 from .admin_finance.aggregate_given import transactions  # noqa: F401
 from .admin_finance.aggregate_given import refunds  # noqa: F401
+from .admin_finance.aggregate_given import coupons  # noqa: F401
 
 # Admin Finance — commands
 from .admin_finance.commands import view_subscription_distribution  # noqa: F401
@@ -613,6 +620,7 @@ from .admin_finance.commands import reject_refund  # noqa: F401
 from .admin_finance.commands import create_coupon  # noqa: F401
 from .admin_finance.commands import approve_refund_otp  # noqa: F401
 from .admin_finance.commands import finance_ui_actions  # noqa: F401
+from .admin_finance.commands import list_refunds  # noqa: F401
 
 # Admin Finance — aggregate_then
 from .admin_finance.aggregate_then import refund_status  # noqa: F401
@@ -630,6 +638,7 @@ from .admin_finance.readmodel_then import export_finance  # noqa: F401
 from .admin_finance.readmodel_then import transaction_filter  # noqa: F401
 from .admin_finance.readmodel_then import transaction_detail  # noqa: F401
 from .admin_finance.readmodel_then import mrr_chart  # noqa: F401
+from .admin_finance.readmodel_then import refunds_coupons  # noqa: F401
 
 # Admin Moderation — aggregate_given
 from .admin_moderation.aggregate_given import ai_cooldowns  # noqa: F401
@@ -643,6 +652,7 @@ from .admin_moderation.commands import resolve_report  # noqa: F401
 from .admin_moderation.commands import click_report_action  # noqa: F401
 from .admin_moderation.commands import click_confirm_buttons  # noqa: F401
 from .admin_moderation.commands import system_ops_panel  # noqa: F401
+from .admin_moderation.commands import moderation_panel_queries  # noqa: F401
 
 # Admin Moderation — aggregate_then
 from .admin_moderation.aggregate_then import cooldown_unlocked  # noqa: F401
@@ -653,6 +663,7 @@ from .admin_moderation.aggregate_then import warn_notification_sent  # noqa: F40
 
 # Admin Moderation — readmodel_then
 from .admin_moderation.readmodel_then import cooldown_users  # noqa: F401
+from .admin_moderation.readmodel_then import abuse_items  # noqa: F401
 from .admin_moderation.readmodel_then import report_count  # noqa: F401
 from .admin_moderation.readmodel_then import confirm_dialog  # noqa: F401
 from .admin_moderation.readmodel_then import filtered_reports  # noqa: F401
@@ -680,6 +691,7 @@ from .admin_settings.commands import create_admin_user  # noqa: F401
 from .admin_settings.commands import clear_cache  # noqa: F401
 from .admin_settings.commands import reset_ai_limits  # noqa: F401
 from .admin_settings.commands import settings_ui_actions  # noqa: F401
+from .admin_settings.commands import list_settings  # noqa: F401
 
 # Admin Settings — aggregate_then
 from .admin_settings.aggregate_then import model_routing_updated  # noqa: F401
@@ -894,6 +906,7 @@ from .question_retirement.aggregate_given import dangerous_blind_spot  # noqa: F
 from .question_retirement.aggregate_given import expires_at_passed  # noqa: F401
 from .question_retirement.aggregate_given import knowledge_node_mastery  # noqa: F401
 from .question_retirement.aggregate_given import learning_journey_with_result_date  # noqa: F401
+from .question_retirement.aggregate_given import result_date_yesterday  # noqa: F401
 from .question_retirement.aggregate_given import result_notification_state  # noqa: F401
 from .question_retirement.aggregate_given import sm2_completed  # noqa: F401
 from .question_retirement.aggregate_given import sm2_stage  # noqa: F401
@@ -903,6 +916,7 @@ from .question_retirement.aggregate_given import subject_question_counts  # noqa
 from .question_retirement.commands import ai_consent  # noqa: F401
 from .question_retirement.commands import ai_generate  # noqa: F401
 from .question_retirement.commands import confirm_result  # noqa: F401
+from .question_retirement.commands import list_pending  # noqa: F401
 from .question_retirement.commands import quality_gate  # noqa: F401
 from .question_retirement.commands import result_notification  # noqa: F401
 from .question_retirement.commands import retirement_scan  # noqa: F401
@@ -919,6 +933,7 @@ from .question_retirement.aggregate_then import retirement_state  # noqa: F401
 from .question_retirement.readmodel_then import ai_consent_response  # noqa: F401
 from .question_retirement.readmodel_then import notification_content  # noqa: F401
 from .question_retirement.readmodel_then import onboarding_result_date  # noqa: F401
+from .question_retirement.readmodel_then import pending_list  # noqa: F401
 from .question_retirement.readmodel_then import retirement_scan_stats  # noqa: F401
 
 # Subscription Trial — commands
@@ -1097,10 +1112,12 @@ from .knowledge_merge.aggregate_given import document_extraction  # noqa: F401
 from .knowledge_merge.aggregate_given import merge_conflicts  # noqa: F401
 from .knowledge_merge.aggregate_given import merge_state  # noqa: F401
 from .knowledge_merge.aggregate_given import node_setup  # noqa: F401
+from .knowledge_merge.aggregate_given import unified_knowledge_tree  # noqa: F401
 
 # Knowledge Merge — commands
 from .knowledge_merge.commands import trigger_merge  # noqa: F401
 from .knowledge_merge.commands import resolve_conflict  # noqa: F401
+from .knowledge_merge.commands import trigger_chunk_remap  # noqa: F401
 
 # Knowledge Merge — query
 from .knowledge_merge.query import merge_conflicts_list  # noqa: F401
@@ -1113,6 +1130,7 @@ from .knowledge_merge.query import query_wrong_answer_map_feature29  # noqa: F40
 # Knowledge Merge — aggregate_then
 from .knowledge_merge.aggregate_then import conflict_resolved  # noqa: F401
 from .knowledge_merge.aggregate_then import mastery_preserved  # noqa: F401
+from .knowledge_merge.aggregate_then import chunks_mapped  # noqa: F401
 
 # Knowledge Merge — readmodel_then
 from .knowledge_merge.readmodel_then import unified_tree  # noqa: F401
@@ -1270,3 +1288,44 @@ from .exam_import.database_import import step_verify_timestamp  # noqa: F401
 from .exam_import.database_import import step_verify_validation_model  # noqa: F401
 from .exam_import.database_import import step_verify_bulk_performance  # noqa: F401
 from .exam_import.database_import import step_verify_acid_compliance  # noqa: F401
+# Cost Monitor (Feature 33) — aggregate_given
+from .cost_monitor.aggregate_given import budget_config as cm_budget_config  # noqa: F401
+from .cost_monitor.aggregate_given import current_usage as cm_current_usage  # noqa: F401
+from .cost_monitor.aggregate_given import misc_given as cm_misc_given  # noqa: F401
+from .cost_monitor.aggregate_given import scenario_extras as cm_scenario_extras  # noqa: F401
+
+# Cost Monitor (Feature 33) — commands
+from .cost_monitor.commands import view_endpoints as cm_view_endpoints  # noqa: F401
+from .cost_monitor.commands import budget_mutations as cm_budget_mutations  # noqa: F401
+from .cost_monitor.commands import internal_actions as cm_internal_actions  # noqa: F401
+
+# Cost Monitor (Feature 33) — readmodel_then
+from .cost_monitor.readmodel_then import response_fields as cm_response_fields  # noqa: F401
+from .cost_monitor.readmodel_then import misc_then as cm_misc_then  # noqa: F401
+
+# Cost Monitor (Feature 33) — aggregate_then
+from .cost_monitor.aggregate_then import db_assertions as cm_db_assertions  # noqa: F401
+
+# Common — error code (shared across features)
+from .common_then import error_code as common_error_code  # noqa: F401
+
+# Mindmap Upgrade (Feature 34) — aggregate_given
+from .mindmap_upgrade.aggregate_given import (  # noqa: F401
+    setup_nodes_and_chunks as mu_setup,
+    rerank_schema_setup as mu_rerank_setup,
+)
+
+# Mindmap Upgrade (Feature 34) — commands
+from .mindmap_upgrade.commands import (  # noqa: F401
+    direct_service_calls as mu_commands,
+    rerank_schema_commands as mu_rerank_commands,
+)
+
+# Mindmap Upgrade (Feature 34) — aggregate_then
+from .mindmap_upgrade.aggregate_then import (  # noqa: F401
+    assertions as mu_assertions,
+    rerank_schema_assertions as mu_rerank_assertions,
+)
+
+# Coverage retrofit (Feature 35, ISS-015)
+from .coverage.commands import retrofit_calls  # noqa: F401

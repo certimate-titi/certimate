@@ -139,6 +139,31 @@ class AdminFinanceService:
 
     # ── Refunds ───────────────────────────────────────────────────────────────
 
+    def list_refunds(self, actor_id: str, status: str | None = None) -> dict:
+        err = self._require_admin(actor_id)
+        if err:
+            return err
+
+        query = self.db.query(Refund)
+        if status:
+            query = query.filter(Refund.status == status)
+        refunds = query.order_by(Refund.created_at.desc()).all()
+
+        items = []
+        for r in refunds:
+            user = self.db.query(User).filter_by(id=r.user_id).first()
+            items.append({
+                "id": str(r.id),
+                "refund_id": r.refund_id,
+                "user_email": user.email if user else "",
+                "transaction_id": r.transaction_id,
+                "amount": float(r.amount),
+                "status": r.status,
+                "reason": r.reason,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+        return {"refunds": items}
+
     def approve_refund(self, actor_id: str, refund_id: str) -> dict:
         err = self._require_admin(actor_id)
         if err:
@@ -236,22 +261,84 @@ class AdminFinanceService:
             "used_count": coupon.used_count,
         }
 
-    def get_coupon(self, actor_id: str, code: str) -> dict:
+    def list_coupons(self, actor_id: str) -> dict:
         err = self._require_admin(actor_id)
         if err:
             return err
+        coupons = self.db.query(Coupon).order_by(Coupon.created_at.desc()).all()
+        return {
+            "coupons": [
+                {
+                    "id": str(c.id),
+                    "code": c.code,
+                    "discount_type": c.discount_type,
+                    "discount_value": float(c.discount_value),
+                    "applicable_plans": c.applicable_plans,
+                    "max_uses": c.max_uses,
+                    "max_uses_per_user": c.max_uses_per_user,
+                    "used_count": c.used_count,
+                    "status": c.status,
+                }
+                for c in coupons
+            ]
+        }
 
+    def request_refund(self, user_id: str, transaction_id: str, amount: float, reason: str | None) -> dict:
+        user = self._get_user(user_id)
+        if not user:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+
+        txn = self.db.query(Transaction).filter_by(merchant_trade_no=transaction_id).first()
+        if not txn:
+            return {"error": True, "status_code": 404, "message": "找不到對應交易"}
+        if txn.user_id != user.id:
+            return {"error": True, "status_code": 403, "message": "無法對他人交易申請退款"}
+
+        existing = self.db.query(Refund).filter_by(transaction_id=transaction_id).first()
+        if existing and existing.status == "pending":
+            return {"error": True, "status_code": 409, "message": "此交易已有待審核的退款申請"}
+
+        import secrets
+        refund_id = "RF-" + secrets.token_hex(6).upper()
+        refund = Refund(
+            refund_id=refund_id,
+            user_id=user.id,
+            transaction_id=transaction_id,
+            amount=amount,
+            status="pending",
+            reason=reason,
+        )
+        self.db.add(refund)
+        self.db.commit()
+        self.db.refresh(refund)
+
+        return {
+            "success": True,
+            "refund_id": refund_id,
+            "status": "pending",
+        }
+
+    def validate_coupon(self, code: str, plan: str, amount: float) -> dict:
         coupon = self.db.query(Coupon).filter_by(code=code).first()
-        if not coupon:
-            return {"error": True, "status_code": 404, "message": "優惠碼不存在"}
+        if not coupon or coupon.status != "active":
+            return {"error": True, "status_code": 404, "message": "優惠碼無效"}
+        if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
+            return {"error": True, "status_code": 410, "message": "優惠碼已額滿"}
+        if coupon.applicable_plans and plan not in coupon.applicable_plans.split(","):
+            return {"error": True, "status_code": 400, "message": "此優惠碼不適用於所選方案"}
+
+        discount_value = float(coupon.discount_value)
+        if coupon.discount_type == "percent":
+            discount = round(amount * discount_value / 100, 2)
+        else:
+            discount = discount_value
+        final_amount = max(amount - discount, 0)
 
         return {
             "code": coupon.code,
             "discount_type": coupon.discount_type,
-            "discount_value": float(coupon.discount_value),
-            "applicable_plans": coupon.applicable_plans,
-            "max_uses": coupon.max_uses,
-            "max_uses_per_user": coupon.max_uses_per_user,
-            "used_count": coupon.used_count,
-            "status": coupon.status,
+            "discount_value": discount_value,
+            "discount_amount": discount,
+            "original_amount": amount,
+            "final_amount": final_amount,
         }

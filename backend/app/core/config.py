@@ -101,6 +101,23 @@ class Settings:
         self.RETRIEVAL_TOP_K: int = int(os.environ.get("RETRIEVAL_TOP_K", "10"))
         self.EMBEDDING_DIMENSIONS: int = int(os.environ.get("EMBEDDING_DIMENSIONS", "1024"))
 
+        # GCP Billing Export 設定（Feature 33）
+        self.GCP_PROJECT_ID: str = os.environ.get("GCP_PROJECT_ID", "")
+        self.GCP_BILLING_EXPORT_DATASET: str = os.environ.get(
+            "GCP_BILLING_EXPORT_DATASET", "billing_export"
+        )
+        self.GCP_BILLING_EXPORT_TABLE: str = os.environ.get(
+            "GCP_BILLING_EXPORT_TABLE", "gcp_billing_export_v1"
+        )
+        self.GCP_BQ_CREDENTIALS_PATH: str = os.environ.get("GCP_BQ_CREDENTIALS_PATH", "")
+        self.GCP_BILLING_MODE: str = os.environ.get("GCP_BILLING_MODE", "fake")  # fake | real
+
+        # GCP Native Budget API 設定
+        self.GCP_BUDGET_PARENT: str = os.environ.get("GCP_BUDGET_PARENT", "")
+
+        # 成本監控預警通知設定
+        self.COST_ALERT_EMAILS: str = os.environ.get("COST_ALERT_EMAILS", "")  # comma-separated
+
 
 # 單例實例
 paths = Paths()

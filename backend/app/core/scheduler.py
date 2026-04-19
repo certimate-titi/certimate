@@ -72,6 +72,40 @@ def init_scheduler(session_factory: sessionmaker) -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # 4) Feature 33 — 預算告警評估（每 30 分鐘）
+    import os
+    if os.environ.get("BUDGET_ALERT_SCHEDULER_ENABLED", "true").lower() == "true":
+        interval_min = int(os.environ.get("BUDGET_ALERT_INTERVAL_MINUTES", "30"))
+        from apscheduler.triggers.interval import IntervalTrigger
+        _scheduler.add_job(
+            job_budget_alert_evaluate,
+            IntervalTrigger(minutes=interval_min),
+            id="budget_alert_evaluate",
+            name=f"Feature 33 預算告警評估（每 {interval_min} 分鐘）",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
+    # 5) 審計日誌清理 — 每天 03:00 刪除 90 天以前的紀錄
+    retention_days = int(os.environ.get("AUDIT_LOG_RETENTION_DAYS", "90"))
+    _scheduler.add_job(
+        job_audit_log_cleanup,
+        CronTrigger(hour=3, minute=0),
+        id="audit_log_cleanup",
+        name=f"審計日誌清理（保留 {retention_days} 天）",
+        replace_existing=True,
+    )
+
+    # 6) ai_usage_ledger 清理 — 每月 1 號 04:00 刪除 12 個月以前的紀錄
+    _scheduler.add_job(
+        job_usage_ledger_cleanup,
+        CronTrigger(day=1, hour=4, minute=0),
+        id="usage_ledger_cleanup",
+        name="AI 用量帳本清理（保留 12 個月）",
+        replace_existing=True,
+    )
+
     logger.info("Scheduler initialized with %d jobs", len(_scheduler.get_jobs()))
     return _scheduler
 
@@ -156,5 +190,77 @@ async def job_weekly_report():
     except Exception:
         db.rollback()
         logger.exception("Weekly report job failed")
+    finally:
+        db.close()
+
+
+async def job_budget_alert_evaluate():
+    """Feature 33 TODO #6 — 定期評估所有 scope 的預算門檻，
+    寫入 budget_alert_log 並觸發通知管道。"""
+    db = _get_db()
+    try:
+        from app.services.budget_service import BudgetService
+        result = BudgetService(db).evaluate_alerts()
+        fired = result.get("fired", []) if isinstance(result, dict) else []
+        if fired:
+            logger.warning(
+                "Budget alert evaluate fired %d alerts: %s",
+                len(fired),
+                [f.get("scope") for f in fired],
+            )
+        else:
+            logger.debug("Budget alert evaluate: no alerts fired")
+    except Exception:
+        db.rollback()
+        logger.exception("Budget alert evaluate job failed")
+    finally:
+        db.close()
+
+
+async def job_audit_log_cleanup():
+    """刪除超過 retention_days 天的審計日誌。
+
+    保留近期紀錄供合規查詢，刪除老舊紀錄避免 DB 膨脹。
+    每天 03:00 執行，AUDIT_LOG_RETENTION_DAYS 環境變數可調（預設 90 天）。
+    """
+    import os
+    from sqlalchemy import text
+    db = _get_db()
+    try:
+        days = int(os.environ.get("AUDIT_LOG_RETENTION_DAYS", "90"))
+        result = db.execute(
+            text("DELETE FROM admin_audit_logs WHERE created_at < NOW() - INTERVAL :days"),
+            {"days": f"{days} days"},
+        )
+        deleted = result.rowcount
+        db.commit()
+        if deleted > 0:
+            logger.info("Audit log cleanup: deleted %d rows older than %d days", deleted, days)
+    except Exception:
+        db.rollback()
+        logger.exception("Audit log cleanup failed")
+    finally:
+        db.close()
+
+
+async def job_usage_ledger_cleanup():
+    """刪除超過 12 個月的 AI 用量帳本紀錄。
+
+    ai_usage_ledger 用於 cost monitor 月報表；超過 12 個月的不需要逐筆保留。
+    每月 1 號 04:00 執行。
+    """
+    from sqlalchemy import text
+    db = _get_db()
+    try:
+        result = db.execute(
+            text("DELETE FROM ai_usage_ledger WHERE created_at < NOW() - INTERVAL '12 months'"),
+        )
+        deleted = result.rowcount
+        db.commit()
+        if deleted > 0:
+            logger.info("Usage ledger cleanup: deleted %d rows older than 12 months", deleted)
+    except Exception:
+        db.rollback()
+        logger.exception("Usage ledger cleanup failed")
     finally:
         db.close()

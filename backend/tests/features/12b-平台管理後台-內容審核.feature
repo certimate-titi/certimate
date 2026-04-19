@@ -117,3 +117,45 @@ Feature: 平台管理後台 — 內容與安全審核
       And 系統應記錄審計日誌：
         | 欄位    | 值                  |
         | action  | clear_cache         |
+
+  # ========== 前端審核面板（frontend-compatible endpoints） ==========
+
+  @added-by:cto
+  Rule: 後置（回應）- 前端審核佇列回應應包含 items 陣列
+
+    Example: 查看前端審核佇列
+      When 使用者 "ops@certimate.com" 查詢前端審核佇列
+      Then 操作成功
+      And 回應應包含 "items" 欄位
+
+  @added-by:cto
+  Rule: 後置（回應）- 前端審核統計應回傳四項指標
+
+    Example: 查看審核統計
+      When 使用者 "ops@certimate.com" 查詢審核統計
+      Then 操作成功
+      And 回應應包含 "pending_reports" 欄位
+      And 回應應包含 "cooled_users" 欄位
+
+  @added-by:cto
+  Rule: 後置（回應）- 前端濫用監控應列出冷卻用戶
+
+    Example: 查看前端濫用監控
+      When 使用者 "ops@certimate.com" 查詢前端濫用監控
+      Then 操作成功
+      And 回應應包含 "items" 欄位
+
+    Example: 前端濫用監控應帶出冷卻原因與狀態
+      When 使用者 "ops@certimate.com" 查詢前端濫用監控
+      Then 操作成功
+      And 前端濫用監控清單應包含至少一筆冷卻紀錄
+      And 前端濫用監控第一筆的 status 應為 "cooling"
+      And 前端濫用監控第一筆的 metric 欄位不應為空
+
+  @added-by:cto
+  Rule: 後置（回應）- 內容審核佇列應回傳結構化清單
+
+    Example: 查看內容審核佇列
+      When 使用者 "ops@certimate.com" 查詢內容審核佇列
+      Then 操作成功
+      And 回應應包含 "items" 欄位

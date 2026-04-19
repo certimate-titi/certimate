@@ -70,23 +70,50 @@ export default function AuditLogsPage() {
     });
   }, []);
 
+  const ACTION_LABELS: Record<string, { icon: typeof Activity; color: string; bg: string; border: string; label: string }> = {
+    // 使用者管理
+    [AdminAction.CREATE_ADMIN]:       { icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '新增管理員' },
+    [AdminAction.EDIT_ADMIN]:         { icon: Settings, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '編輯管理員' },
+    [AdminAction.DELETE_USER]:        { icon: UserMinus, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '刪除用戶' },
+    [AdminAction.SUSPEND_USER]:       { icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '停權用戶' },
+    [AdminAction.ACTIVATE_USER]:      { icon: User, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '啟用用戶' },
+    [AdminAction.ADJUST_ROLE]:        { icon: ShieldAlert, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', label: '調整角色' },
+    [AdminAction.NOTIFY_USER]:        { icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '通知用戶' },
+    // 訂閱 & 財務
+    [AdminAction.ADJUST_SUBSCRIPTION]:  { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '調整訂閱' },
+    [AdminAction.SUBSCRIPTION_UPGRADE]: { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '訂閱升級' },
+    [AdminAction.APPROVE_REFUND]:     { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '核准退款' },
+    [AdminAction.REJECT_REFUND]:      { icon: Activity, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '拒絕退款' },
+    // 系統設定
+    [AdminAction.UPDATE_SETTINGS]:    { icon: Settings, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '更新設定' },
+    [AdminAction.UPDATE_MODEL_ROUTING]: { icon: Settings, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', label: '更新 AI 路由' },
+    [AdminAction.RESET_AI_LIMITS]:    { icon: Activity, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '重設 AI 限額' },
+    [AdminAction.CLEAR_CACHE]:        { icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', label: '清除快取' },
+    // 成本監控
+    [AdminAction.COST_MONITOR_VIEWED]:  { icon: Activity, color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-100', label: '查看成本監控' },
+    [AdminAction.BUDGET_UPDATED]:     { icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '更新預算' },
+    [AdminAction.BUDGET_OVERRIDE]:    { icon: Zap, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '預算覆寫' },
+    // 內容審核
+    [AdminAction.RESOLVE_REPORT]:     { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '處理檢舉' },
+    [AdminAction.UNLOCK_COOLDOWN]:    { icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '解除冷卻' },
+    [AdminAction.APPROVE_CONTENT]:    { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '核准內容' },
+    [AdminAction.REJECT_CONTENT]:     { icon: Activity, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '拒絕內容' },
+    [AdminAction.UPDATE_FEEDBACK]:    { icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '更新反饋狀態' },
+    [AdminAction.UPDATE_ANOMALY]:     { icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '更新異常狀態' },
+    // AI & Prompt
+    [AdminAction.CREATE_PROMPT]:      { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '建立 Prompt' },
+    [AdminAction.UPDATE_PROMPT]:      { icon: Settings, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '更新 Prompt' },
+    [AdminAction.DEACTIVATE_PROMPT]:  { icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', label: '停用 Prompt' },
+    [AdminAction.ROLLBACK_PROMPT]:    { icon: Activity, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '回滾 Prompt' },
+    [AdminAction.CREATE_AB_TEST]:     { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '建立 A/B 測試' },
+    [AdminAction.COMPLETE_AB_TEST]:   { icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '完成 A/B 測試' },
+    [AdminAction.FUP_SOFT_CAP]:       { icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: 'FUP 軟上限觸發' },
+    // 知識庫
+    [AdminAction.EXTRACT_KNOWLEDGE]:  { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '知識樹萃取' },
+  };
+
   const getActionConfig = (action: string) => {
-    switch (action) {
-      case AdminAction.CREATE_ADMIN:
-        return { icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '新增管理員' };
-      case AdminAction.DELETE_ADMIN:
-        return { icon: UserMinus, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', label: '刪除管理員' };
-      case AdminAction.UPDATE_SETTINGS:
-        return { icon: Settings, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', label: '更新設定' };
-      case AdminAction.SUSPEND_USER:
-        return { icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: '停權用戶' };
-      case AdminAction.ACTIVATE_USER:
-        return { icon: User, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '啟用用戶' };
-      case AdminAction.ADJUST_SUBSCRIPTION:
-        return { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '調整訂閱' };
-      default:
-        return { icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', label: action };
-    }
+    return ACTION_LABELS[action] || { icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', label: action };
   };
 
   const filteredLogs = logs.filter(log => {

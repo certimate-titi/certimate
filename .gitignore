@@ -22,6 +22,9 @@ Thumbs.db
 *.log
 pretty.output
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

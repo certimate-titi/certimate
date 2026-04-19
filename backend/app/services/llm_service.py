@@ -173,6 +173,12 @@ class LLMService:
 
         logger.info("LLM generate: model=%s provider=%s", model, provider)
 
+        # TODO #4 — auto-track AI usage in ai_usage_ledger when db available
+        if self.db is not None:
+            return self._generate_with_tracking(
+                provider, model, system_prompt, user_prompt, max_tokens
+            )
+
         if provider == "anthropic":
             return self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
         elif provider == "openai":
@@ -181,6 +187,67 @@ class LLMService:
             return self._generate_google(model, system_prompt, user_prompt, max_tokens)
         else:
             raise ValueError(f"Unknown provider: {provider}")
+
+    def _generate_with_tracking(
+        self,
+        provider: str,
+        model: str,
+        system_prompt: str,
+        user_prompt: str,
+        max_tokens: int,
+    ) -> str:
+        """Wrap generate() in track_ai_usage for ai_usage_ledger.
+
+        Estimates tokens via char count (~4 chars/token) when provider
+        response doesn't expose exact counts.
+        """
+        from app.middleware.ai_usage_tracker import (
+            estimate_anthropic_cost,
+            estimate_gemini_cost,
+            track_ai_usage,
+        )
+
+        feature = "llm_generate"
+        # Map provider name to tracker provider (excluding openai which is not budgeted)
+        if provider == "anthropic":
+            tracker_provider = "anthropic"
+        elif provider == "google":
+            tracker_provider = "gemini"
+        else:
+            # openai or unknown — skip tracking (no budget scope)
+            if provider == "anthropic":
+                return self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
+            elif provider == "openai":
+                return self._generate_openai(model, system_prompt, user_prompt, max_tokens)
+            elif provider == "google":
+                return self._generate_google(model, system_prompt, user_prompt, max_tokens)
+            raise ValueError(f"Unknown provider: {provider}")
+
+        with track_ai_usage(
+            self.db, provider=tracker_provider, feature=feature
+        ) as tracker:
+            if provider == "anthropic":
+                result = self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
+            else:  # google
+                result = self._generate_google(model, system_prompt, user_prompt, max_tokens)
+
+            # Estimate tokens from char counts (~4 chars/token)
+            in_tokens = (len(system_prompt) + len(user_prompt)) // 4 or 1
+            out_tokens = len(result) // 4 or 1
+            tracker.input_tokens = in_tokens
+            tracker.output_tokens = out_tokens
+            tracker.endpoint = model
+
+            if tracker_provider == "anthropic":
+                tracker.cost_usd = estimate_anthropic_cost(
+                    in_tokens, out_tokens, model=model
+                )
+            else:
+                tracker.cost_usd = estimate_gemini_cost(
+                    in_tokens, out_tokens, model=model
+                )
+
+        return result
 
     def generate_with_context(
         self,
@@ -284,11 +351,65 @@ class LLMService:
         return response.choices[0].message.content
 
     def _generate_google(self, model: str, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+        """Generate via Gemini with optional explicit context caching (Tier 1-C).
+
+        Flow:
+        1. Attempt to fetch/create a cached-content resource for the system_prompt.
+        2. If cache available → send only user_prompt + cached_content reference.
+        3. Otherwise → send combined prompt (rely on Gemini implicit caching).
+        4. Record cached_content_token_count for observability.
+        """
+        from app.services.gemini_cache_service import GeminiCacheService
+
         client = self._get_google()
-        combined_prompt = f"{system_prompt}\n\n{user_prompt}"
-        response = client.models.generate_content(
+        cache_svc = GeminiCacheService()
+
+        # Try explicit caching for the system prompt
+        cache_name = cache_svc.get_or_create_cache(
             model=model,
-            contents=combined_prompt,
-            config={"max_output_tokens": max_tokens},
+            system_prompt=system_prompt,
+            display_name=f"llm-{model}-sys",
+            ttl_seconds=3600,
         )
+
+        try:
+            if cache_name:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=user_prompt,
+                    config={
+                        "max_output_tokens": max_tokens,
+                        "cached_content": cache_name,
+                    },
+                )
+            else:
+                combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+                response = client.models.generate_content(
+                    model=model,
+                    contents=combined_prompt,
+                    config={"max_output_tokens": max_tokens},
+                )
+        except Exception as exc:
+            # Graceful fallback: cache reference may have expired server-side
+            import logging
+            logging.getLogger(__name__).warning(
+                "Gemini generate with cache failed (%s); retrying without cache",
+                exc,
+            )
+            combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+            response = client.models.generate_content(
+                model=model,
+                contents=combined_prompt,
+                config={"max_output_tokens": max_tokens},
+            )
+
+        # Track cache savings (implicit + explicit)
+        try:
+            cached_tokens = (
+                getattr(response.usage_metadata, "cached_content_token_count", 0) or 0
+            )
+            cache_svc.record_cached_tokens_seen(cached_tokens)
+        except Exception:  # noqa: BLE001
+            pass
+
         return response.text

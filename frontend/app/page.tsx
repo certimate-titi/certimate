@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, BrainCircuit, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Play, Quote, RefreshCw, ShieldCheck, Star, Users, Zap } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, BrainCircuit, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Play, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -158,9 +157,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">無可取代的陪伴感</h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">考古題智慧出題</h3>
                   <p className="text-slate-600 leading-relaxed">
-                    宛如嚴厲又貼心的專屬家教每天盯著你讀書。未來更將銜接 Notion / Google Drive 雙向同步，昨天抄的新筆記，今天一早自動變成隨堂測驗。
+                    收錄金融證照、iPAS、不動產經紀人、高普考等歷屆考古題，AI 自動分析出題頻率與 Bloom 認知層次，根據你的弱點動態組卷，每次練習都精準命中盲區。
                   </p>
                 </div>
               </div>
@@ -216,102 +215,82 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
+      {/* Learning Journey Tracking Section */}
       <section className="py-24 bg-slate-50 border-t border-slate-100">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">他們都選擇了 CertiMate</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">數千名考生信賴的備考夥伴，用數據說話。</p>
+            <div className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-sm text-purple-600 mb-4">
+              <BrainCircuit className="h-4 w-4 mr-2" />
+              核心功能：學習歷程追蹤
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">看見你的成長軌跡</h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">每一次練習、每一個錯題、每一段學習時間，都被轉化成可視化的成長數據。不再憑感覺讀書，用數據驅動你的備考策略。</p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
-            <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                <Users className="h-6 w-6 text-emerald-500" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Feature 1: Knowledge Map */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-50 flex items-center justify-center mb-6">
+                <BrainCircuit className="h-7 w-7 text-emerald-500" />
               </div>
-              <div className="text-3xl font-extrabold text-slate-900 mb-1">10,000+</div>
-              <div className="text-sm text-slate-500">考生使用</div>
-            </div>
-            <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
-              <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-6 w-6 text-blue-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 mb-1">85%</div>
-              <div className="text-sm text-slate-500">首次通過率</div>
-            </div>
-            <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
-              <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
-                <FileText className="h-6 w-6 text-purple-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 mb-1">50+</div>
-              <div className="text-sm text-slate-500">證照科目支援</div>
-            </div>
-            <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
-              <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-                <BrainCircuit className="h-6 w-6 text-amber-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 mb-1">24h</div>
-              <div className="text-sm text-slate-500">AI 教練隨時待命</div>
-            </div>
-          </div>
-
-          {/* Testimonials */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative">
-              <Quote className="h-8 w-8 text-emerald-100 absolute top-6 right-6" />
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
-                  L
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">林宜萱</div>
-                  <div className="text-sm text-slate-500">AWS SAA 證照</div>
-                </div>
-              </div>
-              <div className="flex gap-0.5 mb-3">
-                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">知識心智圖</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                &ldquo;AI 教練的蘇格拉底問答法讓我真正理解了 IAM Policy 的邏輯，不再死背。準備兩個月就一次通過，比預期提前了一個月。&rdquo;
+                AI 自動分析你的教材與考古題，建構 6 大章節知識樹。每個節點標示掌握度與資料充足度，一眼看出哪些區域需要補強。
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative">
-              <Quote className="h-8 w-8 text-blue-100 absolute top-6 right-6" />
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg">
-                  C
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">陳柏翰</div>
-                  <div className="text-sm text-slate-500">CPA 會計師</div>
-                </div>
+            {/* Feature 2: Strength Tracking */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
+                <CheckCircle2 className="h-7 w-7 text-blue-500" />
               </div>
-              <div className="flex gap-0.5 mb-3">
-                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">四階支撐強度</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                &ldquo;遺忘曲線排程搭配 Google 日曆，每天自動提醒我該複習哪些章節。艾賓浩斯的科學方法真的有效，長期記憶明顯提升。&rdquo;
+                每個知識節點有「待補充 → 稀疏 → 一般 → 充足」四階視覺指標。上傳更多資料或練習更多考古題，強度就會自動提升，讓你清楚看到進步。
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative">
-              <Quote className="h-8 w-8 text-purple-100 absolute top-6 right-6" />
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                  W
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">王雅琪</div>
-                  <div className="text-sm text-slate-500">PMP 專案管理</div>
-                </div>
+            {/* Feature 3: Exam History */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-purple-50 flex items-center justify-center mb-6">
+                <FileText className="h-7 w-7 text-purple-500" />
               </div>
-              <div className="flex gap-0.5 mb-3">
-                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">考古題反向分析</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                &ldquo;把 YouTube 教學影片丟進去就自動生成心智圖和模擬考題，省下大量整理筆記的時間。錯題複習功能是我最愛的部分！&rdquo;
+                收錄金融證照、iPAS、不動產、高普考等真實考古題，AI 反向歸納出考綱結構與出題頻率，讓你知道「考什麼」而不只是「讀什麼」。
+              </p>
+            </div>
+
+            {/* Feature 4: Bloom Classification */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center mb-6">
+                <Zap className="h-7 w-7 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Bloom 認知層次標記</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                每道題目標註「記憶 / 理解 / 應用 / 分析 / 評鑑 / 創造」認知層次。從低階開始練，逐步挑戰高階，學習更有節奏。
+              </p>
+            </div>
+
+            {/* Feature 5: Wrong Answer Map */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-rose-50 flex items-center justify-center mb-6">
+                <RefreshCw className="h-7 w-7 text-rose-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">錯題弱點地圖</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                所有錯題自動歸類到對應知識節點，形成個人化弱點熱力圖。搭配 AI 教練的蘇格拉底式引導，不只知道「答錯了」更知道「為什麼」。
+              </p>
+            </div>
+
+            {/* Feature 6: AI Coach */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="h-14 w-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6">
+                <MessageSquare className="h-7 w-7 text-indigo-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">AI 蘇格拉底教練</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                不直接給答案，而是用提問引導你推導。「你覺得 A 和 B 的差異是什麼？」——用對話式學習建立真正的理解，不是死記硬背。
               </p>
             </div>
           </div>
@@ -406,9 +385,9 @@ export default function LandingPage() {
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> B2B 後台與席位管理</li>
                 <li className="flex items-start gap-2 text-sm text-slate-600"><CheckCircle2 className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" /> Super Admin 控制台</li>
               </ul>
-              <Link href="/edu-console" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm">
+              <a href="mailto:certimate.web@gmail.com?subject=企業方案諮詢" className="w-full rounded-full bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 transition-colors text-sm block">
                 聯絡企業銷售
-              </Link>
+              </a>
               <p className="mt-4 text-xs text-center text-slate-400">企業管理 + API 整合</p>
             </div>
           </div>
@@ -422,7 +401,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 py-16 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">準備好開始了嗎？</h2>
             <p className="text-slate-400 max-w-xl mx-auto mb-8">
-              加入上萬名考生的行列，讓 AI 成為你最強的備考夥伴。
+              讓 AI 成為你最強的備考夥伴，從今天開始聰明學習。
             </p>
             <Link href="/signup" className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all hover:-translate-y-1">
               免費開始 <ArrowRight className="h-5 w-5" />
@@ -459,6 +438,7 @@ export default function LandingPage() {
               <ul className="space-y-3">
                 <li><Link href="#faq" className="text-sm text-slate-400 hover:text-white transition-colors">常見問題</Link></li>
                 <li><Link href="/feedback" className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> 意見反饋</Link></li>
+                <li><a href="mailto:certimate.web@gmail.com" className="text-sm text-slate-400 hover:text-white transition-colors">certimate.web@gmail.com</a></li>
               </ul>
             </div>
 

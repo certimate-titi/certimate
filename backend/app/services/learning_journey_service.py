@@ -15,6 +15,35 @@ class LearningJourneyService:
     def __init__(self, db: Session):
         self.db = db
 
+    def list_pending(self, user_id: str):
+        """列出需要使用者確認結果的學習歷程：放榜日已到且尚未確認。"""
+        u_uuid = uuid.UUID(user_id)
+        today = date.today()
+        journeys = (
+            self.db.query(LearningJourney)
+            .filter(
+                LearningJourney.user_id == u_uuid,
+                LearningJourney.is_archived == False,  # noqa: E712
+                LearningJourney.result_date.isnot(None),
+                LearningJourney.result_date <= today,
+            )
+            .all()
+        )
+        items = []
+        for j in journeys:
+            if j.exam_result_status in ("passed", "quit"):
+                continue
+            subject = self.db.query(Subject).filter_by(id=j.subject_id).first()
+            items.append({
+                "id": str(j.id),
+                "subject_id": str(j.subject_id),
+                "subject_name": subject.name if subject else "",
+                "exam_date": j.exam_date.isoformat() if j.exam_date else None,
+                "result_date": j.result_date.isoformat() if j.result_date else None,
+                "exam_result_status": j.exam_result_status,
+            })
+        return {"items": items}
+
     def confirm_exam_result(self, journey_id: str, status: str):
         """確認考試結果（passed/failed）。"""
         j_uuid = uuid.UUID(journey_id)

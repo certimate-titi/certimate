@@ -15,6 +15,7 @@ from app.schemas.auth import (
     PasswordStrengthRequest,
     VerifyEmailRequest,
     ResendVerificationRequest,
+    ResetPasswordRequest,
 )
 
 router = APIRouter()
@@ -65,6 +66,14 @@ def google_sso(request: GoogleSSORequest, service: AuthService = Depends(_get_au
 @router.post("/auth/forgot-password")
 def forgot_password(request: ForgotPasswordRequest, service: AuthService = Depends(_get_auth_service)):
     result = service.forgot_password(request.email)
+    return result
+
+
+@router.post("/auth/reset-password")
+def reset_password(request: ResetPasswordRequest, service: AuthService = Depends(_get_auth_service)):
+    result = service.reset_password(request.token, request.password)
+    if result.get("error"):
+        raise HTTPException(status_code=result["status_code"], detail=result["message"])
     return result
 
 
