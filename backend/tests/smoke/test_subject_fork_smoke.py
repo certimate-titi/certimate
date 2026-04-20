@@ -228,6 +228,46 @@ def test_fork_idempotent_409(db, tmp_storage):
     assert "您已擁有此科目" in result2["message"]
 
 
+def test_empty_reason_no_resources(db, tmp_storage):
+    """PRD-034 US-02: fork 後刪光所有資源，心智圖應回 empty_reason=no_resources。"""
+    from app.models.learning_journey import LearningJourney
+    from app.models.resource import Resource
+    from app.services.knowledge_nav_service import KnowledgeNavService
+    from app.services.subject_fork_service import SubjectForkService
+
+    _, platform_id, _ = _seed_platform_subject(db)
+    alice = _create_user(db, "alice@test.com")
+
+    fork_result = SubjectForkService(db).fork_platform_subject(
+        user_id=str(alice), platform_subject_id=str(platform_id)
+    )
+    user_sid = uuid.UUID(fork_result["user_subject_id"])
+
+    # 建立 LearningJourney（nav service 檢查用）
+    db.add(LearningJourney(id=uuid.uuid4(), user_id=alice, subject_id=user_sid))
+    db.commit()
+
+    # 刪光 resources + 對應 knowledge_nodes
+    from app.models.knowledge_node import KnowledgeNode
+
+    rids = [r.id for r in db.query(Resource).filter(Resource.subject_id == user_sid).all()]
+    db.query(KnowledgeNode).filter(KnowledgeNode.resource_id.in_(rids)).delete(
+        synchronize_session=False
+    )
+    db.query(KnowledgeNode).filter(KnowledgeNode.subject_id == user_sid).delete(
+        synchronize_session=False
+    )
+    db.query(Resource).filter(Resource.subject_id == user_sid).delete(
+        synchronize_session=False
+    )
+    db.commit()
+
+    result = KnowledgeNavService(db).get_nodes_by_subject(str(user_sid), str(alice))
+    assert result.get("error") is False
+    assert result["nodes"] == []
+    assert result["empty_reason"] == "no_resources"
+
+
 def test_admin_publish_rollback(db, tmp_storage):
     from app.models.subject import Subject
     from app.services.platform_subject_admin_service import PlatformSubjectAdminService

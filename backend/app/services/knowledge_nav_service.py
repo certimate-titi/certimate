@@ -245,7 +245,20 @@ class KnowledgeNavService:
         except Exception:
             pass
 
-        return {"error": False, "nodes": roots, "resources": result_resources}
+        # PRD-034 US-02: 合法空態區分
+        empty_reason = None
+        if not roots:
+            if not result_resources:
+                empty_reason = "no_resources"
+            else:
+                empty_reason = "no_nodes_generated"
+
+        return {
+            "error": False,
+            "nodes": roots,
+            "resources": result_resources,
+            "empty_reason": empty_reason,
+        }
 
     def get_node_detail(self, node_id: str, user_id: str) -> dict:
         """取得節點詳情（含溯源資訊）。"""
