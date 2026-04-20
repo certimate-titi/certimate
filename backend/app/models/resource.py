@@ -68,6 +68,8 @@ class ResourceStatus(str, enum.Enum):
 class ResourceScope(str, enum.Enum):
     PERSONAL = "personal"
     INSTITUTION = "institution"
+    PLATFORM = "platform"
+    SHARED = "shared"
 
 
 class Resource(Base):
@@ -84,6 +86,11 @@ class Resource(Base):
     )
     institution_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("institutions.id")
+    )
+    target_institution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("institutions.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="scope=shared 時的分享目標 EDU 機構",
     )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     type: Mapped[str] = mapped_column(

@@ -397,10 +397,21 @@ class OnboardingService:
 
     def _create_journey(self, user_uuid: uuid.UUID, subj_data: dict) -> LearningJourney:
         subj_name = subj_data["subject_name"]
-        subject = self.db.query(Subject).filter_by(name=subj_name).first()
+        # PRD-033: 先找平台官方考科（scope=platform）或自己建的
+        subject = self.db.query(Subject).filter(
+            Subject.name == subj_name,
+            ((Subject.scope == "platform") & (Subject.owner_user_id.is_(None)))
+            | ((Subject.scope == "personal") & (Subject.owner_user_id == user_uuid)),
+        ).first()
         if not subject:
             cat = self._get_or_create_default_category()
-            subject = Subject(name=subj_name, category_id=cat.id)
+            # 自建考科：標記 owner + scope=personal，避免污染他人選單
+            subject = Subject(
+                name=subj_name,
+                category_id=cat.id,
+                owner_user_id=user_uuid,
+                scope="personal",
+            )
             self.db.add(subject)
             self.db.flush()
 
@@ -731,7 +742,12 @@ class OnboardingService:
         result = []
         all_subjects = []
         for cat in categories:
-            subjects = self.db.query(Subject).filter_by(category_id=cat.id).all()
+            # PRD-033: 只列平台官方考科（scope=platform AND owner_user_id IS NULL）
+            subjects = self.db.query(Subject).filter(
+                Subject.category_id == cat.id,
+                Subject.scope == "platform",
+                Subject.owner_user_id.is_(None),
+            ).all()
             cat_subjects = []
             for s in subjects:
                 # 排除：已備考的、傘狀父科目、無考古題的

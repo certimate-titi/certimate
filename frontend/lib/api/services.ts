@@ -1091,6 +1091,43 @@ export const subjectService = {
       self_assessed_level: req.selfAssessment,
     });
   },
+
+  // PRD-033 US-01：自建考科列表
+  async getMyCustomSubjects(): Promise<{
+    subjects: Array<{ id: string; name: string; description?: string; category_id?: string; created_at?: string }>;
+  }> {
+    return apiClient.get('/subjects/mine');
+  },
+
+  async deleteSubject(subjectId: string): Promise<{ ok?: boolean }> {
+    return apiClient.delete(`/subjects/${subjectId}`);
+  },
+};
+
+// ── PRD-033 資源分享與預設綁定 ────────────────────────────────────────────
+
+export const resourceShareService = {
+  // US-03：Ultra 分享資源給 EDU
+  async shareToInstitution(resourceId: string, targetInstitutionId: string) {
+    return apiClient.post(`/resources/${resourceId}/share-to-institution`, {
+      target_institution_id: targetInstitutionId,
+    });
+  },
+  async revokeShare(resourceId: string) {
+    return apiClient.delete(`/resources/${resourceId}/share`);
+  },
+};
+
+export const adminDefaultResourceService = {
+  // US-04：管理員綁定平台預設資源
+  async bindDefault(subjectId: string, resourceId: string) {
+    return apiClient.post(`/admin/subjects/${subjectId}/default-resources`, {
+      resource_id: resourceId,
+    });
+  },
+  async unbindDefault(subjectId: string, resourceId: string) {
+    return apiClient.delete(`/admin/subjects/${subjectId}/default-resources/${resourceId}`);
+  },
 };
 
 // ── Prompt Template Service ────────────────────────────────────────────────
@@ -1372,6 +1409,8 @@ export interface LibraryResource {
   name: string;
   type: string;
   status: string;
+  scope?: 'personal' | 'institution' | 'platform' | 'shared';
+  badge?: 'personal' | 'institution' | 'official_default' | 'edu_shared';
 }
 
 export const resourceLibraryService = {

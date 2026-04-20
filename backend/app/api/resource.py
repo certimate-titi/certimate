@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.deps import get_db, get_current_user_id
+from app.core.deps import get_db, get_current_user_id, get_tenant_id
 from app.repositories.resource_repository import ResourceRepository
 from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
 from app.repositories.user_repository import UserRepository
@@ -38,12 +38,52 @@ def list_resources(
     若提供 subject_id，會額外把該科目預載的考古題以虛擬資源（type=historical_exam）形式合併回傳。
     """
     from app.models.resource import Resource
+    from app.models.subject_default_resource import SubjectDefaultResource
+    from app.models.user import User
     from app.services.historical_markdown_service import HistoricalMarkdownService
+    from sqlalchemy import or_
 
-    q = db.query(Resource).filter(Resource.user_id == user_id)
+    user = db.query(User).filter_by(id=user_id).first()
+    user_inst_id = getattr(user, "org_id", None) if user else None
+
+    # PRD-033 US-02/03/04：混合四類
+    # 1) 個人 (personal + user_id=me)
+    # 2) 平台預設 (透過 subject_default_resources 關聯到 subject_id)
+    # 3) 機構 (institution + user 屬於該機構)
+    # 4) Ultra 分享 (shared + target_institution_id = user 的機構)
+    or_clauses = [(Resource.scope == "personal") & (Resource.user_id == user_id)]
+
+    if subject_id:
+        default_ids = [
+            row[0] for row in
+            db.query(SubjectDefaultResource.resource_id)
+            .filter(SubjectDefaultResource.subject_id == subject_id)
+            .all()
+        ]
+        if default_ids:
+            or_clauses.append(Resource.id.in_(default_ids))
+
+    if user_inst_id:
+        or_clauses.append(
+            (Resource.scope == "institution") & (Resource.institution_id == user_inst_id)
+        )
+        or_clauses.append(
+            (Resource.scope == "shared") & (Resource.target_institution_id == user_inst_id)
+        )
+
+    q = db.query(Resource).filter(or_(*or_clauses))
     if subject_id:
         q = q.filter(Resource.subject_id == subject_id)
     resources = q.order_by(Resource.created_at.desc()).all()
+
+    def _badge(r):
+        if str(r.scope) == "platform":
+            return "official_default"
+        if str(r.scope) == "shared":
+            return "edu_shared"
+        if str(r.scope) == "institution":
+            return "institution"
+        return "personal"
 
     items = [
         {
@@ -55,6 +95,9 @@ def list_resources(
             "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
             "youtube_url": r.youtube_url or "",
             "created_at": r.created_at.isoformat() if r.created_at else None,
+            "scope": r.scope.value if hasattr(r.scope, 'value') else r.scope,
+            "badge": _badge(r),
+            "is_readonly": str(r.user_id) != str(user_id),
         }
         for r in resources
     ]
@@ -321,6 +364,7 @@ async def upload_resource_file(
     resource_type: Optional[str] = Form(None),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
     db: Session = Depends(get_db),
 ):
@@ -367,22 +411,27 @@ async def upload_resource_file(
     result["file_size_bytes"] = len(file_data)
 
     # 自動觸發背景文件處理（解析→切塊→embedding→知識樹）
-    background_tasks.add_task(_process_resource_background, resource_id, user_id)
+    background_tasks.add_task(_process_resource_background, resource_id, user_id, tenant_id)
 
     return result
 
 
-def _process_resource_background(resource_id: str, user_id: str):
-    """背景執行文件處理 pipeline（獨立 DB session）。"""
+def _process_resource_background(resource_id: str, user_id: str, tenant_id: str | None = None):
+    """背景執行文件處理 pipeline（獨立 DB session）。
+
+    必須呼叫 set_rls_tenant — 否則新開的 session 繼承連線池上一次的 GUC，
+    造成 RLS policy cast 失敗或跨租戶污染（PRD-033 §5 US-05）。
+    """
     import logging
     logger = logging.getLogger(__name__)
-    from app.core.deps import _SessionLocal
+    from app.core.deps import _SessionLocal, set_rls_tenant, PUBLIC_B2C_TENANT_ID
     if _SessionLocal is None:
         logger.error("[BG Process] Session factory not initialized")
         return
 
     db = _SessionLocal()
     try:
+        set_rls_tenant(db, tenant_id or PUBLIC_B2C_TENANT_ID)
         from app.services.document_processing_service import DocumentProcessingService
         svc = DocumentProcessingService(db)
         result = svc.process_resource(uuid.UUID(resource_id))
@@ -401,6 +450,7 @@ def submit_youtube(
     request: SubmitYoutubeRequest,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
     result = service.submit_youtube(
@@ -413,7 +463,7 @@ def submit_youtube(
 
     # 自動觸發背景文件處理
     if result.get("id"):
-        background_tasks.add_task(_process_resource_background, result["id"], user_id)
+        background_tasks.add_task(_process_resource_background, result["id"], user_id, tenant_id)
 
     return result
 
@@ -535,3 +585,58 @@ def merge_chunks(
     service = ChunkedUploadService(db)
     result = service.merge_chunks(user_id=user_id, upload_id=upload_id)
     return _handle_chunked_result(result)
+
+
+# ========== PRD-033 Ultra 分享給 EDU ==========
+
+class ShareToInstitutionRequest(BaseModel):
+    target_institution_id: str
+
+
+@router.post("/resources/{resource_id}/share-to-institution")
+def share_to_institution(
+    resource_id: str,
+    body: ShareToInstitutionRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Ultra 用戶把 personal 資源分享給 EDU 機構（scope→shared）。PRD-033 US-03。"""
+    from app.models.resource import Resource
+    from app.models.user import User
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    plan = (getattr(user, "subscription_tier", None) or getattr(user, "plan", "") or "").upper()
+    if "ULTRA" not in plan:
+        raise HTTPException(status_code=403, detail={"message": "僅 ULTRA 方案可分享資源給 EDU"})
+
+    resource = db.query(Resource).filter_by(id=resource_id, user_id=user_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
+
+    resource.scope = "shared"
+    resource.target_institution_id = uuid.UUID(body.target_institution_id)
+    db.commit()
+    return {"ok": True, "resource_id": str(resource.id), "scope": "shared",
+            "target_institution_id": body.target_institution_id}
+
+
+@router.delete("/resources/{resource_id}/share")
+def revoke_share(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """撤回 EDU 分享。PRD-033 US-03。"""
+    from app.models.resource import Resource
+    resource = db.query(Resource).filter_by(id=resource_id, user_id=user_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
+    if str(resource.scope) != "shared":
+        raise HTTPException(status_code=400, detail={"message": "該資源未處於分享狀態"})
+    resource.scope = "personal"
+    resource.target_institution_id = None
+    db.commit()
+    return {"ok": True, "resource_id": str(resource.id), "scope": "personal"}

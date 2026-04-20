@@ -103,7 +103,8 @@ class GCSStorageService(BaseStorageService):
         return self._bucket
 
     def _build_gcs_key(self, user_id: str, resource_id: str, filename: str) -> str:
-        return f"{user_id}/{resource_id}/{filename}"
+        # PRD-033 §3.1：storage key 加 uploads/ 前綴，對應四態 scope 目錄規劃
+        return f"uploads/{user_id}/{resource_id}/{filename}"
 
     def save_file(self, user_id: str, resource_id: str, filename: str, data: bytes) -> str:
         bucket = self._get_bucket()

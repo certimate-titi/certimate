@@ -2,8 +2,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle } from 'lucide-react';
-import { resourceLibraryService, LibraryResource } from '@/lib/api/services';
+import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle, Share2 } from 'lucide-react';
+import { resourceLibraryService, LibraryResource, resourceShareService } from '@/lib/api/services';
+import { useAuth } from '@/lib/auth-context';
+
+const BADGE_META: Record<string, { label: string; cls: string }> = {
+  official_default: { label: '官方預設', cls: 'bg-green-100 text-green-700' },
+  edu_shared: { label: 'EDU 分享', cls: 'bg-blue-100 text-blue-700' },
+  institution: { label: '機構', cls: 'bg-purple-100 text-purple-700' },
+  personal: { label: '個人', cls: 'bg-slate-100 text-slate-600' },
+};
 
 const STATUS_COLORS: Record<string, string> = {
   ready: 'bg-green-100 text-green-700',
@@ -14,6 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ResourceLibraryPage() {
+  const { isUltra } = useAuth();
   const [items, setItems] = useState<LibraryResource[]>([]);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -50,6 +59,28 @@ export default function ResourceLibraryPage() {
       fetch(keyword);
     } catch (e: any) {
       alert(`重新解析失敗：${e?.message}`);
+    }
+  };
+
+  // PRD-033 US-03: Ultra 分享給 EDU
+  const handleShare = async (id: string, currentScope: string | undefined) => {
+    if (currentScope === 'shared') {
+      if (!confirm('確定撤回此資源對 EDU 的分享？')) return;
+      try {
+        await resourceShareService.revokeShare(id);
+        fetch(keyword);
+      } catch (e: any) {
+        alert(`撤回失敗：${e?.message}`);
+      }
+      return;
+    }
+    const instId = prompt('請輸入目標 EDU 機構 ID（institution_id UUID）：');
+    if (!instId) return;
+    try {
+      await resourceShareService.shareToInstitution(id, instId);
+      fetch(keyword);
+    } catch (e: any) {
+      alert(`分享失敗：${e?.message}`);
     }
   };
 
@@ -106,6 +137,7 @@ export default function ResourceLibraryPage() {
               <tr>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">名稱</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">類型</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">歸屬</th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">狀態</th>
                 <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">操作</th>
               </tr>
@@ -115,6 +147,16 @@ export default function ResourceLibraryPage() {
                 <tr key={r.resource_id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-900">{r.name}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 font-mono">{r.type}</td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const meta = BADGE_META[r.badge || 'personal'] || BADGE_META.personal;
+                      return (
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${meta.cls}`}>
+                          {meta.label}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || 'bg-gray-100 text-gray-600'}`}>
                       {r.status}
@@ -129,6 +171,19 @@ export default function ResourceLibraryPage() {
                       >
                         <RotateCw className="w-3 h-3" /> 重新解析
                       </button>
+                      {isUltra && (r.scope === 'personal' || r.scope === 'shared') && (
+                        <button
+                          onClick={() => handleShare(r.resource_id, r.scope)}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
+                            r.scope === 'shared'
+                              ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+                              : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
+                          }`}
+                          title={r.scope === 'shared' ? '撤回分享' : '分享給 EDU'}
+                        >
+                          <Share2 className="w-3 h-3" /> {r.scope === 'shared' ? '撤回' : '分享'}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(r.resource_id, r.name)}
                         className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"

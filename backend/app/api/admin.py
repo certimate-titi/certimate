@@ -857,3 +857,75 @@ def sync_questions(
             "message": f"Sync error: {str(e)}",
             "traceback": traceback.format_exc()[-500:],
         })
+
+
+# ========== PRD-033 預設資源綁定（管理後台）==========
+
+class BindDefaultResourceRequest(BaseModel):
+    resource_id: str
+
+
+@router.post("/subjects/{subject_id}/default-resources")
+def bind_default_resource(
+    subject_id: str,
+    body: BindDefaultResourceRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """平台管理員：把 scope=platform 的資源綁定為某 subject 的預設資源。PRD-033 US-04。"""
+    import uuid as _uuid
+    from app.models.user import User
+    from app.models.resource import Resource
+    from app.models.subject_default_resource import SubjectDefaultResource
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user or (getattr(user, "role", "") not in ("admin", "super_admin")):
+        raise HTTPException(status_code=403, detail={"message": "僅平台管理員可綁定預設資源"})
+
+    resource = db.query(Resource).filter_by(id=body.resource_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail={"message": "資源不存在"})
+    if str(resource.scope) != "platform":
+        raise HTTPException(status_code=400, detail={"message": "只能綁定 scope=platform 的資源"})
+
+    existing = db.query(SubjectDefaultResource).filter_by(
+        subject_id=_uuid.UUID(subject_id), resource_id=_uuid.UUID(body.resource_id)
+    ).first()
+    if existing:
+        return {"ok": True, "already_bound": True}
+
+    link = SubjectDefaultResource(
+        subject_id=_uuid.UUID(subject_id),
+        resource_id=_uuid.UUID(body.resource_id),
+        added_by_user_id=_uuid.UUID(user_id),
+    )
+    db.add(link)
+    db.commit()
+    return {"ok": True, "subject_id": subject_id, "resource_id": body.resource_id}
+
+
+@router.delete("/subjects/{subject_id}/default-resources/{resource_id}")
+def unbind_default_resource(
+    subject_id: str,
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """解除預設資源綁定。PRD-033 US-04。"""
+    import uuid as _uuid
+    from app.models.user import User
+    from app.models.subject_default_resource import SubjectDefaultResource
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user or (getattr(user, "role", "") not in ("admin", "super_admin")):
+        raise HTTPException(status_code=403, detail={"message": "僅平台管理員可操作"})
+
+    link = db.query(SubjectDefaultResource).filter_by(
+        subject_id=_uuid.UUID(subject_id), resource_id=_uuid.UUID(resource_id)
+    ).first()
+    if not link:
+        raise HTTPException(status_code=404, detail={"message": "綁定不存在"})
+
+    db.delete(link)
+    db.commit()
+    return {"ok": True}

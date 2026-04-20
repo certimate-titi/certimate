@@ -39,6 +39,14 @@ class Subject(Base):
     is_popular: Mapped[bool] = mapped_column(Boolean, default=False)
     available_questions: Mapped[int] = mapped_column(Integer, server_default="0")
     exam_subject_codes: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    owner_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True,
+        comment="NULL = 平台 seed；UUID = 用戶自建考科的 owner",
+    )
+    scope: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="platform",
+        comment="platform | personal | institution",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

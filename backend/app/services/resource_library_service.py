@@ -24,11 +24,21 @@ class ResourceLibraryService:
 
         items = []
         for r in resources:
+            scope_val = r.scope.value if hasattr(r.scope, 'value') else str(r.scope)
+            # PRD-033 §8：badge 類型對應 scope
+            badge = {
+                "platform": "official_default",
+                "shared": "edu_shared",
+                "institution": "institution",
+                "personal": "personal",
+            }.get(scope_val, "personal")
             items.append({
                 "resource_id": str(r.id),
                 "name": r.name,
                 "type": r.type.value if hasattr(r.type, 'value') else str(r.type),
                 "status": r.status.value if hasattr(r.status, 'value') else str(r.status),
+                "scope": scope_val,
+                "badge": badge,
             })
 
         return {"resources": items}

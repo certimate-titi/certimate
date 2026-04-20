@@ -16,6 +16,7 @@ from app.models.subject import SubjectCategory, Subject  # noqa: F401, E402
 from app.models.institution import Institution  # noqa: F401, E402
 from app.models.learning_journey import LearningJourney  # noqa: F401, E402
 from app.models.resource import Resource  # noqa: F401, E402
+from app.models.subject_default_resource import SubjectDefaultResource  # noqa: F401, E402
 from app.models.knowledge_node import KnowledgeNode  # noqa: F401, E402
 from app.models.node_mastery import NodeMastery  # noqa: F401, E402
 from app.models.ai_chat import AiChatSession, AiChatMessage  # noqa: F401, E402

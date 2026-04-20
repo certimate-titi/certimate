@@ -27,6 +27,36 @@ def get_available_subjects(
     return _handle_result(result)
 
 
+@router.get("/mine")
+def get_my_custom_subjects(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """列出目前使用者自建的考科（scope=personal AND owner=me）。PRD-033 US-01。"""
+    import uuid as _uuid
+    from app.models.subject import Subject
+
+    user_uuid = _uuid.UUID(user_id)
+    subjects = (
+        db.query(Subject)
+        .filter(Subject.scope == "personal", Subject.owner_user_id == user_uuid)
+        .order_by(Subject.created_at.desc())
+        .all()
+    )
+    return {
+        "subjects": [
+            {
+                "id": str(s.id),
+                "name": s.name,
+                "description": s.description,
+                "category_id": str(s.category_id) if s.category_id else None,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in subjects
+        ]
+    }
+
+
 class AddSubjectRequest(BaseModel):
     subject_name: str
     exam_date: str | None = None
