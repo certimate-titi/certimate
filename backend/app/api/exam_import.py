@@ -18,7 +18,7 @@ from app.schemas.exam_import import ValidationReport
 
 log = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/exam-import")
+router = APIRouter(prefix="/exam-import")
 
 
 def _handle_result(result: dict):

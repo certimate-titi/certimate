@@ -12,7 +12,7 @@ import tempfile
 import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/exam-import", tags=["exam-import"])
+router = APIRouter(prefix="/exam-import", tags=["exam-import"])
 
 
 @router.post("/async")

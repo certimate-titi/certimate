@@ -13,7 +13,7 @@ from app.models import ImportTask
 from app.models.import_task import ImportTaskStatus
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/exam-import", tags=["exam-import-monitoring"])
+router = APIRouter(prefix="/exam-import", tags=["exam-import-monitoring"])
 
 
 @router.get("/dashboard/stats")

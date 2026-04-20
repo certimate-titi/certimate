@@ -12,6 +12,10 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import get_settings
 from app.core.deps import set_session_factory
 from app.core.scheduler import init_scheduler, start_scheduler, shutdown_scheduler
+from app.services.import_scheduler import (
+    init_scheduler as init_import_scheduler,
+    shutdown_scheduler as shutdown_import_scheduler,
+)
 from app.api import router as api_router
 
 settings = get_settings()
@@ -128,8 +132,18 @@ async def lifespan(app: FastAPI):
     # 啟動背景排程
     init_scheduler(session_local)
     await start_scheduler()
+    # 啟動 Import Job APScheduler（非同步考古題匯入）
+    try:
+        init_import_scheduler(settings.DATABASE_URL)
+        print("✅ Import job scheduler initialized")
+    except Exception as e:
+        print(f"⚠️ Import scheduler init 警告: {e}")
     yield
     await shutdown_scheduler()
+    try:
+        shutdown_import_scheduler()
+    except Exception as e:
+        print(f"⚠️ Import scheduler shutdown 警告: {e}")
     engine.dispose()
     print("🔌 Database connection closed")
 
