@@ -71,6 +71,28 @@ IMAGE_OCR_PROMPT = _FALLBACK_IMAGE_OCR
 STRUCTURE_ANALYSIS_PROMPT = _FALLBACK_STRUCTURE_ANALYSIS
 
 
+def _classify_processing_error(e: Exception) -> str:
+    """Turn a raw exception into a user-friendly, categorized reason.
+
+    UI shows this verbatim via Resource.error_message, so it must read naturally
+    and tell the user which stage failed and why.
+    """
+    msg = str(e)
+    if "偵測到版權" in msg or "COPYRIGHT" in msg.upper():
+        return f"【版權限制】{msg}"
+    if "Voyage" in msg and ("預算" in msg or "quota" in msg.lower()):
+        return f"【系統配額】{msg}"
+    if "媒體萃取失敗" in msg or "無法從" in msg:
+        return f"【萃取失敗】{msg}"
+    if "檔案無法轉換為 Markdown" in msg or "未產出任何" in msg:
+        return f"【轉檔失敗】{msg}"
+    if "embedding" in msg.lower() or "vector" in msg.lower():
+        return f"【向量化失敗】{msg}"
+    if "timeout" in msg.lower() or "timed out" in msg.lower():
+        return f"【處理逾時】{msg}（檔案可能過大，請分批上傳或稍後重試）"
+    return f"【處理失敗】{msg}"
+
+
 class DocumentProcessingService:
     """Full document processing pipeline: upload → parse → chunk → embed → store."""
 
@@ -151,9 +173,17 @@ class DocumentProcessingService:
                 self._check_copyright(pdf_bytes)
 
             # Step 1 + 1.5: Layer 1 media extraction → Layer 2 K-01 structuring
-            extracted = self._extract_text(resource)
+            try:
+                extracted = self._extract_text(resource)
+            except Exception as e:
+                raise ValueError(
+                    f"媒體萃取失敗（無法從 {resource_type.upper()} 讀取文字內容）：{str(e)[:200]}"
+                ) from e
             if not extracted.get("sections"):
-                raise ValueError("文件解析未產出任何內容")
+                raise ValueError(
+                    f"檔案無法轉換為 Markdown：{resource_type.upper()} 未產出任何可用文字。"
+                    "可能原因：純圖片 / 掃描檔（需先 OCR）、內容過短、或檔案格式異常。"
+                )
 
             # Step 1.7: PDF 4-tier structure analysis (replaces raw page splits)
             if resource_type == "pdf":
@@ -287,7 +317,7 @@ class DocumentProcessingService:
             resource = self.db.query(Resource).filter_by(id=resource_id).first()
             if resource:
                 resource.status = ResourceStatus.FAILED
-                resource.error_message = str(e)[:500]
+                resource.error_message = _classify_processing_error(e)[:500]
                 self.db.commit()
             return {"error": True, "message": str(e)}
 

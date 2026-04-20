@@ -291,3 +291,21 @@ Feature: 資源上傳與隱性版權約定
       When 使用者 "free@example.com" 查詢資源列表
       Then 操作成功
       And 該筆資源的 error_message 欄位應為「版權限制關鍵字」
+
+  @added-by:cto
+  Rule: 背景處理失敗時，error_message 須分類標註失敗階段
+
+    失敗原因須以中括號分類前綴，便於用戶快速判斷問題根源：
+    - 【版權限制】：觸發版權關鍵字
+    - 【萃取失敗】：媒體層讀取失敗（PDF/DOCX/YouTube 解不出文字）
+    - 【轉檔失敗】：檔案可讀取但無法轉為 Markdown（純圖片、內容過短）
+    - 【向量化失敗】：Embedding 階段失敗
+    - 【系統配額】：Voyage/LLM 月度預算超限
+    - 【處理逾時】：單次任務逾時
+    - 【處理失敗】：未分類的後備訊息
+
+    Example: 無法萃取任何文字的 PDF 歸類為【轉檔失敗】
+      Given 使用者 "free@example.com" 上傳一個無文字的 PDF 檔案
+      When 背景處理執行完成
+      Then 該資源的 status 應為 FAILED
+      And 該資源的 error_message 應以「【轉檔失敗】」開頭
