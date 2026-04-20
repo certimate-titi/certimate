@@ -19,8 +19,9 @@ depends_on = None
 def upgrade() -> None:
     """Create import_audit_logs table."""
 
-    # Create import_audit_action enum
+    # Create import_audit_action enum (idempotent)
     op.execute("""
+        DO $$ BEGIN
         CREATE TYPE import_audit_action AS ENUM (
             'task_created',
             'task_started',
@@ -38,10 +39,13 @@ def upgrade() -> None:
             'task_cancelled',
             'task_retried',
             'import_rolled_back'
-        )
+        );
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
     """)
 
-    # Create import_audit_logs table
+    # Create import_audit_logs table (idempotent)
+    op.execute("DROP TABLE IF EXISTS import_audit_logs CASCADE")
     op.create_table(
         'import_audit_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),

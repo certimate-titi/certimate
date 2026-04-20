@@ -19,20 +19,19 @@ depends_on = None
 def upgrade() -> None:
     """Create import_tasks table and apscheduler_jobs table."""
 
-    # Create import_task_status enum
+    # Create import_task_status enum (idempotent — tolerate partial prior runs)
     op.execute("""
-        CREATE TYPE import_task_status AS ENUM (
-            'pending',
-            'processing',
-            'validating',
-            'importing',
-            'completed',
-            'failed',
-            'cancelled'
-        )
+        DO $$ BEGIN
+            CREATE TYPE import_task_status AS ENUM (
+                'pending', 'processing', 'validating', 'importing',
+                'completed', 'failed', 'cancelled'
+            );
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
     """)
 
-    # Create import_tasks table
+    # Create import_tasks table (idempotent)
+    op.execute("DROP TABLE IF EXISTS import_tasks CASCADE")
     op.create_table(
         'import_tasks',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),
@@ -75,7 +74,8 @@ def upgrade() -> None:
     op.create_index('ix_import_tasks_status', 'import_tasks', ['status'])
     op.create_index('ix_import_tasks_created_at', 'import_tasks', ['created_at'], postgresql_using='brin')
 
-    # Create apscheduler_jobs table for job persistence
+    # Create apscheduler_jobs table for job persistence (idempotent)
+    op.execute("DROP TABLE IF EXISTS apscheduler_jobs CASCADE")
     op.create_table(
         'apscheduler_jobs',
         sa.Column('id', sa.String(191), nullable=False),
