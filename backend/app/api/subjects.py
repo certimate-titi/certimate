@@ -1,6 +1,6 @@
 """Subjects API — 備考科目管理（Onboarding 後）。"""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -71,6 +71,25 @@ def add_subject(
 ):
     service = OnboardingService(db)
     result = service.add_subject(user_id=user_id, data=body.model_dump())
+    return _handle_result(result)
+
+
+@router.post(
+    "/{platform_subject_id}/fork-from-platform",
+    status_code=status.HTTP_201_CREATED,
+)
+def fork_from_platform(
+    platform_subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """PRD-034 US-01: 從 platform subject 一次性複製資源與心智圖到用戶 personal subject。"""
+    from app.services.subject_fork_service import SubjectForkService
+
+    service = SubjectForkService(db)
+    result = service.fork_platform_subject(
+        user_id=user_id, platform_subject_id=platform_subject_id
+    )
     return _handle_result(result)
 
 

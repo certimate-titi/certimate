@@ -54,6 +54,10 @@ class KnowledgeNode(Base):
         String(16), nullable=False, server_default="user_data",
         comment="節點來源：syllabus / user_data / hybrid",
     )
+    source_resource_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1",
+        comment="引用計數：此節點被幾份資源引用；cascade 刪除時扣 1、歸零即刪 (PRD-034)",
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

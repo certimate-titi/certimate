@@ -307,6 +307,11 @@ Table subjects {
   name_en varchar(200)
   description text
   is_popular boolean [default: false]
+  owner_user_id uuid [ref: > users.id, note: 'scope=personal 時的擁有者（migration 062）']
+  scope varchar(20) [default: 'platform', note: 'platform / personal / institution（migration 062）']
+  source_platform_subject_id uuid [ref: > subjects.id, note: 'Fork 來源（migration 065, PRD-034）']
+  version integer [default: 1, note: '僅 platform scope 有意義；每次 admin publish +1（migration 065）']
+  published_at timestamptz [note: 'platform 最近一次發布時間（migration 065）']
   created_at timestamptz [default: `now()`]
 }
 
@@ -382,6 +387,7 @@ Table knowledge_nodes {
   exam_frequency varchar(10) [note: 'high/medium/low — 出題頻率']
   source_origin varchar(20) [default: 'document', note: 'exam/document/manual']
   node_type varchar(20) [default: 'syllabus', note: 'syllabus=考科官方知識架構(Feature 26/29) / personal=用戶個人學習節點(Feature 03/04/27)']
+  source_resource_count integer [default: 1, note: '此節點被幾份資源引用；cascade 刪除時扣 1、歸零即刪（migration 065, PRD-034）']
   created_at timestamptz [default: `now()`]
 }
 

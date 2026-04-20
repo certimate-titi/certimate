@@ -42,6 +42,12 @@ class BaseStorageService(ABC):
     def exists(self, storage_path: str) -> bool:
         """檢查檔案是否存在。"""
 
+    @abstractmethod
+    def copy_file(
+        self, src_path: str, dst_user_id: str, dst_resource_id: str, dst_filename: str
+    ) -> str:
+        """將 src_path 複製到新的 (user_id, resource_id, filename)，回傳新路徑。"""
+
 
 class LocalStorageService(BaseStorageService):
     """本地檔案系統儲存（開發環境）。"""
@@ -82,6 +88,19 @@ class LocalStorageService(BaseStorageService):
 
     def exists(self, storage_path: str) -> bool:
         return Path(storage_path).exists()
+
+    def copy_file(
+        self, src_path: str, dst_user_id: str, dst_resource_id: str, dst_filename: str
+    ) -> str:
+        src = Path(src_path)
+        if not src.exists():
+            raise FileNotFoundError(f"來源檔案不存在: {src_path}")
+        dst_dir = self.base_dir / dst_user_id / dst_resource_id
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst_path = dst_dir / dst_filename
+        shutil.copy2(src, dst_path)
+        logger.info("Local storage: copied %s -> %s", src_path, dst_path)
+        return str(dst_path)
 
 
 class GCSStorageService(BaseStorageService):
@@ -146,6 +165,20 @@ class GCSStorageService(BaseStorageService):
         bucket = self._get_bucket()
         key = self._parse_gcs_path(storage_path)
         return bucket.blob(key).exists()
+
+    def copy_file(
+        self, src_path: str, dst_user_id: str, dst_resource_id: str, dst_filename: str
+    ) -> str:
+        bucket = self._get_bucket()
+        src_key = self._parse_gcs_path(src_path)
+        src_blob = bucket.blob(src_key)
+        if not src_blob.exists():
+            raise FileNotFoundError(f"來源 GCS blob 不存在: {src_path}")
+        dst_key = self._build_gcs_key(dst_user_id, dst_resource_id, dst_filename)
+        bucket.copy_blob(src_blob, bucket, dst_key)
+        dst_path = f"gs://{self.bucket_name}/{dst_key}"
+        logger.info("GCS storage: copied %s -> %s", src_path, dst_path)
+        return dst_path
 
     def _parse_gcs_path(self, gcs_path: str) -> str:
         """將 gs://bucket/key 轉為 key。"""

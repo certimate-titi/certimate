@@ -47,6 +47,18 @@ class Subject(Base):
         String(20), nullable=False, server_default="platform",
         comment="platform | personal | institution",
     )
+    source_platform_subject_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True,
+        comment="Fork 來源 platform subject — PRD-034",
+    )
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1",
+        comment="僅 platform scope 有意義；admin publish +1",
+    )
+    published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+        comment="platform 最近一次發布時間",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
