@@ -17,7 +17,7 @@
 #   1. 已執行 `gcloud auth login` 且有 project owner 權限
 #   2. 手邊有 3 組新的 API key（強烈建議這次順便輪替舊 key）
 
-set -euo pipefail
+set -eo pipefail
 
 PROJECT_ID="certimate-titi"
 REGION="asia-east1"
@@ -25,11 +25,9 @@ SERVICE_NAME="certimate-titi"
 RUNTIME_SA_NAME="certimate-titi-runtime"
 RUNTIME_SA_EMAIL="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 
-SECRETS=(
-  "gemini-api-key:GEMINI_API_KEY"
-  "anthropic-api-key:ANTHROPIC_API_KEY"
-  "voyage-api-key:VOYAGE_API_KEY"
-)
+# 平行陣列（避免 bash 3.2 對 "a:b" 拆解搭配中文字符時偶發 parser 問題）
+SECRET_NAMES=("gemini-api-key" "anthropic-api-key" "voyage-api-key")
+ENV_NAMES=("GEMINI_API_KEY" "ANTHROPIC_API_KEY" "VOYAGE_API_KEY")
 
 echo "==> 切換專案：$PROJECT_ID"
 gcloud config set project "$PROJECT_ID" >/dev/null
@@ -63,12 +61,12 @@ done
 # ============================================================
 # 2. 建立 secret + 寫入值（互動輸入，不經 shell history）
 # ============================================================
-for entry in "${SECRETS[@]}"; do
-  secret_name="${entry%%:*}"
-  env_name="${entry##*:}"
+for i in 0 1 2; do
+  secret_name="${SECRET_NAMES[$i]}"
+  env_name="${ENV_NAMES[$i]}"
 
   echo
-  echo "==> 處理 secret：$secret_name（對應 env: $env_name）"
+  echo "==> 處理 secret: $secret_name (env: $env_name)"
 
   # 若已存在且有 version，提示是否覆寫
   if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
