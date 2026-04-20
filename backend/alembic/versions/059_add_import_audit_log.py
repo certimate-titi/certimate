@@ -19,33 +19,19 @@ depends_on = None
 def upgrade() -> None:
     """Create import_audit_logs table."""
 
-    # Create import_audit_action enum (idempotent)
-    op.execute("""
-        DO $$ BEGIN
-        CREATE TYPE import_audit_action AS ENUM (
-            'task_created',
-            'task_started',
-            'extraction_started',
-            'extraction_complete',
-            'validation_started',
-            'validation_complete',
-            'import_started',
-            'import_complete',
-            'quality_gates_passed',
-            'quality_gates_failed',
-            'manual_review_required',
-            'task_completed',
-            'task_failed',
-            'task_cancelled',
-            'task_retried',
-            'import_rolled_back'
-        );
-        EXCEPTION WHEN duplicate_object THEN null;
-        END $$;
-    """)
-
-    # Create import_audit_logs table (idempotent)
+    # Fully reset prior partial state so the migration is idempotent
     op.execute("DROP TABLE IF EXISTS import_audit_logs CASCADE")
+    op.execute("DROP TYPE IF EXISTS import_audit_action CASCADE")
+
+    op.execute("""
+        CREATE TYPE import_audit_action AS ENUM (
+            'task_created', 'task_started', 'extraction_started', 'extraction_complete',
+            'validation_started', 'validation_complete', 'import_started', 'import_complete',
+            'quality_gates_passed', 'quality_gates_failed', 'manual_review_required',
+            'task_completed', 'task_failed', 'task_cancelled', 'task_retried',
+            'import_rolled_back'
+        )
+    """)
     op.create_table(
         'import_audit_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),

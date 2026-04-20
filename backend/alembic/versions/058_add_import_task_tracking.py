@@ -19,19 +19,17 @@ depends_on = None
 def upgrade() -> None:
     """Create import_tasks table and apscheduler_jobs table."""
 
-    # Create import_task_status enum (idempotent — tolerate partial prior runs)
-    op.execute("""
-        DO $$ BEGIN
-            CREATE TYPE import_task_status AS ENUM (
-                'pending', 'processing', 'validating', 'importing',
-                'completed', 'failed', 'cancelled'
-            );
-        EXCEPTION WHEN duplicate_object THEN null;
-        END $$;
-    """)
-
-    # Create import_tasks table (idempotent)
+    # Fully reset prior partial state so the migration is idempotent
     op.execute("DROP TABLE IF EXISTS import_tasks CASCADE")
+    op.execute("DROP TYPE IF EXISTS import_task_status CASCADE")
+
+    # Recreate enum (op.create_table below uses create_type=False to avoid double-create)
+    op.execute("""
+        CREATE TYPE import_task_status AS ENUM (
+            'pending', 'processing', 'validating', 'importing',
+            'completed', 'failed', 'cancelled'
+        )
+    """)
     op.create_table(
         'import_tasks',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),
