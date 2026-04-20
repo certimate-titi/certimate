@@ -70,3 +70,30 @@ Feature: 節點練習模式
     Example: 作答不存在的題目回傳錯誤
       When 使用者 "alice@example.com" 練習作答不存在的題目
       Then 操作失敗，錯誤為「題目不存在」
+
+  # ========== 入口導航（前端行為） ==========
+
+  Rule: 前置（導航）- 從知識節點詳情面板點「練習」應直達該節點的練習題
+
+    Example: 有題目時直接進入作答畫面
+      Given 使用者 "alice@example.com" 在 "/knowledge" 頁面選取知識節點 "EC2"
+      When 使用者點擊節點詳情的「練習」按鈕
+      Then 頁面應導向 "/practice?nodeId=N2&nodeName=EC2"
+      And 練習頁面應自動載入 "EC2" 的練習題並進入作答畫面
+      And 不應顯示「選擇知識節點開始練習」的節點列表
+
+    Example: 節點無題目時顯示專屬空態而非回退至節點列表
+      Given 使用者 "alice@example.com" 在 "/knowledge" 頁面選取知識節點 "運算"
+      When 使用者點擊節點詳情的「練習」按鈕
+      Then 頁面應導向 "/practice?nodeId=N1&nodeName=運算"
+      And 練習頁面應顯示「「運算」尚無練習題」的空態訊息
+      And 空態應提供「選擇其他節點」與「回知識圖譜」兩個操作
+      And 不應靜默回退至節點列表
+
+  Rule: 前置（入口）- /practice 保留作為可直接造訪的節點選擇入口
+
+    Example: 無 nodeId 參數時顯示節點選擇列表
+      Given 使用者 "alice@example.com" 直接造訪 "/practice"（未帶 nodeId）
+      Then 頁面應顯示「選擇知識節點開始練習」的葉節點列表
+      And 每個節點卡片應顯示掌握度百分比徽章
+      And 徽章顏色應依掌握度分級：綠色（已掌握）/ 黃色（待加強）/ 紅色（待努力）/ 灰色（未測）

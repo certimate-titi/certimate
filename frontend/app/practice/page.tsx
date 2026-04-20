@@ -28,7 +28,7 @@ export default function PracticePageWrapper() {
   );
 }
 
-type PracticePhase = 'select-node' | 'answering' | 'feedback';
+type PracticePhase = 'select-node' | 'answering' | 'feedback' | 'no-questions';
 
 function PracticePage() {
   const searchParams = useSearchParams();
@@ -53,6 +53,7 @@ function PracticePage() {
     masteryLevel?: string;
     mastery_rate?: number;
     color?: string;
+    mastery_color?: string;
     children?: ApiNode[];
   }
   const [nodes, setNodes] = useState<ApiNode[]>([]);
@@ -119,13 +120,13 @@ function PracticePage() {
       setSelectedAnswer(null);
       setFeedback(null);
       if (res.questions.length === 0) {
-        setPhase('select-node');
+        setPhase('no-questions');
       } else {
         setPhase('answering');
       }
     } catch {
       setQuestions([]);
-      setPhase('select-node');
+      setPhase('no-questions');
     } finally {
       setLoadingQuestions(false);
     }
@@ -322,7 +323,7 @@ function PracticePage() {
                         </h3>
                         {(() => {
                           const rate = node.mastery_rate ?? 0;
-                          const color = node.color || 'gray';
+                          const color = node.mastery_color || node.color || 'gray';
                           return (
                             <span
                               className={`mt-1 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded border ${
@@ -346,6 +347,38 @@ function PracticePage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Phase: No Questions — preselected node has no questions yet */}
+        {phase === 'no-questions' && !loadingQuestions && (
+          <div className="max-w-xl mx-auto text-center py-16">
+            <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <h2 className="text-base font-semibold text-slate-700 mb-1">
+              「{selectedNodeName || '此節點'}」尚無練習題
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">
+              此知識節點還沒有可用題目，請先透過測驗產生題目，或選擇其他節點練習。
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => {
+                  setSelectedNodeId(null);
+                  setSelectedNodeName('');
+                  setPhase('select-node');
+                  router.replace('/practice');
+                }}
+                className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              >
+                選擇其他節點
+              </button>
+              <Link
+                href="/knowledge"
+                className="px-4 py-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100"
+              >
+                回知識圖譜
+              </Link>
+            </div>
           </div>
         )}
 
