@@ -73,26 +73,9 @@ def upgrade() -> None:
             ON subject_default_resources (subject_id)
     """)
 
-    # --- Part E: Backfill ---
-    # system@certimate.app 5 筆「考古題題庫」resources → scope=platform
-    op.execute("""
-        UPDATE resources
-        SET scope = 'platform'
-        WHERE user_id IN (SELECT id FROM users WHERE email = 'system@certimate.app')
-          AND name LIKE '%考古題題庫%'
-    """)
-
-    # 寫入 subject_default_resources 關聯表
-    op.execute("""
-        INSERT INTO subject_default_resources (subject_id, resource_id, added_by_user_id)
-        SELECT r.subject_id, r.id, r.user_id
-        FROM resources r
-        JOIN users u ON u.id = r.user_id
-        WHERE u.email = 'system@certimate.app'
-          AND r.scope = 'platform'
-          AND r.subject_id IS NOT NULL
-        ON CONFLICT (subject_id, resource_id) DO NOTHING
-    """)
+    # 注意：backfill 使用新 enum 值 'platform' 必須在下一個 migration (063)
+    # Postgres 禁止在同一 transaction 中使用剛用 ADD VALUE 加入的 enum 值
+    # (UnsafeNewEnumValueUsage)
 
 
 def downgrade() -> None:
