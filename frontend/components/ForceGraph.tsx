@@ -138,15 +138,27 @@ export default function ForceGraph({
       .attr('dx', 0).attr('dy', 1).attr('stdDeviation', 2)
       .attr('flood-color', '#00000015');
 
-    // Selection halo — outer dashed ring, does not touch mastery stroke/arc
+    // Selection glow filter — soft emerald halo via blur + flood
+    const glowFilter = defs.append('filter')
+      .attr('id', 'node-glow')
+      .attr('x', '-50%').attr('y', '-50%')
+      .attr('width', '200%').attr('height', '200%');
+    glowFilter.append('feGaussianBlur')
+      .attr('stdDeviation', '4').attr('result', 'blur');
+    glowFilter.append('feFlood')
+      .attr('flood-color', SELECTED_RING).attr('flood-opacity', '0.6');
+    glowFilter.append('feComposite')
+      .attr('in2', 'blur').attr('operator', 'in').attr('result', 'glow');
+    const glowMerge = glowFilter.append('feMerge');
+    glowMerge.append('feMergeNode').attr('in', 'glow');
+    glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Selection halo — soft glow circle behind the node, leaves mastery ring untouched
     nodeGroup.filter((d: any) => d.id === selectedNodeId)
-      .append('circle')
-      .attr('r', (d: any) => getRadius(d.depth) + 6)
-      .attr('fill', 'none')
-      .attr('stroke', SELECTED_RING)
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '3 3')
-      .attr('opacity', 0.7);
+      .insert('circle', ':first-child')
+      .attr('r', (d: any) => getRadius(d.depth))
+      .attr('fill', NODE_BG)
+      .attr('filter', 'url(#node-glow)');
 
     // Background circle — stroke always = mastery color
     nodeGroup.append('circle')
