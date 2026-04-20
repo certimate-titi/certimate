@@ -167,7 +167,12 @@ function PracticePage() {
       setFeedback(null);
       setPhase('answering');
     } else {
-      // All questions done — show summary or return to node selection
+      // All questions done — refresh mastery state then return to node selection
+      if (activeSubjectId) {
+        knowledgeService.getMap(activeSubjectId).then((res: Record<string, unknown>) => {
+          setNodes((res.nodes as ApiNode[]) || []);
+        }).catch(() => {});
+      }
       setPhase('select-node');
     }
   };
