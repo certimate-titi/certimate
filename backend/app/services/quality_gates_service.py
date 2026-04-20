@@ -46,7 +46,7 @@ class QualityGatesService(BaseService):
 
             # Check file exists
             if not path.exists():
-                return self.error(400, f"File not found: {file_path}")
+                return self.error(f"File not found: {file_path}", 400)
 
             # Check file size
             file_size = path.stat().st_size
@@ -103,7 +103,7 @@ class QualityGatesService(BaseService):
 
         except Exception as e:
             logger.exception(f"PDF validation error: {str(e)}")
-            return self.error(500, f"Failed to validate PDF: {str(e)}")
+            return self.error(f"Failed to validate PDF: {str(e)}", 500)
 
     def validate_pdf_pair(
         self,
@@ -185,7 +185,7 @@ class QualityGatesService(BaseService):
 
         except Exception as e:
             logger.exception(f"PDF pair validation error: {str(e)}")
-            return self.error(500, f"Failed to validate PDF pair: {str(e)}")
+            return self.error(f"Failed to validate PDF pair: {str(e)}", 500)
 
     def detect_corruption_indicators(self, file_path: str) -> dict:
         """Gate 3: Check for signs of file corruption or damage.
@@ -208,7 +208,7 @@ class QualityGatesService(BaseService):
             path = Path(file_path)
 
             if not path.exists():
-                return self.error(404, f"File not found: {file_path}")
+                return self.error(f"File not found: {file_path}", 404)
 
             try:
                 with open(file_path, "rb") as f:
@@ -246,7 +246,7 @@ class QualityGatesService(BaseService):
 
         except Exception as e:
             logger.exception(f"Corruption detection error: {str(e)}")
-            return self.error(500, f"Failed to check for corruption: {str(e)}")
+            return self.error(f"Failed to check for corruption: {str(e)}", 500)
 
     def estimate_processing_difficulty(self, question_pdf_path: str, answer_pdf_path: str) -> dict:
         """Gate 4: Estimate difficulty of processing these PDFs.
@@ -327,7 +327,7 @@ class QualityGatesService(BaseService):
 
         except Exception as e:
             logger.exception(f"Difficulty estimation error: {str(e)}")
-            return self.error(500, f"Failed to estimate difficulty: {str(e)}")
+            return self.error(f"Failed to estimate difficulty: {str(e)}", 500)
 
     def run_all_gates(self, question_pdf_path: str, answer_pdf_path: str) -> dict:
         """Run all quality gates on a PDF pair.
@@ -402,4 +402,4 @@ class QualityGatesService(BaseService):
 
         except Exception as e:
             logger.exception(f"Quality gates execution error: {str(e)}")
-            return self.error(500, f"Failed to run quality gates: {str(e)}")
+            return self.error(f"Failed to run quality gates: {str(e)}", 500)

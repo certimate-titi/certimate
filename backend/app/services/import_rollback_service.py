@@ -96,7 +96,7 @@ class ImportRollbackService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to check rollback availability: {str(e)}")
-            return self.error(500, f"Failed to check rollback: {str(e)}")
+            return self.error(f"Failed to check rollback: {str(e)}", 500)
 
     def rollback_import(
         self,
@@ -132,7 +132,7 @@ class ImportRollbackService(BaseService):
 
             check_data = check_result.get("data", {})
             if not check_data.get("can_rollback"):
-                return self.error(400, check_data.get("reason", "Cannot rollback"))
+                return self.error(check_data.get("reason", "Cannot rollback"), 400)
 
             task_details = check_data.get("task_details", {})
             historical_exam_id = uuid.UUID(task_details["historical_exam_id"])
@@ -144,7 +144,7 @@ class ImportRollbackService(BaseService):
             ).first()
 
             if not task or not exam:
-                return self.error(500, "Task or exam not found during rollback")
+                return self.error("Task or exam not found during rollback", 500)
 
             # Count questions to delete
             question_count = self.db.query(Question).filter(
@@ -194,7 +194,7 @@ class ImportRollbackService(BaseService):
         except Exception as e:
             self.db.rollback()
             logger.exception(f"Rollback failed: {str(e)}")
-            return self.error(500, f"Rollback failed: {str(e)}")
+            return self.error(f"Rollback failed: {str(e)}", 500)
 
     def get_rollback_history(
         self,
@@ -250,7 +250,7 @@ class ImportRollbackService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to get rollback history: {str(e)}")
-            return self.error(500, f"Failed to retrieve history: {str(e)}")
+            return self.error(f"Failed to retrieve history: {str(e)}", 500)
 
     def _log_rollback_event(
         self,

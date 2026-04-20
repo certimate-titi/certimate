@@ -103,7 +103,7 @@ class ImportAuditLogService(BaseService):
         except Exception as e:
             self.db.rollback()
             logger.exception(f"Failed to log audit event: {str(e)}")
-            return self.error(500, f"Failed to log event: {str(e)}")
+            return self.error(f"Failed to log event: {str(e)}", 500)
 
     def get_task_audit_trail(
         self,
@@ -161,7 +161,7 @@ class ImportAuditLogService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to get audit trail: {str(e)}")
-            return self.error(500, f"Failed to retrieve audit trail: {str(e)}")
+            return self.error(f"Failed to retrieve audit trail: {str(e)}", 500)
 
     def get_user_audit_logs(
         self,
@@ -220,7 +220,7 @@ class ImportAuditLogService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to get user audit logs: {str(e)}")
-            return self.error(500, f"Failed to retrieve logs: {str(e)}")
+            return self.error(f"Failed to retrieve logs: {str(e)}", 500)
 
     def get_import_statistics(self) -> dict:
         """Get aggregate import statistics from audit logs.
@@ -287,7 +287,7 @@ class ImportAuditLogService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to compute statistics: {str(e)}")
-            return self.error(500, f"Failed to compute statistics: {str(e)}")
+            return self.error(f"Failed to compute statistics: {str(e)}", 500)
 
     def search_audit_logs(
         self,
@@ -351,4 +351,4 @@ class ImportAuditLogService(BaseService):
 
         except Exception as e:
             logger.exception(f"Failed to search audit logs: {str(e)}")
-            return self.error(500, f"Failed to search logs: {str(e)}")
+            return self.error(f"Failed to search logs: {str(e)}", 500)

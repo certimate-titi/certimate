@@ -53,7 +53,7 @@ class ImportWebhookService(BaseService):
             {"success": bool, "status_code": int, "message": str}
         """
         if event not in WEBHOOK_EVENTS:
-            return self.error(400, f"Unknown event type: {event}")
+            return self.error(f"Unknown event type: {event}", 400)
 
         try:
             # Build webhook payload
@@ -124,11 +124,11 @@ class ImportWebhookService(BaseService):
                 )
 
             logger.error(f"Webhook timeout (max retries): {event} to {webhook_url}")
-            return self.error(504, "Webhook request timed out")
+            return self.error("Webhook request timed out", 504)
 
         except Exception as e:
             logger.exception(f"Webhook error: {event} to {webhook_url}: {str(e)}")
-            return self.error(500, f"Webhook failed: {str(e)}")
+            return self.error(f"Webhook failed: {str(e)}", 500)
 
     async def notify_task_created(
         self,

@@ -75,7 +75,7 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(400, f"Failed to create import task: {str(e)}")
+            return self.error(f"Failed to create import task: {str(e)}", 400)
 
     def get_task_status(self, task_id: uuid.UUID) -> dict:
         """Get current status of import task.
@@ -89,7 +89,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             return self.ok(
                 {
@@ -118,7 +118,7 @@ class ImportTaskService(BaseService):
                 }
             )
         except Exception as e:
-            return self.error(500, f"Failed to fetch task status: {str(e)}")
+            return self.error(f"Failed to fetch task status: {str(e)}", 500)
 
     def start_processing(self, task_id: uuid.UUID) -> dict:
         """Mark task as PROCESSING and set started_at timestamp.
@@ -132,10 +132,10 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             if task.status != ImportTaskStatus.PENDING:
-                return self.error(400, f"Task cannot start from {task.status} status")
+                return self.error(f"Task cannot start from {task.status} status", 400)
 
             task.status = ImportTaskStatus.PROCESSING
             task.started_at = datetime.utcnow()
@@ -145,7 +145,7 @@ class ImportTaskService(BaseService):
             return self.ok({"status": task.status, "started_at": task.started_at})
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to start processing: {str(e)}")
+            return self.error(f"Failed to start processing: {str(e)}", 500)
 
     def update_progress(
         self,
@@ -170,7 +170,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.questions_processed = processed
             task.questions_valid = valid
@@ -181,7 +181,7 @@ class ImportTaskService(BaseService):
             return self.ok({"progress_percent": task.progress_percent})
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to update progress: {str(e)}")
+            return self.error(f"Failed to update progress: {str(e)}", 500)
 
     def mark_validating(self, task_id: uuid.UUID, total_questions: int) -> dict:
         """Transition task to VALIDATING phase.
@@ -196,7 +196,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.status = ImportTaskStatus.VALIDATING
             task.total_questions = total_questions
@@ -206,7 +206,7 @@ class ImportTaskService(BaseService):
             return self.ok({"status": task.status})
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to mark validating: {str(e)}")
+            return self.error(f"Failed to mark validating: {str(e)}", 500)
 
     def mark_importing(self, task_id: uuid.UUID) -> dict:
         """Transition task to IMPORTING phase.
@@ -220,7 +220,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.status = ImportTaskStatus.IMPORTING
             task.progress_percent = 50
@@ -229,7 +229,7 @@ class ImportTaskService(BaseService):
             return self.ok({"status": task.status})
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to mark importing: {str(e)}")
+            return self.error(f"Failed to mark importing: {str(e)}", 500)
 
     def mark_completed(
         self,
@@ -252,7 +252,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.status = ImportTaskStatus.COMPLETED
             task.completed_at = datetime.utcnow()
@@ -272,7 +272,7 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to mark completed: {str(e)}")
+            return self.error(f"Failed to mark completed: {str(e)}", 500)
 
     def mark_failed(
         self,
@@ -295,7 +295,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.status = ImportTaskStatus.FAILED
             task.completed_at = datetime.utcnow()
@@ -313,7 +313,7 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to mark as failed: {str(e)}")
+            return self.error(f"Failed to mark as failed: {str(e)}", 500)
 
     def mark_cancelled(self, task_id: uuid.UUID) -> dict:
         """Mark task as CANCELLED by user.
@@ -327,10 +327,10 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             if task.status == ImportTaskStatus.COMPLETED or task.status == ImportTaskStatus.FAILED:
-                return self.error(400, f"Cannot cancel {task.status} task")
+                return self.error(f"Cannot cancel {task.status} task", 400)
 
             task.status = ImportTaskStatus.CANCELLED
             task.cancelled_at = datetime.utcnow()
@@ -344,7 +344,7 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to cancel task: {str(e)}")
+            return self.error(f"Failed to cancel task: {str(e)}", 500)
 
     def list_user_tasks(
         self,
@@ -397,7 +397,7 @@ class ImportTaskService(BaseService):
                 }
             )
         except Exception as e:
-            return self.error(500, f"Failed to list tasks: {str(e)}")
+            return self.error(f"Failed to list tasks: {str(e)}", 500)
 
     def increment_retry_count(self, task_id: uuid.UUID) -> dict:
         """Increment retry counter for failed task.
@@ -411,10 +411,10 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             if task.retry_count >= 3:
-                return self.error(400, "Maximum retry attempts (3) exceeded")
+                return self.error("Maximum retry attempts (3) exceeded", 400)
 
             task.retry_count += 1
             # Reset to pending for retry
@@ -433,7 +433,7 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to increment retry: {str(e)}")
+            return self.error(f"Failed to increment retry: {str(e)}", 500)
 
     def set_manual_review(self, task_id: uuid.UUID, note: Optional[str] = None) -> dict:
         """Mark task as requiring manual review (quality gates failed).
@@ -448,7 +448,7 @@ class ImportTaskService(BaseService):
         try:
             task = self.db.query(ImportTask).filter(ImportTask.id == task_id).first()
             if not task:
-                return self.error(404, "Task not found")
+                return self.error("Task not found", 404)
 
             task.requires_manual_review = True
             task.quality_gates_passed = False
@@ -464,4 +464,4 @@ class ImportTaskService(BaseService):
             )
         except Exception as e:
             self.db.rollback()
-            return self.error(500, f"Failed to set manual review: {str(e)}")
+            return self.error(f"Failed to set manual review: {str(e)}", 500)
