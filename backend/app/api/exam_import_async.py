@@ -4,7 +4,7 @@ import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
-from app.core.deps import get_db, get_current_user_id, get_db_with_tenant
+from app.core.deps import get_db, get_current_user_id, get_db_with_tenant, get_tenant_id
 from app.services.import_task_service import ImportTaskService
 from app.services.import_scheduler import schedule_import_job, cancel_import_job, get_scheduler
 from app.services.import_background_worker import ImportBackgroundWorker
@@ -24,6 +24,7 @@ async def submit_async_import(
     subject_code: str = Form(...),
     exam_name: Optional[str] = Form(None),
     user_id: uuid.UUID = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db_with_tenant),
 ) -> dict:
     """Submit an exam import job to background queue.
@@ -81,7 +82,7 @@ async def submit_async_import(
             question_pdf_path=question_pdf_path,
             answer_pdf_path=answer_pdf_path,
             pdf_file_size=total_size,
-            tenant_id=db.get("tenant_id"),  # From dependency
+            tenant_id=tenant_id,
         )
 
         if result.get("error"):
