@@ -506,6 +506,44 @@ function PracticePage() {
               </div>
             </div>
 
+            {/* Question recap with answer highlights */}
+            {currentQuestion && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-4">
+                <p className="text-sm text-slate-800 leading-relaxed mb-5 whitespace-pre-line">
+                  {currentQuestion.content}
+                </p>
+                <div className="space-y-2.5">
+                  {options.map((opt) => {
+                    const isCorrect = opt.key === feedback.correct_answer;
+                    const isUserPick = opt.key === selectedAnswer;
+                    const isWrongPick = isUserPick && !feedback.is_correct;
+                    const baseClass = 'w-full text-left p-3.5 rounded-lg border-2 text-sm flex items-start gap-2';
+                    const stateClass = isCorrect
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+                      : isWrongPick
+                      ? 'border-rose-500 bg-rose-50 text-rose-900'
+                      : 'border-slate-200 text-slate-600';
+                    return (
+                      <div key={opt.key} className={`${baseClass} ${stateClass}`}>
+                        <span className="font-bold text-xs shrink-0 mt-0.5">{opt.key}.</span>
+                        <span className="flex-1">{opt.text}</span>
+                        {isCorrect && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white shrink-0">
+                            正確答案
+                          </span>
+                        )}
+                        {isWrongPick && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-600 text-white shrink-0">
+                            你的選擇
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Explanation */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-4">
               <div className="flex items-center gap-2 mb-3">
@@ -513,7 +551,7 @@ function PracticePage() {
                 <h4 className="text-sm font-bold text-slate-700">詳解</h4>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                {feedback.explanation}
+                {feedback.explanation || '本題暫無詳解，若需進一步說明可詢問 AI 教練。'}
               </p>
             </div>
 
