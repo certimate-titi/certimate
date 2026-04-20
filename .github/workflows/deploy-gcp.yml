@@ -102,6 +102,7 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --platform=managed \
             --allow-unauthenticated \
+            --service-account=certimate-titi-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --memory=512Mi \
             --cpu=1 \
             --min-instances=1 \
@@ -110,6 +111,7 @@ jobs:
             --timeout=300 \
             --add-cloudsql-instances=${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }} \
             --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},SMTP_HOST=smtp.gmail.com,SMTP_USER=${{ secrets.SMTP_USER }},SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }},GCP_BILLING_MODE=real,GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},GCP_BILLING_EXPORT_DATASET=billing_export,GCP_BILLING_EXPORT_TABLE=gcp_billing_export_v1,BUILD_COMMIT=${{ steps.commit.outputs.short_sha }},DEPLOYED_AT=${{ steps.commit.outputs.build_time }},STORAGE_BACKEND=gcs,GCS_BUCKET=certimate-titi-data" \
+            --set-secrets="GEMINI_API_KEY=gemini-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,VOYAGE_API_KEY=voyage-api-key:latest" \
             --quiet
 
       # ========================================
