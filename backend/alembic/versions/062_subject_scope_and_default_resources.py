@@ -11,11 +11,12 @@ Context (PRD-033 §6.2):
 - Backfill:
   - 28 個 seed subjects → scope=platform, owner_user_id=NULL
   - system@certimate.app 用戶的 5 筆「考古題題庫」resources → scope=platform + 寫入關聯表
+
+冪等性：所有 DDL 使用 IF NOT EXISTS，以支援部分失敗後重跑。
 """
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 
 revision = "062"
@@ -25,87 +26,54 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # --- Part A: subjects 加 owner_user_id + scope ---
-    op.add_column(
-        "subjects",
-        sa.Column(
-            "owner_user_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("users.id", ondelete="CASCADE"),
-            nullable=True,
-        ),
-    )
-    op.add_column(
-        "subjects",
-        sa.Column(
-            "scope",
-            sa.String(20),
-            nullable=False,
-            server_default="platform",
-        ),
-    )
-    op.create_index("ix_subjects_owner_scope", "subjects", ["owner_user_id", "scope"])
+    # --- Part A: subjects 加 owner_user_id + scope (冪等) ---
+    op.execute("""
+        ALTER TABLE subjects
+            ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE
+    """)
+    op.execute("""
+        ALTER TABLE subjects
+            ADD COLUMN IF NOT EXISTS scope VARCHAR(20) NOT NULL DEFAULT 'platform'
+    """)
+    op.execute("""
+        CREATE INDEX IF NOT EXISTS ix_subjects_owner_scope
+            ON subjects (owner_user_id, scope)
+    """)
 
     # --- Part B: ResourceScope enum 加新值 ---
-    # Postgres enum ADD VALUE 需獨立執行（不可在 transaction block 裡）
-    # 用 CONNECTION.execution_options 繞過
+    # Postgres enum ADD VALUE 需在自己的 transaction；這裡用 IF NOT EXISTS 所以可重跑
     connection = op.get_bind()
     connection.execute(sa.text("COMMIT"))
     connection.execute(sa.text("ALTER TYPE resource_scope ADD VALUE IF NOT EXISTS 'platform'"))
     connection.execute(sa.text("ALTER TYPE resource_scope ADD VALUE IF NOT EXISTS 'shared'"))
-    # 重新開啟 transaction
     connection.execute(sa.text("BEGIN"))
 
-    # --- Part C: resources 加 target_institution_id ---
-    op.add_column(
-        "resources",
-        sa.Column(
-            "target_institution_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("institutions.id", ondelete="SET NULL"),
-            nullable=True,
-            comment="scope=shared 時的分享目標 EDU 機構",
-        ),
-    )
+    # --- Part C: resources 加 target_institution_id (冪等) ---
+    op.execute("""
+        ALTER TABLE resources
+            ADD COLUMN IF NOT EXISTS target_institution_id UUID
+                REFERENCES institutions(id) ON DELETE SET NULL
+    """)
+    op.execute("""
+        COMMENT ON COLUMN resources.target_institution_id IS 'scope=shared 時的分享目標 EDU 機構'
+    """)
 
-    # --- Part D: subject_default_resources 關聯表 ---
-    op.create_table(
-        "subject_default_resources",
-        sa.Column(
-            "subject_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("subjects.id", ondelete="CASCADE"),
-            primary_key=True,
-        ),
-        sa.Column(
-            "resource_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("resources.id", ondelete="CASCADE"),
-            primary_key=True,
-        ),
-        sa.Column(
-            "added_by_user_id",
-            postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("users.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-        sa.Column(
-            "added_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-    )
-    op.create_index(
-        "ix_subject_default_resources_subject",
-        "subject_default_resources",
-        ["subject_id"],
-    )
+    # --- Part D: subject_default_resources 關聯表 (冪等) ---
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS subject_default_resources (
+            subject_id UUID NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+            resource_id UUID NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+            added_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+            added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+            PRIMARY KEY (subject_id, resource_id)
+        )
+    """)
+    op.execute("""
+        CREATE INDEX IF NOT EXISTS ix_subject_default_resources_subject
+            ON subject_default_resources (subject_id)
+    """)
 
-    # --- Part E: Backfill platform subjects + system resources ---
-    # 既有 28 個 seed subjects 已由 server_default='platform' 處理，scope 已正確
-    # 只需確保 owner_user_id 為 NULL（預設就是 NULL）
-
+    # --- Part E: Backfill ---
     # system@certimate.app 5 筆「考古題題庫」resources → scope=platform
     op.execute("""
         UPDATE resources
@@ -128,14 +96,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_subject_default_resources_subject", table_name="subject_default_resources")
-    op.drop_table("subject_default_resources")
-
-    op.drop_column("resources", "target_institution_id")
-
-    # Postgres 不支援移除 enum value，保留 platform / shared
-    # 若需徹底回退需手動重建 type
-
-    op.drop_index("ix_subjects_owner_scope", table_name="subjects")
-    op.drop_column("subjects", "scope")
-    op.drop_column("subjects", "owner_user_id")
+    op.execute("DROP INDEX IF EXISTS ix_subject_default_resources_subject")
+    op.execute("DROP TABLE IF EXISTS subject_default_resources")
+    op.execute("ALTER TABLE resources DROP COLUMN IF EXISTS target_institution_id")
+    op.execute("DROP INDEX IF EXISTS ix_subjects_owner_scope")
+    op.execute("ALTER TABLE subjects DROP COLUMN IF EXISTS scope")
+    op.execute("ALTER TABLE subjects DROP COLUMN IF EXISTS owner_user_id")
