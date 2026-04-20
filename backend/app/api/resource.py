@@ -341,6 +341,7 @@ def retry_upload(
 def upload_resource(
     request: UploadResourceRequest,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
     """上傳資源（JSON metadata）。"""
@@ -350,6 +351,7 @@ def upload_resource(
         subject_id=request.subject_id,
         file_size_mb=request.file_size_mb,
         resource_type=request.type,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -384,6 +386,7 @@ async def upload_resource_file(
         subject_id=subject_id,
         file_size_mb=file_size_mb,
         resource_type=resource_type,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -457,6 +460,7 @@ def submit_youtube(
         user_id=user_id,
         youtube_url=request.youtube_url,
         subject_id=request.subject_id,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -537,6 +541,7 @@ def _handle_chunked_result(result: dict):
 def init_chunked_upload(
     body: InitChunkedUploadRequest,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db),
 ):
     from app.services.chunked_upload_service import ChunkedUploadService
@@ -544,7 +549,7 @@ def init_chunked_upload(
     file_size = body.file_size
     if file_size is None and body.file_size_mb is not None:
         file_size = body.file_size_mb * 1024 * 1024
-    result = service.init_upload(user_id=user_id, filename=body.filename, file_size=file_size or 0, subject_id=body.subject_id)
+    result = service.init_upload(user_id=user_id, filename=body.filename, file_size=file_size or 0, subject_id=body.subject_id, tenant_id=tenant_id)
     return _handle_chunked_result(result)
 
 

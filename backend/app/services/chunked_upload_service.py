@@ -66,7 +66,7 @@ class ChunkedUploadService:
 
         return user
 
-    def init_upload(self, user_id: str, filename: str, file_size: int, subject_id: str = None) -> dict:
+    def init_upload(self, user_id: str, filename: str, file_size: int, subject_id: str = None, tenant_id: str = None) -> dict:
         """初始化分片上傳。"""
         result = self._validate_ultra(user_id, file_size)
         if isinstance(result, dict):
@@ -90,6 +90,7 @@ class ChunkedUploadService:
             "uploaded_chunks": set(),
             "chunk_dir": str(chunk_dir),
             "subject_id": subject_id,
+            "tenant_id": tenant_id,
         }
 
         return {
@@ -173,8 +174,11 @@ class ChunkedUploadService:
 
         # Create a resource record in DB
         from app.models.resource import Resource, ResourceType, ResourceStatus
+        from app.core.deps import PUBLIC_B2C_TENANT_ID
+        tenant_id_val = upload_info.get("tenant_id") or PUBLIC_B2C_TENANT_ID
         resource = Resource(
             user_id=uuid.UUID(upload_info["user_id"]),
+            tenant_id=uuid.UUID(tenant_id_val) if isinstance(tenant_id_val, str) else tenant_id_val,
             name=upload_info["filename"],
             type=ResourceType.PDF,
             status=ResourceStatus.PENDING,

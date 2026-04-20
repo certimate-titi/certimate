@@ -77,7 +77,8 @@ class ResourceService:
         self.user_repo = user_repo
 
     def upload(self, user_id: str, filename: str, subject_id: str,
-               file_size_mb: int = None, resource_type: str = None) -> dict:
+               file_size_mb: int = None, resource_type: str = None,
+               tenant_id: str = None) -> dict:
         if not filename or not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 
@@ -134,9 +135,11 @@ class ResourceService:
         else:
             processing_engine = "gemini_flash"
 
+        from app.core.deps import PUBLIC_B2C_TENANT_ID
         resource = Resource(
             user_id=user_id,
             subject_id=subject_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
             name=filename,
             type=r_type,
             scope=ResourceScope.PERSONAL,
@@ -157,16 +160,19 @@ class ResourceService:
             "implicit_consent": True,
         }
 
-    def submit_youtube(self, user_id: str, youtube_url: str, subject_id: str) -> dict:
+    def submit_youtube(self, user_id: str, youtube_url: str, subject_id: str,
+                       tenant_id: str = None) -> dict:
         if not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 
         if not YOUTUBE_REGEX.match(youtube_url):
             return {"error": True, "status_code": 400, "message": "無效的 YouTube URL"}
 
+        from app.core.deps import PUBLIC_B2C_TENANT_ID
         resource = Resource(
             user_id=user_id,
             subject_id=subject_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
             name=youtube_url,
             type="youtube",
             scope=ResourceScope.PERSONAL,
