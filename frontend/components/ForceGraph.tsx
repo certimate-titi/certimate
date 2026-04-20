@@ -138,12 +138,22 @@ export default function ForceGraph({
       .attr('dx', 0).attr('dy', 1).attr('stdDeviation', 2)
       .attr('flood-color', '#00000015');
 
-    // Background circle
+    // Selection halo — outer dashed ring, does not touch mastery stroke/arc
+    nodeGroup.filter((d: any) => d.id === selectedNodeId)
+      .append('circle')
+      .attr('r', (d: any) => getRadius(d.depth) + 6)
+      .attr('fill', 'none')
+      .attr('stroke', SELECTED_RING)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '3 3')
+      .attr('opacity', 0.7);
+
+    // Background circle — stroke always = mastery color
     nodeGroup.append('circle')
       .attr('r', (d: any) => getRadius(d.depth))
       .attr('fill', NODE_BG)
-      .attr('stroke', (d: any) => d.id === selectedNodeId ? SELECTED_RING : STATUS_COLORS[d.color] || NODE_STROKE_DEFAULT)
-      .attr('stroke-width', (d: any) => d.id === selectedNodeId ? 3 : d.depth === 0 ? 2.5 : 1.5)
+      .attr('stroke', (d: any) => STATUS_COLORS[d.color] || NODE_STROKE_DEFAULT)
+      .attr('stroke-width', (d: any) => d.depth === 0 ? 2.5 : 1.5)
       .attr('filter', 'url(#node-shadow)');
 
     // Progress arc
