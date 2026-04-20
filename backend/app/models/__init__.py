@@ -58,6 +58,7 @@ from app.models.historical_exam import HistoricalExam  # noqa: F401, E402
 from app.models.syllabus_topic import SyllabusTopic  # noqa: F401, E402
 from app.models.import_task import ImportTask, ImportTaskStatus  # noqa: F401, E402
 from app.models.daily_quest_progress import DailyQuestProgress  # noqa: F401, E402
+from app.models.user_hidden_resource import UserHiddenResource  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -110,4 +111,5 @@ __all__ = [
     "ImportTask",
     "ImportTaskStatus",
     "DailyQuestProgress",
+    "UserHiddenResource",
 ]

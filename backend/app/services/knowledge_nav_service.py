@@ -89,16 +89,35 @@ class KnowledgeNavService:
         # 不應因重開知識地圖頁就被重建。考古題 Resource 建立僅在 onboarding 流程。
         subject_ids = [sid]
 
-        # 找此科目下所有資源
-        resources = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids)).all()
+        # 讀取使用者的隱藏 Resource 清單（軟隱藏，DELETE 非擁有資源時寫入）
+        from app.models.user_hidden_resource import UserHiddenResource
+        hidden_resource_ids = {
+            row[0] for row in
+            self.db.query(UserHiddenResource.resource_id)
+            .filter(UserHiddenResource.user_id == uid)
+            .all()
+        }
+
+        # 找此科目下所有資源（排除使用者已隱藏的）
+        resources_q = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids))
+        if hidden_resource_ids:
+            resources_q = resources_q.filter(~Resource.id.in_(hidden_resource_ids))
+        resources = resources_q.all()
         resource_ids = [r.id for r in resources]
 
         # 只查統一知識樹節點（resource_id IS NULL）
         # per-resource 節點是文件處理的中間產物，不應出現在知識庫列表
-        nodes = self.db.query(KnowledgeNode).filter(
+        nodes_q = self.db.query(KnowledgeNode).filter(
             KnowledgeNode.subject_id.in_(subject_ids),
             KnowledgeNode.resource_id.is_(None),
-        ).order_by(KnowledgeNode.sort_order).all()
+        )
+        if hidden_resource_ids:
+            # 保險：若未來開放 per-resource 節點顯示，此過濾仍生效
+            nodes_q = nodes_q.filter(
+                (KnowledgeNode.resource_id.is_(None))
+                | (~KnowledgeNode.resource_id.in_(hidden_resource_ids))
+            )
+        nodes = nodes_q.order_by(KnowledgeNode.sort_order).all()
 
         # 找掌握度
         node_ids = [n.id for n in nodes]

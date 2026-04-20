@@ -70,6 +70,18 @@ def list_resources(
     q = db.query(Resource).filter(or_(*or_clauses))
     if subject_id:
         q = q.filter(Resource.subject_id == subject_id)
+
+    # 排除使用者已軟隱藏的 Resource
+    from app.models.user_hidden_resource import UserHiddenResource
+    hidden_ids = [
+        row[0] for row in
+        db.query(UserHiddenResource.resource_id)
+        .filter(UserHiddenResource.user_id == user_id)
+        .all()
+    ]
+    if hidden_ids:
+        q = q.filter(~Resource.id.in_(hidden_ids))
+
     resources = q.order_by(Resource.created_at.desc()).all()
 
     def _badge(r):
@@ -205,16 +217,31 @@ def delete_resource(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """刪除資源及其關聯的 chunks 和 knowledge nodes。"""
+    """刪除資源及其關聯的 chunks 和 knowledge nodes。
+
+    非擁有者（如平台預設 / 機構分享 Resource）→ 軟隱藏：寫入 user_hidden_resources，
+    回 200。這樣該使用者的 /resources 與知識地圖都不再看到，但不影響其他使用者。
+    """
     from app.models.resource import Resource
     from app.models.knowledge_node import KnowledgeNode
     from app.models.resource_chunk import ResourceChunk
+    from app.models.user_hidden_resource import UserHiddenResource
 
-    resource = db.query(Resource).filter(
-        Resource.id == resource_id, Resource.user_id == user_id
-    ).first()
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
+
+    if str(resource.user_id) != str(user_id):
+        # 非擁有者 → 軟隱藏（idempotent）
+        existing_hide = db.query(UserHiddenResource).filter_by(
+            user_id=uuid.UUID(user_id), resource_id=resource.id
+        ).first()
+        if not existing_hide:
+            db.add(UserHiddenResource(
+                user_id=uuid.UUID(user_id), resource_id=resource.id
+            ))
+            db.commit()
+        return {"message": "資源已從您的清單中隱藏"}
 
     rid = resource.id
     subject_id = str(resource.subject_id) if resource.subject_id else None
