@@ -213,16 +213,21 @@ export default function DashboardPage() {
 
 
   const handleAddSubject = useCallback(async (selected: SelectedSubject[]) => {
+    const failures: string[] = [];
     for (const s of selected) {
-      await subjectService.addSubject({
-        subjectId: s.subjectId,
-        subjectName: s.subjectName,
-        examDate: s.examDate,
-        resultDate: s.resultDate,
-        selfAssessment: s.selfAssessment,
-      });
+      try {
+        await subjectService.addSubject({
+          subjectId: s.subjectId,
+          subjectName: s.subjectName,
+          examDate: s.examDate,
+          resultDate: s.resultDate,
+          selfAssessment: s.selfAssessment,
+        });
+      } catch (e: any) {
+        const msg = e?.response?.data?.detail?.message || e?.response?.data?.message || e?.message || '未知錯誤';
+        failures.push(`${s.subjectName}：${msg}`);
+      }
     }
-    // Reload subjects from backend
     try {
       const res = await subjectService.getUserSubjects();
       setSubjects(res.subjects);
@@ -230,7 +235,12 @@ export default function DashboardPage() {
         setActiveSubjectId(res.subjects[0].id);
       }
     } catch { /* silent */ }
-    setShowAddSubject(false);
+    if (failures.length > 0) {
+      alert(`部分科目新增失敗：\n\n${failures.join('\n')}`);
+    }
+    if (failures.length < selected.length) {
+      setShowAddSubject(false);
+    }
   }, [activeSubjectId]);
 
   if (authLoading || !isAuthenticated) {
@@ -319,13 +329,12 @@ export default function DashboardPage() {
       )}
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">早安，{user?.displayName || '學習者'}！</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <p className="text-slate-500">今天想從哪裡開始複習？</p>
-              {/* Task Mode Badge */}
+        {/* Header — Row 1: Greeting + Mode Badge / StreakCounter */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 truncate">早安，{user?.displayName || '學習者'}！</h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-sm text-slate-500">今天想從哪裡開始複習？</p>
               {data.stats.examCountdown && (() => {
                 const days = data.stats.examCountdown.daysRemaining;
                 const mode = days < 14 ? { icon: '🔥', label: 'Sprint 衝刺', color: 'bg-rose-50 text-rose-700 border-rose-200', desc: '距離考試不到 14 天，系統已自動切換至衝刺狀態。', strategy: '重點加強曾答錯的高頻題目與未觸及的盲點。', weights: '未考知識 40% / 曾錯盲點 50% / 其他 10%' }
@@ -355,35 +364,26 @@ export default function DashboardPage() {
               })()}
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            {subjects.length > 0 && (
-              <SubjectSwitcher
-                subjects={subjects}
-                activeSubjectId={activeSubjectId}
-                onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-                onAddSubject={() => setShowAddSubject(true)}
-                variant="compact"
-              />
-            )}
-            <div className="flex flex-col items-end gap-1">
-              <StreakCounter streak={data.streak} />
-              {data.streak.freezesRemaining > 0 && (
-                <span className="text-xs text-blue-500">❄️ {data.streak.freezesRemaining} 次補救機會</span>
-              )}
-              {data.streak.freezeConsumedToday && (
-                <span className="text-xs text-slate-500 italic">休息也是學習的一部分，歡迎回來！</span>
-              )}
-            </div>
-            {data.stats.examCountdown && (
-              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-                <Clock className="h-5 w-5 text-amber-500" />
-                <span className="text-sm font-medium text-slate-700">
-                  距離 {data.stats.examCountdown.examName} 還有 <strong className="text-amber-600">{data.stats.examCountdown.daysRemaining}</strong> 天
-                </span>
-              </div>
+          <div className="flex items-center gap-2 shrink-0" title={data.streak.freezeConsumedToday ? '休息也是學習的一部分，歡迎回來！' : undefined}>
+            <StreakCounter streak={data.streak} />
+            {data.streak.freezesRemaining > 0 && (
+              <span className="text-xs text-blue-500 whitespace-nowrap">❄️ {data.streak.freezesRemaining}</span>
             )}
           </div>
         </div>
+
+        {/* Header — Row 2: Subject Switcher (full width tab bar) */}
+        {subjects.length > 0 && (
+          <div className="mb-6">
+            <SubjectSwitcher
+              subjects={subjects}
+              activeSubjectId={activeSubjectId}
+              onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+              onAddSubject={() => setShowAddSubject(true)}
+              variant="compact"
+            />
+          </div>
+        )}
 
         {/* Ultra: Co-study counter — requires backend /community/online-count API */}
 
