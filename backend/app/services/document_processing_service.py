@@ -1236,6 +1236,7 @@ class DocumentProcessingService:
 
             chunk = ResourceChunk(
                 resource_id=resource.id, node_id=node_id,
+                tenant_id=resource.tenant_id,
                 chunk_index=cd["chunk_index"], content=content_text,
                 token_count=cd["token_count"],
                 source_page_start=page_start,

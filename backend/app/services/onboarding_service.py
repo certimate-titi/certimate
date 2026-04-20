@@ -197,12 +197,12 @@ class OnboardingService:
             self.db.add(node)
 
         # 為 seed 資源建立 resource_chunks（供知識庫 accordion 展開顯示）
-        self._create_seed_chunks(resource.id, exam_subject_id)
+        self._create_seed_chunks(resource.id, exam_subject_id, resource.tenant_id)
 
         logger.info("Auto-created exam bank resource for subject %s (%d questions)",
                      subject.name, subject.available_questions)
 
-    def _create_seed_chunks(self, resource_id: uuid.UUID, exam_subject_id: uuid.UUID) -> None:
+    def _create_seed_chunks(self, resource_id: uuid.UUID, exam_subject_id: uuid.UUID, tenant_id: uuid.UUID | None = None) -> None:
         """從考古題 questions 建立 resource_chunks，按 historical_exam 分群。
 
         每個 chunk = 一份考卷（historical_exam），內容為格式化的考題列表。
@@ -282,6 +282,7 @@ class OnboardingService:
 
             chunk = ResourceChunk(
                 resource_id=resource_id,
+                tenant_id=tenant_id,
                 chunk_index=i,
                 content=content,
                 token_count=len(content),

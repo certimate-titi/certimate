@@ -258,3 +258,36 @@ Feature: 資源上傳與隱性版權約定
       When _process_resource_background 建立新的 _SessionLocal
       Then 背景任務第一步應呼叫 set_rls_tenant(db, tenant_id) 寫入正確 GUC
       And 背景任務查詢 resources 不應因前一個連線的空字串 GUC 失敗
+
+  @added-by:cto
+  Rule: ResourceChunk 建立時必須明確設定 tenant_id（RLS 防護）
+
+    Example: 背景處理產出的 chunks 必須繼承 Resource.tenant_id
+      Given 使用者 "free@example.com" 成功上傳 PDF "notes.pdf"，科目為 1
+      When 背景任務 DocumentProcessingService.process_resource 產出 chunks
+      Then 每個 ResourceChunk 的 tenant_id 應等於 Resource.tenant_id
+      And INSERT resource_chunks 不應因 tenant_id NULL 違反 RLS policy
+
+  @added-by:cto
+  Rule: 上傳時同步預檢 PDF（可解析性 + 版權關鍵字）
+
+    Example: 上傳損毀 PDF 應立即回傳 400
+      When 使用者 "free@example.com" 上傳損毀的 PDF 檔案「corrupted.pdf」
+      Then 操作失敗狀態碼為 400
+      And 錯誤訊息應包含「PDF 檔案損毀或無法解析」
+      And 不應建立 Resource 紀錄
+
+    Example: 上傳含版權關鍵字 PDF 應立即回傳 400
+      When 使用者 "free@example.com" 上傳前兩頁含「版權所有」的 PDF
+      Then 操作失敗狀態碼為 400
+      And 錯誤訊息應包含「版權限制關鍵字」
+      And 不應建立 Resource 紀錄
+
+  @added-by:cto
+  Rule: 資源列表須回傳 error_message 供前端顯示具體失敗原因
+
+    Example: FAILED 資源的列表回應包含 error_message
+      Given 使用者 "free@example.com" 有一筆 status=FAILED 的資源，error_message 為「版權限制關鍵字」
+      When 使用者 "free@example.com" 查詢資源列表
+      Then 操作成功
+      And 該筆資源的 error_message 欄位應為「版權限制關鍵字」
