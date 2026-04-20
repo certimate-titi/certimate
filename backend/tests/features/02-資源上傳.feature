@@ -237,3 +237,24 @@ Feature: 資源上傳與隱性版權約定
       Given 使用者 "ultra@example.com" 已初始化分片上傳任務，總共 60 片
       When 使用者 "ultra@example.com" 上傳第 0 片（大小為 1024 bytes）
       Then 操作成功
+
+  # ─────────────────────────────────────────────
+  # PRD-033：雲端環境 GCS 儲存與 RLS 隔離
+  # ─────────────────────────────────────────────
+  @prd-033 @wip
+  Rule: 雲端 GCS 儲存 key 需使用 uploads/ 前綴
+
+    Example: 上傳檔案至 GCS 使用統一前綴
+      Given 環境變數 STORAGE_BACKEND=gcs, GCS_BUCKET=certimate-titi-data
+      When 使用者 "cloud@example.com" 上傳 PDF "sample.pdf"
+      Then GCS 物件 key 應為 "uploads/{user_id}/{resource_id}/sample.pdf"
+      And resources.file_path 應記錄完整 GCS key
+
+  @prd-033 @wip
+  Rule: 背景解析任務必須重新套用 RLS tenant_id
+
+    Example: BackgroundTasks 新 Session 不繼承連線池汙染的 GUC
+      Given 使用者 "cloud@example.com" 觸發資源上傳
+      When _process_resource_background 建立新的 _SessionLocal
+      Then 背景任務第一步應呼叫 set_rls_tenant(db, tenant_id) 寫入正確 GUC
+      And 背景任務查詢 resources 不應因前一個連線的空字串 GUC 失敗

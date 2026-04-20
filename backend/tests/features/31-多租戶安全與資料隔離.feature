@@ -121,3 +121,25 @@ Feature: 多租戶安全與資料隔離
       Given 測試 Scenario 已建立 5 筆 resources（tenant_id = test_tenant）
       When after_scenario 鉤子執行 TRUNCATE
       Then resources 表中不應有任何 tenant_id = test_tenant 的資料殘留
+
+  # ─────────────────────────────────────────────
+  # PRD-033：多租戶 tenant_id 補正與 RLS 容錯（Migration 061）
+  # ─────────────────────────────────────────────
+  @prd-033 @wip
+  Rule: 既有資料的 tenant_id NULL 值必須回填
+
+    Example: Migration 061 回填 5 張表的 NULL tenant_id
+      Given 資料表 resources, subjects, user_subjects, exams, questions 於歷史資料中存在 tenant_id IS NULL 的列
+      When Alembic upgrade 到 revision 061
+      Then 5 張表中不應再有 tenant_id IS NULL 的列
+      And 所有被回填的列的 tenant_id 應為 PUBLIC_B2C_TENANT_ID ("00000000-0000-0000-0000-000000b2cb2c")
+      And 5 張表的 tenant_id 欄位應設為 NOT NULL DEFAULT PUBLIC_B2C_TENANT_ID
+
+  @prd-033 @wip
+  Rule: RLS policy 必須容錯 app.current_tenant_id GUC 為空字串
+
+    Example: 未設定 GUC 時 RLS 不應拋出 UUID cast 錯誤
+      Given PostgreSQL session 未呼叫 SET app.current_tenant_id
+      When 對 resources 表執行 SELECT
+      Then 查詢不應拋出 "invalid input syntax for type uuid" 錯誤
+      And RLS 應視為 tenant_id = PUBLIC_B2C_TENANT_ID

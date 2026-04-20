@@ -337,3 +337,27 @@ Feature: 首次登入引導與學習歷程建立 (Onboarding)
       When 使用者 "alice@example.com" 查看該科目的知識心智圖
       Then 知識節點應只包含初級考古題（fundamentals + application）
       And 知識節點不應包含中級考古題（大數據、機器學習、技術規劃）
+  # ─────────────────────────────────────────────
+  # PRD-033：自訂考科必須嚴格隔離到建立者
+  # ─────────────────────────────────────────────
+  @prd-033 @wip
+  Rule: 自訂備考科目 owner_user_id 與 scope 正確設置
+
+    Example: 建立自訂考科時寫入 owner_user_id 並標記 scope=personal
+      Given 使用者 "u1@example.com" 已完成引導
+      When 使用者透過 SubjectPickerModal 建立自訂考科 "我的化學複習"
+      Then 新 subject 的 owner_user_id 應為 u1 的 UUID
+      And 新 subject 的 scope 應為 "personal"
+
+    Example: 其他使用者看不到別人的自訂考科
+      Given 使用者 "u1@example.com" 已建立自訂考科 "我的化學複習"
+      When 使用者 "u2@example.com" 呼叫 GET /api/v1/subjects/available
+      Then 回應清單不應包含 "我的化學複習"
+      And 回應清單只應包含 scope=platform AND owner_user_id IS NULL 的科目
+
+    Example: 使用者可於帳號設定檢視並刪除自己的自訂考科
+      Given 使用者 "u1@example.com" 已建立 2 個自訂考科
+      When 呼叫 GET /api/v1/subjects/mine
+      Then 應回應 2 筆 subjects（皆為 u1 擁有）
+      When 呼叫 DELETE /api/v1/subjects/{subject_id}
+      Then 操作成功

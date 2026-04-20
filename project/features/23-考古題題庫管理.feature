@@ -102,3 +102,29 @@ Feature: 考古題題庫管理
       Given 題庫中有一道 AI 生成題（historical_source 為空）
       When 查詢該題目的信度標示
       Then 信度應為 "yellow"（🟡 AI 模擬題）
+  # ─────────────────────────────────────────────
+  # PRD-033：平台預設資源綁定（subject_default_resources）
+  # ─────────────────────────────────────────────
+  @prd-033 @wip
+  Rule: 管理員可綁定 platform 資源為考科預設資源
+
+    Example: 管理員綁定預設資源
+      Given 使用者 "admin@example.com" 角色為 "super_admin"
+      And 存在 scope=platform 的資源 R_PLATFORM
+      And 存在考科 S1 "AI 應用規劃師（初級）"
+      When 呼叫 POST /api/v1/admin/subjects/{S1}/default-resources body={"resource_id": "R_PLATFORM"}
+      Then 操作成功
+      And subject_default_resources 應新增一筆 (subject_id=S1, resource_id=R_PLATFORM)
+
+    Example: 使用者選該考科後自動看到預設資源
+      Given 考科 S1 已綁定預設資源 R_PLATFORM
+      And 使用者 "u1@example.com" 的備考科目包含 S1
+      When 呼叫 GET /api/v1/resources
+      Then 回應應包含 R_PLATFORM
+      And R_PLATFORM 的 badge 應為 "official_default"
+      And R_PLATFORM 的 is_readonly 應為 true
+
+    Example: 管理員解除綁定
+      When 呼叫 DELETE /api/v1/admin/subjects/{S1}/default-resources/{R_PLATFORM}
+      Then 操作成功
+      And 使用者 "u1@example.com" 的 GET /api/v1/resources 不再包含 R_PLATFORM

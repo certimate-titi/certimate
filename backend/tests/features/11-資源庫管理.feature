@@ -61,3 +61,43 @@ Feature: 資源庫管理
     Example: 刪除 FAILED 資源成功
       When 使用者 "alice@example.com" 刪除資源 3
       Then 操作成功
+
+  # ─────────────────────────────────────────────
+  # PRD-033：多 scope 資源合併 + Ultra 分享給 EDU
+  # ─────────────────────────────────────────────
+  @prd-033 @wip
+  Rule: GET /resources 需合併四種 scope 並附 badge
+
+    Example: 使用者看到 personal + platform 預設 + institution + shared 四類
+      Given 使用者 "u1@example.com" 有 2 個 personal 資源
+      And 使用者的備考科目 "AI 應用規劃師（初級）" 綁定了 1 個 platform 預設資源
+      And 使用者屬於機構 I1，機構有 1 個 institution 資源
+      And Ultra 使用者 "ultra@example.com" 分享了 1 個資源給機構 I1 (scope=shared)
+      When 使用者 "u1@example.com" 呼叫 GET /api/v1/resources
+      Then 回應應包含 5 筆資源
+      And badge 欄位應分別為 "personal"×2, "official_default"×1, "institution"×1, "edu_shared"×1
+      And platform 與 shared 資源的 is_readonly 應為 true
+
+  @prd-033 @wip
+  Rule: Ultra 使用者可分享個人資源給特定 EDU 機構
+
+    Example: Ultra 分享資源給目標機構
+      Given 使用者 "ultra@example.com" 訂閱為 ULTRA_1599
+      And 使用者擁有 personal 資源 R1
+      When 呼叫 POST /api/v1/resources/{R1}/share-to-institution body={"institution_id": "I1"}
+      Then 操作成功
+      And 資源 R1 的 scope 應變為 "shared"
+      And 資源 R1 的 target_institution_id 應為 "I1"
+
+    Example: 非 Ultra 使用者無法分享
+      Given 使用者 "pro@example.com" 訂閱為 PRO_199
+      When 呼叫 POST /api/v1/resources/{R1}/share-to-institution
+      Then 應回應 403
+      And 錯誤訊息應包含 "僅 ULTRA 訂閱可分享資源"
+
+    Example: Ultra 撤回分享
+      Given 資源 R1 目前 scope=shared, target_institution_id=I1
+      When 呼叫 DELETE /api/v1/resources/{R1}/share
+      Then 操作成功
+      And 資源 R1 的 scope 應還原為 "personal"
+      And 資源 R1 的 target_institution_id 應為 NULL
