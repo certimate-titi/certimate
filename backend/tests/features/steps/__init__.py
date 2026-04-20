@@ -4,6 +4,12 @@ if "__name__" not in globals():
 if "__package__" not in globals():
     __package__ = "tests.features.steps"
 
+# Subject Fork — PRD-034
+from .subject_fork.aggregate_given import platform_subject  # noqa: F401
+from .subject_fork.commands import api_calls  # noqa: F401
+from .subject_fork.aggregate_then import db_assertions  # noqa: F401
+from .subject_fork.readmodel_then import response_body  # noqa: F401
+
 # Common Then
 from .common_then import success  # noqa: F401
 from .common_then import failure  # noqa: F401

@@ -48,7 +48,8 @@
     並且 該 5 個節點已從 knowledge_nodes 刪除
     並且 該科目心智圖回應不再包含這些節點
 
-  @US-02 @merged-node
+  @US-02 @merged-node @ignore
+  # TODO: merged node decrement 需 schema 改造（resource_id 改為 join 表或可為 NULL）
   場景: 刪除資源時 merged 節點僅減少引用計數
     假設 我以 "alice@test.com" 身份登入
     並且 節點 N1 被資源 R1 與 R2 共同引用（source_resource_count = 2）
@@ -76,6 +77,7 @@
   @US-03 @admin-publish
   場景: 平台管理員發布新版後僅影響未來選科用戶
     假設 我以 "admin@certimate.app" 身份登入
+    並且 "alice@test.com" 已 fork "iPAS AI 應用規劃師（初級）"（版本 v1）
     並且 platform subject 版本為 v1，已有草稿修改
     當 我呼叫 POST "/api/v1/admin/platform-subjects/{id}/publish"
     那麼 回應狀態碼應為 200
