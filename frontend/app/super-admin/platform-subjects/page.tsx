@@ -5,7 +5,7 @@ import { Save, Rocket, Undo2, RefreshCw } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import {
   platformSubjectAdminService,
-  type PlatformSubjectVersion,
+  type PlatformSubjectVersionInfo,
 } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 
@@ -29,7 +29,7 @@ export default function PlatformSubjectsAdminPage() {
   const [selectedId, setSelectedId] = useState('');
   const [platformResources, setPlatformResources] = useState<Resource[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
-  const [versions, setVersions] = useState<PlatformSubjectVersion[]>([]);
+  const [versionInfo, setVersionInfo] = useState<PlatformSubjectVersionInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ export default function PlatformSubjectsAdminPage() {
   const loadVersions = async (subjectId: string) => {
     try {
       const res = await platformSubjectAdminService.listVersions(subjectId);
-      setVersions(res.versions || []);
+      setVersionInfo(res);
     } catch (e: unknown) {
       setMsg(e instanceof Error ? e.message : '載入版本失敗');
     }
@@ -226,24 +226,17 @@ export default function PlatformSubjectsAdminPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h2 className="font-semibold text-slate-900 mb-3">版本歷史</h2>
-            {versions.length === 0 ? (
-              <p className="text-sm text-slate-400">尚無版本紀錄</p>
+            <h2 className="font-semibold text-slate-900 mb-3">目前版本</h2>
+            {!versionInfo ? (
+              <p className="text-sm text-slate-400">載入中…</p>
             ) : (
-              <div className="space-y-2">
-                {versions.map((v) => (
-                  <div
-                    key={v.version}
-                    className="flex items-center justify-between p-3 rounded-lg bg-slate-50 text-sm"
-                  >
-                    <span className="font-medium">v{v.version}</span>
-                    <span className="text-slate-500">
-                      {v.published_at
-                        ? new Date(v.published_at).toLocaleString()
-                        : '未發布'}
-                    </span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 text-sm">
+                <span className="font-medium">v{versionInfo.current_version}</span>
+                <span className="text-slate-500">
+                  {versionInfo.published_at
+                    ? `已發布：${new Date(versionInfo.published_at).toLocaleString()}`
+                    : '尚未發布'}
+                </span>
               </div>
             )}
           </div>

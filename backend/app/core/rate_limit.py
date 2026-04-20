@@ -286,6 +286,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # 未啟用或豁免路徑 → 直接通過
         if not _config.enabled or request.url.path in _EXEMPT_PATHS:
             return await call_next(request)
+        # CORS preflight (OPTIONS) 不應計入限流 — 瀏覽器會為每個跨域請求自動發送
+        if request.method == "OPTIONS":
+            return await call_next(request)
 
         tenant_key, limit = _extract_tenant_info(request)
         redis_b, memory_b = _get_backends()

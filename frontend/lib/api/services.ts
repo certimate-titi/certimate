@@ -1544,8 +1544,9 @@ export const costMonitorService = {
 // PRD-034 — Platform Subject Fork / Admin
 // ===========================
 
-export interface PlatformSubjectVersion {
-  version: number;
+export interface PlatformSubjectVersionInfo {
+  subject_id: string;
+  current_version: number;
   published_at: string | null;
 }
 
@@ -1571,7 +1572,7 @@ export const platformSubjectAdminService = {
     return apiClient.post(`/admin/platform-subjects/${subjectId}/rollback`, {});
   },
 
-  async listVersions(subjectId: string): Promise<{ versions: PlatformSubjectVersion[] }> {
+  async listVersions(subjectId: string): Promise<PlatformSubjectVersionInfo> {
     return apiClient.get(`/admin/platform-subjects/${subjectId}/versions`);
   },
 };
