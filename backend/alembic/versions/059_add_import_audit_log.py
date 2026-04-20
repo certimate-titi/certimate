@@ -36,7 +36,7 @@ def upgrade() -> None:
         'import_audit_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, server_default=sa.text('gen_random_uuid()')),
         sa.Column('import_task_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column('action', sa.Enum(
+        sa.Column('action', postgresql.ENUM(
             'task_created', 'task_started', 'extraction_started', 'extraction_complete',
             'validation_started', 'validation_complete', 'import_started', 'import_complete',
             'quality_gates_passed', 'quality_gates_failed', 'manual_review_required',

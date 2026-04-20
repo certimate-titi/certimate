@@ -37,7 +37,7 @@ def upgrade() -> None:
         sa.Column('category_code', sa.String(100), nullable=False),
         sa.Column('subject_code', sa.String(100), nullable=False),
         sa.Column('exam_name', sa.String(255), nullable=True),
-        sa.Column('status', sa.Enum('pending', 'processing', 'validating', 'importing', 'completed', 'failed', 'cancelled', name='import_task_status', create_type=False), nullable=False, server_default='pending'),
+        sa.Column('status', postgresql.ENUM('pending', 'processing', 'validating', 'importing', 'completed', 'failed', 'cancelled', name='import_task_status', create_type=False), nullable=False, server_default='pending'),
         sa.Column('total_questions', sa.Integer(), nullable=True),
         sa.Column('questions_processed', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('questions_valid', sa.Integer(), nullable=False, server_default='0'),
