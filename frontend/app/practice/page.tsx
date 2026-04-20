@@ -160,19 +160,25 @@ function PracticePage() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
       setSelectedAnswer(null);
       setFeedback(null);
       setPhase('answering');
     } else {
-      // All questions done — refresh mastery state then return to node selection
+      // All questions done — await refresh mastery state BEFORE switching phase
+      // so the node list renders fresh data instead of stale "未測" tags.
+      setLoadingNodes(true);
       if (activeSubjectId) {
-        knowledgeService.getMap(activeSubjectId).then((res: Record<string, unknown>) => {
+        try {
+          const res = await knowledgeService.getMap(activeSubjectId) as Record<string, unknown>;
           setNodes((res.nodes as ApiNode[]) || []);
-        }).catch(() => {});
+        } catch {
+          // leave stale nodes on error — user can refresh manually
+        }
       }
+      setLoadingNodes(false);
       setPhase('select-node');
     }
   };
