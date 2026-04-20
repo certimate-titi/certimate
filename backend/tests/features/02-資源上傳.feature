@@ -311,15 +311,19 @@ Feature: 資源上傳與隱性版權約定
       And 該資源的 error_message 應以「【轉檔失敗】」開頭
 
   @added-by:cto
-  Rule: 資源列表只回傳真實 Resource 紀錄，不混入考古題虛擬項
+  Rule: 刪除考古題 Resource 後，重開知識地圖頁不得自動重建
 
-    考古題（historical_exam）屬於系統預載題庫，不是「使用者的資源」，
-    故不應出現在 GET /resources 列表（即使帶 subject_id 亦然）。考古題相關功能
-    走獨立端點：
-    - `GET /resources/historical/{id}/markdown` 渲染單場考古題內容
-    - 考古題出題走 exam_service.submit_config（以 exam_subject_codes 對映）
+    使用者刪除考古題題庫 Resource（type=markdown, name="{科目}考古題題庫"）後，
+    重新進入該科目的知識地圖頁面時，系統不得因查無 Resource 而自動重建一份。
+    考古題 Resource 的建立僅發生於明確的 onboarding 流程。
 
-    背景：2026-04-20 用戶反映刪除資源列表中的 historical_exam 項後又「跑回來」。
-    根因：list_resources 將 subject_default_resources 以虛擬 id (hist:xxx) 拼入
-    回傳，點刪除呼叫 DELETE /resources/hist:xxx 404，重整又由後端拼回。
-    解法：移除虛擬合併，列表只反映真實 Resource 表內容。
+    背景：2026-04-20 用戶反映刪除考古題題庫後，資源列表又出現同內容項目。
+    根因：knowledge_nav_service.get_nodes_by_subject() 每次都呼叫
+    _ensure_exam_bank_resource(sid) 並 commit，會在 Resource 不存在時用
+    新 UUID 重建，對使用者呈現為「刪除無效」。雲端 log 顯示同科目短時間內
+    多筆不同 resource_id 的 INSERT。
+    解法：移除 get_nodes_by_subject 中的 _ensure_exam_bank_resource 呼叫；
+    _ensure_exam_bank_resource 仍保留給 onboarding 明確呼叫。
+
+    另：GET /resources 亦不再將 subject_default_resources 以虛擬 id (hist:xxx)
+    拼入回傳（獨立修正），列表只反映真實 Resource 表內容。
