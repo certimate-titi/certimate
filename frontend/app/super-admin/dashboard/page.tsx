@@ -258,7 +258,7 @@ export default function OperationsDashboard() {
                   </div>
                   <button
                     onClick={() => router.push('/super-admin/moderation')}
-                    className="opacity-0 group-hover:opacity-100 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
                     處理
                   </button>

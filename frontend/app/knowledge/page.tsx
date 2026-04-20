@@ -521,7 +521,7 @@ export default function KnowledgeBasePage() {
                               >
                                 📖 原文
                               </button>
-                              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all shrink-0"><Trash2 className="h-3 w-3" /></button>
+                              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
                             </div>
                           </div>
                           {isExpanded && (
