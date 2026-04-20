@@ -33,14 +33,10 @@ def list_resources(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """列出使用者的所有資源。
-
-    若提供 subject_id，會額外把該科目預載的考古題以虛擬資源（type=historical_exam）形式合併回傳。
-    """
+    """列出使用者的所有資源。"""
     from app.models.resource import Resource
     from app.models.subject_default_resource import SubjectDefaultResource
     from app.models.user import User
-    from app.services.historical_markdown_service import HistoricalMarkdownService
     from sqlalchemy import or_
 
     user = db.query(User).filter_by(id=user_id).first()
@@ -102,26 +98,6 @@ def list_resources(
         }
         for r in resources
     ]
-
-    if subject_id:
-        try:
-            historical = HistoricalMarkdownService(db).list_for_subject(subject_id)
-            for h in historical:
-                items.append({
-                    "id": f"hist:{h['id']}",
-                    "filename": h["name"],
-                    "resource_type": "historical_exam",
-                    "status": "ready",
-                    "subject_id": subject_id,
-                    "file_size_mb": None,
-                    "youtube_url": "",
-                    "created_at": None,
-                    "historical_exam_id": h["id"],
-                    "total_questions": h["total_questions"],
-                    "year": h["year"],
-                })
-        except Exception:
-            pass
 
     return {"resources": items}
 
