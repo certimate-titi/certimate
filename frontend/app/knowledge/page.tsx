@@ -625,11 +625,12 @@ export default function KnowledgeBasePage() {
                         const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
                         setNodes((mapRes.nodes || []) as KnowledgeNode[]);
                         setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
-                      } catch {
-                        setExtractResult('❌ 萃取失敗，請稍後再試');
+                      } catch (err) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        setExtractResult(`❌ 萃取失敗：${msg}`);
                       } finally {
                         setExtracting(false);
-                        setTimeout(() => setExtractResult(null), 5000);
+                        setTimeout(() => setExtractResult(null), 8000);
                       }
                     }}
                     disabled={extracting || !activeSubjectId}

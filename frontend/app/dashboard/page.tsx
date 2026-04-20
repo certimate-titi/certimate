@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'pending' | 'processing' | 'completed' | 'failed'>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calendar state
@@ -164,14 +165,16 @@ export default function DashboardPage() {
       });
     }, 300);
     try {
+      setUploadErrorMessage(null);
       await documentService.upload({ file: files[0], title: files[0].name, subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadStatus('completed');
       setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
-    } catch {
+    } catch (err) {
       clearInterval(progressInterval);
+      setUploadErrorMessage(err instanceof Error ? err.message : String(err));
       setUploadStatus('failed');
     } finally {
       setUploading(false);
@@ -196,6 +199,7 @@ export default function DashboardPage() {
       });
     }, 400);
     try {
+      setUploadErrorMessage(null);
       await documentService.upload({ youtubeUrl: youtubeUrl.trim(), subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -203,8 +207,9 @@ export default function DashboardPage() {
       setYoutubeUrl('');
       setData(await loadDashboardData(activeSubjectId));
       // 上傳成功後不自動消失，讓用戶手動關閉確認
-    } catch {
+    } catch (err) {
       clearInterval(progressInterval);
+      setUploadErrorMessage(err instanceof Error ? err.message : String(err));
       setUploadStatus('failed');
     } finally {
       setUploading(false);
@@ -465,13 +470,18 @@ export default function DashboardPage() {
                 </div>
               )}
               {uploadStatus === 'failed' && (
-                <div className="mb-4 flex items-center justify-between bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                    <p className="text-sm text-rose-800">解析失敗</p>
+                <div className="mb-4 flex items-start justify-between bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <XCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-rose-800">解析失敗</p>
+                      {uploadErrorMessage && (
+                        <p className="text-xs text-rose-700 mt-0.5 break-words whitespace-pre-wrap">{uploadErrorMessage}</p>
+                      )}
+                    </div>
                   </div>
                   <button
-                    onClick={() => { setUploadStatus('idle'); fileInputRef.current?.click(); }}
+                    onClick={() => { setUploadStatus('idle'); setUploadErrorMessage(null); fileInputRef.current?.click(); }}
                     className="flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-800 ml-2 shrink-0"
                   >
                     <RefreshCw className="h-3 w-3" /> 重試
