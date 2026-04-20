@@ -1539,3 +1539,50 @@ export const costMonitorService = {
     return apiClient.post('/admin/cost/budget/override-disable', req);
   },
 };
+
+// ===========================
+// PRD-034 — Platform Subject Fork / Admin
+// ===========================
+
+export interface PlatformSubjectVersion {
+  version: number;
+  published_at: string | null;
+}
+
+export const platformSubjectAdminService = {
+  async updateDraft(
+    subjectId: string,
+    resourceIds: string[],
+  ): Promise<{ subject_id: string; resource_ids: string[] }> {
+    return apiClient.put(`/admin/platform-subjects/${subjectId}/draft`, {
+      resource_ids: resourceIds,
+    });
+  },
+
+  async publish(
+    subjectId: string,
+  ): Promise<{ subject_id: string; version: number; published_at: string }> {
+    return apiClient.post(`/admin/platform-subjects/${subjectId}/publish`, {});
+  },
+
+  async rollback(
+    subjectId: string,
+  ): Promise<{ subject_id: string; version: number; published_at: string | null }> {
+    return apiClient.post(`/admin/platform-subjects/${subjectId}/rollback`, {});
+  },
+
+  async listVersions(subjectId: string): Promise<{ versions: PlatformSubjectVersion[] }> {
+    return apiClient.get(`/admin/platform-subjects/${subjectId}/versions`);
+  },
+};
+
+export const subjectForkService = {
+  async forkFromPlatform(platformSubjectId: string): Promise<{
+    user_subject_id: string;
+    subject_id: string;
+    resources_copied: number;
+    nodes_copied: number;
+  }> {
+    return apiClient.post(`/subjects/${platformSubjectId}/fork-from-platform`, {});
+  },
+};
