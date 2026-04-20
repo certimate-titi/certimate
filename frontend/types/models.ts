@@ -142,6 +142,8 @@ export interface DailyQuest {
   type: 'review' | 'explore' | 'quiz';
   completed: boolean;
   xpReward: number;
+  progress?: number;
+  target?: number;
 }
 
 export interface Achievement {

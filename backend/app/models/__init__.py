@@ -56,6 +56,7 @@ from app.models.tenant import Tenant  # noqa: F401, E402
 from app.models.historical_exam import HistoricalExam  # noqa: F401, E402
 from app.models.syllabus_topic import SyllabusTopic  # noqa: F401, E402
 from app.models.import_task import ImportTask, ImportTaskStatus  # noqa: F401, E402
+from app.models.daily_quest_progress import DailyQuestProgress  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -107,4 +108,5 @@ __all__ = [
     "SyllabusTopic",
     "ImportTask",
     "ImportTaskStatus",
+    "DailyQuestProgress",
 ]

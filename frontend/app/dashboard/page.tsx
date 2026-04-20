@@ -71,12 +71,14 @@ export default function DashboardPage() {
       dashboardService.getDailyQuests().catch(() => ({ quests: [] })),
       dashboardService.getReviewCalendar().catch(() => ({ calendar: [], subject: null, month: null })),
     ]);
-    const quests = (questsRes.quests || []).map((q) => ({
+    const quests = (questsRes.quests || []).map((q: any) => ({
       id: q.id,
       type: (q.type as 'review' | 'explore' | 'quiz') || 'review',
       description: q.title,
       completed: q.status === 'completed',
       xpReward: 0,
+      progress: typeof q.progress === 'number' ? q.progress : undefined,
+      target: typeof q.target === 'number' ? q.target : undefined,
     }));
     const calendar = (calRes.calendar || []).map((c) => ({
       date: c.date,

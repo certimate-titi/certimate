@@ -185,6 +185,14 @@ def submit_exam(
 
         result["settlement"] = settlement_mode
 
+        # Daily quest hook — count exam submission
+        try:
+            from app.services.daily_quest_service import DailyQuestService
+            DailyQuestService(db).record_exam_completed(user_id, exam_id)
+            db.commit()
+        except Exception:
+            pass
+
         # 非同步時回傳 202，同步時回傳 200
         status_code = 202 if settlement_mode == "async" else 200
         return JSONResponse(status_code=status_code, content=result)

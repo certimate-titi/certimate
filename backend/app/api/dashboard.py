@@ -84,13 +84,18 @@ def complete_quest(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """完成每日任務。"""
+    """手動完成每日任務（通常由自動 hook 驅動，此為相容保留）。"""
     from app.models.user import User
+    from app.services.daily_quest_service import DailyQuestService
     user_uuid = uuid.UUID(user_id)
     user = db.query(User).filter_by(id=user_uuid).first()
     if not user:
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
-    return {"message": "任務已完成", "quest_id": quest_id}
+    result = DailyQuestService(db).mark_complete_by_id(user_id, quest_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail={"message": "任務不存在"})
+    db.commit()
+    return {"message": "任務已完成", "quest_id": quest_id, **result}
 
 
 @router.post("/profile/avatar")
@@ -286,10 +291,9 @@ def daily_login(
     user.last_login_at = now
     db.commit()
 
-    quests = [
-        {"id": "q1", "type": "review", "title": "複習 3 個弱點知識節點", "status": "pending"},
-        {"id": "q2", "type": "quiz", "title": "完成一份 15 題測驗", "status": "pending"},
-    ]
+    from app.services.daily_quest_service import DailyQuestService
+    quests = DailyQuestService(db).list_today(user_id)
+    db.commit()
 
     return {
         "ok": True,
@@ -310,32 +314,16 @@ def get_daily_quests(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """取得每日微任務列表（含 badge 資訊）。"""
+    """取得每日微任務列表（真實進度）。"""
     from app.models.user import User
+    from app.services.daily_quest_service import DailyQuestService
     user_uuid = uuid.UUID(user_id)
     user = db.query(User).filter_by(id=user_uuid).first()
     if not user:
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
 
-    quests = [
-        {
-            "id": "q1",
-            "type": "review",
-            "title": "複習 3 個弱點知識節點",
-            "status": "pending",
-            "quest_type": "review",
-            "tooltip": "針對掌握度最低的知識節點進行複習練習",
-        },
-        {
-            "id": "q2",
-            "type": "quiz",
-            "title": "完成一份 15 題測驗",
-            "status": "pending",
-            "quest_type": "quiz",
-            "tooltip": "完成一份模擬考以鞏固學習成果",
-        },
-    ]
-
+    quests = DailyQuestService(db).list_today(user_id)
+    db.commit()
     return {"quests": quests}
 
 

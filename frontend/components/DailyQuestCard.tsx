@@ -46,11 +46,21 @@ export default function DailyQuestCard({ quest }: DailyQuestCardProps) {
         {quest.description}
       </span>
 
-      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-        quest.completed ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-      }`}>
-        +{quest.xpReward} XP
-      </span>
+      {typeof quest.progress === 'number' && typeof quest.target === 'number' && (
+        <span className={`text-[11px] font-semibold tabular-nums px-1.5 py-0.5 rounded ${
+          quest.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+        }`}>
+          {quest.progress}/{quest.target}
+        </span>
+      )}
+
+      {quest.xpReward > 0 && (
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+          quest.completed ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+        }`}>
+          +{quest.xpReward} XP
+        </span>
+      )}
     </motion.div>
   );
 }

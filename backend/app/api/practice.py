@@ -81,6 +81,14 @@ def submit_practice_answer(
             weight=0.5,  # 練習權重 0.5（考試權重 1.0）
         )
         propagation = engine.propagate_upward(user_id, str(q.node_id))
+
+        # Daily quest hook — count distinct practiced nodes
+        try:
+            from app.services.daily_quest_service import DailyQuestService
+            DailyQuestService(db).record_node_practiced(user_id, str(q.node_id))
+        except Exception:
+            pass
+
         db.commit()
 
     return {
