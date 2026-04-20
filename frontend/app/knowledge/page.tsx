@@ -463,7 +463,9 @@ export default function KnowledgeBasePage() {
                                   const statusMsg = doc.status === 'PROCESSING'
                                     ? '⏳ 此資源仍在處理中（PDF 解析 → 文字切塊 → 向量化）。系統每 5 秒自動更新狀態，請稍後再試。'
                                     : doc.status === 'FAILED'
-                                      ? '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。'
+                                      ? (doc.errorMessage
+                                          ? `❌ 處理失敗：${doc.errorMessage}\n\n請刪除後修正問題並重新上傳。`
+                                          : '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。')
                                       : '（尚無可顯示內容）';
 
                                   // Historical exam virtual resource — render markdown from backend

@@ -61,6 +61,7 @@ export interface Document {
   fileSizeBytes: number;
   visionRequired: boolean;
   createdAt: string; // ISO timestamp
+  errorMessage?: string | null;
 }
 
 export interface Exam {

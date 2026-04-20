@@ -125,6 +125,7 @@ export const documentService = {
       fileSizeBytes: ((r.file_size_mb as number) || 0) * 1024 * 1024,
       visionRequired: false,
       createdAt: (r.created_at as string) || new Date().toISOString(),
+      errorMessage: (r.error_message as string | null) || null,
     }));
     return { documents, total: documents.length };
   },

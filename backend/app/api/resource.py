@@ -98,6 +98,7 @@ def list_resources(
             "scope": r.scope.value if hasattr(r.scope, 'value') else r.scope,
             "badge": _badge(r),
             "is_readonly": str(r.user_id) != str(user_id),
+            "error_message": r.error_message,
         }
         for r in resources
     ]
@@ -358,6 +359,42 @@ def upload_resource(
     return result
 
 
+def _presubmit_validate_pdf(pdf_bytes: bytes) -> str | None:
+    """上傳時同步預檢 PDF：可解析性 + 版權關鍵字。
+
+    發現問題回傳錯誤訊息，通過則回傳 None。讓用戶在上傳當下就看到具體原因，
+    而不是上傳成功後到背景處理才失敗。
+    """
+    try:
+        import fitz
+    except Exception:
+        return None  # PyMuPDF 不可用 → 跳過預檢，交背景處理
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    except Exception:
+        return "PDF 檔案損毀或無法解析，請確認檔案完整後重新上傳。"
+    try:
+        page_count = len(doc)
+        if page_count == 0:
+            return "PDF 沒有任何頁面，請重新上傳有效文件。"
+        sample_text = ""
+        for i in range(min(2, page_count)):
+            sample_text += doc[i].get_text() + "\n"
+    finally:
+        doc.close()
+
+    from app.services.document_processing_service import COPYRIGHT_KEYWORDS
+    sample_lower = sample_text.lower()
+    for kw in COPYRIGHT_KEYWORDS:
+        if kw.lower() in sample_lower:
+            return f"偵測到版權限制關鍵字「{kw}」，請確認您擁有此文件的合法使用授權後重新上傳。"
+
+    if not sample_text.strip():
+        return "PDF 前兩頁無法擷取文字（可能為純圖片或掃描檔）。請先 OCR 後再上傳，或升級至 PRO_PLUS 使用圖片辨識功能。"
+
+    return None
+
+
 @router.post("/resources/upload-file")
 async def upload_resource_file(
     file: UploadFile = File(...),
@@ -378,6 +415,12 @@ async def upload_resource_file(
     actual_filename = filename or file.filename or "unnamed"
     file_data = await file.read()
     file_size_mb = len(file_data) / (1024 * 1024)
+
+    # 上傳時同步預檢：解析性 + 版權關鍵字（只對 PDF，發現問題立即回 400）
+    if actual_filename.lower().endswith(".pdf"):
+        precheck_error = _presubmit_validate_pdf(file_data)
+        if precheck_error:
+            raise HTTPException(status_code=400, detail={"message": precheck_error})
 
     # 先做驗證（用原有 service）
     result = service.upload(
