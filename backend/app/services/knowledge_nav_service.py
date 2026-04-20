@@ -186,7 +186,7 @@ class KnowledgeNavService:
                 "source_page": node.source_page_number,
                 "available_questions": node.available_questions or 0,
                 "mastery_rate": int(progress * 100),
-                "color": display_color,
+                "mastery_color": display_color,
                 "status": status,
                 "decay_status": decay_status,
                 "progress_percentage": round(progress, 4),
@@ -435,7 +435,7 @@ class KnowledgeNavService:
         if rate >= 80:
             mastery.color = "green"
         elif rate >= 60:
-            mastery.color = "orange"
+            mastery.color = "yellow"
         else:
             mastery.color = "red"
 
