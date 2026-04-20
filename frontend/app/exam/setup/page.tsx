@@ -391,15 +391,26 @@ function ExamSetupPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <SubjectSwitcher
-        subjects={subjects}
-        activeSubjectId={activeSubjectId}
-        onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-        onAddSubject={() => router.push('/onboarding')}
-        allowAdd={false}
-      />
-      
-      <div className="flex-1 overflow-y-auto py-12">
+      <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between shrink-0 gap-3">
+        <div className="min-w-0">
+          <h1 className="text-base md:text-lg font-bold text-slate-900 truncate">自訂模擬考卷</h1>
+          <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">選擇範圍與難度，AI 將動態生成專屬考題</p>
+        </div>
+        {subjects.length > 0 && (
+          <div className="shrink-0">
+            <SubjectSwitcher
+              subjects={subjects}
+              activeSubjectId={activeSubjectId}
+              onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+              onAddSubject={() => router.push('/onboarding')}
+              allowAdd={false}
+              variant="compact"
+            />
+          </div>
+        )}
+      </header>
+
+      <div className="flex-1 overflow-y-auto py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <ExamLoadingOverlay
             stages={LOADING_STAGES}
@@ -407,8 +418,7 @@ function ExamSetupPage() {
             isVisible={isGenerating}
           />
 
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">自訂模擬考卷</h1>
+      <div className="text-center mb-10">
         <p className="text-slate-600">選擇你想測驗的範圍與難度，AI 將為你動態生成專屬考題。</p>
       </div>
 

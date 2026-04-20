@@ -248,6 +248,7 @@ function PracticePage() {
               }}
               onAddSubject={() => router.push('/onboarding')}
               allowAdd={false}
+              variant="compact"
             />
             <Link
               href="/knowledge"

@@ -324,7 +324,7 @@ export default function KnowledgeBasePage() {
   const quickChips = ['用簡單的話解釋', '給我一個例子', '轉成 1 題小測驗'];
 
   const showSubjectSwitcher = subjects.length > 0;
-  const containerHeightClass = showSubjectSwitcher ? 'h-[calc(100dvh-64px-48px)]' : 'h-[calc(100dvh-64px)]';
+  const containerHeightClass = 'h-[calc(100dvh-64px)]';
 
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
     return (
@@ -336,15 +336,6 @@ export default function KnowledgeBasePage() {
 
   return (
     <>
-      {showSubjectSwitcher && (
-        <SubjectSwitcher
-          subjects={subjects}
-          activeSubjectId={activeSubjectId}
-          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-          onAddSubject={() => router.push('/onboarding')}
-          allowAdd={false}
-        />
-      )}
       <div className={`flex-1 flex flex-col ${containerHeightClass} overflow-hidden bg-slate-50`}>
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
@@ -353,6 +344,16 @@ export default function KnowledgeBasePage() {
             <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
           </div>
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            {showSubjectSwitcher && (
+              <SubjectSwitcher
+                subjects={subjects}
+                activeSubjectId={activeSubjectId}
+                onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+                onAddSubject={() => router.push('/onboarding')}
+                allowAdd={false}
+                variant="compact"
+              />
+            )}
             {/* Mobile drawer toggles */}
             {isMobile && (
               <>

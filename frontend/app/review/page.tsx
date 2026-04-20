@@ -122,13 +122,6 @@ function ReviewBookPage() {
   if (loading || !data) {
     return (
       <div className="flex-1 flex flex-col h-screen bg-slate-50">
-        <SubjectSwitcher
-          subjects={subjects}
-          activeSubjectId={activeSubjectId}
-          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-          onAddSubject={() => router.push('/onboarding')}
-          allowAdd={false}
-        />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -139,13 +132,6 @@ function ReviewBookPage() {
   if (data.wrongQuestions.length === 0) {
     return (
       <div className="flex-1 flex flex-col min-h-screen bg-slate-50">
-        <SubjectSwitcher
-          subjects={subjects}
-          activeSubjectId={activeSubjectId}
-          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-          onAddSubject={() => router.push('/onboarding')}
-          allowAdd={false}
-        />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4"><TiTiLogo size={64} /></div>
@@ -167,24 +153,29 @@ function ReviewBookPage() {
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
-      <SubjectSwitcher
-        subjects={subjects}
-        activeSubjectId={activeSubjectId}
-        onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-        onAddSubject={() => router.push('/onboarding')}
-        allowAdd={false}
-      />
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 transition-colors">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 gap-3">
+        <div className="flex items-center gap-4 min-w-0">
+          <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
             <ChevronLeft className="h-5 w-5" />
           </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">錯題本與 AI 教練</h1>
-            <p className="text-sm text-slate-500">{data.examTitle} • 第 {currentIndex + 1}/{data.wrongQuestions.length} 題</p>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-slate-900 truncate">錯題本與 AI 教練</h1>
+            <p className="text-sm text-slate-500 truncate">{data.examTitle} • 第 {currentIndex + 1}/{data.wrongQuestions.length} 題</p>
           </div>
         </div>
+        {subjects.length > 0 && (
+          <div className="shrink-0">
+            <SubjectSwitcher
+              subjects={subjects}
+              activeSubjectId={activeSubjectId}
+              onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+              onAddSubject={() => router.push('/onboarding')}
+              allowAdd={false}
+              variant="compact"
+            />
+          </div>
+        )}
       </header>
 
       <div className="flex-1 flex overflow-hidden">

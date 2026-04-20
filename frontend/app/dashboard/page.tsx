@@ -306,22 +306,15 @@ export default function DashboardPage() {
       {/* Pending exam result confirmations */}
       <PendingJourneysBanner />
 
-      {/* Subject Switcher */}
-      {subjects.length > 0 ? (
-        <SubjectSwitcher
-          subjects={subjects}
-          activeSubjectId={activeSubjectId}
-          onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-          onAddSubject={() => setShowAddSubject(true)}
-        />
-      ) : isAuthenticated && onboardingCompleted ? (
+      {/* No-subject prompt */}
+      {subjects.length === 0 && isAuthenticated && onboardingCompleted && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
           <div className="container mx-auto max-w-6xl flex items-center justify-between">
             <span className="text-sm text-amber-800">尚未建立備考科目，請先新增科目以開始學習</span>
             <button onClick={() => setShowAddSubject(true)} className="text-sm font-bold text-amber-700 hover:text-amber-900 underline">新增科目</button>
           </div>
         </div>
-      ) : null}
+      )}
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
@@ -360,7 +353,16 @@ export default function DashboardPage() {
               })()}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {subjects.length > 0 && (
+              <SubjectSwitcher
+                subjects={subjects}
+                activeSubjectId={activeSubjectId}
+                onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+                onAddSubject={() => setShowAddSubject(true)}
+                variant="compact"
+              />
+            )}
             <div className="flex flex-col items-end gap-1">
               <StreakCounter streak={data.streak} />
               {data.streak.freezesRemaining > 0 && (
