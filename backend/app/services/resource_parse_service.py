@@ -254,9 +254,18 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
 
     text = getattr(resp, "text", None) or ""
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
     except json.JSONDecodeError as e:
         raise RuntimeError(f"gemini returned non-JSON: {text[:500]}") from e
+    if isinstance(parsed, dict):
+        logger.info(
+            "parse result resource=%s questions=%d scaffolds=%d md_len=%d",
+            resource.id,
+            len(parsed.get("questions") or []),
+            len(parsed.get("scaffolds") or []),
+            len(parsed.get("markdown") or ""),
+        )
+    return parsed
 
 
 # ---------------------------------------------------------------------------
