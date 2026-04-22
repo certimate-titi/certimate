@@ -2,14 +2,21 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { questionCandidateService } from '@/lib/api/services';
 import type { CandidateListResponse, QuestionCandidate } from '@/types/api';
 
+function useResourceIdFromPath(): string {
+  const [id, setId] = useState('');
+  useEffect(() => {
+    const m = window.location.pathname.match(/\/resources\/([^/]+)\/candidates/);
+    if (m) setId(m[1]);
+  }, []);
+  return id;
+}
+
 export default function CandidateApprovalPage() {
-  const params = useParams();
-  const resourceId = params?.id as string;
+  const resourceId = useResourceIdFromPath();
 
   const [data, setData] = useState<CandidateListResponse | null>(null);
   const [loading, setLoading] = useState(true);

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { ArrowLeft, Loader2, Lightbulb, MessageSquare, Target, AlertTriangle, Check } from 'lucide-react';
 import { resourceParseService, scaffoldService } from '@/lib/api/services';
 import type { ParsedResourceResponse, Scaffold, ScaffoldType } from '@/types/api';
@@ -75,9 +74,17 @@ function ScaffoldCard({ s, onSubmitted }: { s: Scaffold; onSubmitted: () => void
   );
 }
 
+function useResourceIdFromPath(): string {
+  const [id, setId] = useState('');
+  useEffect(() => {
+    const m = window.location.pathname.match(/\/resources\/([^/]+)\/parsed/);
+    if (m) setId(m[1]);
+  }, []);
+  return id;
+}
+
 export default function ParsedResourcePage() {
-  const params = useParams();
-  const resourceId = params?.id as string;
+  const resourceId = useResourceIdFromPath();
 
   const [data, setData] = useState<ParsedResourceResponse | null>(null);
   const [loading, setLoading] = useState(true);
