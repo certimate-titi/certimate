@@ -235,10 +235,25 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
         raise RuntimeError("resource has no gcs_path")
     local_pdf = storage.download_to_temp(resource.gcs_path)
 
+    ext = (resource.gcs_path or resource.name or "").lower().rsplit(".", 1)[-1]
+    mime_map = {
+        "pdf": "application/pdf",
+        "md": "text/markdown",
+        "markdown": "text/markdown",
+        "txt": "text/plain",
+        "html": "text/html",
+        "htm": "text/html",
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "webp": "image/webp",
+    }
+    mime = mime_map.get(ext, "application/pdf")
+
     try:
         uploaded = client.files.upload(
             file=local_pdf,
-            config={"mime_type": "application/pdf"},
+            config={"mime_type": mime},
         )
         resp = client.models.generate_content(
             model=model,
