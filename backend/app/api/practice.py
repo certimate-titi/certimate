@@ -46,6 +46,10 @@ def get_node_questions(
                 "figure_description": q.figure_description,
                 "difficulty": q.difficulty.value if hasattr(q.difficulty, "value") else q.difficulty,
                 "type": q.type.value if hasattr(q.type, "value") else q.type,
+                "needs_answer": bool(getattr(q, "needs_answer", False)),
+                "answer_source": getattr(q, "answer_source", None),
+                "confidence": float(q.confidence) if getattr(q, "confidence", None) is not None else None,
+                "never_for_scoring": bool(getattr(q, "never_for_scoring", False)),
             }
             for q in questions
         ],
@@ -104,4 +108,7 @@ def submit_practice_answer(
         "state_updated": True,
         "progress": progress_update,
         "propagation": propagation,
+        "answer_source": getattr(q, "answer_source", None),
+        "confidence": float(q.confidence) if getattr(q, "confidence", None) is not None else None,
+        "never_for_scoring": bool(getattr(q, "never_for_scoring", False)),
     }

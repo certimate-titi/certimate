@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle, Share2 } from 'lucide-react';
-import { resourceLibraryService, LibraryResource, resourceShareService } from '@/lib/api/services';
+import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle, Share2, Sparkles, CheckCircle2, BookOpenCheck } from 'lucide-react';
+import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
+import type { ParseStatusResponse } from '@/types/api';
 
 const BADGE_META: Record<string, { label: string; cls: string }> = {
   official_default: { label: '官方預設', cls: 'bg-green-100 text-green-700' },
@@ -27,6 +28,8 @@ export default function ResourceLibraryPage() {
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [parseStatus, setParseStatus] = useState<Record<string, ParseStatusResponse>>({});
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetch = useCallback(async (kw?: string) => {
     setLoading(true);
@@ -42,6 +45,47 @@ export default function ResourceLibraryPage() {
   }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
+
+  // EPIC-035: poll parse status for in-progress resources
+  useEffect(() => {
+    const active = items.filter((r) =>
+      ['pending', 'processing', 'PENDING', 'CHUNKING', 'EXTRACTING', 'GENERATING'].includes(r.status),
+    );
+    if (active.length === 0) {
+      if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
+      return;
+    }
+    const poll = async () => {
+      const updates: Record<string, ParseStatusResponse> = {};
+      await Promise.all(
+        active.map(async (r) => {
+          try {
+            updates[r.resource_id] = await resourceParseService.getStatus(r.resource_id);
+          } catch { /* 404 when no job yet — ignore */ }
+        }),
+      );
+      setParseStatus((prev) => ({ ...prev, ...updates }));
+      const allDone = Object.values(updates).every(
+        (s) => s.status === 'COMPLETED' || s.status === 'FAILED',
+      );
+      if (allDone && Object.keys(updates).length > 0) fetch(keyword);
+    };
+    poll();
+    pollTimer.current = setInterval(poll, 3000);
+    return () => {
+      if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
+    };
+  }, [items, keyword, fetch]);
+
+  const triggerParse = async (id: string) => {
+    try {
+      await resourceParseService.triggerParse(id);
+      fetch(keyword);
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail?.message || e?.message || '觸發解析失敗';
+      alert(msg);
+    }
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`確定要刪除「${name}」？`)) return;
@@ -161,9 +205,42 @@ export default function ResourceLibraryPage() {
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || 'bg-gray-100 text-gray-600'}`}>
                       {r.status}
                     </span>
+                    {parseStatus[r.resource_id] && parseStatus[r.resource_id].status !== 'COMPLETED' && parseStatus[r.resource_id].status !== 'FAILED' && (
+                      <div className="mt-1 flex items-center gap-1 text-xs text-blue-600">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {parseStatus[r.resource_id].status}
+                      </div>
+                    )}
+                    {parseStatus[r.resource_id]?.status === 'FAILED' && (
+                      <div className="mt-1 text-xs text-red-600" title={parseStatus[r.resource_id].failure_reason || ''}>
+                        解析失敗
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => triggerParse(r.resource_id)}
+                        disabled={['pending', 'processing', 'PENDING', 'CHUNKING', 'EXTRACTING', 'GENERATING'].includes(r.status)}
+                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 rounded hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="EPIC-035 LLM 統一解析"
+                      >
+                        <Sparkles className="w-3 h-3" /> LLM 解析
+                      </button>
+                      <Link
+                        href={`/resources/${r.resource_id}/candidates`}
+                        className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded hover:bg-amber-50"
+                        title="確認抽取的題目"
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> 題目確認
+                      </Link>
+                      <Link
+                        href={`/resources/${r.resource_id}/parsed`}
+                        className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
+                        title="檢視解析內容與學習鷹架"
+                      >
+                        <BookOpenCheck className="w-3 h-3" /> 解析內容
+                      </Link>
                       <button
                         onClick={() => handleReparse(r.resource_id)}
                         disabled={r.status === 'pending' || r.status === 'processing'}

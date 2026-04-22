@@ -329,3 +329,81 @@ export interface AddUserSubjectRequest {
 export interface AddUserSubjectResponse {
   subject: UserSubject;
 }
+
+// ===========================
+// EPIC-035 Resource LLM Parse + Personal Bank + Scaffolds
+// ===========================
+
+export type ParseJobStatus =
+  | 'PENDING'
+  | 'CHUNKING'
+  | 'EXTRACTING'
+  | 'GENERATING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface ParseJobResponse {
+  job_id: string;
+  resource_id: string;
+  status: ParseJobStatus;
+}
+
+export interface ParseStatusResponse {
+  job_id: string;
+  status: ParseJobStatus;
+  started_at: string | null;
+  finished_at: string | null;
+  failure_reason: string | null;
+  detected_content_type: string | null;
+  critical_pages: number[];
+}
+
+export type ScaffoldType = 'takeaway' | 'elaborative' | 'strategy';
+
+export interface Scaffold {
+  id: string;
+  chapter_heading: string | null;
+  type: ScaffoldType;
+  content: string;
+  user_response: string | null;
+}
+
+export interface ParsedResourceResponse {
+  resource_id: string;
+  parsed_markdown: string | null;
+  detected_content_type: string | null;
+  trust_level: string | null;
+  scaffolds: Scaffold[];
+}
+
+export interface QuestionCandidate {
+  id: string;
+  question_text: string;
+  options: string[];
+  ai_inferred_answer: string | null;
+  confidence: number | null;
+  source_page: number | null;
+  tier: 'T1' | 'T2' | 'T3';
+}
+
+export interface CandidateListResponse {
+  t1_count: number;
+  t2: QuestionCandidate[];
+  t3: QuestionCandidate[];
+}
+
+export interface ApproveCandidatesRequest {
+  candidate_ids: string[];
+  approve: boolean;
+}
+
+export interface BlindAnswerResponse {
+  user_answer: string;
+  ai_inferred_answer: string;
+  ai_confidence: number | null;
+  ai_reasoning: string;
+  never_for_scoring: boolean;
+  next_step: 'submit_judgment';
+}
+
+export type InferenceJudgment = 'accept_ai' | 'keep_mine' | 'skip';

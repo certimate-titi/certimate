@@ -14,8 +14,9 @@ import {
   TrendingUp,
   Network,
 } from 'lucide-react';
-import { practiceService, knowledgeService, subjectService } from '@/lib/api/services';
+import { practiceService, knowledgeService, subjectService, blindInferenceService } from '@/lib/api/services';
 import type { PracticeQuestion, PracticeSubmitResponse } from '@/lib/api/services';
+import type { InferenceJudgment } from '@/types/api';
 import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
@@ -71,6 +72,7 @@ function PracticePage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<PracticeSubmitResponse | null>(null);
+  const [judgmentSet, setJudgmentSet] = useState(false);
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
@@ -152,6 +154,7 @@ function PracticePage() {
       const res = await practiceService.submitAnswer(questions[currentIdx].id, selectedAnswer);
       setFeedback(res);
       setPhase('feedback');
+      setJudgmentSet(false);
       setTotalAnswered(prev => prev + 1);
       if (res.is_correct) setCorrectCount(prev => prev + 1);
     } catch {
@@ -426,9 +429,33 @@ function PracticePage() {
                 </span>
               </div>
 
-              <p className="text-sm text-slate-800 leading-relaxed mb-6 whitespace-pre-line">
+              <p className="text-sm text-slate-800 leading-relaxed mb-4 whitespace-pre-line">
                 {currentQuestion.content}
               </p>
+
+              {currentQuestion.figure_urls && currentQuestion.figure_urls.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  {currentQuestion.figure_urls.map((url, i) => {
+                    const src = url.startsWith('http')
+                      ? url
+                      : `${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/v1\/?$/, '')}${url}`;
+                    return (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={currentQuestion.figure_description || `題目附圖 ${i + 1}`}
+                        className="max-w-full rounded-lg border border-slate-200"
+                        loading="lazy"
+                      />
+                    );
+                  })}
+                  {currentQuestion.figure_description && (
+                    <p className="text-xs text-slate-500 italic">
+                      圖說：{currentQuestion.figure_description}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Options */}
               <div className="space-y-2.5">
@@ -554,6 +581,62 @@ function PracticePage() {
                 {feedback.explanation || '本題暫無詳解，若需進一步說明可詢問 AI 教練。'}
               </p>
             </div>
+
+            {/* EPIC-035: AI 推論揭示（僅 ai_inferred 題目顯示） */}
+            {currentQuestion && feedback.answer_source === 'ai_inferred' && (
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-amber-600" />
+                  <h4 className="text-sm font-bold text-amber-800">這是 AI 推論的答案</h4>
+                </div>
+                <div className="text-xs text-amber-700 space-y-1">
+                  <div>
+                    AI 推論：<span className="font-bold">{feedback.correct_answer}</span>
+                    {typeof feedback.confidence === 'number' && (
+                      <span className="ml-2">（信心度 {(feedback.confidence * 100).toFixed(0)}%）</span>
+                    )}
+                  </div>
+                  <p className="text-amber-600 italic">
+                    此題無官方正解，AI 僅提供推論。你可以保留自己的答案或採信 AI。
+                  </p>
+                </div>
+                {!judgmentSet && (
+                  <div className="mt-3 flex gap-2">
+                    {([
+                      { k: 'keep_mine' as InferenceJudgment, label: '保留我的答案' },
+                      { k: 'accept_ai' as InferenceJudgment, label: '採信 AI' },
+                      { k: 'skip' as InferenceJudgment, label: '略過' },
+                    ]).map((b) => (
+                      <button
+                        key={b.k}
+                        onClick={async () => {
+                          try {
+                            await blindInferenceService.submitJudgment(currentQuestion.id, b.k);
+                            setJudgmentSet(true);
+                          } catch (e: any) {
+                            alert(`記錄失敗：${e?.message}`);
+                          }
+                        }}
+                        className="px-3 py-1 text-xs bg-white border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-100"
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {judgmentSet && (
+                  <p className="mt-2 text-xs text-amber-600 font-medium">已記錄你的判定 ✓</p>
+                )}
+              </div>
+            )}
+
+            {/* EPIC-035: never_for_scoring 隔離提示 */}
+            {feedback.never_for_scoring && !feedback.progress && (
+              <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 mb-4 text-xs text-slate-600">
+                <span className="font-semibold">個人題庫隔離：</span>
+                本題為個人題庫題目，作答結果不影響節點掌握度統計。
+              </div>
+            )}
 
             {/* Progress update */}
             {feedback.progress && (

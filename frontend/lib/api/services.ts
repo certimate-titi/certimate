@@ -1449,8 +1449,15 @@ export interface PracticeQuestion {
   option_b: string;
   option_c: string;
   option_d: string;
+  figure_urls?: string[];
+  figure_description?: string | null;
   difficulty: string;
   type: string;
+  // EPIC-035
+  needs_answer?: boolean;
+  answer_source?: string | null;
+  confidence?: number | null;
+  never_for_scoring?: boolean;
 }
 
 export interface PracticeQuestionsResponse {
@@ -1479,6 +1486,10 @@ export interface PracticeSubmitResponse {
     new_progress: number;
     child_count: number;
   }>;
+  // EPIC-035
+  answer_source?: string | null;
+  confidence?: number | null;
+  never_for_scoring?: boolean;
 }
 
 export const practiceService = {
@@ -1586,5 +1597,70 @@ export const subjectForkService = {
     nodes_copied: number;
   }> {
     return apiClient.post(`/subjects/${platformSubjectId}/fork-from-platform`, {});
+  },
+};
+
+// ===========================
+// EPIC-035 Resource LLM Parse + Personal Bank + Scaffolds
+// ===========================
+
+import type {
+  ParseJobResponse,
+  ParseStatusResponse,
+  ParsedResourceResponse,
+  CandidateListResponse,
+  ApproveCandidatesRequest,
+  BlindAnswerResponse,
+  InferenceJudgment,
+} from '@/types/api';
+
+export const resourceParseService = {
+  async triggerParse(resourceId: string): Promise<ParseJobResponse> {
+    return apiClient.post(`/resources/${resourceId}/parse`, {});
+  },
+  async getStatus(resourceId: string): Promise<ParseStatusResponse> {
+    return apiClient.get(`/resources/${resourceId}/parse-status`);
+  },
+  async getParsed(resourceId: string): Promise<ParsedResourceResponse> {
+    return apiClient.get(`/resources/${resourceId}/parsed`);
+  },
+};
+
+export const questionCandidateService = {
+  async list(resourceId: string): Promise<CandidateListResponse> {
+    return apiClient.get(`/resources/${resourceId}/question-candidates`);
+  },
+  async decide(
+    resourceId: string,
+    req: ApproveCandidatesRequest,
+  ): Promise<{ approved: number; rejected: number }> {
+    return apiClient.post(
+      `/resources/${resourceId}/question-candidates/approve`,
+      req,
+    );
+  },
+};
+
+export const scaffoldService = {
+  async submitResponse(scaffoldId: string, content: string): Promise<{ status: string }> {
+    return apiClient.post(`/resource-scaffolds/${scaffoldId}/response`, { content });
+  },
+};
+
+export const blindInferenceService = {
+  async submitBlindAnswer(
+    questionId: string,
+    answer: string,
+  ): Promise<BlindAnswerResponse> {
+    return apiClient.post(`/questions/${questionId}/blind-answer`, { answer });
+  },
+  async submitJudgment(
+    questionId: string,
+    judgment: InferenceJudgment,
+  ): Promise<{ status: string; judgment: string }> {
+    return apiClient.post(`/questions/${questionId}/inference-judgment`, { judgment });
+  },
+  async setConceptNote(questionId: string, note: string): Promise<{ status: string }> {
+    return apiClient.post(`/questions/${questionId}/concept-note`, { note });
   },
 };

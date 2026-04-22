@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Youtube, FileText, Image as ImageIcon, Clock, TrendingUp, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, AlertCircle, Sparkles, Lock, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
-import { dashboardService, documentService, subjectService } from '@/lib/api/services';
+import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import StreakCounter from '@/components/StreakCounter';
@@ -166,12 +166,16 @@ export default function DashboardPage() {
     }, 300);
     try {
       setUploadErrorMessage(null);
-      await documentService.upload({ file: files[0], title: files[0].name, subjectId: activeSubjectId });
+      const uploadRes = await documentService.upload({ file: files[0], title: files[0].name, subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadStatus('completed');
       setData(await loadDashboardData(activeSubjectId));
-      // 上傳成功後不自動消失，讓用戶手動關閉確認
+      // EPIC-035：上傳成功後自動觸發 LLM 解析（非阻塞）
+      const resourceId = uploadRes?.document?.id;
+      if (resourceId) {
+        try { await resourceParseService.triggerParse(resourceId); } catch { /* 忽略配額錯誤，使用者可在資源庫手動觸發 */ }
+      }
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));
@@ -200,13 +204,16 @@ export default function DashboardPage() {
     }, 400);
     try {
       setUploadErrorMessage(null);
-      await documentService.upload({ youtubeUrl: youtubeUrl.trim(), subjectId: activeSubjectId });
+      const uploadRes = await documentService.upload({ youtubeUrl: youtubeUrl.trim(), subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadStatus('completed');
       setYoutubeUrl('');
       setData(await loadDashboardData(activeSubjectId));
-      // 上傳成功後不自動消失，讓用戶手動關閉確認
+      const resourceId = uploadRes?.document?.id;
+      if (resourceId) {
+        try { await resourceParseService.triggerParse(resourceId); } catch { /* noop */ }
+      }
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));
