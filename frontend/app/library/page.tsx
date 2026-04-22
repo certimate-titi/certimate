@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FolderOpen, Network } from 'lucide-react';
 import KnowledgeBasePage from '../knowledge/page';
 import ResourceLibraryPage from '../account/resource-library/page';
+import { EmbedProvider } from '@/lib/embed-context';
 
 type Tab = 'materials' | 'map';
 
@@ -39,12 +40,9 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-slate-900">學習庫</h1>
-          <p className="text-sm text-slate-500 mt-1">素材與知識地圖一站管理</p>
-
-          <div className="mt-6 flex gap-1 border-b border-slate-200 -mb-px">
+      <div className="sticky top-16 z-40 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-1 -mb-px pt-2">
             {TABS.map((t) => {
               const Icon = t.icon;
               const isActive = t.key === tab;
@@ -64,12 +62,13 @@ export default function LibraryPage() {
               );
             })}
           </div>
-
-          <p className="text-xs text-slate-500 mt-3">{active.desc}</p>
+          <p className="text-xs text-slate-500 py-2">{active.desc}</p>
         </div>
       </div>
 
-      <div>{tab === 'materials' ? <ResourceLibraryPage /> : <KnowledgeBasePage />}</div>
+      <EmbedProvider>
+        {tab === 'materials' ? <ResourceLibraryPage /> : <KnowledgeBasePage />}
+      </EmbedProvider>
     </div>
   );
 }

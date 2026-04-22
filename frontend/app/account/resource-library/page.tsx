@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle, Share2, Sparkles, CheckCircle2, BookOpenCheck } from 'lucide-react';
 import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
+import { useIsEmbedded } from '@/lib/embed-context';
 import type { ParseStatusResponse } from '@/types/api';
 
 const BADGE_META: Record<string, { label: string; cls: string }> = {
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ResourceLibraryPage() {
+  const embedded = useIsEmbedded();
   const { isUltra } = useAuth();
   const [items, setItems] = useState<LibraryResource[]>([]);
   const [keyword, setKeyword] = useState('');
@@ -130,12 +132,14 @@ export default function ResourceLibraryPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/account" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <h1 className="text-xl font-bold text-gray-900">我的資源庫</h1>
-      </div>
+      {!embedded && (
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/account" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-xl font-bold text-gray-900">我的資源庫</h1>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1 max-w-sm">

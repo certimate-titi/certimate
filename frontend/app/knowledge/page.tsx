@@ -7,6 +7,7 @@ import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, 
 import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
+import { useIsEmbedded } from '@/lib/embed-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
@@ -19,6 +20,7 @@ interface ChatMessage {
 }
 
 export default function KnowledgeBasePage() {
+  const embedded = useIsEmbedded();
   const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, subscriptionTier } = useAuth();
   const isPro199 = subscriptionTier === 'PRO_199';
   const router = useRouter();
@@ -339,10 +341,12 @@ export default function KnowledgeBasePage() {
       <div className={`flex-1 flex flex-col ${containerHeightClass} overflow-hidden bg-slate-50`}>
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
-          <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">知識庫</h1>
-            <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
-          </div>
+          {!embedded && (
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">知識庫</h1>
+              <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
+            </div>
+          )}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {showSubjectSwitcher && (
               <SubjectSwitcher
