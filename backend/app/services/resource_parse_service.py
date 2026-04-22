@@ -324,6 +324,16 @@ def _persist_parsed(
             s_created += 1
 
     db.flush()
+
+    # 4) 映射 T1 題目到科目知識節點（Voyage cosine similarity）
+    if q_created > 0 and resource.subject_id:
+        try:
+            _map_questions_to_nodes(db, resource)
+        except Exception:
+            logger.warning(
+                "node mapping failed resource=%s", resource.id, exc_info=True
+            )
+
     return ParseOutcome(
         job_id=job.id,
         status=ParseJobStatus.SUCCESS,
@@ -332,6 +342,68 @@ def _persist_parsed(
         scaffolds_created=s_created,
         pages_rendered=pages_rendered,
     )
+
+
+def _map_questions_to_nodes(db: Session, resource: Resource) -> int:
+    """將本次解析的 T1 題目用 Voyage embedding 映射到 subject 的知識節點。"""
+    import math
+
+    from app.services.embedding_service import EmbeddingService
+
+    nodes = db.execute(
+        text(
+            """
+            SELECT id, name, COALESCE(source_text, name)
+            FROM knowledge_nodes WHERE subject_id = :sid
+            """
+        ),
+        {"sid": resource.subject_id},
+    ).fetchall()
+    if not nodes:
+        logger.info("no nodes in subject=%s, skip mapping", resource.subject_id)
+        return 0
+
+    qs = db.execute(
+        text(
+            """
+            SELECT id, content, option_a, option_b, option_c, option_d
+            FROM questions
+            WHERE source_resource_id = :rid AND node_id IS NULL
+            """
+        ),
+        {"rid": resource.id},
+    ).fetchall()
+    if not qs:
+        return 0
+
+    emb = EmbeddingService()
+    node_texts = [f"{r[1]} — {(r[2] or '')[:400]}" for r in nodes]
+    q_texts = [" ".join(str(c or "") for c in r[1:6])[:500] for r in qs]
+    node_embs = emb.embed_texts(node_texts, input_type="document")
+    q_embs = emb.embed_texts(q_texts, input_type="document")
+    node_ids = [r[0] for r in nodes]
+
+    def _cos(a: list, b: list) -> float:
+        dot = sum(x * y for x, y in zip(a, b))
+        na = math.sqrt(sum(x * x for x in a)) or 1.0
+        nb = math.sqrt(sum(x * x for x in b)) or 1.0
+        return dot / (na * nb)
+
+    mapped = 0
+    for qi, qe in enumerate(q_embs):
+        best_i = max(range(len(node_embs)), key=lambda i: _cos(qe, node_embs[i]))
+        db.execute(
+            text("UPDATE questions SET node_id = :nid WHERE id = :qid"),
+            {"nid": node_ids[best_i], "qid": qs[qi][0]},
+        )
+        mapped += 1
+    logger.info(
+        "mapped %d questions to nodes resource=%s nodes=%d",
+        mapped,
+        resource.id,
+        len(nodes),
+    )
+    return mapped
 
 
 def _build_question_row(resource: Resource, q: dict[str, Any]) -> Question:
