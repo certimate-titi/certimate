@@ -215,14 +215,19 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
         or "（fallback）將資源解析為 Output Contract 指定的 JSON。"
     )
     raw_user_prompt = _tget(template, "user_prompt") or ""
-    user_prompt = raw_user_prompt.format(
-        filename=resource.name,
-        source_type=resource.source_type or "user_other",
-        declared_exam_code=resource.exam_code or "",
-    ) if raw_user_prompt else (
-        "請將此 PDF 解析為符合 Output Contract 的 JSON，"
-        f"檔名={resource.name}。"
-    )
+    if raw_user_prompt:
+        user_prompt = raw_user_prompt
+        for var, val in (
+            ("filename", resource.name),
+            ("source_type", resource.source_type or "user_other"),
+            ("declared_exam_code", resource.exam_code or ""),
+        ):
+            user_prompt = user_prompt.replace("{" + var + "}", str(val))
+    else:
+        user_prompt = (
+            "請將此 PDF 解析為符合 Output Contract 的 JSON，"
+            f"檔名={resource.name}。"
+        )
 
     # download PDF locally for upload
     storage = get_storage_service()
