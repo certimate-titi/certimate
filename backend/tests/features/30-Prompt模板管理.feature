@@ -396,3 +396,21 @@ Feature: Prompt 模板管理（僅 super_admin）
   #
   # 內部 API（非 admin，供 AI 服務調用）：
   # | GET    | /api/v1/internal/prompt-templates/{name}           | 依 name 取得生效中 prompt（含 A/B 分流）|
+
+  # ─────────────────────────────────────────────
+  # EPIC-035 K-06：resource_parser_v2 模板（資源 LLM 統一解析）
+  # ─────────────────────────────────────────────
+
+  @epic-035
+  Rule: 後置（回應）- Internal API 應回傳 K-06 resource_parser_v2 模板供資源解析使用
+
+    Example: AI 服務取得 resource_parser_v2 模板
+      Given 系統中有以下 Prompt 模板：
+        | template_id | name               | display_name          | category  | model           | max_tokens | temperature | current_version |
+        | K-06        | resource_parser_v2 | 資源 LLM 統一解析     | knowledge | gemini-2.5-pro  | 32768      | 0.1         | 1               |
+      When Internal API 請求模板 "resource_parser_v2"
+      Then 操作成功
+      And 回應欄位 "name" 應為 "resource_parser_v2"
+      And 回應欄位 "model" 應為 "gemini-2.5-pro"
+      And 回應應包含 system_prompt 欄位
+      And 回應應包含 user_prompt 欄位

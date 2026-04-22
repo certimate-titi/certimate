@@ -129,3 +129,37 @@ Feature: 信心度校準
       Then 題目 101 的題號應帶有綠色底框（confident）
       And 題目 102 的題號應帶有橘色底框（guessing）
       And 題目 103 的題號應為灰色（未作答）
+
+  # ─────────────────────────────────────────────
+  # EPIC-035 M3：盲推論作答（反錨定 anti-anchoring）
+  # ─────────────────────────────────────────────
+
+  @epic-035
+  Rule: 後置（反錨定）- needs_answer 題作答時先不揭曉 AI 推論，提交後才揭曉
+
+    Example: 使用者盲作答後 API 揭曉 AI 推論與推理
+      Given 使用者 "pro@example.com" 有一個 needs_answer 個人題庫題目，AI 推論答案為 "B"、信心度 0.65
+      When 使用者 "pro@example.com" 對該題提交盲作答答案 "A"
+      Then 操作成功
+      And 回應欄位 "user_answer" 應為 "A"
+      And 回應欄位 "ai_inferred_answer" 應為 "B"
+      And 回應欄位 "next_step" 應為 "submit_judgment"
+
+  @epic-035
+  Rule: 後置（判定）- 盲推論揭曉後可記錄「同意自己/同意AI/都不對」三段狀態
+
+    Example: 使用者提交「同意自己」判定後記錄於題目
+      Given 使用者 "pro@example.com" 有一個 needs_answer 個人題庫題目，AI 推論答案為 "B"、信心度 0.65
+      When 使用者 "pro@example.com" 對該題提交推論判定 "agree_self"
+      Then 操作成功
+      And 回應欄位 "judgment" 應為 "agree_self"
+      And DB 中該題 explanation 欄位應包含 "user_judgment:agree_self"
+
+  @epic-035
+  Rule: 前置（守門）- 非 needs_answer 題走盲推論 API 應拒絕
+
+    Example: 一般 T1 題（answer_source=from_source）提交盲作答回 400
+      Given 使用者 "pro@example.com" 有一個 T1 個人題庫題目，正解為 "C"、answer_source=from_source
+      When 使用者 "pro@example.com" 對該題提交盲作答答案 "A"
+      Then 操作失敗狀態碼為 400
+      And 錯誤訊息應包含「此題不屬於 needs_answer」

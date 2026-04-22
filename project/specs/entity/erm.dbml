@@ -513,6 +513,8 @@ Table questions {
   option_d text
   correct_answer varchar(10) [not null]
   explanation text [note: 'AI 生成的詳解（Markdown）']
+  figure_urls "text[]" [not null, default: `'{}'`, note: '題目附圖路徑陣列（爬蟲 PyMuPDF 抽出或 AI 生成）']
+  figure_description text [note: '圖片內容文字描述，供無法顯示圖時 fallback']
   source_citation text [note: '原文溯源引用']
   historical_source varchar(255) [note: '考古題來源：如 "112年第1次金融業務人員"']
   source_type varchar(20) [default: 'historical', note: 'historical / ai_generated']

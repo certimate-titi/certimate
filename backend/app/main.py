@@ -2,10 +2,13 @@
 
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -189,6 +192,15 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"detail": {"message": "必要參數未提供"}},
+    )
+
+# 靜態檔案：考古題圖像（爬蟲 PyMuPDF 抽出），供題目卡渲染
+_hist_dir = Path(__file__).resolve().parent.parent / "data" / "historical_questions"
+if _hist_dir.exists():
+    app.mount(
+        "/static/historical-questions",
+        StaticFiles(directory=str(_hist_dir)),
+        name="historical-questions",
     )
 
 # 註冊 API 路由

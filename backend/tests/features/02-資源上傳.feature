@@ -327,3 +327,50 @@ Feature: 資源上傳與隱性版權約定
 
     另：GET /resources 亦不再將 subject_default_resources 以虛擬 id (hist:xxx)
     拼入回傳（獨立修正），列表只反映真實 Resource 表內容。
+
+  # ─────────────────────────────────────────────
+  # EPIC-035：資源上傳 LLM 統一解析 + 題庫自動抽取
+  # ─────────────────────────────────────────────
+
+  @epic-035
+  Rule: 後置（查詢）- 解析完成後可查詢 parsed markdown 與狀態
+
+    Example: 查詢已完成的解析狀態回傳 success + 內容型別
+      Given 使用者 "pro@example.com" 已上傳資源 "LLM解析講義.pdf"（科目 ID: 1）並完成 LLM 解析，包含 2 個 T1 題、3 個 T2 題、1 個 T3 題
+      When 使用者 "pro@example.com" 查詢該資源解析狀態
+      Then 操作成功
+      And 回應欄位 "status" 應為 "success"
+      And 回應欄位 "detected_content_type" 應為 "mixed"
+
+  @epic-035
+  Rule: 後置（查詢）- 候選題依信度分桶；T1 已直接入個人題庫
+
+    Example: 查詢候選題 T2/T3 分桶正確，T1 回傳 count
+      Given 使用者 "pro@example.com" 已上傳資源 "LLM解析講義.pdf"（科目 ID: 1）並完成 LLM 解析，包含 2 個 T1 題、3 個 T2 題、1 個 T3 題
+      When 使用者 "pro@example.com" 查詢該資源候選題
+      Then 操作成功
+      And 回應欄位 "t1_count" 應為 2
+      And 回應的 "t2" 陣列應有 3 個項目
+      And 回應的 "t3" 陣列應有 1 個項目
+
+  @epic-035
+  Rule: 後置（狀態）- 批次核可候選題寫入個人題庫並標記隔離
+
+    Example: 核可 2 個 T2 候選題後進個人題庫且 never_for_scoring 正確
+      Given 使用者 "pro@example.com" 已上傳資源 "LLM解析講義.pdf"（科目 ID: 1）並完成 LLM 解析，包含 0 個 T1 題、3 個 T2 題、0 個 T3 題
+      When 使用者 "pro@example.com" 批次核可該資源前 2 個 T2 候選題
+      Then 操作成功
+      And 回應欄位 "approved" 應為 2
+      And DB 中 source_resource_id=該資源 的 questions 應有 2 筆
+      And 該 2 筆 questions 的 owner_user_id 應等於 "pro@example.com" 的 user_id
+
+  @epic-035
+  Rule: 前置（配額）- 超過月度 LLM 解析配額觸發 402 附升級引導
+
+    Example: FREE 方案當月已用完 5 次解析，第 6 次觸發回 402
+      Given 使用者 "free@example.com" 已上傳資源 "第六份.pdf"（科目 ID: 1）且有 0 個分塊
+      And 使用者 "free@example.com" 本月已完成 5 次 LLM 資源解析
+      When 使用者 "free@example.com" 觸發該資源的 LLM 解析
+      Then 操作失敗狀態碼為 402
+      And 錯誤訊息應包含「本月解析配額已用完」
+      And 回應應包含升級引導欄位 "upgrade_hint"

@@ -22,6 +22,9 @@ class PlanQuota(Base):
     daily_ai_chats: Mapped[int | None] = mapped_column(Integer)
     monthly_vision_pages: Mapped[int | None] = mapped_column(Integer)
     max_file_size_mb: Mapped[int | None] = mapped_column(Integer)
+    monthly_resource_parse_limit: Mapped[int | None] = mapped_column(
+        Integer, comment="EPIC-035 每月 LLM 解析份數；-1 代表無限"
+    )
     updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id")
     )

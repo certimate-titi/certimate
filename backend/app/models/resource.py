@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     JSON,
+    SmallInteger,
     String,
     Text,
     func,
@@ -115,6 +116,20 @@ class Resource(Base):
     implicit_consent: Mapped[bool] = mapped_column(Boolean, default=True)
     tags: Mapped[list | None] = mapped_column(JSON, server_default="[]")
     error_message: Mapped[str | None] = mapped_column(Text)
+    # EPIC-035
+    parsed_markdown: Mapped[str | None] = mapped_column(Text)
+    parsed_text: Mapped[str | None] = mapped_column(Text)
+    source_type: Mapped[str | None] = mapped_column(
+        String(20), comment="user_official | user_other"
+    )
+    detected_content_type: Mapped[str | None] = mapped_column(
+        String(30), comment="practice_questions | study_material | mixed"
+    )
+    exam_code: Mapped[str | None] = mapped_column(String(50))
+    trust_level: Mapped[int | None] = mapped_column(
+        SmallInteger,
+        comment="1-5；min(user_selected, source_exists, ai_detected)",
+    )
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True,
         comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",

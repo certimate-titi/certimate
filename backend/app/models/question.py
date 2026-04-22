@@ -5,14 +5,16 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid
 
@@ -80,6 +82,13 @@ class Question(Base):
              values_callable=lambda e: [m.value for m in e]),
     )
     explanation: Mapped[str | None] = mapped_column(Text)
+    figure_urls: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default="{}",
+        comment="題目附圖路徑（相對或 URL）",
+    )
+    figure_description: Mapped[str | None] = mapped_column(
+        Text, comment="圖片內容文字描述，供無法顯示圖時 fallback",
+    )
     source_citation: Mapped[str | None] = mapped_column(Text)
     historical_source: Mapped[str | None] = mapped_column(String(255))
     source_type: Mapped[str] = mapped_column(
@@ -98,4 +107,24 @@ class Question(Base):
         UUID(as_uuid=True), nullable=True,
         comment="多租戶隔離鍵（NULL = 歸屬 public_b2c）",
         index=True,
+    )
+    # EPIC-035 fields
+    source_resource_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("resources.id", ondelete="SET NULL"),
+        comment="此題從哪份用戶資源抽出（NULL = 官方考古題或 AI 生成）",
+    )
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        comment="個人題庫擁有者；NOT NULL 代表 scope=personal",
+    )
+    answer_source: Mapped[str | None] = mapped_column(
+        String(20),
+        comment="authoritative | ai_inferred | user_confirmed",
+    )
+    confidence: Mapped[float | None] = mapped_column(Numeric(3, 2))
+    needs_answer: Mapped[bool] = mapped_column(Boolean, default=False)
+    never_for_scoring: Mapped[bool] = mapped_column(Boolean, default=False)
+    user_concept_note: Mapped[str | None] = mapped_column(Text)
+    user_concept_note_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
     )

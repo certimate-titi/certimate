@@ -461,3 +461,17 @@ Feature: 錯題複習與 AI 教練
       Then 節點掌握度應上升（練習權重 0.5）
       And API 應回傳正確答案與詳解
       And API 應回傳更新後的 progress 數值
+
+  # ─────────────────────────────────────────────
+  # EPIC-035 M4：個人題庫 never_for_scoring 隔離
+  # ─────────────────────────────────────────────
+
+  @epic-035
+  Rule: 後置（隔離）- never_for_scoring 題目不更新節點掌握度與 progress
+
+    Example: 提交 never_for_scoring 題的作答 — 回應不含 progress 更新
+      Given 使用者 "pro@example.com" 有一個掛在知識節點上的 never_for_scoring 個人題庫題目，正解為 "B"
+      When 使用者 "pro@example.com" 在練習模式提交該題答案 "B"
+      Then 操作成功
+      And 回應欄位 "is_correct" 應為 true
+      And 回應欄位 "progress" 應為 null

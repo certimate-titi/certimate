@@ -220,6 +220,8 @@ class ExamService:
                     option_d=hq.option_d,
                     correct_answer=hq.correct_answer,
                     explanation=hq.explanation,
+                    figure_urls=list(hq.figure_urls or []),
+                    figure_description=hq.figure_description,
                     bloom_category=hq.bloom_category,
                     historical_source=hq.historical_source,
                     source_type="historical",

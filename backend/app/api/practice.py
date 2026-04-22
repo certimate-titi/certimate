@@ -42,6 +42,8 @@ def get_node_questions(
                 "option_b": q.option_b,
                 "option_c": q.option_c,
                 "option_d": q.option_d,
+                "figure_urls": list(q.figure_urls or []),
+                "figure_description": q.figure_description,
                 "difficulty": q.difficulty.value if hasattr(q.difficulty, "value") else q.difficulty,
                 "type": q.type.value if hasattr(q.type, "value") else q.type,
             }
@@ -69,10 +71,10 @@ def submit_practice_answer(
 
     is_correct = body.selected_answer == q.correct_answer
 
-    # V3：即時更新 progress
+    # V3：即時更新 progress（never_for_scoring 題目排除於統計/進度更新）
     progress_update = None
     propagation = []
-    if q.node_id:
+    if q.node_id and not q.never_for_scoring:
         engine = OrganicProgressEngine(db)
         progress_update = engine.update_on_answer(
             user_id=user_id,

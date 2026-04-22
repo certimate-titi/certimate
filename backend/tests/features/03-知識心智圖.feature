@@ -178,3 +178,25 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       When 系統為該考科新增 3 個新知識節點
       Then 根節點掌握度應因分母變大而下降
       And 前端應顯示 Toast 通知「知識庫已擴充」
+
+  # ─────────────────────────────────────────────
+  # EPIC-035 M7：學習鷹架（Resource Scaffolds）Layer A
+  # ─────────────────────────────────────────────
+
+  @epic-035
+  Rule: 後置（回應）- 已解析資源應附帶 scaffolds（takeaway/elaborative/strategy）
+
+    Example: 取得 parsed 資源時回傳 scaffolds 清單
+      Given 使用者 "pro@example.com" 已上傳資源 "學習筆記.pdf" 並完成解析，附帶 2 筆鷹架（takeaway, elaborative）
+      When 使用者 "pro@example.com" 取得該資源的 parsed 內容
+      Then 操作成功
+      And 回應的 "scaffolds" 陣列應有 2 個項目
+
+  @epic-035
+  Rule: 後置（狀態）- 提交延遲思考題回應應記錄於 scaffold
+
+    Example: 使用者提交思考題 response 後 DB 更新
+      Given 使用者 "pro@example.com" 已上傳資源 "學習筆記.pdf" 並完成解析，附帶 2 筆鷹架（takeaway, elaborative）
+      When 使用者 "pro@example.com" 對該資源第 2 筆鷹架提交作答內容 "我認為 A 與 B 的差異在於..."
+      Then 操作成功
+      And DB 中該鷹架的 user_response 應包含 "A 與 B 的差異"

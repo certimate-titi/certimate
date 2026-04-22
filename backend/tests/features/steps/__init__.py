@@ -107,6 +107,24 @@ from .resource.readmodel_then import resource_file_size  # noqa: F401
 from .resource.readmodel_then import chunk_count  # noqa: F401
 from .resource.readmodel_then import resource_detail_response  # noqa: F401
 
+# Resource Parse — EPIC-035
+from .resource_parse.aggregate_given import parsed_resource  # noqa: F401
+from .resource_parse.aggregate_given import parse_quota_used  # noqa: F401
+from .resource_parse.aggregate_given import personal_question  # noqa: F401
+from .resource_parse.aggregate_given import scaffolded_resource  # noqa: F401
+from .resource_parse.aggregate_given import personal_question_with_node  # noqa: F401
+from .resource_parse.commands import parse_actions  # noqa: F401
+from .resource_parse.commands import blind_answer_actions  # noqa: F401
+from .resource_parse.commands import scaffold_actions  # noqa: F401
+from .resource_parse.commands import practice_submit_actions  # noqa: F401
+from .resource_parse.readmodel_then import parse_response  # noqa: F401
+from .resource_parse.aggregate_then import questions_by_resource  # noqa: F401
+from .resource_parse.aggregate_then import question_explanation  # noqa: F401
+from .resource_parse.aggregate_then import scaffold_response  # noqa: F401
+
+# Common Then — EPIC-035 additions
+from .common_then import status_and_bracket_error  # noqa: F401
+
 # Knowledge Map — aggregate_given
 from .knowledge_map.aggregate_given import knowledge_node_data  # noqa: F401
 from .knowledge_map.aggregate_given import knowledge_map_ui_state  # noqa: F401

@@ -159,6 +159,13 @@ class QuestionImporter:
                     correct_answer=q_data.get("correct_answer", ""),
                     explanation=q_data.get("explanation", ""),
                     bloom_category=q_data.get("bloom_category"),
+                    figure_urls=[
+                        f"/static/historical-questions/{exam_code}/{category_code}/{p}"
+                        if not p.startswith(("/", "http"))
+                        else p
+                        for p in (q_data.get("figure_urls") or [])
+                    ],
+                    figure_description=q_data.get("figure_description") or None,
                     historical_source="moex",
                     source_type="historical",
                     tenant_id=tenant_id,

@@ -59,6 +59,13 @@ from app.models.syllabus_topic import SyllabusTopic  # noqa: F401, E402
 from app.models.import_task import ImportTask, ImportTaskStatus  # noqa: F401, E402
 from app.models.daily_quest_progress import DailyQuestProgress  # noqa: F401, E402
 from app.models.user_hidden_resource import UserHiddenResource  # noqa: F401, E402
+from app.models.resource_parse_job import ResourceParseJob, ParseJobStatus  # noqa: F401, E402
+from app.models.question_candidate import (  # noqa: F401, E402
+    QuestionCandidate,
+    QuestionCandidateTier,
+    QuestionCandidateDecision,
+)
+from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -112,4 +119,11 @@ __all__ = [
     "ImportTaskStatus",
     "DailyQuestProgress",
     "UserHiddenResource",
+    "ResourceParseJob",
+    "ParseJobStatus",
+    "QuestionCandidate",
+    "QuestionCandidateTier",
+    "QuestionCandidateDecision",
+    "ResourceScaffold",
+    "ResourceScaffoldType",
 ]
