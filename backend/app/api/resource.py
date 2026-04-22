@@ -488,6 +488,23 @@ def _process_resource_background(resource_id: str, user_id: str, tenant_id: str 
             logger.error(f"[BG Process] resource={resource_id} failed: {result.get('message')}")
         else:
             logger.info(f"[BG Process] resource={resource_id} completed: {result.get('chunks_created', 0)} chunks")
+
+        # 知識樹處理完成後，順便觸發 LLM 解析（學習鷹架 + T1/T2/T3 候選題）
+        try:
+            from app.models.resource import Resource
+            from app.services.resource_parse_service import create_parse_job, run_parse_job
+            resource = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
+            if resource and resource.gcs_path:
+                job = create_parse_job(db, resource)
+                db.commit()
+                run_parse_job(db, job.id)
+                db.commit()
+                logger.info(f"[BG Parse] resource={resource_id} scaffold+candidate parse done")
+            else:
+                logger.info(f"[BG Parse] resource={resource_id} skipped (no gcs_path)")
+        except Exception as e:
+            logger.exception(f"[BG Parse] resource={resource_id} parse failed: {e}")
+            db.rollback()
     except Exception as e:
         logger.exception(f"[BG Process] resource={resource_id} exception: {e}")
     finally:
