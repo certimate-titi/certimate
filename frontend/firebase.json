@@ -27,8 +27,16 @@
         "destination": "/edu-console/student/detail/index.html"
       },
       {
+        "source": "/resources/*/parsed",
+        "destination": "/resources/detail/parsed/index.html"
+      },
+      {
         "source": "/resources/*/parsed/**",
         "destination": "/resources/detail/parsed/index.html"
+      },
+      {
+        "source": "/resources/*/candidates",
+        "destination": "/resources/detail/candidates/index.html"
       },
       {
         "source": "/resources/*/candidates/**",
