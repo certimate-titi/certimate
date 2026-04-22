@@ -180,25 +180,48 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     from app.services.prompt_template_service import PromptTemplateService
 
     settings = get_settings()
-    api_key = getattr(settings, "gemini_api_key", None) or ""
+    api_key = (
+        getattr(settings, "GEMINI_API_KEY", None)
+        or getattr(settings, "gemini_api_key", None)
+        or ""
+    )
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not configured")
     genai.configure(api_key=api_key)
 
-    # load prompt template 'resource_parser_v2'
-    prompt_service = PromptTemplateService()
+    # load prompt template 'resource_parser_v2' (best-effort; falls back to hardcoded)
+    template = None
     try:
-        template = prompt_service.get_active("resource_parser_v2")
-    except Exception:
+        from app.core.deps import _SessionLocal
+        if _SessionLocal is not None:
+            _tmp_db = _SessionLocal()
+            try:
+                prompt_service = PromptTemplateService(_tmp_db)
+                template = prompt_service.get_prompt_for_ai("resource_parser_v2")
+            finally:
+                _tmp_db.close()
+    except Exception as _e:
+        logger.warning("prompt template lookup failed: %s", _e)
         template = None
+    def _tget(obj, key):
+        if obj is None:
+            return None
+        if isinstance(obj, dict):
+            return obj.get(key)
+        return getattr(obj, key, None)
+
     system_prompt = (
-        getattr(template, "system_prompt", None)
+        _tget(template, "system_prompt")
         or "（fallback）將資源解析為 Output Contract 指定的 JSON。"
     )
-    user_prompt = (getattr(template, "user_prompt", None) or "").format(
+    raw_user_prompt = _tget(template, "user_prompt") or ""
+    user_prompt = raw_user_prompt.format(
         filename=resource.name,
         source_type=resource.source_type or "user_other",
         declared_exam_code=resource.exam_code or "",
+    ) if raw_user_prompt else (
+        "請將此 PDF 解析為符合 Output Contract 的 JSON，"
+        f"檔名={resource.name}。"
     )
 
     # download PDF locally for upload

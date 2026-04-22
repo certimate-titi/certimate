@@ -183,9 +183,11 @@ def trigger_parse(
 
 def _run_in_background(job_id: UUID) -> None:
     """BackgroundTasks wrapper — 建新 session 避免共用 request-scoped."""
-    from app.core.deps import SessionLocal  # type: ignore[attr-defined]
+    from app.core.deps import _SessionLocal
 
-    db = SessionLocal()
+    if _SessionLocal is None:
+        raise RuntimeError("Database session factory not initialized")
+    db = _SessionLocal()
     try:
         run_parse_job(db, job_id)
         db.commit()
