@@ -171,9 +171,9 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     測試可透過 monkeypatch 這個函式或塞 fake。
     """
     try:
-        import google.generativeai as genai
+        from google import genai
     except ImportError as e:
-        raise RuntimeError("google-generativeai SDK not installed") from e
+        raise RuntimeError("google-genai SDK not installed") from e
 
     from app.core.config import get_settings
     from app.services.storage_service import get_storage_service
@@ -187,7 +187,7 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     )
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not configured")
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     # load prompt template 'resource_parser_v2' (best-effort; falls back to hardcoded)
     template = None
@@ -236,16 +236,19 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     local_pdf = storage.download_to_temp(resource.gcs_path)
 
     try:
-        uploaded = genai.upload_file(local_pdf, mime_type="application/pdf")
-        gmodel = genai.GenerativeModel(
-            model,
-            system_instruction=system_prompt,
-            generation_config={
+        uploaded = client.files.upload(
+            file=local_pdf,
+            config={"mime_type": "application/pdf"},
+        )
+        resp = client.models.generate_content(
+            model=model,
+            contents=[uploaded, user_prompt],
+            config={
+                "system_instruction": system_prompt,
                 "temperature": 0.1,
                 "response_mime_type": "application/json",
             },
         )
-        resp = gmodel.generate_content([uploaded, user_prompt])
     except Exception as e:  # noqa: BLE001
         msg = str(e).lower()
         if "429" in msg or "quota" in msg or "timeout" in msg or "unavailable" in msg:
