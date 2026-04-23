@@ -132,6 +132,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [fetchMe]);
 
+  // Start analytics flusher once user is authenticated
+  useEffect(() => {
+    if (!user) return;
+    let stop: (() => void) | undefined;
+    import('./analytics').then(({ startAnalyticsFlusher, flushQueue }) => {
+      void flushQueue();
+      stop = startAnalyticsFlusher();
+    });
+    return () => { stop?.(); };
+  }, [user]);
+
   const loginWithCredentials = useCallback(async (email: string, password: string) => {
     const res = await apiClient.post<BackendLoginResponse>('/auth/login', { email, password });
     setStoredToken(res.access_token);
