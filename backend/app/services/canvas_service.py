@@ -14,9 +14,12 @@ import uuid
 
 from sqlalchemy import text
 
+from app.core.cache import cache
 from app.models.knowledge_node import KnowledgeNode
 from app.models.learning_journey import LearningJourney
 from app.services.base import BaseService
+
+CANVAS_CACHE_TTL = 60  # 秒
 
 
 def _mastery_color(progress: float) -> str:
@@ -147,14 +150,21 @@ class CanvasService(BaseService):
         if err:
             return err
 
+        cache_key = f"canvas:tier1:{subject_id}:{user_id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return self.ok(cached)
+
         nodes = self._aggregated_children(sid, uid, parent_id=None)
-        return self.ok({
+        payload = {
             "tier": 1,
             "subject_id": subject_id,
             "parent_id": None,
             "nodes": nodes,
             "empty_reason": "no_nodes_generated" if not nodes else None,
-        })
+        }
+        cache.set(cache_key, payload, ttl=CANVAS_CACHE_TTL)
+        return self.ok(payload)
 
     def get_children(
         self, subject_id: str, parent_id: str, user_id: str
@@ -177,10 +187,15 @@ class CanvasService(BaseService):
         if not parent:
             return self.error("父節點不存在或不屬於此科目", 404)
 
+        cache_key = f"canvas:children:{subject_id}:{parent_id}:{user_id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return self.ok(cached)
+
         nodes = self._aggregated_children(sid, uid, parent_id=pid)
         # Tier = 子節點的 depth（DB 以 1 為根節點 depth，tier 則以 1 為領域層對外語意）
         child_depth = nodes[0]["depth"] if nodes else (parent.depth or 0) + 1
-        return self.ok({
+        payload = {
             "tier": child_depth,
             "subject_id": subject_id,
             "parent_id": parent_id,
@@ -188,4 +203,6 @@ class CanvasService(BaseService):
             "parent_depth": parent.depth or 0,
             "nodes": nodes,
             "empty_reason": "leaf_node" if not nodes else None,
-        })
+        }
+        cache.set(cache_key, payload, ttl=CANVAS_CACHE_TTL)
+        return self.ok(payload)
