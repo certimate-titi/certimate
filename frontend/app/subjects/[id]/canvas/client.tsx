@@ -74,6 +74,20 @@ export default function CanvasClient() {
 
   useEffect(() => { loadTier1(); }, [loadTier1]);
 
+  // Auto-drill when ?focus=<node_id> is present in URL (from dashboard radar click)
+  const [focusApplied, setFocusApplied] = useState(false);
+  useEffect(() => {
+    if (focusApplied || !tier || tier.tier !== 1) return;
+    const params = new URLSearchParams(window.location.search);
+    const focusId = params.get('focus');
+    if (!focusId) { setFocusApplied(true); return; }
+    const target = tier.nodes.find((n) => n.id === focusId);
+    if (target?.has_children) {
+      loadChildren(target.id, target.name, target.depth);
+    }
+    setFocusApplied(true);
+  }, [tier, focusApplied, loadChildren]);
+
   const graphNodes: GraphNode[] = useMemo(() => {
     if (!tier) return [];
     return tier.nodes.map<GraphNode>((n) => ({

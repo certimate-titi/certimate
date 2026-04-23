@@ -179,6 +179,7 @@ export interface ChatMessage {
 
 export interface DomainAnalysis {
   domain: string;
+  node_id?: string;
   correct: number;
   total: number;
   percentage: number;

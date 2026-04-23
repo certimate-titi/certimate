@@ -25,6 +25,7 @@ const EMERALD_LIGHT = 'rgba(16, 185, 129, 0.2)';
 interface RadarItem {
   domain: string;
   strength: number;
+  node_id?: string;
   children: { domain: string; strength: number }[];
 }
 
@@ -36,6 +37,7 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
     return domains.map(d => ({
       domain: d.domain,
       strength: d.percentage,
+      node_id: d.node_id,
       children: (d.children || []).map(c => ({
         domain: c.domain,
         strength: c.percentage,
@@ -54,6 +56,7 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
     groups.push({
       domain: chunk.length === 1 ? chunk[0].domain : `${chunk[0].domain.slice(0, 4)}等${chunk.length}項`,
       strength: avg,
+      node_id: chunk.length === 1 ? chunk[0].node_id : undefined,
       children: chunk.map(d => ({ domain: d.domain, strength: d.percentage })),
     });
   }
@@ -62,7 +65,7 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
 
 interface DomainRadarChartProps {
   domains: DomainAnalysis[];
-  onDomainClick?: (domain: string) => void;
+  onDomainClick?: (domain: string, nodeId?: string) => void;
 }
 
 export default function DomainRadarChart({ domains, onDomainClick }: DomainRadarChartProps) {
@@ -136,7 +139,7 @@ export default function DomainRadarChart({ domains, onDomainClick }: DomainRadar
               ) : onDomainClick ? (
                 <button
                   type="button"
-                  onClick={() => onDomainClick(g.domain)}
+                  onClick={() => onDomainClick(g.domain, g.node_id)}
                   className="w-full flex items-center gap-1.5 text-xs py-1.5 px-2 rounded-lg hover:bg-emerald-50 transition-colors"
                   title="開啟知識地圖"
                 >

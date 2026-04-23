@@ -729,8 +729,9 @@ export default function DashboardPage() {
 
               <DomainRadarChart
                 domains={data.domainStrengths}
-                onDomainClick={activeSubjectId ? () => {
-                  window.location.href = `/subjects/${activeSubjectId}/canvas`;
+                onDomainClick={activeSubjectId ? (_d, nodeId) => {
+                  const qs = nodeId ? `?focus=${nodeId}` : '';
+                  window.location.href = `/subjects/${activeSubjectId}/canvas${qs}`;
                 } : undefined}
               />
 

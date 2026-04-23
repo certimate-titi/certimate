@@ -421,6 +421,7 @@ class DashboardService:
 
             groups.append({
                 "domain": root.name[:20],
+                "node_id": str(root.id),
                 "correct": group_correct,
                 "total": group_total,
                 "percentage": group_pct,
