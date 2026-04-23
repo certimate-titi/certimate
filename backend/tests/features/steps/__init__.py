@@ -1357,4 +1357,5 @@ from .coverage.commands import retrofit_calls  # noqa: F401
 # Canvas (PRD-046)
 from .canvas.aggregate_given import fixtures as canvas_fixtures  # noqa: F401
 from .canvas.commands import canvas_queries  # noqa: F401
+from .canvas.commands import analytics_calls  # noqa: F401
 from .canvas.readmodel_then import canvas_assertions  # noqa: F401

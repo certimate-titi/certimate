@@ -54,6 +54,12 @@ def step_empty_reason(context, reason):
     assert body.get("empty_reason") == reason, f"empty_reason: {body.get('empty_reason')}"
 
 
+@then('Analytics 回應 accepted 為 {n:d}')
+def step_analytics_accepted(context, n):
+    body = _body(context)
+    assert body.get("accepted") == n, f"accepted: {body.get('accepted')}"
+
+
 @then('Canvas 錯誤訊息包含 "{fragment}"')
 def step_error_message_contains(context, fragment):
     body = _body(context)
