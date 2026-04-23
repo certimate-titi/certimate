@@ -133,7 +133,7 @@ class CanvasService(BaseService):
                 "available_questions": int(r.total_questions or 0),
                 "support_strength": round(float(r.support_strength or 0), 3),
                 "node_source": r.node_source or "user_data",
-                "has_children": r.leaf_count > 0 or r.descendant_count > 1,
+                "has_children": r.descendant_count > 1,
             })
         return results
 

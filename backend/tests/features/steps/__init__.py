@@ -1353,3 +1353,8 @@ from .mindmap_upgrade.aggregate_then import (  # noqa: F401
 
 # Coverage retrofit (Feature 35, ISS-015)
 from .coverage.commands import retrofit_calls  # noqa: F401
+
+# Canvas (PRD-046)
+from .canvas.aggregate_given import fixtures as canvas_fixtures  # noqa: F401
+from .canvas.commands import canvas_queries  # noqa: F401
+from .canvas.readmodel_then import canvas_assertions  # noqa: F401
