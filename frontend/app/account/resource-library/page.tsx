@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, RefreshCw, Trash2, RotateCw, Loader2, FileText, AlertTriangle, Share2, Sparkles, CheckCircle2, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, Search, RefreshCw, Trash2, Loader2, FileText, AlertTriangle, Share2, Sparkles, CheckCircle2, BookOpenCheck } from 'lucide-react';
 import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
@@ -79,16 +79,6 @@ export default function ResourceLibraryPage() {
     };
   }, [items, keyword, fetch]);
 
-  const triggerParse = async (id: string) => {
-    try {
-      await resourceParseService.triggerParse(id);
-      fetch(keyword);
-    } catch (e: any) {
-      const msg = e?.response?.data?.detail?.message || e?.message || '觸發解析失敗';
-      alert(msg);
-    }
-  };
-
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`確定要刪除「${name}」？`)) return;
     try {
@@ -96,15 +86,6 @@ export default function ResourceLibraryPage() {
       fetch(keyword);
     } catch (e: any) {
       alert(`刪除失敗：${e?.message}`);
-    }
-  };
-
-  const handleReparse = async (id: string) => {
-    try {
-      await resourceLibraryService.reparse(id);
-      fetch(keyword);
-    } catch (e: any) {
-      alert(`重新解析失敗：${e?.message}`);
     }
   };
 
@@ -223,14 +204,13 @@ export default function ResourceLibraryPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => triggerParse(r.resource_id)}
-                        disabled={['pending', 'processing', 'PENDING', 'CHUNKING', 'EXTRACTING', 'GENERATING'].includes(r.status)}
-                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 rounded hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      <Link
+                        href={`/resources/${r.resource_id}/parsed`}
+                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 rounded hover:bg-purple-50"
                         title="EPIC-035 LLM 統一解析"
                       >
                         <Sparkles className="w-3 h-3" /> LLM 解析
-                      </button>
+                      </Link>
                       <Link
                         href={`/resources/${r.resource_id}/candidates`}
                         className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded hover:bg-amber-50"
@@ -245,13 +225,6 @@ export default function ResourceLibraryPage() {
                       >
                         <BookOpenCheck className="w-3 h-3" /> 解析內容
                       </Link>
-                      <button
-                        onClick={() => handleReparse(r.resource_id)}
-                        disabled={r.status === 'pending' || r.status === 'processing'}
-                        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <RotateCw className="w-3 h-3" /> 重新解析
-                      </button>
                       {isUltra && (r.scope === 'personal' || r.scope === 'shared') && (
                         <button
                           onClick={() => handleShare(r.resource_id, r.scope)}
