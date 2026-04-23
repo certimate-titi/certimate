@@ -406,6 +406,46 @@ export const knowledgeService = {
 };
 
 // ===========================
+// Canvas Service (PRD-046)
+// ===========================
+
+export interface CanvasNode {
+  id: string;
+  name: string;
+  depth: number;
+  sort_order: number;
+  progress: number;
+  mastery_rate: number;
+  mastery_color: 'green' | 'yellow' | 'red' | 'gray';
+  leaf_count: number;
+  descendant_count: number;
+  available_questions: number;
+  support_strength: number;
+  node_source: string;
+  has_children: boolean;
+}
+
+export interface CanvasTierResponse {
+  ok: boolean;
+  tier: number;
+  subject_id: string;
+  parent_id: string | null;
+  parent_name?: string;
+  parent_depth?: number;
+  nodes: CanvasNode[];
+  empty_reason: string | null;
+}
+
+export const canvasService = {
+  async getTier1(subjectId: string): Promise<CanvasTierResponse> {
+    return apiClient.get<CanvasTierResponse>(`/subjects/${subjectId}/canvas`);
+  },
+  async getChildren(subjectId: string, parentId: string): Promise<CanvasTierResponse> {
+    return apiClient.get<CanvasTierResponse>(`/subjects/${subjectId}/canvas/children/${parentId}`);
+  },
+};
+
+// ===========================
 // Account Service
 // ===========================
 

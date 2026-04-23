@@ -727,7 +727,23 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <DomainRadarChart domains={data.domainStrengths} />
+              <DomainRadarChart
+                domains={data.domainStrengths}
+                onDomainClick={activeSubjectId ? () => {
+                  window.location.href = `/subjects/${activeSubjectId}/canvas`;
+                } : undefined}
+              />
+
+              {activeSubjectId && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <Link
+                    href={`/subjects/${activeSubjectId}/canvas`}
+                    className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-800 py-2 rounded-lg hover:bg-emerald-50 transition"
+                  >
+                    🗺️ 開啟知識地圖 Canvas
+                  </Link>
+                </div>
+              )}
             </section>
           </div>
         </div>

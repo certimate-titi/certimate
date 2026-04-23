@@ -62,9 +62,10 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
 
 interface DomainRadarChartProps {
   domains: DomainAnalysis[];
+  onDomainClick?: (domain: string) => void;
 }
 
-export default function DomainRadarChart({ domains }: DomainRadarChartProps) {
+export default function DomainRadarChart({ domains, onDomainClick }: DomainRadarChartProps) {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const items = useMemo(() => toRadarItems(domains), [domains]);
 
@@ -127,6 +128,20 @@ export default function DomainRadarChart({ domains }: DomainRadarChartProps) {
                 >
                   <span className={`transition-transform text-slate-400 text-[9px] ${isExpanded ? 'rotate-90' : ''}`}>&#9654;</span>
                   <span className="font-medium text-slate-700 w-14 shrink-0 text-left truncate">{g.domain}</span>
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${g.strength}%` }} />
+                  </div>
+                  <span className="text-slate-400 w-7 text-right text-[10px]">{g.strength}%</span>
+                </button>
+              ) : onDomainClick ? (
+                <button
+                  type="button"
+                  onClick={() => onDomainClick(g.domain)}
+                  className="w-full flex items-center gap-1.5 text-xs py-1.5 px-2 rounded-lg hover:bg-emerald-50 transition-colors"
+                  title="開啟知識地圖"
+                >
+                  <span className="text-emerald-500 text-[9px]">→</span>
+                  <span className="font-medium text-slate-700 w-14 shrink-0 truncate text-left">{g.domain}</span>
                   <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${g.strength}%` }} />
                   </div>

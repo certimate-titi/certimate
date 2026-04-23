@@ -358,6 +358,15 @@ export default function KnowledgeBasePage() {
                 variant="compact"
               />
             )}
+            {activeSubjectId && (
+              <Link
+                href={`/subjects/${activeSubjectId}/canvas`}
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition shrink-0"
+                title="開啟知識地圖 Canvas"
+              >
+                🗺️ Canvas
+              </Link>
+            )}
             {/* Mobile drawer toggles */}
             {isMobile && (
               <>
