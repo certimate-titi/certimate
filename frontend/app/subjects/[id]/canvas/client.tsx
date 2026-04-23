@@ -17,9 +17,32 @@ export default function CanvasClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loadProgress, setLoadProgress] = useState(0);
+
+  // Strategy E：骨架載入時推進預估進度條（以 2000ms 為基準，載入中停在 95%）
+  useEffect(() => {
+    if (!loading) { setLoadProgress(0); return; }
+    const t0 = performance.now();
+    const BASELINE_MS = 2000;
+    const id = setInterval(() => {
+      const elapsed = performance.now() - t0;
+      const pct = Math.min(95, Math.round((elapsed / BASELINE_MS) * 100));
+      setLoadProgress(pct);
+    }, 80);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const loadTier1 = useCallback(async () => {
     if (!subjectId) return;
+    // Strategy F：若已有預取快取，立即套用避免 skeleton 閃爍
+    const prefetched = canvasService.readPrefetchedTier1(subjectId);
+    if (prefetched) {
+      setTier(prefetched);
+      setBreadcrumb([]);
+      setSelectedId(null);
+      track('canvas_view', { subject_id: subjectId, tier: 1, node_count: prefetched.nodes.length, load_ms: 0, prefetched: true });
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -173,8 +196,17 @@ export default function CanvasClient() {
                       style={{ top: p.top, left: p.left, width: p.size, height: p.size }}
                     />
                   ))}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-slate-400">
-                    <Loader2 className="w-3 h-3 animate-spin" /> 建構知識地圖...
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-64 max-w-[80%] flex flex-col items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      {loadProgress < 95 ? '建構知識地圖...' : '仍在載入，馬上就好...'}
+                    </div>
+                    <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 transition-[width] duration-150 ease-out"
+                        style={{ width: `${loadProgress}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

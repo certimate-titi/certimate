@@ -66,9 +66,10 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
 interface DomainRadarChartProps {
   domains: DomainAnalysis[];
   onDomainClick?: (domain: string, nodeId?: string) => void;
+  onDomainHover?: (domain: string, nodeId?: string) => void;
 }
 
-export default function DomainRadarChart({ domains, onDomainClick }: DomainRadarChartProps) {
+export default function DomainRadarChart({ domains, onDomainClick, onDomainHover }: DomainRadarChartProps) {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const items = useMemo(() => toRadarItems(domains), [domains]);
 
@@ -140,6 +141,7 @@ export default function DomainRadarChart({ domains, onDomainClick }: DomainRadar
                 <button
                   type="button"
                   onClick={() => onDomainClick(g.domain, g.node_id)}
+                  onMouseEnter={onDomainHover ? () => onDomainHover(g.domain, g.node_id) : undefined}
                   className="w-full flex items-center gap-1.5 text-xs py-1.5 px-2 rounded-lg hover:bg-emerald-50 transition-colors"
                   title="開啟知識地圖"
                 >

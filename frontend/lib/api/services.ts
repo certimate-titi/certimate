@@ -436,12 +436,39 @@ export interface CanvasTierResponse {
   empty_reason: string | null;
 }
 
+const CANVAS_PREFETCH_KEY = (subjectId: string) => `canvas_prefetch_tier1_${subjectId}`;
+const CANVAS_PREFETCH_TTL_MS = 60_000;
+
 export const canvasService = {
   async getTier1(subjectId: string): Promise<CanvasTierResponse> {
     return apiClient.get<CanvasTierResponse>(`/subjects/${subjectId}/canvas`);
   },
   async getChildren(subjectId: string, parentId: string): Promise<CanvasTierResponse> {
     return apiClient.get<CanvasTierResponse>(`/subjects/${subjectId}/canvas/children/${parentId}`);
+  },
+  async prefetchTier1(subjectId: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const data = await apiClient.get<CanvasTierResponse>(`/subjects/${subjectId}/canvas`);
+      sessionStorage.setItem(CANVAS_PREFETCH_KEY(subjectId), JSON.stringify({ ts: Date.now(), data }));
+    } catch {
+      // silent
+    }
+  },
+  readPrefetchedTier1(subjectId: string): CanvasTierResponse | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem(CANVAS_PREFETCH_KEY(subjectId));
+      if (!raw) return null;
+      const { ts, data } = JSON.parse(raw);
+      if (Date.now() - ts > CANVAS_PREFETCH_TTL_MS) {
+        sessionStorage.removeItem(CANVAS_PREFETCH_KEY(subjectId));
+        return null;
+      }
+      return data as CanvasTierResponse;
+    } catch {
+      return null;
+    }
   },
 };
 
