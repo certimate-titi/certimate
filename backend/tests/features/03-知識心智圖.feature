@@ -100,8 +100,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
 
   # ========== PRO_199 付費牆、D3.js 視覺 — 移至 e2e ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需 node_mastery + practice 答對 pipeline 接線；Feature 04/05 綠燈後再展開
   Rule: 後置（即時）- 練習作答即時更新知識圖譜進度
 
     Example: 練習答對一題後節點進度即時上升

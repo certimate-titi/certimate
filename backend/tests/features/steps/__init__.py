@@ -1272,6 +1272,11 @@ from .practice.commands import practice_actions  # noqa: F401
 # Practice (Feature 32) — readmodel_then
 from .practice.readmodel_then import practice_results  # noqa: F401
 
+# Epic 3 Node Mastery Pipeline
+from .practice.aggregate_given import node_mastery_setup  # noqa: F401
+from .practice.commands import practice_correct_answer  # noqa: F401
+from .practice.aggregate_then import node_mastery_assertions  # noqa: F401
+
 # Pomodoro (Feature 21) — readmodel_then
 from .pomodoro.readmodel_then import pomodoro_response  # noqa: F401
 
