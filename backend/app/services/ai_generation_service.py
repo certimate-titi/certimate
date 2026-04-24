@@ -425,7 +425,20 @@ class AiGenerationService:
         ]
 
         # Bloom 指令
-        if has_historical:
+        bloom_order = ["remember", "understand", "apply", "analyze", "evaluate", "create"]
+        override = getattr(self, "_bloom_override", None)
+        if override and override.get("source") == "historical" and override.get("distribution"):
+            dist = override["distribution"]
+            pairs = ", ".join(f"{k}:{dist.get(k, 0)}%" for k in bloom_order if k in dist)
+            bloom_instruction = f"請依照以下 Bloom 認知層次配比分配考點：{pairs}"
+        elif override and override.get("source") == "default":
+            dist = override.get("distribution") or {
+                "remember": 20, "understand": 25, "apply": 25,
+                "analyze": 15, "evaluate": 10, "create": 5,
+            }
+            pairs = ", ".join(f"{k}:{dist.get(k, 0)}%" for k in bloom_order if k in dist)
+            bloom_instruction = f"Bloom 配比：{pairs}"
+        elif has_historical:
             # 從考古題統計計算 Bloom 分佈
             bloom_totals = {}
             for stat in historical_stats:
@@ -435,7 +448,7 @@ class AiGenerationService:
             bloom_pcts = {k: round(v / total_bloom * 100) for k, v in bloom_totals.items()}
             bloom_instruction = "依考古題統計：" + ", ".join(f"{k}:{v}%" for k, v in bloom_pcts.items())
         else:
-            bloom_instruction = "使用預設配比：remember:30%, understand:25%, apply:20%, analyze:15%, evaluate:7%, create:3%"
+            bloom_instruction = "Bloom 配比：remember:20%, understand:25%, apply:25%, analyze:15%, evaluate:10%, create:5%"
 
         # 嘗試 LLM 生成
         db_prompt = self._load_prompt("stage1_exam_point_analysis", {

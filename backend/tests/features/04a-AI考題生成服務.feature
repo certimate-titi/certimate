@@ -123,8 +123,7 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 1：考點分析 ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需向量庫 RAG + 考古題 Bloom 統計注入 Prompt；AI 生成服務重構 epic 接線
+  @epic-recon @llm-mock
   Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱，並注入考古題 Bloom 配比
 
     Example: 科目有考古題時，階段 1 Prompt 應注入考古題 Bloom 統計作為出題配比約束
@@ -161,8 +160,7 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 2：考題生成 ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需 AI 階段 2 原始考題生成 mock；AI 生成服務重構 epic 接線
+  @epic-recon @llm-mock
   Rule: 後置（回應）- 階段 2 應根據考綱生成原始考題
 
     Example: 考題生成階段產出含題幹與正確答案的原始考題
@@ -179,8 +177,7 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 3：干擾項優化 ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需 AI 階段 3 干擾項生成 mock；AI 生成服務重構 epic 接線
+  @epic-recon @llm-mock
   Rule: 後置（回應）- 階段 3 應為每題設計三個高誘答性干擾項並撰寫詳解
 
     Example: 干擾項優化階段補齊選項與解析

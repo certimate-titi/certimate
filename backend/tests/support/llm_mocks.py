@@ -83,33 +83,46 @@ class MockLLMService:
         if stage == "stage2":
             m = re.search(r"出\s*(\d+)\s*題", user)
             n = int(m.group(1)) if m else 3
+            # 跨批次保持全域索引，讓 Easy:30% Medium:50% Hard:20% 可被驗證
+            mem = self._context_ref.memo
+            idx = mem.get("_stage2_global_idx", 0)
+            # 題序列：前 3 題 easy，接 5 題 medium，末 2 題 hard（共 10 題一循環）
+            seq = ["easy"] * 3 + ["medium"] * 5 + ["hard"] * 2
             qs = []
             for i in range(n):
+                diff = seq[(idx + i) % len(seq)]
                 qs.append({
-                    "question_text": f"Mock Stage2 Q{i+1}",
+                    "question_text": f"Mock Stage2 Q{idx + i + 1}",
                     "options": {"A": "A opt", "B": "B opt", "C": "C opt", "D": "D opt"},
                     "correct_answer": "A",
                     "explanation": "mock 解析",
-                    "difficulty": ["easy", "medium", "hard"][i % 3],
+                    "difficulty": diff,
                     "exam_point": "EC2 運算服務",
                 })
+            mem["_stage2_global_idx"] = idx + n
             return json.dumps({"questions": qs})
 
-        # stage3 — 補齊 distractor + explanation
+        # stage3 — 從 user prompt 抽取考題數
+        m = re.search(r"(\d+)\s*道考題", user)
+        n = int(m.group(1)) if m else 3
         qs = []
-        for i in range(3):
+        labels = ["A", "B", "C", "D"]
+        for i in range(n):
+            correct_idx = i % 4  # 隨機分布：循環 0/1/2/3
+            options = ["干擾 1", "干擾 2", "干擾 3"]
+            options.insert(correct_idx, "正確")
+            reasons = {}
+            for j, lab in enumerate(labels):
+                if j != correct_idx:
+                    reasons[lab] = f"表面合理但本質錯誤（誘答 {j}）"
             qs.append({
                 "question_text": f"Mock Stage3 Q{i+1}",
-                "options": {"A": "正確", "B": "誤 1", "C": "誤 2", "D": "誤 3"},
-                "correct_index": 0,
-                "correct_answer": "A",
+                "options": options,
+                "correct_index": correct_idx,
+                "correct_answer": labels[correct_idx],
                 "explanation": "詳解：略",
-                "distractor_reasons": {
-                    "B": "表面合理但本質錯誤",
-                    "C": "常見混淆",
-                    "D": "範圍錯誤",
-                },
-                "difficulty": "medium",
+                "distractor_reasons": reasons,
+                "difficulty": ["easy", "medium", "hard"][i % 3],
                 "exam_point": "EC2 運算服務",
             })
         return json.dumps({"questions": qs})

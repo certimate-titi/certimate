@@ -23,10 +23,16 @@ def step_stage1_input(context):
             if node:
                 nodes.append(node)
 
+    bloom_source = context.memo.get("bloom_source")
+    bloom_dist = context.memo.get("bloom_distribution")
+    if bloom_source:
+        service._bloom_override = {"source": bloom_source, "distribution": bloom_dist}
+
     difficulty_dist = {"easy": 30, "medium": 50, "hard": 20}
     result = service._stage1_exam_point_analysis(nodes, 10, difficulty_dist)
     context.memo["stage_1_output"] = result
     context.memo["stage_1_completed"] = True
+    context.memo["exam_question_count"] = 10
 
 
 @when('階段 2 Prompt 以階段 1 輸出與難易度分配為輸入')

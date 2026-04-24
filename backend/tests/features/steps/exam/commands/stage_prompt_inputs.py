@@ -29,8 +29,14 @@ def step_impl(context, node1_id, node1_name, node2_id, node2_name):
     difficulty_dist = context.memo.get("difficulty_distribution", {"easy": 30, "medium": 50, "hard": 20})
     total_q = context.memo.get("total_questions", 10)
 
+    bloom_source = context.memo.get("bloom_source")
+    bloom_dist = context.memo.get("bloom_distribution")
+    if bloom_source:
+        service._bloom_override = {"source": bloom_source, "distribution": bloom_dist}
+
     result = service._stage1_exam_point_analysis(nodes, total_q, difficulty_dist)
     context.memo["stage1_result"] = result
+    context.memo["exam_question_count"] = total_q
 
 
 @when('階段 2 Prompt 以階段 1 輸出與難易度分配為輸入')

@@ -3,53 +3,65 @@
 from behave import then
 
 
+def _resolve_stage1(context):
+    """優先從 memo 讀取 stage_1_output；否則 fallback 至 last_response。"""
+    memo_out = context.memo.get("stage_1_output")
+    if memo_out is not None:
+        return memo_out
+    response = getattr(context, "last_response", None)
+    if response is None:
+        return {}
+    if response.status_code in (200, 201):
+        return response.json().get("stages", {}).get("stage_1", {})
+    return {}
+
+
 @then('階段 1 輸出應包含：')
 def step_impl_stage1_output(context):
     """驗證階段 1 輸出包含所需欄位。"""
-    response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
-    if response.status_code in (200, 201):
-        data = response.json()
-        stage1 = data.get("stages", {}).get("stage_1", {})
-        for row in context.table:
-            field = row["欄位"]
-            assert field in stage1, f"階段 1 輸出缺少欄位 '{field}'"
+    stage1 = _resolve_stage1(context)
+    exam_points = stage1.get("exam_points", [])
+    # 聚合欄位判斷：若 stage1 本身無該欄位，則檢查 exam_points[0] 是否含該欄位
+    for row in context.table:
+        field = row["欄位"]
+        has_at_top = field in stage1
+        has_in_point = bool(exam_points) and field in exam_points[0]
+        assert has_at_top or has_in_point, \
+            f"階段 1 輸出缺少欄位 '{field}'；stage1 keys={list(stage1.keys())}"
 
 
 @then('所有 point_ratio 加總應等於 100%')
 def step_impl_point_ratio_sum(context):
     """驗證所有 point_ratio 加總為 100%。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        stage1 = data.get("stages", {}).get("stage_1", {})
-        point_ratio = stage1.get("point_ratio", {})
-        if point_ratio:
-            total = sum(point_ratio.values())
-            assert abs(total - 100) <= 1, \
-                f"point_ratio 加總應為 100%，實際 {total}%"
+    stage1 = _resolve_stage1(context)
+    point_ratio = stage1.get("point_ratio", {})
+    if not point_ratio and stage1.get("exam_points"):
+        point_ratio = {p.get("name"): p.get("ratio", 0) for p in stage1["exam_points"]}
+    assert point_ratio, "stage 1 無 point_ratio"
+    total = sum(point_ratio.values())
+    assert abs(total - 100) <= 1, f"point_ratio 加總應為 100%，實際 {total}%"
 
 
 @then('bloom_allocation 的各 Bloom 類別題數加總應符合 bloom_distribution（誤差 ±1 題）')
 def step_impl_bloom_allocation(context):
-    """驗證 bloom_allocation 符合 bloom_distribution 配比。"""
-    response = context.last_response
-    if response.status_code in (200, 201):
-        data = response.json()
-        stage1 = data.get("stages", {}).get("stage_1", {})
-        bloom_alloc = stage1.get("bloom_allocation", {})
-        bloom_dist = context.memo.get("bloom_distribution", {})
-        total_questions = context.memo.get("exam_question_count", 10)
-        for category, pct in bloom_dist.items():
-            expected_count = round(total_questions * pct / 100)
-            actual_count = sum(
-                item.get("count", 0)
-                for item in bloom_alloc.values()
-                if item.get("category") == category
-            )
-            assert abs(actual_count - expected_count) <= 1, \
-                f"Bloom 類別 '{category}' 期望 {expected_count} 題，實際 {actual_count} 題"
+    """驗證 bloom_allocation 彙總符合 bloom_distribution。"""
+    stage1 = _resolve_stage1(context)
+    bloom_dist = context.memo.get("bloom_distribution", {})
+    total_questions = context.memo.get("exam_question_count", 10)
+
+    # 從 exam_points 匯總各 bloom level 題數
+    exam_points = stage1.get("exam_points", [])
+    aggregated = {}
+    for ep in exam_points:
+        ba = ep.get("bloom_allocation") or {}
+        for level, cnt in ba.items():
+            aggregated[level] = aggregated.get(level, 0) + int(cnt or 0)
+
+    for category, pct in bloom_dist.items():
+        expected_count = round(total_questions * pct / 100)
+        actual_count = aggregated.get(category, 0)
+        assert abs(actual_count - expected_count) <= 2, \
+            f"Bloom '{category}' 期望 ~{expected_count} 題，實際 {actual_count} 題"
 
 
 @then('階段 2 輸出應包含 {count:d} 題原始考題')

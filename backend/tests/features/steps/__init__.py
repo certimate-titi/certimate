@@ -217,6 +217,7 @@ from .knowledge_map.readmodel_then import ai_coach_reply  # noqa: F401
 
 # Exam — aggregate_given
 from .exam.aggregate_given import resources  # noqa: F401
+from .exam.aggregate_given import bloom_source as _bloom_source_given  # noqa: F401
 from .exam.aggregate_given import knowledge_nodes  # noqa: F401
 from .exam.aggregate_given import exam_task_created  # noqa: F401
 from .exam.aggregate_given import resources_with_nodes  # noqa: F401
@@ -269,6 +270,7 @@ from .exam.readmodel_then import response_question_count  # noqa: F401
 from .exam.readmodel_then import stages_executed  # noqa: F401
 from .exam.readmodel_then import personalization_prompts  # noqa: F401
 from .exam.readmodel_then import stage1_output  # noqa: F401
+from .exam.readmodel_then import stage1_prompt_then  # noqa: F401
 from .exam.readmodel_then import stage2_output  # noqa: F401
 from .exam.readmodel_then import stage3_output  # noqa: F401
 from .exam.readmodel_then import stage4_output  # noqa: F401
