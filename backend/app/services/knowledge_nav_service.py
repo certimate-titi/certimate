@@ -276,12 +276,12 @@ class KnowledgeNavService:
 
         resource = self.db.query(Resource).filter_by(id=node.resource_id).first() if node.resource_id else None
 
-        # 判斷來源類型
+        # 判斷來源類型：優先看 resource；若節點無 resource（統一知識樹）則依溯源欄位推斷
         if resource:
             resource_type_val = resource.type.value if hasattr(resource.type, 'value') else resource.type
             is_youtube = resource_type_val == "youtube"
         else:
-            is_youtube = False
+            is_youtube = bool(node.source_timestamp_seconds) and not node.source_page_number
 
         if is_youtube:
             source_type = "youtube"

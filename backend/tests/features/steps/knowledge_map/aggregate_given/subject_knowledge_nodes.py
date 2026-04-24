@@ -57,10 +57,12 @@ def step_impl(context, subject):
 
         resource = resource_map[source_resource_name]
 
-        # 建立知識節點
+        # 建立知識節點（統一知識樹：subject_id 必設、resource_id=None；
+        # 溯源欄位 source_page_number / source_timestamp_seconds 仍保留）
         node = KnowledgeNode(
             id=node_id,
-            resource_id=resource.id,
+            subject_id=subject_id,
+            resource_id=None,
             parent_id=None,
             name=row['名稱'],
             depth=1,

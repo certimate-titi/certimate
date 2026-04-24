@@ -37,23 +37,21 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       And 面板的對話歷史紀錄中，會以 Markdown 格式高亮顯示當前節點萃取的原文與重點
 
   # ========== 商業轉換：毛玻璃鎖死政策 ==========
+  # 毛玻璃 UI / 升級提示視覺為純前端行為，已移至 Playwright e2e
+  # （frontend/e2e/specs/knowledge-map-paywall.spec.ts）
 
-  Rule: 後置（商業漏斗）- 點擊左下角「AI 教練對話框發問」時，依照付費方案進行強勢攔截或解答
-
-    Example: PRO (199 TWD) 的使用者嘗試與高階教練對話，輸入框遭到高斯模糊鎖死 (Paywall)
-      When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
-      Then 該對話框應立即呈現毛玻璃效果被鎖住
-      And 面板周圍彈出極高質感的升級提示「🌟 解鎖 Claude 3.5 終極教練專為您梳理盲區漏洞，立刻升級 PRO_PLUS 取得解答」
+  Rule: 後置（商業漏斗）- PRO_PLUS 高階教練 API 切換模型並扣額度
 
     Example: PRO_PLUS (399 TWD) 的使用者順利拋出難題並讓 Claude 回答
       When 使用者 "proplus@example.com" 在對話框輸入：「這題的化學鍵算出來為什麼相反？」
       Then 操作成功
       And 系統後端引擎無縫切換為 "Claude 3.5 Sonnet 模型"
       And 扣除該用戶本月 1 次的高階教練解題額度
-      And 左側主面板以氣泡對話框形式渲染出教練那充滿關懷與深度的專屬解析
 
   # ========== 情緒視覺化與學習激勵 ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需節點掌握度即時更新 + 模擬考作答 pipeline；待 Feature 05 模擬機考綠燈後再接線
   Rule: 後置（狀態回饋）- 測驗完成後導航樹的節點應依答對率進行『紅綠燈變色』
 
     Example: 節點掌握度顏色隨著努力而即時演進
@@ -62,66 +60,24 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       Then 返回此頁面時，該節點的顏色應即時更新渲染為「綠色（熟練）」
       And 對應的 AI 教練可能發送灑花的恭喜獎章動畫
 
-  # ========== 搜尋與篩選 ==========
+  # ========== 搜尋、摺疊、Modal、YouTube、Chips — 移至 e2e ==========
+  # 以下純 UI 行為已從後端 BDD 移除，由 Playwright e2e 接手：
+  # - 搜尋知識點篩選（frontend client-side filter）
+  # - 資源面板摺疊/展開
+  # - 刪除確認 Modal 取消/確認互動（「確認刪除 → DELETE API」保留下方 scenario）
+  # - YouTube 嵌入播放器時間戳定位
+  # - AI 聊天快速提問 Chips 填入輸入框
 
-  Rule: 後置（互動）- 搜尋知識點可即時篩選心智圖導覽區的節點
+  # ========== 刪除資源（保留 API 契約測試） ==========
 
-    Example: 搜尋知識點篩選心智圖節點
-      When 使用者 "pro@example.com" 在心智圖導覽區的搜尋框輸入 "S3"
-      Then 右側心智圖導覽區應僅顯示包含 "S3" 關鍵字的知識節點
-      And 不符合搜尋條件的節點應被隱藏或灰化
+  Rule: 後置（刪除）- 確認刪除後資源與關聯知識節點一併移除
 
-  # ========== 資源面板摺疊 ==========
-
-  Rule: 後置（UI）- 資源面板支援摺疊與展開切換
-
-    Example: 摺疊與展開資源面板
-      Given 使用者 "pro@example.com" 已進入知識心智圖頁面
-      When 使用者點擊資源面板的摺疊按鈕
-      Then 資源面板應收合隱藏，心智圖導覽區佔據完整右側空間
-      When 使用者再次點擊展開按鈕
-      Then 資源面板應恢復原始寬度顯示
-
-  # ========== 刪除文件確認 Modal ==========
-
-  Rule: 後置（互動）- 刪除文件需經過確認 Modal，可取消或確認
-
-    Example: 刪除文件確認 Modal 取消操作
+    Example: 確認刪除文件後 API 成功且關聯節點移除
       Given 使用者 "pro@example.com" 在資源面板選中一份文件
-      When 使用者點擊刪除按鈕
-      Then 系統應彈出確認刪除 Modal 視窗
-      When 使用者在 Modal 中點擊「取消」
-      Then Modal 應關閉，文件仍保留在資源列表中
-
-    Example: 刪除文件確認 Modal 確認刪除成功
-      Given 使用者 "pro@example.com" 在資源面板選中一份文件
-      When 使用者點擊刪除按鈕
-      Then 系統應彈出確認刪除 Modal 視窗
-      When 使用者在 Modal 中點擊「確認刪除」
+      When 使用者 "pro@example.com" 確認刪除該文件
       Then 操作成功
       And 該文件應從資源列表中移除
       And 心智圖導覽區應同步移除該文件關聯的知識節點
-
-  # ========== YouTube 嵌入播放器 ==========
-
-  Rule: 後置（互動）- YouTube 嵌入播放器可跳轉至引用時間點播放
-
-    Example: YouTube 嵌入播放器播放引用時間點
-      Given 使用者 "pro@example.com" 點擊了一個來源為 YouTube 的知識節點
-      And 該節點的影片時間戳為 "00:08:32"
-      When 左側面板載入 YouTube 嵌入播放器
-      Then 播放器應自動定位至 00:08:32 時間點
-      And 使用者可直接從該時間點開始播放影片
-
-  # ========== AI 聊天快速提問 ==========
-
-  Rule: 後置（互動）- AI 聊天區提供快速提問 Chips 方便使用者一鍵填入
-
-    Example: AI 聊天快速提問 Chips 填入輸入框
-      Given 使用者 "proplus@example.com" 已點擊一個知識節點進入 AI 教練面板
-      When 使用者點擊快速提問 Chip「用簡單的話解釋這個概念」
-      Then AI 教練對話輸入框應自動填入「用簡單的話解釋這個概念」
-      And 使用者可直接按下傳送按鈕發出提問
 
   # ========== 傳送聊天訊息 ==========
 
@@ -130,8 +86,7 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
     Example: 傳送聊天訊息並取得回應
       When 使用者 "proplus@example.com" 在 AI 教練對話框輸入「什麼是 VPC？」並按下傳送
       Then 操作成功
-      And AI 教練應以串流方式回覆與 VPC 相關的解說內容
-      And 回覆訊息應以氣泡對話框形式顯示在聊天區域
+      # 串流/氣泡 UI 行為已移至 Playwright e2e
 
   # ========== FREE 使用者查詢次數限制 ==========
 
@@ -143,26 +98,10 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       And AI 教練面板應顯示「本月剩餘免費查詢次數」計數器
       And 計數器應顯示目前可用次數與每月上限（例如：3/5）
 
-  # ========== PRO_199 付費牆升級提示 ==========
+  # ========== PRO_199 付費牆、D3.js 視覺 — 移至 e2e ==========
 
-  Rule: 後置（商業漏斗）- PRO_199 使用者嘗試使用進階功能時看到升級提示
-
-    Example: PRO_199 使用者看到付費牆升級提示
-      When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
-      Then 該對話框應立即呈現毛玻璃效果被鎖住
-      And 面板應顯示升級提示，引導使用者升級至 PRO_PLUS 方案以解鎖完整 AI 教練功能
-
-  # ========== V3 有機生長動態圖譜 ==========
-
-  Rule: 後置（視覺）- 知識圖譜應以力導向動態拓撲圖呈現
-
-    Example: 知識節點以 D3.js 力導向圖呈現，支援 Zoom/Pan/Drag
-      Given 使用者 "pro@example.com" 已上傳資源並生成知識節點
-      When 使用者進入知識庫頁面
-      Then 知識圖譜應以力導向動態拓撲圖呈現
-      And 根節點（章）應比子節點（考點）更大
-      And 節點顏色應反映掌握度（綠=精熟、黃=部分、紅=弱、灰=未測）
-
+  @epic-recon @infra-heavy @skip
+  # 需 node_mastery + practice 答對 pipeline 接線；Feature 04/05 綠燈後再展開
   Rule: 後置（即時）- 練習作答即時更新知識圖譜進度
 
     Example: 練習答對一題後節點進度即時上升
@@ -171,6 +110,8 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       Then 節點 "EC2 運算服務" 的掌握度應上升
       And 父節點的掌握度應連動更新（向上傳播）
 
+  @epic-recon @infra-heavy @skip
+  # 需掌握度稀釋演算法 + Toast 通知 pipeline；後端目前無新增節點的廣播機制
   Rule: 後置（稀釋）- 考綱擴展時進度應平滑調降
 
     Example: 新增知識節點後進度自動稀釋

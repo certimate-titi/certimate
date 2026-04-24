@@ -5,7 +5,8 @@ from behave import then
 
 @then('頁面應載入與 AWS SAA 關聯的學習資源列表')
 def resource_list_loaded(context):
-    response = context.last_response
+    # 讀取切換學科時發出的「資源列表」請求回應（由 switch_subject step 存入）
+    response = context.memo.get("resources_response") or context.last_response
     assert response.status_code == 200, (
         f"預期 HTTP 200，實際 {response.status_code}: {response.text}"
     )

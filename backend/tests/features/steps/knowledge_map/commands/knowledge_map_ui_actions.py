@@ -76,6 +76,22 @@ def step_impl_click_modal_cancel(context):
         context.last_response = type("R", (), {"status_code": 404, "json": lambda s: {}})()
 
 
+@when('使用者 "{email}" 確認刪除該文件')
+def step_impl_confirm_delete_document(context, email):
+    """確認刪除資源（呼叫 DELETE API）— 對齊前端 DELETE /resources/{id}。"""
+    from app.models.user import User
+    user = context.db_session.query(User).filter(User.email == email).first()
+    assert user, f"找不到使用者 {email}"
+    token = context.memo.get("km_token") or context.jwt_helper.create_token(str(user.id))
+    resource_id = context.memo.get("selected_resource_id")
+    assert resource_id, "尚未選中資源（需先執行 Given 在資源面板選中一份文件）"
+    response = context.api_client.delete(
+        f"/api/v1/resources/{resource_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context.last_response = response
+
+
 @when('使用者在 Modal 中點擊「確認刪除」')
 def step_impl_click_modal_confirm_delete(context):
     """確認刪除資源（呼叫 DELETE API）。"""
@@ -130,7 +146,7 @@ def step_impl_send_ai_coach_message(context, email, question):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.post(
-        "/api/v1/ai-coach/chat",
+        "/api/v1/knowledge-map/ai-coach/chat",
         json={"message": question},
         headers={"Authorization": f"Bearer {token}"},
     )

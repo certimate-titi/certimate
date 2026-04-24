@@ -5,7 +5,7 @@ from behave import then
 
 @then('右側心智圖導覽區應切換顯示 AWS SAA 的深層知識節點樹（如：AWS S3、IAM）')
 def knowledge_tree_displayed(context):
-    response = context.last_response
+    response = context.memo.get("nodes_response") or context.last_response
     assert response.status_code == 200, (
         f"預期 HTTP 200，實際 {response.status_code}: {response.text}"
     )

@@ -22,7 +22,10 @@ def knowledge_node_data(context):
         raise KeyError("需要至少一個使用者")
 
     user_id = uuid.UUID(context.ids[first_email])
-    subject = db.query(Subject).first()
+    subject = (
+        db.query(Subject).filter(Subject.name == "AWS SAA").first()
+        or db.query(Subject).first()
+    )
     if not subject:
         cat = db.query(SubjectCategory).first()
         if not cat:
@@ -85,5 +88,24 @@ def knowledge_node_data(context):
     db.flush()
     context.ids["node_ec2"] = str(ec2_node.id)
     context.ids["node_EC2 運算邏輯"] = str(ec2_node.id)
+
+    # Subject-level unified tree nodes (resource_id=None) — required by
+    # KnowledgeNavService.get_nodes_by_subject which filters resource_id IS NULL
+    subject_root = KnowledgeNode(
+        subject_id=subject.id, name="AWS SAA 知識樹",
+        depth=0, sort_order=0,
+    )
+    db.add(subject_root)
+    db.flush()
+
+    s3_node = KnowledgeNode(
+        subject_id=subject.id, parent_id=subject_root.id,
+        name="AWS S3", depth=1, sort_order=0,
+    )
+    iam_unified = KnowledgeNode(
+        subject_id=subject.id, parent_id=subject_root.id,
+        name="IAM", depth=1, sort_order=1,
+    )
+    db.add_all([s3_node, iam_unified])
 
     db.commit()
