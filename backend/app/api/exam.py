@@ -196,6 +196,8 @@ def submit_exam(
         # 非同步時回傳 202，同步時回傳 200
         status_code = 202 if settlement_mode == "async" else 200
         return JSONResponse(status_code=status_code, content=result)
+    except HTTPException:
+        raise
     except Exception as e:
         logging.getLogger("exam").exception("Submit exam error: %s", e)
         raise HTTPException(status_code=500, detail={"message": f"Submit error: {str(e)}"})

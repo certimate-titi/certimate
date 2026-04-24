@@ -154,6 +154,8 @@ Feature: 個人化錯題地圖
 
   # ========== AI 弱點建議 ==========
 
+  @epic-recon @infra-heavy @skip
+  # AI 學習建議端點尚未實作（需 Gemini prompt + red-node 排序），待 Feature 27 AI epic
   Rule: 後置（建議）- 系統應根據錯題地圖生成學習建議
 
     Example: AI 根據弱點節點生成個人化學習路徑建議

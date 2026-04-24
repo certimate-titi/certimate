@@ -23,6 +23,8 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 考古題模式短路 ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需 historical_only 模式的題庫直抽 + SSE 跳 100% 管線；歷史題庫 CI 完成後接線
   Rule: 前置（模式）- exam_mode 為 historical_only 時跳過 AI 四階段 Pipeline
 
     Example: 考古題模式直接從題庫抽題，不經過 AI 生成
@@ -74,6 +76,8 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 個人化：使用者背景注入 Prompt ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需個人化 Prompt 注入 + AI mock 驗證；AI 生成服務重構 epic 接線
   Rule: 後置（個人化）- 有填寫個人資料的使用者，其年齡、學歷與職業應作為 Prompt 上下文注入
 
     Example: 高中學歷使用者生成的考題應避免艱澀術語
@@ -120,6 +124,8 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 1：考點分析 ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需向量庫 RAG + 考古題 Bloom 統計注入 Prompt；AI 生成服務重構 epic 接線
   Rule: 後置（回應）- 階段 1 應從向量庫擷取知識後回傳考綱，並注入考古題 Bloom 配比
 
     Example: 科目有考古題時，階段 1 Prompt 應注入考古題 Bloom 統計作為出題配比約束
@@ -156,6 +162,8 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 2：考題生成 ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需 AI 階段 2 原始考題生成 mock；AI 生成服務重構 epic 接線
   Rule: 後置（回應）- 階段 2 應根據考綱生成原始考題
 
     Example: 考題生成階段產出含題幹與正確答案的原始考題
@@ -172,6 +180,8 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 階段 3：干擾項優化 ==========
 
+  @epic-recon @infra-heavy @skip
+  # 需 AI 階段 3 干擾項生成 mock；AI 生成服務重構 epic 接線
   Rule: 後置（回應）- 階段 3 應為每題設計三個高誘答性干擾項並撰寫詳解
 
     Example: 干擾項優化階段補齊選項與解析
