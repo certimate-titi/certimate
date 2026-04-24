@@ -145,7 +145,7 @@ Feature: 模擬機考
 
   # ========== UI 元件補充場景 ==========
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # 後端無 pause endpoint；timer 邏輯純前端計算，規格應移 Playwright e2e
   Rule: 後置（狀態）- 暫停考試後恢復作答時計時器應繼續倒數
 
@@ -156,7 +156,7 @@ Feature: 模擬機考
       Then 測驗 1 的剩餘時間應接近 19 分 50 秒
       And 計時器應繼續正常倒數
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # Modal UI 純前端互動，規格應移 Playwright e2e
   Rule: 後置（回應）- 總覽格 Modal 應顯示所有題目的作答狀態
 
@@ -169,7 +169,7 @@ Feature: 模擬機考
         | 1    | 已作答 |
         | 2    | 未作答 |
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # 題目跳轉純前端路由，規格應移 Playwright e2e
   Rule: 後置（回應）- 題目導航格點擊應跳轉至指定題目
 

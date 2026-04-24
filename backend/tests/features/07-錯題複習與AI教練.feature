@@ -164,8 +164,6 @@ Feature: 錯題複習與 AI 教練
 
   # ========== 錯題複習觸發 node_mastery 更新 ==========
 
-  @epic-recon @infra-heavy @skip
-  # node_mastery 聯動需 wrong_review exam_type 與 progress pipeline（Feature 07 練習 epic）
   Rule: 後置（聯動）- 錯題複習作答後應觸發對應知識節點的 node_mastery 更新
 
     Example: 錯題複習作答後 node_mastery 自動更新
@@ -416,7 +414,7 @@ Feature: 錯題複習與 AI 教練
 
   # ========== 錯題側邊列表切換 ==========
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # 側邊列表切換為純前端 UI，應移 Playwright e2e
   Rule: 後置（互動）- 點擊錯題側邊列表中的題目可切換右側顯示內容
 
@@ -429,7 +427,7 @@ Feature: 錯題複習與 AI 教練
 
   # ========== 答案對比顯示 ==========
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # 答案對比顯示為純前端視覺，應移 Playwright e2e
   Rule: 後置（UI）- 錯題解析應同時顯示使用者錯誤答案與正確答案的對比
 

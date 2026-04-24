@@ -337,6 +337,8 @@ from .wrong_answer.aggregate_given import historical_wrong  # noqa: F401
 from .wrong_answer.aggregate_given import cooldown_history  # noqa: F401
 from .wrong_answer.aggregate_given import learning_history  # noqa: F401
 from .wrong_answer.aggregate_given import review_page_state  # noqa: F401
+from .wrong_answer.aggregate_given import wrong_review_mastery_setup  # noqa: F401
+from .wrong_answer.commands import wrong_review_resubmit  # noqa: F401
 
 # Wrong Answer — commands
 from .wrong_answer.commands import filter_by_subject  # noqa: F401

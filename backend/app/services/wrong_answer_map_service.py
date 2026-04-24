@@ -142,9 +142,10 @@ class WrongAnswerMapService:
                     user_id=uid, node_id=node.id
                 ).first()
                 if mastery and mastery.total_count > 0:
+                    rate = float(mastery.mastery_rate)
                     mastery_map[node.id] = {
-                        "mastery_rate": float(mastery.mastery_rate),
-                        "color": mastery.color,
+                        "mastery_rate": rate,
+                        "color": self._compute_color(Decimal(str(rate)), mastery.total_count),
                         "wrong_count": mastery.total_count - mastery.correct_count,
                     }
                 else:

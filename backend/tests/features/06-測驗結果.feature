@@ -142,7 +142,7 @@ Feature: 測驗結果
 
   # ========== 知識圖譜進度變化 ==========
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @playwright-e2e
   # ForceGraph 為純前端視覺化元件；弱點分析 API 需連動 knowledge node 對應（待 Feature 04a 綠燈）
   Rule: 後置（視覺）- 測驗結果頁應顯示完整知識圖譜
 

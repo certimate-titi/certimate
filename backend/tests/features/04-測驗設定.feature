@@ -270,38 +270,6 @@ Feature: 測驗設定
       Then 操作失敗
       And 錯誤訊息應為 "該文件尚未處理完成，無法用於出題"
 
-  # ========== 考古題模擬考模式 ==========
-
-  @epic-recon @infra-heavy @skip
-  # 與 L111 規則重複且 step 尚未實作；歷史題庫匯入 CI/CD 完成後統一接線
-  Rule: 前置（模式）- 考古題模擬考模式應從歷史題庫抽取真實題目
-
-    Example: 選擇考古題模擬考模式時 100% 從題庫抽取
-      Given 系統中有以下使用者帳號：
-        | 使用者 ID | Email              | 訂閱方案    |
-        | 1        | ultra@example.com  | ULTRA_1599 |
-      And 系統中有相關科目的考古題
-      When 使用者 "ultra@example.com" 選擇考古題模擬考模式並設定 10 題
-      Then 操作成功
-      And 考試狀態應為 "READY"
-      And 所有題目應來自 historical_exams 題庫
-
-    Example: 考古題模式下題數不受方案限制
-      Given 系統中有以下使用者帳號：
-        | 使用者 ID | Email             | 訂閱方案 |
-        | 1        | free@example.com  | FREE    |
-      When 使用者 "free@example.com" 選擇考古題模擬考模式
-      Then 10 題、20 題、50 題、100 題選項應全部可選
-
-    Example: 考古題模擬考模式下題庫不足時自動調整題數
-      Given 系統中僅有 5 題相關考古題
-      When 使用者選擇考古題模擬考模式並設定 10 題
-      Then 操作成功
-      And 實際出題數應為 5 題
-      And 回應應包含提示「此範圍考古題僅 5 題，已自動調整」
-
-    Example: 考古題應匹配使用者選擇的考科
-      Given 使用者選擇「AI 應用規劃師（初級）」考科
-      When 使用者以考古題模擬考模式生成考卷
-      Then 所有題目應屬於 AI 應用規劃師相關考試
-      And 不應出現其他考科的題目（如民航法、金融法規）
+  # ========== 考古題模擬考模式 — 規格統一於 L111 Rule（已綠燈） ==========
+  # 原 L275 四個 scenario 與 L111 重複，已於 Epic 4 整併刪除；
+  # 科目隔離由 exam_service._historical_only_generate + exam_subject_codes 強制。
