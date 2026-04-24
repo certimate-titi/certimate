@@ -23,7 +23,7 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 考古題模式短路 ==========
 
-  @epic-recon @infra-heavy @skip
+  @epic-recon @resolved
   # 需 historical_only 模式的題庫直抽 + SSE 跳 100% 管線；歷史題庫 CI 完成後接線
   Rule: 前置（模式）- exam_mode 為 historical_only 時跳過 AI 四階段 Pipeline
 

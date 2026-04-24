@@ -5,6 +5,8 @@ import uuid
 from behave import given
 
 from app.models.exam import Exam, ExamStatus
+from app.models.historical_exam import HistoricalExam
+from app.models.question import Question
 from app.repositories.exam_repository import ExamRepository
 
 
@@ -46,15 +48,50 @@ def step_impl(context, email):
 
     subject_id = uuid.UUID(context.ids.get("default_subject", str(uuid.uuid4())))
 
+    diff_dist = {
+        **difficulty_dist,
+        "node_ids": node_ids,
+    }
+    exam_mode = config.get("exam_mode")
+    if exam_mode:
+        diff_dist["exam_mode"] = exam_mode.strip()
+
+    # historical_only 模式：為所選節點補 seed 考古題，讓 service 可抽題
+    if exam_mode and exam_mode.strip() == "historical_only":
+        he = db.query(HistoricalExam).filter_by(exam_code="AIGEN_TEST").first()
+        if not he:
+            he = HistoricalExam(
+                exam_code="AIGEN_TEST",
+                subject_code="aigen_default",
+                exam_name="AI Gen Test 考古題",
+                subject_name="AI Gen Test",
+            )
+            db.add(he)
+            db.commit()
+            db.refresh(he)
+        seed_count = max(total_q, 10)
+        for idx, nid_str in enumerate(node_ids):
+            for i in range(seed_count):
+                q = Question(
+                    historical_exam_id=he.id,
+                    node_id=uuid.UUID(nid_str),
+                    question_number=(idx + 1) * 10000 + i + 1,
+                    content=f"考古題 node{idx+1} #{i + 1}",
+                    option_a="A", option_b="B", option_c="C", option_d="D",
+                    correct_answer="A",
+                    source_type="historical",
+                    quality_flag="ok",
+                    historical_source=he.exam_name,
+                )
+                db.add(q)
+        db.commit()
+
     exam = Exam(
         user_id=user_id,
         subject_id=subject_id,
         status=ExamStatus.PENDING,
         total_questions=total_q,
-        difficulty_distribution={
-            **difficulty_dist,
-            "node_ids": node_ids,
-        },
+        difficulty_distribution=diff_dist,
     )
     db.add(exam)
     db.commit()
