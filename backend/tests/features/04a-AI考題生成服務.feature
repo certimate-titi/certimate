@@ -76,8 +76,7 @@ Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   # ========== 個人化：使用者背景注入 Prompt ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需個人化 Prompt 注入 + AI mock 驗證；AI 生成服務重構 epic 接線
+  @epic-recon @llm-mock
   Rule: 後置（個人化）- 有填寫個人資料的使用者，其年齡、學歷與職業應作為 Prompt 上下文注入
 
     Example: 高中學歷使用者生成的考題應避免艱澀術語

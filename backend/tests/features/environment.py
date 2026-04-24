@@ -230,6 +230,17 @@ def before_scenario(context, scenario):
 
     AdminService._send_email = _spy_send_email
 
+    # LLM mock hook：scenario 含 @llm-mock 標籤時，攔截 AiGenerationService._llm
+    tags = set(getattr(scenario, "effective_tags", None) or scenario.tags or [])
+    try:
+        parent_tags = scenario.feature.tags or []
+        tags.update(parent_tags)
+    except Exception:
+        pass
+    if "llm-mock" in tags:
+        from tests.support.llm_mocks import install_llm_mock
+        install_llm_mock(context)
+
 
 def after_scenario(context, scenario):
     """每個 Scenario 執行後清理。"""
@@ -284,6 +295,13 @@ def after_scenario(context, scenario):
             # Cache the pristine factory the first time we see it
             _gbs._original_make_default_adapter = _gbs._make_default_adapter
     except ImportError:
+        pass
+
+    # LLM mock 還原
+    try:
+        from tests.support.llm_mocks import uninstall_llm_mock
+        uninstall_llm_mock(context)
+    except Exception:
         pass
 
     # 清理狀態

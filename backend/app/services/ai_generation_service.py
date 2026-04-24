@@ -680,9 +680,11 @@ class AiGenerationService:
             batch_points = [points[(batch_start + j) % len(points)] for j in range(batch_count)]
             point_names = [p["name"] for p in batch_points]
 
+            prompt_ctx = self._build_prompt_contexts(user_context)
             user_prompt = (
                 f"出 {batch_count} 題選擇題。\n"
                 f"考點：{', '.join(point_names)}\n"
+                f"個人化上下文：{prompt_ctx.get('stage_2', '無')}\n"
                 f"JSON: {{\"questions\": [{{\"question_text\": \"題目\", \"options\": {{\"A\": \"\", \"B\": \"\", \"C\": \"\", \"D\": \"\"}}, \"correct_answer\": \"A\", \"explanation\": \"短解析\", \"difficulty\": \"medium\", \"exam_point\": \"考點\"}}]}}"
             )
 
