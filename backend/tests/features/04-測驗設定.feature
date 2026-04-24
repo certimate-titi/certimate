@@ -108,8 +108,6 @@ Feature: 測驗設定
 
   # ========== 考古題模擬考模式 ==========
 
-  @epic-recon @infra-heavy @skip
-  # 需歷史考古題 fixture 綁 exam_subject_codes + 節點名稱匹配；歷史題庫匯入 CI/CD 完成後接線
   Rule: 前置（模式）- 使用者可選擇「考古題模擬考」模式，100% 從考古題題庫出題
 
     Example: 選擇考古題模擬考模式時 100% 從題庫抽取

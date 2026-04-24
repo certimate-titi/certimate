@@ -208,7 +208,7 @@ class ExamService:
                 new_q = QuestionModel(
                     id=uuid.uuid4(),
                     exam_id=exam.id,
-                    historical_exam_id=hq.historical_exam_id,
+                    historical_exam_id=None,  # 考試題目為副本，不共用 (he_id, q_num) 唯一索引
                     node_id=safe_node_id,
                     question_number=i + 1,
                     type=hq.type,

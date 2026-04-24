@@ -4,7 +4,9 @@ import uuid
 
 from behave import given
 
+from app.models.historical_exam import HistoricalExam
 from app.models.knowledge_node import KnowledgeNode
+from app.models.question import Question
 from app.models.resource import Resource, ResourceStatus
 from app.models.subject import Subject
 from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
@@ -54,6 +56,46 @@ def step_impl(context, subject_name, node_name, count):
     )
     node_repo.save(node)
     context.ids[f"node_{node_name}"] = str(node.id)
+
+    # 確保 subject 有 exam_subject_codes
+    exam_code = "TEST_EXAM"
+    subject_code = f"test_{uuid.uuid4().hex[:8]}"
+    if not subject.exam_subject_codes:
+        subject.exam_subject_codes = [f"{exam_code}:{subject_code}"]
+        db.commit()
+    else:
+        parts = subject.exam_subject_codes[0].split(":", 1)
+        if len(parts) == 2:
+            exam_code, subject_code = parts[0], parts[1]
+
+    # 建立 HistoricalExam 與 count 題考古題
+    he_key = f"historical_exam_{subject_name}_{node_name}"
+    if he_key not in context.ids:
+        he = HistoricalExam(
+            exam_code=exam_code,
+            subject_code=subject_code,
+            exam_name=f"{subject_name}_{node_name}_歷屆",
+            subject_name=subject_name,
+        )
+        db.add(he)
+        db.commit()
+        db.refresh(he)
+        context.ids[he_key] = str(he.id)
+    he_id = uuid.UUID(context.ids[he_key])
+
+    for i in range(count):
+        q = Question(
+            historical_exam_id=he_id,
+            node_id=node.id,
+            question_number=i + 1,
+            content=f"{node_name} 考古題 #{i + 1}",
+            option_a="A", option_b="B", option_c="C", option_d="D",
+            correct_answer="A",
+            source_type="historical",
+            quality_flag="ok",
+        )
+        db.add(q)
+    db.commit()
 
     # 記錄到 memo
     if "node_limited_questions" not in context.memo:
