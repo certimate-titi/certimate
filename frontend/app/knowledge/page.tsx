@@ -15,6 +15,7 @@ import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
 import ScaffoldMaterial from '@/components/ScaffoldMaterial';
 import ScaffoldNotebook from '@/components/ScaffoldNotebook';
+import ScaffoldReplayCard from '@/components/ScaffoldReplayCard';
 // react-resizable-panels removed — using plain flex layout
 
 interface ChatMessage {
@@ -697,6 +698,11 @@ export default function KnowledgeBasePage() {
               </div>
             ) : selectedNodeDetail ? (
               <div>
+                <ScaffoldReplayCard
+                  nodeId={nodeId}
+                  masteryLevel={selectedNodeDetail.node?.masteryLevel}
+                  isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                />
                 <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-blue-500" />
                   <h3 className="text-xs font-bold text-slate-700 truncate">{nodeLabel || '節點說明'}</h3>
