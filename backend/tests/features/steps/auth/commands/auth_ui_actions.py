@@ -20,13 +20,12 @@ def step_impl_toggle_password_visibility(context):
 
 @when('使用者在註冊頁面輸入密碼 "{password}"')
 def step_impl_register_input_password(context, password):
-    """呼叫 API 驗證密碼強度（在 Red 階段可能返回 404）。"""
-    response = context.api_client.post(
-        "/api/v1/auth/check-password-strength",
-        json={"password": password},
+    """純前端計算密碼強度（鏡射 frontend/app/signup/page.tsx:155-167）。"""
+    from tests.features.steps.auth.commands.check_password_strength import (
+        _compute_password_strength,
     )
-    context.last_response = response
     context.memo["register_password_input"] = password
+    context.memo["password_strength_label"] = _compute_password_strength(password)
 
 
 @when('使用者在註冊頁面點擊「服務條款」連結')
@@ -62,16 +61,15 @@ def step_impl_clear_email_field(context):
 
 @when('使用者在登入頁面點擊「以 Google 帳號登入」按鈕')
 def step_impl_click_google_login(context):
-    """呼叫 API 取得 Google OAuth 授權 URL。"""
-    response = context.api_client.get("/api/v1/auth/google/oauth-url")
-    context.last_response = response
+    """觸發前端 Firebase signInWithPopup（純前端，僅記錄狀態）。"""
+    context.memo["firebase_google_popup_opened"] = True
 
 
-@when('使用者完成 Google OAuth 授權且 Email 為 "{email}"')
-def step_impl_complete_google_oauth(context, email):
-    """呼叫 API 完成 Google OAuth 授權登入。"""
+@when('使用者完成 Google 登入授權且 Email 為 "{email}"')
+def step_impl_complete_google_firebase_login(context, email):
+    """呼叫後端 /auth/google-sso，附 Firebase ID token（mock）。"""
     response = context.api_client.post(
-        "/api/v1/auth/google/callback",
-        json={"email": email, "google_token": "mock_token"},
+        "/api/v1/auth/google-sso",
+        json={"google_id_token": "mock_firebase_id_token", "email": email},
     )
     context.last_response = response

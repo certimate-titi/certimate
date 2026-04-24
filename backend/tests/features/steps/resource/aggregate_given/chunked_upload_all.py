@@ -18,6 +18,10 @@ def step_impl(context, email, total_chunks):
     from app.services.chunked_upload_service import _uploads, UPLOAD_DIR
     chunk_dir = UPLOAD_DIR / upload_id
     chunk_dir.mkdir(parents=True, exist_ok=True)
+    # 建立實體 chunk 檔案讓 merge 能讀取
+    for i in range(total_chunks):
+        chunk_file = chunk_dir / f"chunk_{i:05d}"
+        chunk_file.write_bytes(b"x" * 1024)
     # Ensure a subject exists for the resource
     from app.models.subject import Subject
     db = context.db_session

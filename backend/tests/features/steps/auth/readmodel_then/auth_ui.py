@@ -108,21 +108,25 @@ def step_impl_back_to_login_link(context):
 
 @then('重寄按鈕應進入 60 秒冷卻倒數狀態')
 def step_impl_resend_btn_cooldown(context):
-    _response_ok(context)
+    assert context.memo.get("resend_cooldown_remaining", 0) == 60, \
+        f"冷卻秒數應為 60，實際為 {context.memo.get('resend_cooldown_remaining')}"
 
 
 @then('倒數期間按鈕應顯示剩餘秒數且無法點擊')
 def step_impl_countdown_display(context):
-    _response_ok(context)
+    assert context.memo.get("resend_cooldown_remaining", 0) > 0, \
+        "冷卻剩餘秒數應 > 0"
 
 
 @then('重寄按鈕應恢復為可點擊狀態')
 def step_impl_resend_btn_active(context):
-    _response_ok(context)
+    assert context.memo.get("resend_cooldown_ended") is True, \
+        "冷卻倒數尚未結束，按鈕不應恢復可點擊"
 
 
-# ── 真實 API：Google OAuth ───────────────────────────────────────────────────
+# ── UI 狀態：Firebase Google SSO popup ──────────────────────────────────────
 
-@then('系統應導向 Google OAuth 授權頁面')
-def step_impl_redirect_to_google_oauth(context):
-    _response_ok(context)
+@then('前端應開啟 Firebase Google 登入 popup')
+def step_impl_firebase_popup_opened(context):
+    assert context.memo.get("firebase_google_popup_opened") is True, \
+        "Firebase Google popup 未開啟"

@@ -34,6 +34,7 @@ from .auth.aggregate_given import user_google_sso  # noqa: F401
 # Auth — commands
 from .auth.commands import check_password_strength  # noqa: F401
 from .auth.commands import auth_ui_actions  # noqa: F401
+from .auth.commands import resend_verification_ui  # noqa: F401
 from .auth.commands import forgot_password  # noqa: F401
 from .auth.commands import reset_password  # noqa: F401
 from .auth.commands import google_sso  # noqa: F401
@@ -96,6 +97,12 @@ from .resource.commands import complete_chunked_upload  # noqa: F401
 from .resource.commands import query_chunks  # noqa: F401
 from .resource.commands import resource_detail  # noqa: F401
 from .resource.commands import upload_chunk  # noqa: F401
+from .resource.commands import query_resource_list  # noqa: F401
+from .resource.commands import upload_special_pdf  # noqa: F401
+from .resource.aggregate_then import no_resource_created  # noqa: F401
+from .resource.aggregate_then import resource_status_and_error  # noqa: F401
+from .resource.commands import trigger_background_processing  # noqa: F401
+from .resource.aggregate_given import failed_resource  # noqa: F401
 
 # Resource — readmodel_then
 from .resource.readmodel_then import resource_status  # noqa: F401
@@ -106,6 +113,7 @@ from .resource.readmodel_then import can_resume_upload  # noqa: F401
 from .resource.readmodel_then import resource_file_size  # noqa: F401
 from .resource.readmodel_then import chunk_count  # noqa: F401
 from .resource.readmodel_then import resource_detail_response  # noqa: F401
+from .resource.readmodel_then import error_message_in_list  # noqa: F401
 
 # Resource Parse — EPIC-035
 from .resource_parse.aggregate_given import parsed_resource  # noqa: F401

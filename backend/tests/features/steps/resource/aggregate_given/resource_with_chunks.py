@@ -1,6 +1,8 @@
 """Given 使用者已上傳資源且有 N 個分塊。"""
 
+import tempfile
 import uuid
+from pathlib import Path
 
 from behave import given
 
@@ -17,6 +19,17 @@ def step_impl(context, email, filename, subject_id, chunk_count):
     subject_uuid = context.ids.get(f"subject_{subject_id}")
     assert subject_uuid is not None, f"找不到科目 ID {subject_id}"
 
+    # 建立實體 PDF 檔案供 DocumentProcessingService 解析
+    temp_dir = Path(tempfile.gettempdir()) / "certimate_test_resources"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    file_path = temp_dir / f"{uuid.uuid4()}_{filename}"
+    import fitz  # PyMuPDF
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "測試 PDF 內容：這是一份提供 BDD 測試使用的範例文件。" * 5)
+    doc.save(str(file_path))
+    doc.close()
+
     resource = Resource(
         user_id=uuid.UUID(user_id),
         name=filename,
@@ -24,6 +37,7 @@ def step_impl(context, email, filename, subject_id, chunk_count):
         status="COMPLETED",
         subject_id=uuid.UUID(subject_uuid),
         file_size_bytes=1024 * 1024,
+        gcs_path=str(file_path),
     )
     db.add(resource)
     db.commit()
