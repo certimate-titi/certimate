@@ -189,3 +189,9 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
     Example: 查詢不存在的節點取得鷹架失敗
       When 使用者 "pro@example.com" 查詢節點 999 的學習鷹架
       Then 操作失敗，錯誤為「知識節點不存在」
+
+  Rule: 前置（守門）- FREE 用戶查詢節點學習鷹架應回 403
+
+    Example: FREE 用戶被擋在鷹架 endpoint 前
+      When 使用者 "free@example.com" 查詢節點 101 的學習鷹架
+      Then 操作失敗，錯誤為「學習教材為 PRO 以上方案功能」

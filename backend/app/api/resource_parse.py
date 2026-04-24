@@ -123,6 +123,25 @@ def _get_user_or_404(db: Session, user_id: UUID | str) -> User:
     return user
 
 
+def _require_paid_plan(db: Session, user_id: UUID | str) -> None:
+    """學習鷹架 / 教材 Tab 是 PRO 以上專屬功能（TASK-04）。"""
+    user = _get_user_or_404(db, user_id)
+    plan = user.subscription_plan
+    plan_val = plan.value if hasattr(plan, "value") else plan
+    if plan_val in (None, "FREE"):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "message": "學習教材為 PRO 以上方案功能",
+                "paywall": True,
+                "upgrade": {
+                    "target_plan": "PRO_199",
+                    "message": "升級 PRO 解鎖 AI 學習教材與延伸思考",
+                },
+            },
+        )
+
+
 def _get_resource_owned(db: Session, resource_id: UUID, user_id: UUID | str) -> Resource:
     uid = _as_uuid(user_id)
     res = db.get(Resource, resource_id)
@@ -232,6 +251,7 @@ def get_parsed(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> ParsedResourceResponse:
+    _require_paid_plan(db, current_user_id)
     res = _get_resource_owned(db, resource_id, current_user_id)
     scaffolds_rows = db.execute(
         select(ResourceScaffold)

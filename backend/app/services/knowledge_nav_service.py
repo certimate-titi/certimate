@@ -348,8 +348,29 @@ class KnowledgeNavService:
         映射規則（優先順序）：
         1. 若節點 source_page_number 介於某鷹架 [page_start, page_end]，命中。
         2. 若無 page 資訊，退回以 resource_id + chapter_heading 子字串比對節點名稱。
-        FREE 用戶不會呼叫此 endpoint（上層守門擋掉）；此處仍保留 404 on no node。
+        FREE 用戶 403（TASK-04）。
         """
+        try:
+            uid = uuid.UUID(user_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "使用者 ID 格式錯誤"}
+        user = self.db.query(User).filter_by(id=uid).first()
+        if not user:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+        plan = user.subscription_plan
+        plan_val = plan.value if hasattr(plan, "value") else plan
+        if plan_val in (None, "FREE"):
+            return {
+                "error": True,
+                "status_code": 403,
+                "paywall": True,
+                "message": "學習教材為 PRO 以上方案功能",
+                "upgrade": {
+                    "target_plan": "PRO_199",
+                    "message": "升級 PRO 解鎖 AI 學習教材與延伸思考",
+                },
+            }
+
         try:
             nid = uuid.UUID(node_id)
         except ValueError:
