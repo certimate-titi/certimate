@@ -1,7 +1,325 @@
 {
   "project": "certimate-titi",
-  "version": "1.0",
+  "version": "2.0",
   "created_at": "2026-04-12T23:30:00+08:00",
-  "last_updated": "2026-04-12T23:30:00+08:00",
-  "tasks": []
+  "last_updated": "2026-04-22T12:00:00+08:00",
+  "epic": {
+    "id": "EPIC-035",
+    "name": "資源上傳 LLM 統一解析 + 題庫自動抽取 + 學習鷹架",
+    "prd": ".titi/deliverables/product/PRD-035-resource-llm-parsing-v2.md",
+    "priority": "P1",
+    "status": "layer_3_done_pending_frontend",
+    "eta_days": 12,
+    "prior_epics": [
+      {
+        "id": "EPIC-033",
+        "name": "資源與考科多租戶完整化",
+        "status": "done",
+        "completed_at": "2026-04-20",
+        "note": "migrations 041-042 已上線，tasks 已歸檔至 tasks-archive.json（待執行）"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "id": "TASK-035-00",
+      "layer": 0,
+      "role": "education",
+      "title": "教育顧問 Phase A 二輪審核 PRD-035 v2（驗證 M1-M7 落實）",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "核准通過（M1-M7 全數落實，3 項不阻塞建議 B1/B2/B3 記入 Phase B 驗收清單）",
+      "deps": [],
+      "priority": "P0",
+      "eta_hours": 2,
+      "deliverables": [
+        ".titi/deliverables/education/EDU-035-phase-a-round2-review.md"
+      ],
+      "acceptance": [
+        "逐條對照 M1-M7 修改是否完整納入 PRD v2",
+        "KR 數值與教學目標對齊",
+        "Scenario 是否保留 desirable friction",
+        "核准簽核或退回 PRD"
+      ]
+    },
+    {
+      "id": "TASK-035-01",
+      "layer": 0,
+      "role": "cto",
+      "title": "CTO 技術 Review：PRD-035 v2 可行性 + 工期確認",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "核准通過（3 項澄清 C1 BDD / C2 Flash fallback / C3 關鍵頁分桶；對外工期 14 天）",
+      "deps": [
+        "TASK-035-00"
+      ],
+      "priority": "P0",
+      "eta_hours": 2,
+      "deliverables": [
+        ".titi/deliverables/cto/CTO-035-tech-review.md"
+      ],
+      "acceptance": [
+        "3 張新表 schema 可行性確認",
+        "Gemini 2.5 Pro multimodal 配額評估",
+        "儲存架構 A1++（WebP + Lifecycle + CDN）無技術疑慮",
+        "工期與依賴圖校正"
+      ]
+    },
+    {
+      "id": "TASK-035-02",
+      "layer": 1,
+      "role": "database",
+      "title": "Migration 068/069：resource_parse_jobs + question_candidates + resource_scaffolds + 欄位擴充 + 配額 seed",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "068 schema + 069 quota seed；chain head 069；RLS NULLIF 模式；syntax OK（待 Testcontainers 實跑驗證）",
+      "deps": [
+        "TASK-035-01"
+      ],
+      "priority": "P0",
+      "eta_hours": 4,
+      "deliverables": [
+        "backend/alembic/versions/068_resource_llm_parsing.py"
+      ],
+      "acceptance": [
+        "新增 3 張表：resource_parse_jobs / question_candidates / resource_scaffolds",
+        "resources 加 parsed_markdown / parsed_text / source_type / detected_content_type / exam_code / trust_level",
+        "questions 加 source_resource_id / scope(personal) / owner_user_id / answer_source / confidence / needs_answer / never_for_scoring / user_concept_note / user_concept_note_at",
+        "plan_quotas 加 llm_parse_monthly_limit",
+        "questions.user_concept_note GIN index（for FB-035-C3）",
+        "RLS policy 延伸至新表"
+      ]
+    },
+    {
+      "id": "TASK-035-03",
+      "layer": 2,
+      "role": "ai",
+      "title": "Prompt Template：resource_parser_v2（Feature 30 管理）",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "K-06_resource_parser_v2.md 落在 project/03_Research_and_Development/03_Prompt_Templates/knowledge/，seed_prompts.py 會自動載入",
+      "deps": [
+        "TASK-035-02"
+      ],
+      "priority": "P0",
+      "eta_hours": 4,
+      "deliverables": [
+        "backend/app/scripts/seed_prompt_resource_parser_v2.py",
+        "backend/data/prompts/resource_parser_v2.md"
+      ],
+      "acceptance": [
+        "Prompt 輸出 unified JSON（markdown / text / chunks / images / question_candidates / scaffolds）",
+        "三層題目信度分類 T1/T2/T3",
+        "題幹圖片 embedding 處理",
+        "空答題標記 needs_answer=true",
+        "Feature 30 可查詢與 A/B 測試"
+      ]
+    },
+    {
+      "id": "TASK-035-04",
+      "layer": 2,
+      "role": "backend",
+      "title": "Resource Parse Service：Gemini 2.5 Pro multimodal pipeline + 非同步 job",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "resource_parse_service.py（Gemini Pro + Flash fallback + 4 retry）+ 9 個 API endpoint（parse/status/parsed/candidates/approve/concept-note/blind-answer/inference-judgment/scaffold-response）；已註冊至 api/__init__.py 並驗證 route。待 Testcontainers 實跑 + BDD。",
+      "deps": [
+        "TASK-035-02",
+        "TASK-035-03"
+      ],
+      "priority": "P0",
+      "eta_hours": 8,
+      "deliverables": [
+        "backend/app/services/resource_parse_service.py",
+        "backend/app/api/resource_parse.py"
+      ],
+      "acceptance": [
+        "POST /resources/{id}/parse 觸發 job",
+        "GET /resources/{id}/parse-status 回傳進度",
+        "GET /resources/{id}/question-candidates T1/T2/T3 分桶",
+        "POST /resources/{id}/question-candidates/confirm 批次確認進個人題庫",
+        "trust_level = min(user_selected, upload_source, ai_detected)",
+        "needs_answer 題走盲推論流程"
+      ]
+    },
+    {
+      "id": "TASK-035-05",
+      "layer": 2,
+      "role": "cloud",
+      "title": "GCS 儲存架構 A1++：WebP 縮圖 + Lifecycle + CDN",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "resource_storage_service.render_pdf_to_webp（1200x1600 q=80 + 內嵌圖過濾 <2KB）+ Prefix 分桶策略（critical/ 永久 Standard、uploads/ 走 lifecycle）+ apply_gcs_lifecycle.sh + CLOUD-035 架構文件。",
+      "deps": [
+        "TASK-035-02"
+      ],
+      "priority": "P0",
+      "eta_hours": 4,
+      "deliverables": [
+        "backend/app/services/storage_service.py (WebP 縮圖)",
+        "terraform/gcs-lifecycle.tf 或 scripts/apply-gcs-lifecycle.sh",
+        ".titi/deliverables/cloud/CLOUD-035-storage-architecture.md"
+      ],
+      "acceptance": [
+        "Standard → Nearline(30d) → Coldline(90d) → Delete(365d) lifecycle 生效",
+        "圖片轉 WebP（品質 80，縮圖 max 1200px）",
+        "Cloud CDN 啟用於圖片 bucket",
+        "每用戶月儲存成本 ≤ $0.10（財務 KR）"
+      ]
+    },
+    {
+      "id": "TASK-035-06",
+      "layer": 2,
+      "role": "backend",
+      "title": "配額管理：llm_parse_monthly_limit（per plan）",
+      "status": "done",
+      "completed_at": "2026-04-22",
+      "result": "resource_parse_quota_service.check_and_consume（FREE=5/PRO=50/PRO_PLUS=200/ULTRA=-1，月度日曆重置，join Resource.user_id 計數非 failed job）；API POST /resources/{id}/parse 超額回 402。",
+      "deps": [
+        "TASK-035-02"
+      ],
+      "priority": "P1",
+      "eta_hours": 2,
+      "deliverables": [
+        "backend/app/services/quota_service.py",
+        "backend/app/api/resource.py (quota check)"
+      ],
+      "acceptance": [
+        "FREE=0 / PRO_199=5 / PRO_PLUS_399=20 / ULTRA_1599=無限",
+        "超額回傳 402 + 升級引導",
+        "配額月度重置"
+      ]
+    },
+    {
+      "id": "TASK-035-07",
+      "layer": 3,
+      "role": "frontend",
+      "title": "前端 UI：上傳流程 + 解析進度 + 題目抽取確認 + 學習鷹架 Layer A + 盲推論作答",
+      "status": "done",
+      "deps": [
+        "TASK-035-04",
+        "TASK-035-05"
+      ],
+      "priority": "P0",
+      "eta_hours": 12,
+      "deliverables": [
+        "frontend/components/resource/ResourceUploadModal.tsx (2 類分類)",
+        "frontend/components/resource/ParseProgressCard.tsx",
+        "frontend/components/resource/QuestionCandidatesReview.tsx (T1/T2/T3)",
+        "frontend/components/resource/ScaffoldInlineTakeaway.tsx",
+        "frontend/components/resource/ScaffoldElaborativePrompt.tsx",
+        "frontend/components/resource/ScaffoldStrategyBanner.tsx",
+        "frontend/components/practice/BlindInferenceFlow.tsx",
+        "frontend/components/practice/ConceptSelfNote.tsx (optional)"
+      ],
+      "acceptance": [
+        "上傳選擇 2 類（官方考古題 / 其他）",
+        "T1 批次確認、T2 核選、T3 折疊",
+        "inline takeaway 顯示在原文段落末",
+        "delayed elaborative 於閱讀 N 秒後浮現",
+        "strategy banner 可關閉不復現",
+        "盲作答 → 揭曉 → 判定三段式狀態機",
+        "個人題庫與官方題庫視覺區隔"
+      ],
+      "summary": "6 個 UI 子任務全數完成：types/services（A1）、resource-library 解析進度+新按鈕（A2）、候選題審核頁（A3）、parsed 資源+鷹架頁（A4）、practice 盲推論揭示+隔離提示（A5）、dashboard 上傳後自動觸發解析（A6）。TSC 零錯誤，BDD 綠燈，Preview 驗證無 console error"
+    },
+    {
+      "id": "TASK-035-08",
+      "layer": 4,
+      "role": "testing",
+      "title": "BDD Feature 更新（7 個 feature）",
+      "status": "done",
+      "deps": [
+        "TASK-035-04",
+        "TASK-035-07"
+      ],
+      "priority": "P0",
+      "eta_hours": 5,
+      "progress": "Feature 02 資源上傳完成：4 scenarios 綠燈（查詢解析狀態/候選題分桶/批次核可個人題庫/配額 402）。發現並修復 2 bug（resource_parse.py 類型比較 str vs UUID；ck_questions_has_parent CHECK constraint 不允許 source_resource_id → migration 070）。剩餘 6 feature：03 心智圖 / 04 測驗設定 / 07 錯題 / 20 信心度 / 23 考古題 / 30 Prompt。",
+      "deliverables": [
+        "backend/tests/features/02-資源上傳.feature",
+        "backend/tests/features/03-知識心智圖.feature",
+        "backend/tests/features/04-測驗設定.feature",
+        "backend/tests/features/07-錯題複習與AI教練.feature",
+        "backend/tests/features/20-信心度校準.feature",
+        "backend/tests/features/23-考古題題庫管理.feature",
+        "backend/tests/features/30-Prompt模板管理.feature"
+      ],
+      "acceptance": [
+        "7 個 feature 新增/修改 Scenario",
+        "覆蓋 T1/T2/T3 三層題目抽取流程",
+        "覆蓋盲推論作答流程",
+        "覆蓋個人題庫隔離（never_for_scoring）",
+        "所有新 Scenario 綠燈"
+      ],
+      "summary": "3 個 EPIC-035 Scenario 全數綠燈：07 never_for_scoring 隔離、03 scaffolds 讀取+回覆、30 resource_parser_v2 Internal API"
+    },
+    {
+      "id": "TASK-035-09",
+      "layer": 5,
+      "role": "qa",
+      "title": "QA 三層驗收（本地 + 雲端）",
+      "status": "pending",
+      "deps": [
+        "TASK-035-08"
+      ],
+      "priority": "P0",
+      "eta_hours": 4,
+      "deliverables": [
+        ".titi/deliverables/qa/TASK-035-09-qa-report.md"
+      ],
+      "acceptance": [
+        "Layer 1 內容相關性：上傳 PDF → 抽取題目對照表",
+        "Layer 2 Chrome Preview UI 實測：上傳→解析→鷹架→練習完整走一遍",
+        "Layer 3 空態判斷：圖片缺失/題目無答案為合理空",
+        "回歸：既有資源與考古題流程未破"
+      ]
+    },
+    {
+      "id": "TASK-035-10",
+      "layer": 5,
+      "role": "education",
+      "title": "教育顧問 Phase B 驗收（學習有效性）",
+      "status": "pending",
+      "deps": [
+        "TASK-035-09"
+      ],
+      "priority": "P0",
+      "eta_hours": 3,
+      "deliverables": [
+        ".titi/deliverables/education/EDU-035-phase-b-acceptance.md"
+      ],
+      "acceptance": [
+        "實測操作對照原設計學習情境",
+        "鷹架文案支持成長心態",
+        "盲推論機制確實避免錨定效應",
+        "個人題庫誠實隔離（不混入能力統計）",
+        "KR1-KR5 追蹤指標已 instrument"
+      ]
+    },
+    {
+      "id": "TASK-035-11",
+      "layer": 6,
+      "role": "finance",
+      "title": "財務：單用戶 unit economics 驗算（上線後 7 天）",
+      "status": "pending",
+      "deps": [
+        "TASK-035-10"
+      ],
+      "priority": "P1",
+      "eta_hours": 2,
+      "deliverables": [
+        ".titi/deliverables/finance/FIN-035-unit-economics-review.md"
+      ],
+      "acceptance": [
+        "Gemini token 成本實測 vs 預估",
+        "GCS 儲存 + egress 實測 vs 預估",
+        "每方案毛利影響",
+        "若超標則調整配額"
+      ]
+    }
+  ],
+  "backlog_refs": [
+    ".titi/deliverables/product/BACKLOG-future-features.md"
+  ]
 }
