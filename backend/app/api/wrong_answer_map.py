@@ -51,6 +51,17 @@ def get_node_wrong_answers(
 
 # ========== Export Markdown ==========
 
+@router.post("/subjects/{subject_id}/ai-suggestions")
+def get_ai_suggestions(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """依錯題地圖紅色節點產出學習建議（Feature 27 Rule 159）。"""
+    service = WrongAnswerMapService(db)
+    return service.get_suggestions(user_id, subject_id)
+
+
 @router.get("/subjects/{subject_id}/map/markdown")
 def export_markdown(
     subject_id: str,

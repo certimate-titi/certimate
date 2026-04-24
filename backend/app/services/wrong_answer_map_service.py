@@ -280,3 +280,46 @@ class WrongAnswerMapService:
                 lines.append(f"{prefix} {n.name} ⚪ (未作答)")
 
         return "\n".join(lines)
+
+    # ========== AI 學習建議（Feature 27 Rule 159）==========
+
+    def get_suggestions(self, user_id: str, subject_id: Optional[str] = None) -> dict:
+        """依錯題地圖紅色節點產出學習建議（紅色 = mastery_rate < 60）。
+
+        排序：mastery_rate ASC（最低掌握度優先）。
+        """
+        uid = uuid.UUID(user_id)
+
+        q = self.db.query(NodeMastery, KnowledgeNode).join(
+            KnowledgeNode, NodeMastery.node_id == KnowledgeNode.id
+        ).filter(NodeMastery.user_id == uid)
+
+        if subject_id:
+            q = q.filter(KnowledgeNode.subject_id == uuid.UUID(subject_id))
+
+        rows = q.all()
+
+        red_items = []
+        for mastery, node in rows:
+            if mastery.total_count and mastery.total_count > 0 and float(mastery.mastery_rate) < 60:
+                red_items.append((mastery, node))
+
+        red_items.sort(key=lambda pair: float(pair[0].mastery_rate))
+
+        suggestions = []
+        for mastery, node in red_items:
+            rate = float(mastery.mastery_rate)
+            if rate < 30:
+                action, est = "deep_dive", 30
+            elif rate < 45:
+                action, est = "review", 20
+            else:
+                action, est = "quiz", 15
+            suggestions.append({
+                "target_node": {"id": str(node.id), "name": node.name},
+                "current_rate": rate,
+                "suggested_action": action,
+                "estimated_time": est,
+            })
+
+        return {"suggestions": suggestions, "total": len(suggestions)}
