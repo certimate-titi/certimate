@@ -335,12 +335,18 @@ def _persist_parsed(
             db.add(_build_candidate_row(resource, q, tier))
             c_created += 1
 
+    new_scaffold_rows: list[ResourceScaffold] = []
     for s in parsed.get("scaffolds", []) or []:
         row = _build_scaffold_row(resource, s)
         if row is not None:
             db.add(row)
+            new_scaffold_rows.append(row)
             s_created += 1
 
+    db.flush()
+
+    # 3b) elaborative 類鷹架預產 AI 參考答案（TASK-03）
+    _generate_reference_answers(new_scaffold_rows)
     db.flush()
 
     # 4) 映射 T1 題目到科目知識節點（Voyage cosine similarity）
@@ -488,6 +494,80 @@ def _build_scaffold_row(
         page_start=page_start,
         page_end=page_end,
     )
+
+
+def _generate_reference_answers(rows: list[ResourceScaffold]) -> None:
+    """為 elaborative 類鷹架預產 AI 參考答案（TASK-03）。
+
+    失敗不阻斷解析流程：單筆失敗只記 warning，rows 的 reference_answer 留 None。
+    測試環境可 monkeypatch `_call_gemini_reference_answer` 注入 fake。
+    """
+    for row in rows:
+        type_val = row.type.value if hasattr(row.type, "value") else row.type
+        if type_val != ResourceScaffoldType.ELABORATIVE.value:
+            continue
+        if not row.content:
+            continue
+        try:
+            answer = _call_gemini_reference_answer(row.content, row.chapter_heading)
+        except Exception:
+            logger.warning(
+                "reference answer generation failed scaffold_id=%s",
+                row.id, exc_info=True,
+            )
+            continue
+        if answer:
+            row.reference_answer = answer
+
+
+def _call_gemini_reference_answer(question: str, chapter_heading: str | None) -> str | None:
+    """呼叫 Gemini 產生延伸思考題的參考答案。
+
+    使用 Flash（速度優先、批次生成、每資源數張鷹架）。
+    """
+    try:
+        from google import genai
+        from google.genai import types as genai_types
+    except ImportError:
+        raise RuntimeError("google-genai SDK not installed")
+
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    api_key = (
+        getattr(settings, "GEMINI_API_KEY", None)
+        or getattr(settings, "gemini_api_key", None)
+        or ""
+    )
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not configured")
+
+    client = genai.Client(api_key=api_key)
+    heading_line = f"章節：{chapter_heading}\n" if chapter_heading else ""
+    prompt = (
+        "你是一位證照考試輔導老師。請針對以下延伸思考題給一段簡潔的參考答案，"
+        "長度 100–200 字，聚焦考試重點，避免冗詞。\n\n"
+        f"{heading_line}題目：{question}\n\n參考答案："
+    )
+
+    last_exc: Exception | None = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = client.models.generate_content(
+                model=GEMINI_FLASH,
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=512,
+                ),
+            )
+            return (getattr(resp, "text", None) or "").strip() or None
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            time.sleep(BASE_BACKOFF * (2 ** attempt))
+    if last_exc is not None:
+        raise last_exc
+    return None
 
 
 def _coerce_page_range(s: dict[str, Any]) -> tuple[int | None, int | None]:

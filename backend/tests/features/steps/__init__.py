@@ -121,6 +121,8 @@ from .resource_parse.readmodel_then import parse_response  # noqa: F401
 from .resource_parse.aggregate_then import questions_by_resource  # noqa: F401
 from .resource_parse.aggregate_then import question_explanation  # noqa: F401
 from .resource_parse.aggregate_then import scaffold_response  # noqa: F401
+from .resource_parse.aggregate_then import reference_answer_populated  # noqa: F401
+from .resource_parse.commands import generate_reference_answer  # noqa: F401
 
 # Common Then — EPIC-035 additions
 from .common_then import status_and_bracket_error  # noqa: F401

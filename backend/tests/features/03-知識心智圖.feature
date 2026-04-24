@@ -200,3 +200,15 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       When 使用者 "pro@example.com" 對該資源第 2 筆鷹架提交作答內容 "我認為 A 與 B 的差異在於..."
       Then 操作成功
       And DB 中該鷹架的 user_response 應包含 "A 與 B 的差異"
+
+  # ─────────────────────────────────────────────
+  # TASK-03：elaborative 類鷹架預產 AI 參考答案
+  # ─────────────────────────────────────────────
+
+  @task-03
+  Rule: 後置（狀態）- elaborative 類鷹架生成時應同時產出 reference_answer
+
+    Example: 預產參考答案後 DB 中 reference_answer 非空
+      Given 使用者 "pro@example.com" 已上傳資源 "延伸題測試.pdf" 並完成解析，附帶 1 筆鷹架（elaborative）
+      When 系統為該資源的 elaborative 鷹架預產 AI 參考答案（stub）
+      Then 該資源的 elaborative 鷹架 reference_answer 欄位應非空

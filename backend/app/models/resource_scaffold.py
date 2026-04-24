@@ -44,6 +44,7 @@ class ResourceScaffold(Base):
     responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     page_start: Mapped[int | None] = mapped_column(Integer)
     page_end: Mapped[int | None] = mapped_column(Integer)
+    reference_answer: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
