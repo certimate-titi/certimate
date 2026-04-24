@@ -478,13 +478,40 @@ def _build_scaffold_row(
         t = ResourceScaffoldType(raw_type)
     except ValueError:
         return None
+    page_start, page_end = _coerce_page_range(s)
     return ResourceScaffold(
         resource_id=resource.id,
         tenant_id=resource.tenant_id,
         chapter_heading=s.get("chapter_heading"),
         type=t.value,
         content=s.get("content") or "",
+        page_start=page_start,
+        page_end=page_end,
     )
+
+
+def _coerce_page_range(s: dict[str, Any]) -> tuple[int | None, int | None]:
+    """從鷹架 payload 解析 page_start / page_end。
+
+    LLM 可能用不同形狀回傳：顯式 page_start/page_end、單一 source_page、
+    或 pages: [start, end]。都歸一到 (start, end)。
+    """
+    ps = s.get("page_start")
+    pe = s.get("page_end")
+    if isinstance(ps, int) and isinstance(pe, int):
+        return (ps, pe) if ps <= pe else (pe, ps)
+    sp = s.get("source_page")
+    if isinstance(sp, int):
+        return sp, sp
+    pages = s.get("pages")
+    if isinstance(pages, (list, tuple)) and len(pages) >= 1:
+        try:
+            start = int(pages[0])
+            end = int(pages[-1])
+            return (start, end) if start <= end else (end, start)
+        except (TypeError, ValueError):
+            pass
+    return None, None
 
 
 # ---------------------------------------------------------------------------

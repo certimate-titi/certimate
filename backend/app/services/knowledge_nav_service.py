@@ -9,6 +9,7 @@ from app.models.node_mastery import NodeMastery
 from app.models.learning_journey import LearningJourney
 from app.models.resource import Resource
 from app.models.resource_chunk import ResourceChunk
+from app.models.resource_scaffold import ResourceScaffold
 from app.models.subject import Subject
 from app.models.ai_chat import AiChatSession, AiChatMessage
 from app.models.user import User
@@ -340,6 +341,67 @@ class KnowledgeNavService:
             result["highlight"] = None
 
         return result
+
+    def get_node_scaffolds(self, node_id: str, user_id: str) -> dict:
+        """取得節點對應的學習鷹架清單。
+
+        映射規則（優先順序）：
+        1. 若節點 source_page_number 介於某鷹架 [page_start, page_end]，命中。
+        2. 若無 page 資訊，退回以 resource_id + chapter_heading 子字串比對節點名稱。
+        FREE 用戶不會呼叫此 endpoint（上層守門擋掉）；此處仍保留 404 on no node。
+        """
+        try:
+            nid = uuid.UUID(node_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "節點 ID 格式錯誤"}
+
+        node = self.db.query(KnowledgeNode).filter_by(id=nid).first()
+        if not node:
+            return {"error": True, "status_code": 404, "message": "知識節點不存在"}
+
+        if not node.resource_id:
+            return {"error": False, "node_id": node_id, "scaffolds": []}
+
+        q = self.db.query(ResourceScaffold).filter(
+            ResourceScaffold.resource_id == node.resource_id
+        )
+
+        page = node.source_page_number
+        if page is not None:
+            hits = q.filter(
+                ResourceScaffold.page_start <= page,
+                ResourceScaffold.page_end >= page,
+            ).all()
+        else:
+            hits = q.filter(
+                ResourceScaffold.chapter_heading.isnot(None),
+                ResourceScaffold.chapter_heading != "",
+            ).all()
+            if node.name:
+                hits = [
+                    s for s in hits
+                    if s.chapter_heading and (
+                        s.chapter_heading in node.name or node.name in s.chapter_heading
+                    )
+                ]
+
+        return {
+            "error": False,
+            "node_id": node_id,
+            "scaffolds": [
+                {
+                    "id": str(s.id),
+                    "type": s.type.value if hasattr(s.type, "value") else s.type,
+                    "chapter_heading": s.chapter_heading,
+                    "content": s.content,
+                    "page_start": s.page_start,
+                    "page_end": s.page_end,
+                    "user_response": s.user_response,
+                    "responded_at": s.responded_at.isoformat() if s.responded_at else None,
+                }
+                for s in hits
+            ],
+        }
 
     def get_layout(self, user_id: str) -> dict:
         """取得知識心智圖頁面佈局。"""

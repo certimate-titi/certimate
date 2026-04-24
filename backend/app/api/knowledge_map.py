@@ -54,6 +54,18 @@ def get_node_detail(
     return _handle_result(result)
 
 
+@router.get("/nodes/{node_id}/scaffolds")
+def get_node_scaffolds(
+    node_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """取得節點對應的學習鷹架（TASK-02）。"""
+    service = KnowledgeNavService(db)
+    result = service.get_node_scaffolds(node_id, user_id)
+    return _handle_result(result)
+
+
 @router.get("/nodes/{node_id}/source")
 def get_node_source(
     node_id: str,

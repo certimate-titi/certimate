@@ -142,6 +142,7 @@ from .knowledge_map.aggregate_given import user_single_subject  # noqa: F401
 from .knowledge_map.aggregate_given import user_node_followup_count  # noqa: F401
 from .knowledge_map.aggregate_given import user_coach_quota  # noqa: F401
 from .knowledge_map.aggregate_given import basic_coach_quota  # noqa: F401
+from .knowledge_map.aggregate_given import resource_scaffolds  # noqa: F401
 
 # Knowledge Map — commands
 from .knowledge_map.commands import ai_coach_input  # noqa: F401
@@ -149,6 +150,7 @@ from .knowledge_map.commands import knowledge_map_ui_actions  # noqa: F401
 from .knowledge_map.commands import ai_coach_input_locked  # noqa: F401
 from .knowledge_map.commands import answer_questions_correctly  # noqa: F401
 from .knowledge_map.commands import click_knowledge_node  # noqa: F401
+from .knowledge_map.commands import query_node_scaffolds  # noqa: F401
 from .knowledge_map.commands import enter_knowledge_map  # noqa: F401
 from .knowledge_map.commands import switch_subject  # noqa: F401
 from .knowledge_map.commands import complete_resource_parsing  # noqa: F401
@@ -173,6 +175,7 @@ from .knowledge_map.aggregate_then import basic_quota_remaining  # noqa: F401
 
 # Knowledge Map — readmodel_then
 from .knowledge_map.readmodel_then import achievement_animation  # noqa: F401
+from .knowledge_map.readmodel_then import scaffolds_list  # noqa: F401
 from .knowledge_map.readmodel_then import knowledge_map_ui  # noqa: F401
 from .knowledge_map.readmodel_then import coach_response_rendered  # noqa: F401
 from .knowledge_map.readmodel_then import knowledge_tree_displayed  # noqa: F401

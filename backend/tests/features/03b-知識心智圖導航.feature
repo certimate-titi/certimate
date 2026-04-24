@@ -171,3 +171,21 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
         | 102     | EC2 運算邏輯 | 30     | red    |
         | 103     | IAM 管理     | 0      | gray   |
       And 顏色規則為：green >= 80、orange 60-79、red < 60、gray 未作答
+
+  # ========== TASK-02 節點 ↔ 學習鷹架映射 ==========
+
+  Rule: 後置（映射）- 節點 ↔ 學習鷹架透過頁碼區間比對
+
+    Example: 節點頁碼命中鷹架 [page_start, page_end] 區間時回傳對應鷹架
+      Given 資源 "aws-guide.pdf" 有以下學習鷹架：
+        | chapter_heading | type       | content                 | page_start | page_end |
+        | S3 儲存服務      | takeaway   | S3 提供 11 個 9 的耐用性 | 10         | 14       |
+        | EC2 運算邏輯     | elaborative| 為何選擇 EC2？           | 30         | 40       |
+      When 使用者 "pro@example.com" 查詢節點 101 的學習鷹架
+      Then 操作成功
+      And 學習鷹架清單應包含 chapter_heading 為 "S3 儲存服務" 的項目
+      And 學習鷹架清單不應包含 chapter_heading 為 "EC2 運算邏輯" 的項目
+
+    Example: 查詢不存在的節點取得鷹架失敗
+      When 使用者 "pro@example.com" 查詢節點 999 的學習鷹架
+      Then 操作失敗，錯誤為「知識節點不存在」
