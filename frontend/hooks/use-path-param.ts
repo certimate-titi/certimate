@@ -11,7 +11,6 @@ import { useEffect, useState } from 'react';
  * （例如 "detail"），而非 URL 中的真實 ID。
  *
  * @example
- * const subjectId = usePathParam(/\/subjects\/([^/]+)\/canvas/);
  * const resourceId = usePathParam(/\/resources\/([^/]+)\/parsed/);
  */
 export function usePathParam(pattern: RegExp): string {
@@ -21,10 +20,6 @@ export function usePathParam(pattern: RegExp): string {
     if (m && m[1]) setValue(m[1]);
   }, [pattern]);
   return value;
-}
-
-export function useSubjectIdFromPath(): string {
-  return usePathParam(/\/subjects\/([^/]+)\/canvas/);
 }
 
 export function useResourceIdFromPath(): string {

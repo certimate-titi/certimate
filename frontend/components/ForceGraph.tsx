@@ -103,6 +103,8 @@ export default function ForceGraph({
       .scaleExtent([0.3, 3])
       .on('zoom', (event) => container.attr('transform', event.transform));
     svg.call(zoom);
+    // Reset transform when nodes change — 避免切層後節點被前次 pan/zoom 推出 viewport
+    svg.call(zoom.transform, d3.zoomIdentity);
 
     // Links
     const link = container.append('g')

@@ -43,14 +43,6 @@
         "destination": "/resources/detail/candidates/index.html"
       },
       {
-        "source": "/subjects/*/canvas",
-        "destination": "/subjects/detail/canvas/index.html"
-      },
-      {
-        "source": "/subjects/*/canvas/**",
-        "destination": "/subjects/detail/canvas/index.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }

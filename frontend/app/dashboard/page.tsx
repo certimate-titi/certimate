@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Youtube, FileText, Image as ImageIcon, Clock, TrendingUp, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, AlertCircle, Sparkles, Lock, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
-import { dashboardService, documentService, subjectService, resourceParseService, canvasService } from '@/lib/api/services';
+import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import StreakCounter from '@/components/StreakCounter';
@@ -731,20 +731,18 @@ export default function DashboardPage() {
               <DomainRadarChart
                 domains={data.domainStrengths}
                 onDomainClick={activeSubjectId ? (_d, nodeId) => {
-                  const qs = nodeId ? `?focus=${nodeId}` : '';
-                  window.location.href = `/subjects/${activeSubjectId}/canvas${qs}`;
+                  const qs = nodeId ? `?nodeId=${nodeId}` : '';
+                  window.location.href = `/knowledge${qs}`;
                 } : undefined}
-                onDomainHover={activeSubjectId ? () => canvasService.prefetchTier1(activeSubjectId) : undefined}
               />
 
               {activeSubjectId && (
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <Link
-                    href={`/subjects/${activeSubjectId}/canvas`}
-                    onMouseEnter={() => canvasService.prefetchTier1(activeSubjectId)}
+                    href="/knowledge"
                     className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-800 py-2 rounded-lg hover:bg-emerald-50 transition"
                   >
-                    🗺️ 開啟知識地圖 Canvas
+                    🗺️ 開啟知識地圖
                   </Link>
                 </div>
               )}
