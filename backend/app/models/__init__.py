@@ -66,7 +66,6 @@ from app.models.question_candidate import (  # noqa: F401, E402
     QuestionCandidateDecision,
 )
 from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType  # noqa: F401, E402
-from app.models.analytics_event import AnalyticsEvent  # noqa: F401, E402
 
 __all__ = [
     "Base",
