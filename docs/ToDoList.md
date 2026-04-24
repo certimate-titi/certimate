@@ -12,15 +12,15 @@
 - [ ] `/knowledge` — 科目切換器無 active Scenario（Feature 03 全 @ignore）（首見：2026-04-24）
 - [ ] `/knowledge/mindmap` — ForceGraph/MindMapTree 視圖切換無任何 Feature 覆蓋（首見：2026-04-24）
 - [ ] `/exam/results` — 成績卡片下載按鈕無 Feature Scenario（功能目前為 stub）（首見：2026-04-24）
-- [ ] `/exam/workspace` — 番茄鐘計時器 Feature 21 存在但 0 active Scenario，疑似頁面未完整實作（首見：2026-04-24）
+- [x] `/exam/workspace` — ~~番茄鐘計時器 Feature 21 存在但 0 active Scenario~~ Feature 21 已有 15 個 active Scenario，無 @ignore 標記（確認：2026-04-25 自動巡檢）
 - [ ] `/account/my-subjects` — 刪除科目功能無任何 Feature 覆蓋（首見：2026-04-24）
-- [ ] `/account/resource-library` — 資源分享功能無 active Feature Scenario（Feature 11 @wip）（首見：2026-04-24）
+- [x] `/account/resource-library` — ~~資源分享功能無 active Feature Scenario（Feature 11 @wip）~~ Feature 11 已有 15 個 active Scenario，無 @wip 標記（確認：2026-04-25 自動巡檢）
 - [ ] `/library` — Tab 切換無任何 Feature 覆蓋（首見：2026-04-24）
 - [ ] `/edu-console` — CSV 匯入 / 新增學員 Feature 10 全 @ignore，無 active Scenario（首見：2026-04-24）
 - [ ] `/super-admin/settings/flags` — Feature Flag 設定無任何 Feature 覆蓋（首見：2026-04-24）
 - [ ] `/super-admin/settings/plans` — 方案配額管理無 active Feature Scenario（首見：2026-04-24）
 - [ ] `/super-admin/users/[userId]` — 用戶詳情頁無 active Feature Scenario（首見：2026-04-24）
-- [ ] `/review` — Feature 07（錯題複習與 AI 教練）整個 Feature 全 @ignore，但頁面已完整實作，含 AI 安全 Router / max_tokens / PII 過濾 / System Prompt 保護規格，安全實作無法被測試驗證（首見：2026-04-24，**高優先**）
+- [x] `/review` — ~~Feature 07（錯題複習與 AI 教練）整個 Feature 全 @ignore~~ Feature-level @ignore 已移除（改為 @query），6 個 scenario-level @ignore 已解封（側邊列表切換→@playwright-e2e、答案對比→@playwright-e2e、引用來源切換、毛玻璃遮罩、月配額限制、空狀態）。後端 step definitions 齊全。13 個 AI 安全 scenario 維持 @skip（標記 @infra-heavy，待基礎設施就緒）（修復：2026-04-25 自動巡檢，**高優先已解決**）
 - [x] `/practice` — blindInferenceService（信心度校準）Feature 20 核心後端 Scenario 已全部 active，僅 2 個 UI scenario 仍 @ignore（確認：2026-04-24 15:08 自動巡檢）
 - [ ] `/super-admin/settings/version` — 版本資訊頁無任何 Feature 覆蓋（首見：2026-04-24）
 - [x] `19-交錯練習.feature` + `32-節點練習模式.feature` + `46-知識地圖Canvas.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples, 46：6 Examples）（確認：2026-04-24 自動巡檢）
@@ -36,7 +36,7 @@
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
 - [ ] `/practice` — Feature 32 要求空節點空態有「選擇其他節點」與「回知識圖譜」兩個操作按鈕，頁面是否完整實作需確認（首見：2026-04-24）
-- [ ] `/account/resource-library` — FAILED 資源 failure_reason 詳細原因文字是否向用戶呈現需確認（首見：2026-04-24）
+- [x] `/account/resource-library` — FAILED 資源 failure_reason 已透過 title tooltip 向用戶呈現（hover「解析失敗」可見詳細原因），並透過 resourceParseService.getStatus() 主動輪詢（確認：2026-04-25 自動巡檢）
 
 ---
 
@@ -48,8 +48,8 @@
 - [x] `/exam/setup` — documents.length === 0 空態已新增提示：若已上傳資源但為空，引導至知識庫查看解析狀態（修復：2026-04-24 自動巡檢）
 - [ ] `/library` — 頁面空態情況不明，建議確認 Tab 切換後空態是否查詢相關 job 狀態（首見：2026-04-24）
 - [ ] `/practice` — no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**，僅文字引導，需補強至主動查 job 表（首見：2026-04-24）
-- [ ] `/account/resource-library` — FAILED 資源 badge 已顯示，但 failure_reason 詳細文字是否呈現給用戶尚待確認（首見：2026-04-24）
-- [ ] `/super-admin/exam-import` — Import job FAILED 狀態是否顯示 failure_reason 需確認（首見：2026-04-24）
+- [x] `/account/resource-library` — FAILED 資源 badge 已顯示，failure_reason 透過 tooltip 呈現（確認：2026-04-25 自動巡檢）
+- [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
 
 ---
 
