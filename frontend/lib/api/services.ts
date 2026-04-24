@@ -380,6 +380,23 @@ export const dashboardService = {
 // Knowledge Service
 // ===========================
 
+export interface NodeScaffoldItem {
+  id: string;
+  type: 'takeaway' | 'elaborative' | 'strategy';
+  chapter_heading: string | null;
+  content: string;
+  page_start: number | null;
+  page_end: number | null;
+  user_response: string | null;
+  responded_at: string | null;
+  reference_answer?: string | null;
+}
+
+export interface NodeScaffoldsResponse {
+  node_id: string;
+  scaffolds: NodeScaffoldItem[];
+}
+
 export const knowledgeService = {
   async getMap(subjectId?: string): Promise<Record<string, unknown>> {
     const path = subjectId
@@ -390,6 +407,10 @@ export const knowledgeService = {
 
   async getNodeDetail(nodeId: string): Promise<GetNodeDetailResponse> {
     return apiClient.get<GetNodeDetailResponse>(`/knowledge-map/nodes/${nodeId}`);
+  },
+
+  async getNodeScaffolds(nodeId: string): Promise<NodeScaffoldsResponse> {
+    return apiClient.get<NodeScaffoldsResponse>(`/knowledge-map/nodes/${nodeId}/scaffolds`);
   },
 
   async getResourceSummary(resourceId: string): Promise<{ title: string; content: string; node_count: number }> {
