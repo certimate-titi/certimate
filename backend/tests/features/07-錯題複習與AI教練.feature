@@ -485,8 +485,6 @@ Feature: 錯題複習與 AI 教練
 
   # ========== V3 練習模式即時更新 ==========
 
-  @epic-recon @infra-heavy @skip
-  # 練習模式 progress 即時更新需 V3 practice endpoint（待 EPIC-035 M3）
   Rule: 後置（即時）- 練習模式答題即時更新知識圖譜
 
     Example: 練習答題後即時更新節點掌握度
