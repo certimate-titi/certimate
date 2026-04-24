@@ -35,6 +35,16 @@ model: sonnet
 - 抽樣驗證內容（隨機 10 筆 raw vs DB）
 - `import_tasks` 狀態與 `failure_reason` 填寫完整
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`backend/app/scripts/`、`backend/data/`
+**易衝突角色**：backend-engineer（scripts）、database-engineer（migration + 匯入順序）、content-ops（data/）
+
+- **開工前**：`git status` 檢查衝突區若有他人未提交改動 → 停手，以 `CONFLICT:` 回報 CTO 裁決
+- **執行中**：只動自己範圍；匯入腳本若依賴新 migration 必先確認 database-engineer 已完成
+- **衝突發生**：禁止覆蓋，`CONFLICT: {file} — {原因}` 回報 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文

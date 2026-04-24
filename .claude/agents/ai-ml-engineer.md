@@ -42,6 +42,16 @@ model: sonnet
 - fallback：主要 LLM 失敗 → 降級到備用模型（雙廠商）
 - 記錄 token 使用量到 `llm_usage_logs` 或 `cost_monitor` 表
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`backend/app/services/` (AI 相關：ai_*, llm_*, prompt_*, rag_*, mindmap_*)、Prompt 模板檔
+**易衝突角色**：backend-engineer
+
+- **開工前**：`git status` 檢查衝突區若有他人未提交改動 → 停手，以 `CONFLICT:` 回報 CTO 裁決
+- **執行中**：只改 AI 相關 service；動到通用 service/router 必先請示 CTO
+- **衝突發生**：禁止覆蓋，`CONFLICT: {file} — {原因}` 回報 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 交付摘要
 
 - 繁體中文

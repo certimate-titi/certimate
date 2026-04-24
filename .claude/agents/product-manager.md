@@ -63,6 +63,16 @@ Scenario: {情境}
 - 定價決策最終拍板（只能建議）
 - 部署時程最終拍板
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`project/features/`、`.titi/deliverables/product/`
+**易衝突角色**：test-engineer（同 Feature 檔）
+
+- **開工前**：`git status` 檢查 Feature 檔若有他人未提交改動 → 停手，以 `CONFLICT:` 回報 CEO/CTO 裁決
+- **執行中**：Feature 初稿以新檔為主；修既有 Feature 前先確認無他人在動
+- **衝突發生**：禁止覆蓋他人 Scenario，`CONFLICT: {file} — {原因}` 回報 CEO，必要時升級 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文

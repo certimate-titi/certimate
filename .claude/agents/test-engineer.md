@@ -46,6 +46,16 @@ cd backend
 - 測試能在 Docker 可用環境下可重現執行
 - 覆蓋 happy path + 至少一個 edge case / error case
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`project/features/`、`backend/tests/features/`、`backend/tests/step_impls/`
+**易衝突角色**：backend-engineer（同 Feature 檔 + step）、product-manager（Feature 檔初稿）
+
+- **開工前**：`git status` 檢查衝突區若有他人未提交改動 → 停手，以 `CONFLICT:` 回報 CTO 裁決
+- **執行中**：同一 Feature 檔一次只能一人改；新增 Scenario 避開他人段落
+- **衝突發生**：禁止覆蓋 Scenario，`CONFLICT: {file} — {原因}` 回報 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文

@@ -59,6 +59,16 @@ def downgrade():
 - 新表 / 新欄位同步更新 DBML
 - 對應 SQLAlchemy model 同步更新
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`backend/alembic/versions/`、`backend/app/models/`、`project/specs/entity/erm.dbml`
+**易衝突角色**：backend-engineer、data-engineer
+
+- **開工前**：`git status` + `ls backend/alembic/versions/ | tail -3`，衝突區若有他人未提交改動或 migration 編號打架 → 停手，以 `CONFLICT:` 回報 CTO 裁決
+- **執行中**：migration 編號一次只佔一個；DBML 編輯避開他人 section
+- **衝突發生**：禁止覆蓋，`CONFLICT: {file} — {原因}` 回報 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文

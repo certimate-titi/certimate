@@ -39,6 +39,16 @@ model: sonnet
 - [ ] 無偏離需求的多餘實作
 - [ ] HTTPException 覆蓋錯誤路徑
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`backend/app/api/`、`backend/app/services/`、`backend/app/models/`、`backend/alembic/versions/`
+**易衝突角色**：database-engineer、ai-ml-engineer、data-engineer、test-engineer
+
+- **開工前**：`git status` 檢查衝突區若有他人未提交改動 → 停手，以 `CONFLICT:` 開頭回報 CTO 裁決
+- **執行中**：只動自己範圍；跨界修改（例：動到 alembic/model）必先請示 CTO
+- **衝突發生**：禁止覆蓋他人改動，以 `CONFLICT: {file} — {原因}` 回報 CTO，等候裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文

@@ -40,6 +40,16 @@ model: haiku
 - 擴充 roadmap
 - 模板庫（`backend/app/templates/`）
 
+## 🌳 Worktree 協作守則
+
+**我的衝突區**：`backend/app/templates/`、`backend/data/historical_questions/`
+**易衝突角色**：data-engineer（同 `backend/data/`）
+
+- **開工前**：`git status` 檢查衝突區若有他人未提交改動 → 停手，以 `CONFLICT:` 回報 CEO/CTO 裁決
+- **執行中**：題庫檔案一次只動自己負責的 subject/考季
+- **衝突發生**：禁止覆蓋，`CONFLICT: {file} — {原因}` 回報 CEO，必要時升級 CTO 裁決
+- **Worktree 狀態**：若 CTO 已配置 `isolation: "worktree"` 安心執行；否則併發風險自檢
+
 ## 輸出原則
 
 - 繁體中文
