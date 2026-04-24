@@ -14,6 +14,7 @@ import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
 import ScaffoldMaterial from '@/components/ScaffoldMaterial';
+import ScaffoldNotebook from '@/components/ScaffoldNotebook';
 // react-resizable-panels removed — using plain flex layout
 
 interface ChatMessage {
@@ -754,10 +755,12 @@ export default function KnowledgeBasePage() {
             );
 
             const notebookSlot = (
-              <div className="p-4 text-xs text-slate-400">
-                <NotebookPen className="h-6 w-6 mx-auto mb-2 text-slate-300" />
-                <p className="text-center">我的筆記本即將在 TASK-07 上線</p>
-              </div>
+              <ScaffoldNotebook
+                nodeId={nodeId}
+                nodeLabel={nodeLabel}
+                isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                onUpgradeClick={() => router.push('/account')}
+              />
             );
 
             const coachSlot = (
