@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CertiMate Frontend
 
-# Run and deploy your AI Studio app
+Next.js 15 + React 19 前端應用，搭配 FastAPI 後端與 Firebase 認證。
 
-This contains everything you need to run your app locally.
+## 開發
 
-View your app in AI Studio: https://ai.studio/apps/b01fd246-8d03-44eb-874b-463aece4baa8
+```bash
+npm install
+cp .env.example .env.local   # 填入 NEXT_PUBLIC_API_URL 等
+npm run dev                   # http://localhost:3005
+```
 
-## Run Locally
+需要後端運行於 `http://localhost:8000/api/v1`。demo 登入：`admin@certimate.com` / `admin123`。
 
-**Prerequisites:**  Node.js
+## 指令
 
+```bash
+npm run dev     # 開發（使用 .next-dev/）
+npm run build   # 正式建置（靜態匯出到 .next/）
+npm run lint    # ESLint
+npm run clean   # 清 Next.js 快取
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 部署
+
+推送 `main` 觸發 GitHub Actions → Firebase Hosting (`certimate-titi.web.app`)。
+
+## 詳細說明
+
+- 架構、頁面、API 服務清單、動態路由陷阱：見 [CLAUDE.md](CLAUDE.md)
