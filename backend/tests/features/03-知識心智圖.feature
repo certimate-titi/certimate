@@ -108,15 +108,13 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
       Then 節點 "EC2 運算服務" 的掌握度應上升
       And 父節點的掌握度應連動更新（向上傳播）
 
-  @epic-recon @infra-heavy @skip
-  # 需掌握度稀釋演算法 + Toast 通知 pipeline；後端目前無新增節點的廣播機制
+  # Toast 通知「知識庫已擴充」為純前端 UI，已移至 Playwright e2e
   Rule: 後置（稀釋）- 考綱擴展時進度應平滑調降
 
     Example: 新增知識節點後進度自動稀釋
       Given 使用者 "pro@example.com" 的根節點掌握度為 80%
       When 系統為該考科新增 3 個新知識節點
       Then 根節點掌握度應因分母變大而下降
-      And 前端應顯示 Toast 通知「知識庫已擴充」
 
   # ─────────────────────────────────────────────
   # EPIC-035 M7：學習鷹架（Resource Scaffolds）Layer A
