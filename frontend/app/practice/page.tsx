@@ -361,10 +361,19 @@ function PracticePage() {
             <h2 className="text-base font-semibold text-slate-700 mb-1">
               「{selectedNodeName || '此節點'}」尚無練習題
             </h2>
-            <p className="text-sm text-slate-500 mb-6">
-              此知識節點還沒有可用題目，請先透過測驗產生題目，或選擇其他節點練習。
+            <p className="text-sm text-slate-500 mb-4">
+              此知���節點還沒有可用題目，請先透過測驗產生題目���或選擇其他節點練習。
             </p>
-            <div className="flex gap-3 justify-center">
+            <p className="text-xs text-slate-400 mb-6">
+              提示：若已建立過測驗但仍無題目，可能是 AI 出題任務尚未完成或已失敗，請至測驗頁重新產生。
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Link
+                href={selectedNodeId ? `/exam/setup?nodeId=${selectedNodeId}` : '/exam/setup'}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                前往出題
+              </Link>
               <button
                 onClick={() => {
                   setSelectedNodeId(null);
@@ -374,7 +383,7 @@ function PracticePage() {
                 }}
                 className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
               >
-                選擇其他節點
+                選擇其他��點
               </button>
               <Link
                 href="/knowledge"

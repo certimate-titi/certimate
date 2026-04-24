@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen } from 'lucide-react';
-import { knowledgeService, subjectService, documentService } from '@/lib/api/services';
+import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
@@ -58,6 +58,7 @@ export default function KnowledgeBasePage() {
   const [extractResult, setExtractResult] = useState<string | null>(null);
   const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
   const [centerView, setCenterView] = useState<'graph' | 'document'>('graph');
+  const [parseJobFailures, setParseJobFailures] = useState<Record<string, string>>({});
   const [docFullText, setDocFullText] = useState<string>('');
   const [docFullTitle, setDocFullTitle] = useState<string>('');
   const [showLeftPanel, setShowLeftPanel] = useState(true);
@@ -207,6 +208,21 @@ export default function KnowledgeBasePage() {
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documents.map(d => `${d.id}:${d.status}`).join(','), activeSubjectId]);
+
+  // Layer 3 空態查 Job 表: 當有 FAILED 的文件，自動查詢 failure_reason
+  useEffect(() => {
+    const failedDocs = documents.filter(d => d.status === 'FAILED');
+    if (failedDocs.length === 0) return;
+    failedDocs.forEach(doc => {
+      if (parseJobFailures[doc.id]) return; // 已查過
+      resourceParseService.getStatus(doc.id).then(res => {
+        if (res.failure_reason) {
+          setParseJobFailures(prev => ({ ...prev, [doc.id]: res.failure_reason! }));
+        }
+      }).catch(() => { /* silent */ });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents.map(d => `${d.id}:${d.status}`).join(',')]);
 
   const handleNodeClick = async (nodeId: string) => {
     setLoadingDetail(true);
@@ -427,7 +443,10 @@ export default function KnowledgeBasePage() {
                   {loadingDocs ? (
                     [1, 2, 3].map(i => <div key={i} className="bg-slate-100 rounded-lg animate-pulse h-12" />)
                   ) : documents.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400 text-xs">尚無資源</div>
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      <BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />
+                      尚無資源，請上傳學習教材
+                    </div>
                   ) : (
                     documents.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => {
                       const isActive = doc.id === selectedDocId;
@@ -453,8 +472,9 @@ export default function KnowledgeBasePage() {
                                     </span>
                                   )}
                                   {doc.status === 'FAILED' && (
-                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-medium">
-                                      失敗
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-medium" title={parseJobFailures[doc.id] || ''}>
+                                      <AlertTriangle className="w-2.5 h-2.5" />
+                                      {parseJobFailures[doc.id] ? `失敗：${parseJobFailures[doc.id].slice(0, 30)}${parseJobFailures[doc.id].length > 30 ? '...' : ''}` : '失敗'}
                                     </span>
                                   )}
                                   {doc.status === 'COMPLETED' && (
@@ -670,6 +690,42 @@ export default function KnowledgeBasePage() {
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
                     <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
                       {docFullText}
+                    </div>
+                  </div>
+                ) : !loadingDocs && mindMapNodes.length === 0 ? (
+                  /* Layer 3 空態區分：節點為空時根據文件狀態顯示不同訊息 */
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center py-12 px-4 max-w-sm">
+                      {documents.length === 0 ? (
+                        <>
+                          <Network className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                          <p className="text-sm text-slate-500 font-medium">尚無知識圖譜</p>
+                          <p className="text-xs text-slate-400 mt-1">上傳學習資源後，AI 將自動萃取知識節點</p>
+                        </>
+                      ) : documents.every(d => d.status === 'FAILED') ? (
+                        <>
+                          <AlertTriangle className="h-10 w-10 text-rose-400 mx-auto mb-3" />
+                          <p className="text-sm text-rose-600 font-medium">所有資源解析失敗</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {Object.values(parseJobFailures).length > 0
+                              ? `原因：${Object.values(parseJobFailures)[0].slice(0, 80)}`
+                              : '請檢查資源格式或聯繫管理員'}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-2">可嘗試刪除後重新上傳，或更換檔案格式</p>
+                        </>
+                      ) : documents.some(d => d.status === 'PROCESSING') ? (
+                        <>
+                          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                          <p className="text-sm text-slate-500 font-medium">資源處理中...</p>
+                          <p className="text-xs text-slate-400 mt-1">AI 正在解析文件並萃取知識節點，請稍候</p>
+                        </>
+                      ) : (
+                        <>
+                          <Network className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                          <p className="text-sm text-slate-500 font-medium">尚未生成知識圖譜</p>
+                          <p className="text-xs text-slate-400 mt-1">點擊上方「重新分析」按鈕萃取知識節點</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : graphView === 'force' ? (
