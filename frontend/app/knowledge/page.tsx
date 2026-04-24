@@ -13,6 +13,7 @@ import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
+import ScaffoldMaterial from '@/components/ScaffoldMaterial';
 // react-resizable-panels removed — using plain flex layout
 
 interface ChatMessage {
@@ -745,10 +746,11 @@ export default function KnowledgeBasePage() {
             );
 
             const materialSlot = (
-              <div className="p-4 text-xs text-slate-400">
-                <BookOpen className="h-6 w-6 mx-auto mb-2 text-slate-300" />
-                <p className="text-center">學習教材即將在 TASK-06 上線</p>
-              </div>
+              <ScaffoldMaterial
+                nodeId={nodeId}
+                isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                onUpgradeClick={() => router.push('/account')}
+              />
             );
 
             const notebookSlot = (
