@@ -69,7 +69,19 @@ export default function LoginPage() {
         setIsLoading(false);
       }
     },
-    onError: () => setError('Google 登入失敗'),
+    onError: (err) => {
+      const desc = err?.error_description || err?.error || 'Google 登入失敗';
+      setError(`Google 登入失敗：${desc}`);
+    },
+    onNonOAuthError: (err) => {
+      if (err?.type === 'popup_failed_to_open') {
+        setError('Google 登入彈窗被瀏覽器擋下，請允許彈窗後重試（或關閉擴充套件如廣告封鎖、隱私保護）。');
+      } else if (err?.type === 'popup_closed') {
+        setError('Google 登入視窗已關閉，請再試一次。');
+      } else {
+        setError('Google 登入發生問題，請再試一次或改用 Email 登入。');
+      }
+    },
   });
 
   return (

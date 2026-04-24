@@ -37,6 +37,7 @@ export default function DashboardPage() {
 
   // Subject state
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
+  const [subjectsLoaded, setSubjectsLoaded] = useState(false);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
   const [showAddSubject, setShowAddSubject] = useState(false);
 
@@ -62,7 +63,7 @@ export default function DashboardPage() {
         const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
         setActiveSubjectId(match ? saved : res.subjects[0].id);
       }
-    }).catch(() => setSubjects([]));
+    }).catch(() => setSubjects([])).finally(() => setSubjectsLoaded(true));
   }, [authLoading, isAuthenticated, onboardingCompleted]);
 
   // Merge main dashboard response with quests + review-calendar endpoints.
@@ -331,7 +332,7 @@ export default function DashboardPage() {
       <PendingJourneysBanner />
 
       {/* No-subject prompt */}
-      {subjects.length === 0 && isAuthenticated && onboardingCompleted && (
+      {subjectsLoaded && subjects.length === 0 && isAuthenticated && onboardingCompleted && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
           <div className="container mx-auto max-w-6xl flex items-center justify-between">
             <span className="text-sm text-amber-800">尚未建立備考科目，請先新增科目以開始學習</span>
@@ -434,7 +435,7 @@ export default function DashboardPage() {
                 <Upload className="h-5 w-5 text-emerald-500" /> 快速匯入學習資源
               </h2>
 
-              {!activeSubjectId && (
+              {subjectsLoaded && !activeSubjectId && (
                 <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
                   尚未選擇備考科目，請先{' '}
                   <button onClick={() => setShowAddSubject(true)} className="font-bold underline">新增科目</button>{' '}
