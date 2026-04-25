@@ -11,10 +11,11 @@ from app.models.user import User
 @given('測驗 {exam_id:d} 的作答記錄含信心度：')
 def step_impl_answers_with_confidence(context, exam_id):
     """建立含信心度標記的作答記錄。"""
-    exam_key = f"exam_id_{exam_id}"
-    exam_uuid = context.ids.get(exam_key)
-    if not exam_uuid:
-        return
+    exam_uuid = (
+        context.ids.get(f"exam_id_{exam_id}")
+        or context.ids.get(f"exam_{exam_id}")
+        or str(uuid.UUID(int=exam_id))
+    )
 
     user = context.db_session.query(User).first()
     if not user:

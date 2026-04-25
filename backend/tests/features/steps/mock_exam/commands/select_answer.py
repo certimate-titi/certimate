@@ -5,7 +5,7 @@ import uuid
 from behave import when
 
 
-@when('使用者 "{email}" 在題目 {question_id:d} 選擇答案 "{answer}"')
+@when('使用者 "{email}" 在題目 {question_id:d} 選擇答案 "{answer:w}"')
 def step_impl(context, email, question_id, answer):
     user_id = context.ids[email]
     token = context.jwt_helper.generate_token(user_id)

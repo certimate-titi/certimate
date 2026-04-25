@@ -10,9 +10,28 @@ def _resolve_exam_id(context, q_uuid):
     try:
         qid = uuid_mod.UUID(q_uuid)
     except Exception:
-        return q_uuid
-    q = context.db_session.query(Question).filter(Question.id == qid).first()
-    return str(q.exam_id) if q and q.exam_id else q_uuid
+        qid = None
+    if qid is not None:
+        q = context.db_session.query(Question).filter(Question.id == qid).first()
+        if q and q.exam_id:
+            return str(q.exam_id)
+    current = context.memo.get("current_exam_id")
+    if current is not None:
+        try:
+            return str(uuid_mod.UUID(int=int(current))) if isinstance(current, int) or str(current).isdigit() else str(current)
+        except Exception:
+            return str(current)
+    return q_uuid
+
+
+def _resolve_question_uuid(context, q_id):
+    """Resolve numeric question id (e.g. 101) to UUID, supporting both ids dict keys."""
+    import uuid as uuid_mod
+    for key in (f"question_id_{q_id}", f"question_{q_id}"):
+        v = context.ids.get(key)
+        if v:
+            return v
+    return str(uuid_mod.UUID(int=int(q_id)))
 
 
 @when('使用者 "{email}" 在題目 {q_id:d} 選擇答案 "{answer}" 並標記信心度為 "{confidence}"')
@@ -22,8 +41,8 @@ def step_impl_answer_with_confidence(context, email, q_id, answer, confidence):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
 
-    q_key = f"question_id_{q_id}"
-    q_uuid = context.ids.get(q_key, str(q_id))
+    # q_key fallback handled by _resolve_question_uuid
+    q_uuid = _resolve_question_uuid(context, q_id)
     exam_id = _resolve_exam_id(context, q_uuid)
 
     token = context.jwt_helper.generate_token(str(user.id))
@@ -48,8 +67,8 @@ def step_impl_answer_no_confidence(context, email, q_id, answer):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
 
-    q_key = f"question_id_{q_id}"
-    q_uuid = context.ids.get(q_key, str(q_id))
+    # q_key fallback handled by _resolve_question_uuid
+    q_uuid = _resolve_question_uuid(context, q_id)
     exam_id = _resolve_exam_id(context, q_uuid)
 
     token = context.jwt_helper.generate_token(str(user.id))
@@ -72,8 +91,8 @@ def step_impl_answer_only(context, email, q_id, answer):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
 
-    q_key = f"question_id_{q_id}"
-    q_uuid = context.ids.get(q_key, str(q_id))
+    # q_key fallback handled by _resolve_question_uuid
+    q_uuid = _resolve_question_uuid(context, q_id)
     exam_id = _resolve_exam_id(context, q_uuid)
 
     token = context.jwt_helper.generate_token(str(user.id))
@@ -93,8 +112,12 @@ def step_impl_view_confidence_analysis(context, email, exam_id):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
 
-    exam_key = f"exam_id_{exam_id}"
-    exam_uuid = context.ids.get(exam_key, str(exam_id))
+    import uuid as _uuid
+    exam_uuid = (
+        context.ids.get(f"exam_id_{exam_id}")
+        or context.ids.get(f"exam_{exam_id}")
+        or str(_uuid.UUID(int=int(exam_id)))
+    )
 
     token = context.jwt_helper.generate_token(str(user.id))
     response = context.api_client.get(
