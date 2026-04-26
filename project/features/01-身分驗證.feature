@@ -360,13 +360,13 @@ Feature: 身分驗證
       Given 使用者已點擊「重新寄送驗證信」且冷卻倒數已結束
       Then 重寄按鈕應恢復為可點擊狀態
 
-  @ignore
   Rule: 後置（狀態）- 登入頁支援 Google SSO 一鍵登入流程
 
-    Example: 使用者點擊 Google 登入按鈕後導向 Google OAuth 授權頁面
+    Example: 使用者點擊 Google 登入按鈕後開啟 Google 授權彈窗
       When 使用者在登入頁面點擊「以 Google 帳號登入」按鈕
-      Then 系統應導向 Google OAuth 授權頁面
+      Then 系統應開啟 Google 授權彈窗
 
+    @ignore
     Example: Google OAuth 授權成功後系統自動完成登入並導向儀表板
       Given 使用者 "carol@example.com" 已有 Google SSO 帳號且狀態為 "已啟用"
       When 使用者完成 Google OAuth 授權且 Email 為 "carol@example.com"
