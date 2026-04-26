@@ -366,7 +366,6 @@ Feature: 身分驗證
       When 使用者在登入頁面點擊「以 Google 帳號登入」按鈕
       Then 系統應開啟 Google 授權彈窗
 
-    @ignore
     Example: Google OAuth 授權成功後系統自動完成登入並導向儀表板
       Given 使用者 "carol@example.com" 已有 Google SSO 帳號且狀態為 "已啟用"
       When 使用者完成 Google OAuth 授權且 Email 為 "carol@example.com"

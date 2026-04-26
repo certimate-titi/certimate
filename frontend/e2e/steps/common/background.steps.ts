@@ -61,10 +61,6 @@ Given('使用者 {string} 已建立至少一個備考科目的學習歷程', asy
   setUserOverride(email, { onboarding_completed: true });
 });
 
-Given('使用者 {string} 已有 Google SSO 帳號且狀態為 {string}', async ({}) => {
-  // No-op
-});
-
 Given('使用者已開啟服務條款彈窗', async ({ page }) => {
   await page.goto('/signup');
   await page.getByRole('button', { name: '服務條款' }).click();

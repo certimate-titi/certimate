@@ -138,7 +138,6 @@ Feature: 模擬機考
 
   Rule: 後置（狀態）- 暫停考試後恢復作答時計時器應繼續倒數
 
-    @ignore
     Example: 暫停考試後恢復作答計時器繼續倒數
       Given 使用者 "alice@example.com" 已開始測驗 1，剩餘時間為 20 分鐘
       When 使用者 "alice@example.com" 暫停測驗 1
@@ -148,7 +147,6 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 總覽格 Modal 應顯示所有題目的作答狀態
 
-    @ignore
     Example: 開啟總覽格 Modal 顯示所有題目狀態
       Given 使用者 "alice@example.com" 已開始測驗 1
       And 使用者 "alice@example.com" 在題目 101 選擇答案 "C"
@@ -160,7 +158,6 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 題目導航格點擊應跳轉至指定題目
 
-    @ignore
     Example: 點擊題目導航格中的題號跳轉至該題目
       Given 使用者 "alice@example.com" 已開始測驗 1
       And 使用者 "alice@example.com" 目前瀏覽題目 101
@@ -170,14 +167,12 @@ Feature: 模擬機考
 
   Rule: 後置（回應）- 上一題與下一題按鈕在邊界題目時應正確停用
 
-    @ignore
     Example: 第一題時上一題按鈕應停用
       Given 使用者 "alice@example.com" 已開始測驗 1
       When 使用者 "alice@example.com" 瀏覽題目 101
       Then 上一題按鈕應為停用狀態
       And 下一題按鈕應為啟用狀態
 
-    @ignore
     Example: 最後一題時下一題按鈕應停用
       Given 使用者 "alice@example.com" 已開始測驗 1
       When 使用者 "alice@example.com" 瀏覽題目 102

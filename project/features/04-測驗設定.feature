@@ -239,7 +239,6 @@ Feature: 測驗設定
 
   Rule: 前置（參數）- 題型切換應支援選擇多種題型
 
-    @ignore
     Example: 選擇多種題型成功提交測驗設定
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，題型為 "單選" 和 "多選" 和 "填空"
       Then 操作成功
@@ -247,7 +246,6 @@ Feature: 測驗設定
 
   Rule: 前置（參數）- 難度滑桿應支援調整至最高難度
 
-    @ignore
     Example: 難度滑桿調整至最高難度後成功提交
       When 使用者 "pro@example.com" 提交測驗設定，選擇節點 5，題數為 20，難易度分配為 Easy:0% Medium:0% Hard:100%
       Then 操作成功
@@ -255,7 +253,6 @@ Feature: 測驗設定
 
   Rule: 前置（狀態）- 文件未處理完成時無法選擇作為測驗範圍
 
-    @ignore
     Example: 文件狀態為 PROCESSING 時無法選擇
       Given 系統中有以下資源：
         | 資源 ID | 使用者 ID | 名稱              | 狀態       |

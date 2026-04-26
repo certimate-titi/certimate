@@ -65,13 +65,11 @@ Feature: 帳號設定與個人偏好
 
   Rule: 命令（危險）- 使用者可申請刪除帳號
 
-    @ignore
     Example: 確認刪除帳號
       When 使用者 "user@example.com" 申請刪除帳號並輸入確認文字 "刪除我的帳號"
       Then 操作應成功
       And 使用者帳號狀態應變更為 "DELETED"
 
-    @ignore
     Example: 確認文字不符時應拒絕
       When 使用者 "user@example.com" 申請刪除帳號並輸入確認文字 "不要刪除"
       Then 操作應失敗，錯誤訊息為 "確認文字不符"
@@ -80,7 +78,6 @@ Feature: 帳號設定與個人偏好
 
   Rule: 命令（偏好）- 使用者可設定通知偏好
 
-    @ignore
     Example: 更新通知偏好設定
       When 使用者 "user@example.com" 更新通知偏好：
         | 欄位                | 值    |

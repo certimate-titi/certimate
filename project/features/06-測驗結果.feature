@@ -134,7 +134,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態
 
-    @ignore
     Example: 點擊分享到 LinkedIn 按鈕顯示即將推出提示
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
@@ -142,7 +141,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 下載成績卡片按鈕應顯示為 placeholder 未實作狀態
 
-    @ignore
     Example: 點擊下載成績卡片按鈕顯示即將推出提示
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
@@ -150,7 +148,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
 
-    @ignore
     Example: 點擊 AI 教練介入卡片導航至錯題複習
       Given 使用者 "bob@example.com" 查看測驗 3 的結果
       And 測驗 3 的知識點分析中存在答對率低於 60% 的節點
@@ -160,7 +157,6 @@ Feature: 測驗結果
 
   Rule: 後置（回應）- 領域分析進度條應顯示各知識節點的正確百分比
 
-    @ignore
     Example: 領域分析區塊顯示各節點進度條與正確百分比
       When 使用者 "alice@example.com" 查看測驗 2 的知識點分析
       Then 操作成功
