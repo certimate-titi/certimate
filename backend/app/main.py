@@ -208,6 +208,7 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
+@app.get(f"{settings.API_V1_PREFIX}/health")
 def health_check():
     """健康檢查端點。"""
     return {"status": "healthy", "project": settings.PROJECT_NAME}
