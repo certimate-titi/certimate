@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen } from 'lucide-react';
@@ -23,7 +23,7 @@ interface ChatMessage {
   content: string;
 }
 
-export default function KnowledgeBasePage() {
+function KnowledgeBasePageInner() {
   const embedded = useIsEmbedded();
   const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, subscriptionTier } = useAuth();
   const isPro199 = subscriptionTier === 'PRO_199';
@@ -958,4 +958,12 @@ function renderInline(text: string) {
 function extractYouTubeId(url: string): string {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?#]+)/);
   return match?.[1] ?? '';
+}
+
+export default function KnowledgeBasePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-gray-400">載入中...</div>}>
+      <KnowledgeBasePageInner />
+    </Suspense>
+  );
 }
