@@ -3,8 +3,17 @@
 from behave import when
 
 
-@when('使用者 "{email}" 恢復使用者 {user_key} 的帳號')
+@when('使用者 "{email}" 恢復使用者 {user_id:d} 的帳號')
+def step_impl_by_id(context, email, user_id):
+    return _activate(context, email, str(user_id))
+
+
+@when('使用者 "{email}" 恢復使用者 "{user_key}" 的帳號')
 def step_impl(context, email, user_key):
+    return _activate(context, email, user_key)
+
+
+def _activate(context, email, user_key):
     from app.models.user import User
 
     # 支援兩種格式：context.ids mapping 或直接查 DB by email
