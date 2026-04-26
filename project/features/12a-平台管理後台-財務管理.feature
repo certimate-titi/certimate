@@ -1,4 +1,4 @@
-@ignore @query
+@query
 Feature: 平台管理後台 — 財務與訂閱管理
 
   Background:
@@ -106,7 +106,6 @@ Feature: 平台管理後台 — 財務與訂閱管理
 
   # ========== UI 互動情境 ==========
 
-  @ignore
   Rule: 後置（回應）- 匯出財務報告應觸發 JSON 檔案下載
 
     Example: 匯出財務報告下載 JSON
@@ -115,7 +114,6 @@ Feature: 平台管理後台 — 財務與訂閱管理
       And 瀏覽器應觸發 JSON 檔案下載
       And 下載檔案應包含交易摘要與營收統計資料
 
-  @ignore
   Rule: 後置（回應）- 交易搜尋應依交易 ID 即時過濾
 
     Example: 交易搜尋依交易 ID 過濾
@@ -124,7 +122,6 @@ Feature: 平台管理後台 — 財務與訂閱管理
       And 列表中應包含交易 "TXN-001"
       And 列表中不應包含交易 "TXN-002"
 
-  @ignore
   Rule: 後置（回應）- 交易狀態篩選應透過下拉選單切換
 
     Example: 交易狀態篩選下拉選單切換
@@ -133,7 +130,6 @@ Feature: 平台管理後台 — 財務與訂閱管理
       And 列表中應包含交易 "TXN-003"
       And 列表中不應包含交易 "TXN-001"
 
-  @ignore
   Rule: 後置（回應）- 交易列表應支援展開顯示詳情
 
     Example: 交易列展開顯示詳情
@@ -147,7 +143,6 @@ Feature: 平台管理後台 — 財務與訂閱管理
         | status          | success             |
         | created_at      | 2026-03-01 10:00:00 |
 
-  @ignore
   Rule: 後置（回應）- MRR 趨勢圖表應顯示正確資料
 
     Example: MRR 趨勢圖表顯示正確資料

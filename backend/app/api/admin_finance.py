@@ -35,11 +35,23 @@ def get_subscription_distribution(
 @router.get("/transactions")
 def list_transactions(
     status: Optional[str] = None,
+    search: Optional[str] = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
     service = AdminFinanceService(db)
-    result = service.list_transactions(actor_id=user_id, status=status)
+    result = service.list_transactions(actor_id=user_id, status=status, search=search)
+    return _handle_result(result)
+
+
+@router.get("/export")
+def export_finance_report(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """匯出財務報告為 JSON（含交易摘要與營收統計）。"""
+    service = AdminFinanceService(db)
+    result = service.export_finance_report(actor_id=user_id)
     return _handle_result(result)
 
 

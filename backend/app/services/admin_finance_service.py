@@ -113,7 +113,7 @@ class AdminFinanceService:
 
     # ── Transactions ──────────────────────────────────────────────────────────
 
-    def list_transactions(self, actor_id: str, status: str | None = None) -> dict:
+    def list_transactions(self, actor_id: str, status: str | None = None, search: str | None = None) -> dict:
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -121,6 +121,8 @@ class AdminFinanceService:
         query = self.db.query(Transaction)
         if status:
             query = query.filter(Transaction.status == status)
+        if search:
+            query = query.filter(Transaction.merchant_trade_no.ilike(f"%{search}%"))
 
         txns = query.order_by(Transaction.created_at.desc()).all()
 
@@ -136,6 +138,32 @@ class AdminFinanceService:
                 }
                 for t in txns
             ]
+        }
+
+    def export_finance_report(self, actor_id: str) -> dict:
+        err = self._require_admin(actor_id)
+        if err:
+            return err
+
+        txns = self.db.query(Transaction).order_by(Transaction.created_at.desc()).all()
+        total_revenue = sum(float(t.amount) for t in txns if t.status == "success")
+        return {
+            "transactions": [
+                {
+                    "transaction_id": t.merchant_trade_no,
+                    "user_id": str(t.user_id),
+                    "amount": float(t.amount),
+                    "plan": t.target_plan,
+                    "status": t.status,
+                    "created_at": t.created_at.isoformat() if t.created_at else None,
+                }
+                for t in txns
+            ],
+            "summary": {
+                "total_transactions": len(txns),
+                "total_revenue": total_revenue,
+                "success_count": sum(1 for t in txns if t.status == "success"),
+            },
         }
 
     # ── Refunds ───────────────────────────────────────────────────────────────
