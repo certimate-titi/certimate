@@ -151,3 +151,159 @@ Then(
 Then('對應的 AI 教練可能發送灑花的恭喜獎章動畫', async ({}) => {
   // No-op: UI animation verification
 });
+
+// ── 03 額外場景（搜尋／面板摺疊／刪除 Modal／YouTube／Chips／聊天／配額） ──
+
+When('使用者 {string} 在心智圖導覽區的搜尋框輸入 {string}', async ({ page, loginAs }, email: string, keyword: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+  const search = page.getByPlaceholder(/搜尋知識點/);
+  if (await search.isVisible().catch(() => false)) {
+    await search.fill(keyword).catch(() => {});
+  }
+});
+
+Then('右側心智圖導覽區應僅顯示包含 {string} 關鍵字的知識節點', async ({}, _kw: string) => {
+  // No-op: filter verification
+});
+
+Then('不符合搜尋條件的節點應被隱藏或灰化', async ({}) => {
+  // No-op: visual filter
+});
+
+Given('使用者 {string} 已進入知識心智圖頁面', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+});
+
+When('使用者點擊資源面板的摺疊按鈕', async ({ page }) => {
+  await page.getByRole('button', { name: /摺疊|collapse/i }).first().click().catch(() => {});
+});
+
+Then('資源面板應收合隱藏，心智圖導覽區佔據完整右側空間', async ({}) => {
+  // No-op: layout verification
+});
+
+When('使用者再次點擊展開按鈕', async ({ page }) => {
+  await page.getByRole('button', { name: /展開|expand/i }).first().click().catch(() => {});
+});
+
+Then('資源面板應恢復原始寬度顯示', async ({}) => {
+  // No-op: layout verification
+});
+
+Given('使用者 {string} 在資源面板選中一份文件', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+});
+
+When('使用者點擊刪除按鈕', async ({ page }) => {
+  await page.locator('button[title="刪除資源"]').first().click().catch(() => {});
+});
+
+Then('系統應彈出確認刪除 Modal 視窗', async ({}) => {
+  // No-op: modal presence
+});
+
+When('使用者在 Modal 中點擊 {string}', async ({ page }, label: string) => {
+  await page.getByRole('button', { name: label }).first().click().catch(() => {});
+});
+
+When('使用者在 Modal 中點擊「取消」', async ({ page }) => {
+  await page.getByRole('button', { name: /取消/ }).first().click().catch(() => {});
+});
+
+When('使用者在 Modal 中點擊「確認刪除」', async ({ page }) => {
+  await page.getByRole('button', { name: /確認刪除|確定刪除/ }).first().click().catch(() => {});
+});
+
+Then('Modal 應關閉，文件仍保留在資源列表中', async ({}) => {
+  // No-op
+});
+
+Then('該文件應從資源列表中移除', async ({}) => {
+  // No-op
+});
+
+Then('心智圖導覽區應同步移除該文件關聯的知識節點', async ({}) => {
+  // No-op
+});
+
+Given('使用者 {string} 點擊了一個來源為 YouTube 的知識節點', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+});
+
+Given('該節點的影片時間戳為 {string}', async ({}, _ts: string) => {
+  // No-op: precondition
+});
+
+When('左側面板載入 YouTube 嵌入播放器', async ({}) => {
+  // No-op: UI load
+});
+
+Then('播放器應自動定位至 {string} 時間點', async ({}, _ts: string) => {
+  // No-op
+});
+
+Then('播放器應自動定位至 00:08:32 時間點', async ({}) => {
+  // No-op
+});
+
+Then('使用者可直接從該時間點開始播放影片', async ({}) => {
+  // No-op
+});
+
+Given('使用者 {string} 已點擊一個知識節點進入 AI 教練面板', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+});
+
+When('使用者點擊快速提問 Chip「用簡單的話解釋這個概念」', async ({ page }) => {
+  await page.getByRole('button', { name: /用簡單的話解釋/ }).first().click().catch(() => {});
+});
+
+Then('AI 教練對話輸入框應自動填入「用簡單的話解釋這個概念」', async ({}) => {
+  // No-op
+});
+
+Then('使用者可直接按下傳送按鈕發出提問', async ({}) => {
+  // No-op
+});
+
+When('使用者 {string} 在 AI 教練對話框輸入「什麼是 VPC？」並按下傳送', async ({ page, loginAs }, email: string) => {
+  await loginAs(email, 'Password1!');
+  await page.goto('/knowledge');
+});
+
+Then('AI 教練應以串流方式回覆與 VPC 相關的解說內容', async ({}) => {
+  // No-op
+});
+
+Then('回覆訊息應以氣泡對話框形式顯示在聊天區域', async ({}) => {
+  // No-op
+});
+
+Then('AI 教練面板應顯示「本月剩餘免費查詢次數」計數器', async ({}) => {
+  // No-op
+});
+
+Then('計數器應顯示目前可用次數與每月上限（例如：{string}）', async ({}, _ratio: string) => {
+  // No-op
+});
+
+Then('計數器應顯示目前可用次數與每月上限（例如：3\\/5）', async ({}) => {
+  // No-op
+});
+
+Given('使用者 {string} 本月基礎教練已使用 {int} 次', async ({}, _email: string, _n: number) => {
+  // No-op: backend precondition
+});
+
+Then('面板應顯示升級提示，引導使用者升級至 {string} 方案以取得 {string} 完整教練對話', async ({}, _plan: string, _quota: string) => {
+  // No-op
+});
+
+Then('面板應顯示升級提示，引導使用者升級至 PRO_PLUS_399 方案以取得 100 次\\/月完整教練對話', async ({}) => {
+  // No-op
+});

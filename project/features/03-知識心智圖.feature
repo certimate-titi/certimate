@@ -73,8 +73,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== 搜尋與篩選 ==========
 
   Rule: 後置（互動）- 搜尋知識點可即時篩選心智圖導覽區的節點
-
-    @ignore
     Example: 搜尋知識點篩選心智圖節點
       When 使用者 "pro@example.com" 在心智圖導覽區的搜尋框輸入 "S3"
       Then 右側心智圖導覽區應僅顯示包含 "S3" 關鍵字的知識節點
@@ -83,8 +81,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== 資源面板摺疊 ==========
 
   Rule: 後置（UI）- 資源面板支援摺疊與展開切換
-
-    @ignore
     Example: 摺疊與展開資源面板
       Given 使用者 "pro@example.com" 已進入知識心智圖頁面
       When 使用者點擊資源面板的摺疊按鈕
@@ -95,16 +91,12 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== 刪除文件確認 Modal ==========
 
   Rule: 後置（互動）- 刪除文件需經過確認 Modal，可取消或確認
-
-    @ignore
     Example: 刪除文件確認 Modal 取消操作
       Given 使用者 "pro@example.com" 在資源面板選中一份文件
       When 使用者點擊刪除按鈕
       Then 系統應彈出確認刪除 Modal 視窗
       When 使用者在 Modal 中點擊「取消」
       Then Modal 應關閉，文件仍保留在資源列表中
-
-    @ignore
     Example: 刪除文件確認 Modal 確認刪除成功
       Given 使用者 "pro@example.com" 在資源面板選中一份文件
       When 使用者點擊刪除按鈕
@@ -117,8 +109,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== YouTube 嵌入播放器 ==========
 
   Rule: 後置（互動）- YouTube 嵌入播放器可跳轉至引用時間點播放
-
-    @ignore
     Example: YouTube 嵌入播放器播放引用時間點
       Given 使用者 "pro@example.com" 點擊了一個來源為 YouTube 的知識節點
       And 該節點的影片時間戳為 "00:08:32"
@@ -129,8 +119,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== AI 聊天快速提問 ==========
 
   Rule: 後置（互動）- AI 聊天區提供快速提問 Chips 方便使用者一鍵填入
-
-    @ignore
     Example: AI 聊天快速提問 Chips 填入輸入框
       Given 使用者 "proplus@example.com" 已點擊一個知識節點進入 AI 教練面板
       When 使用者點擊快速提問 Chip「用簡單的話解釋這個概念」
@@ -140,8 +128,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== 傳送聊天訊息 ==========
 
   Rule: 後置（回應）- 傳送聊天訊息後應取得 AI 教練的即時回應
-
-    @ignore
     Example: 傳送聊天訊息並取得回應
       When 使用者 "proplus@example.com" 在 AI 教練對話框輸入「什麼是 VPC？」並按下傳送
       Then 操作成功
@@ -151,8 +137,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== FREE 使用者查詢次數限制 ==========
 
   Rule: 後置（UI）- FREE 使用者應看到剩餘免費查詢次數的計數器
-
-    @ignore
     Example: FREE 使用者查看免費查詢次數計數器
       When 使用者 "alice@example.com" 進入知識心智圖頁面
       Then 操作成功
@@ -162,8 +146,6 @@ Feature: 知識心智圖導航與 AI 教練面板聯動
   # ========== PRO_199 付費牆升級提示 ==========
 
   Rule: 後置（商業漏斗）- PRO_199 使用者嘗試使用進階功能時看到升級提示
-
-    @ignore
     Example: PRO_199 使用者月配額用盡後看到升級提示
       Given 使用者 "pro@example.com" 本月基礎教練已使用 20 次
       When 使用者 "pro@example.com" 在左下角文字框嘗試輸入：「請用小學生能聽懂的例子教我這一段」
