@@ -90,7 +90,14 @@ class AdminModerationService:
             query = query.filter(ContentReport.status == status)
 
         reports = query.all()
-        reporter_ids = {r.reporter_id for r in reports if r.reporter_id}
+        import uuid as _uuid
+        def _is_uuid(s):
+            try:
+                _uuid.UUID(str(s))
+                return True
+            except (ValueError, TypeError):
+                return False
+        reporter_ids = {r.reporter_id for r in reports if r.reporter_id and _is_uuid(r.reporter_id)}
         reporter_emails: dict = {}
         if reporter_ids:
             rows = self.db.query(User.id, User.email).filter(User.id.in_(reporter_ids)).all()
@@ -136,6 +143,11 @@ class AdminModerationService:
             report.status = ReportStatus.RESOLVED
         elif action == "dismiss":
             report.status = ReportStatus.DISMISSED
+        elif action == "approve":
+            report.status = "approved"
+        elif action == "reject":
+            report.status = ReportStatus.RESOLVED
+            action = "delete_and_warn"
         else:
             return {"error": True, "status_code": 400, "message": f"未知動作: {action}"}
 

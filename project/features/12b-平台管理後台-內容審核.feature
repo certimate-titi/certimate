@@ -1,4 +1,4 @@
-@ignore @command
+@command
 Feature: 平台管理後台 — 內容與安全審核
 
   Background:
@@ -69,8 +69,6 @@ Feature: 平台管理後台 — 內容與安全審核
       And 目標資源 51 不應被刪除
 
   # ========== UI 互動情境 ==========
-
-  @ignore
   Rule: 後置（狀態）- 通過內容審核項目應更新狀態為已通過
 
     Example: 通過內容審核項目成功
@@ -78,8 +76,6 @@ Feature: 平台管理後台 — 內容與安全審核
       Then 操作成功
       And 檢舉 "RPT-002" 的狀態應為 "approved"
       And 目標資源 51 不應被刪除
-
-  @ignore
   Rule: 後置（狀態）- 移除內容審核項目需確認後執行
 
     Example: 移除內容審核項目需確認
@@ -89,8 +85,6 @@ Feature: 平台管理後台 — 內容與安全審核
       Then 操作成功
       And 檢舉 "RPT-001" 的狀態應為 "resolved"
       And 目標資源 50 應被刪除
-
-  @ignore
   Rule: 後置（回應）- 審核佇列應支援篩選切換
 
     Example: 審核佇列篩選切換
@@ -98,8 +92,6 @@ Feature: 平台管理後台 — 內容與安全審核
       Then 檢舉列表應僅顯示狀態為 "pending" 的檢舉
       When 於篩選選單切換為 "resolved"
       Then 檢舉列表應僅顯示狀態為 "resolved" 的檢舉
-
-  @ignore
   Rule: 後置（狀態）- 快速操作可重設 AI 速率限制
 
     Example: 快速操作重設 AI 速率限制
@@ -110,8 +102,6 @@ Feature: 平台管理後台 — 內容與安全審核
       And 系統應記錄審計日誌：
         | 欄位    | 值                  |
         | action  | reset_ai_limits     |
-
-  @ignore
   Rule: 後置（狀態）- 快速操作可清除系統快取
 
     Example: 快速操作清除系統快取

@@ -21,9 +21,14 @@ def step_impl_confirm_generic(context):
     """確認通用操作（如重設速率限制、清除快取）。"""
     pending_action = context.memo.get("pending_system_action")
     token = context.memo.get("admin_token")
+    action_url_map = {
+        "reset-ai-limits": "/api/v1/admin/system-settings/reset-ai-limits",
+        "clear-cache": "/api/v1/admin/system-settings/clear-cache",
+    }
     if pending_action and token:
+        url = action_url_map.get(pending_action, f"/api/v1/admin/system/{pending_action}/confirm")
         response = context.api_client.post(
-            f"/api/v1/admin/system/{pending_action}/confirm",
+            url,
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
