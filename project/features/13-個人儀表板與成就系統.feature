@@ -1,4 +1,4 @@
-@ignore @query
+@query
 Feature: 個人儀表板與成就系統
 
   Background:
@@ -161,10 +161,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 檔案拖放上傳 ==========
 
-  @ignore
   Rule: 後置（狀態）- 儀表板快速上傳區支援拖放上傳 PDF/MD/TXT 檔案
 
-    @ignore
     Example: 檔案拖放上傳 PDF/MD/TXT 成功
       When 使用者 "alice@example.com" 在儀表板拖放上傳以下檔案：
         | 檔名               | 格式 | 大小    |
@@ -173,7 +171,6 @@ Feature: 個人儀表板與成就系統
       And 回應應包含上傳資源的 ID
       And 上傳狀態應為 "completed"
 
-    @ignore
     Example: 檔案拖放上傳不支援格式失敗
       When 使用者 "alice@example.com" 在儀表板拖放上傳以下檔案：
         | 檔名             | 格式 | 大小    |
@@ -182,27 +179,22 @@ Feature: 個人儀表板與成就系統
 
   # ========== YouTube URL 解析 ==========
 
-  @ignore
   Rule: 後置（狀態）- 儀表板快速上傳區支援 YouTube URL 解析提交
 
-    @ignore
     Example: YouTube URL 解析提交成功
       When 使用者 "alice@example.com" 在儀表板提交 YouTube URL "https://www.youtube.com/watch?v=abc123"
       Then 操作成功
       And 回應應包含上傳資源的 ID
       And 資源類型應為 "youtube"
 
-    @ignore
     Example: YouTube URL 解析提交無效 URL 失敗
       When 使用者 "alice@example.com" 在儀表板提交 YouTube URL "https://not-a-valid-url.com/xyz"
       Then 操作失敗，錯誤為「請輸入有效的 YouTube 影片網址」
 
   # ========== 圖片 Vision OCR 權限 ==========
 
-  @ignore
   Rule: 前置（權限）- 上傳圖片 Vision OCR 功能需要 PRO_PLUS 以上方案
 
-    @ignore
     Example: 上傳圖片 Vision OCR 非 PRO+ 顯示鎖定
       Given 使用者 "alice@example.com" 的訂閱方案為 "FREE"
       When 使用者 "alice@example.com" 嘗試上傳圖片進行 Vision OCR
@@ -211,10 +203,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 上傳進度與重試 ==========
 
-  @ignore
   Rule: 後置（回應）- 上傳過程應顯示進度指示器與正確狀態
 
-    @ignore
     Example: 上傳進度指示器顯示正確狀態
       When 使用者 "alice@example.com" 在儀表板拖放上傳以下檔案：
         | 檔名               | 格式 | 大小    |
@@ -225,10 +215,8 @@ Feature: 個人儀表板與成就系統
         | progress       | 上傳百分比（0-100）      |
         | status         | uploading / completed    |
 
-  @ignore
   Rule: 後置（狀態）- 上傳失敗後應提供重試功能
 
-    @ignore
     Example: 上傳失敗後重試功能
       Given 使用者 "alice@example.com" 有一筆上傳失敗的資源，ID 為 "res-fail-001"
       When 使用者 "alice@example.com" 重試上傳資源 "res-fail-001"
@@ -237,10 +225,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 雷達圖 ==========
 
-  @ignore
   Rule: 後置（回應）- 雷達圖應顯示各領域的強度資料
 
-    @ignore
     Example: 雷達圖顯示領域強度資料
       Given 使用者 "alice@example.com" 在 "AWS SAA" 科目有以下能力分布：
         | 領域               | 強度 |
@@ -261,10 +247,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 艾賓浩斯複習月曆 ==========
 
-  @ignore
   Rule: 後置（回應）- 艾賓浩斯複習月曆應顯示正確的複習排程點
 
-    @ignore
     Example: 艾賓浩斯複習月曆顯示正確複習點
       Given 使用者 "alice@example.com" 在 "AWS SAA" 科目有以下複習排程：
         | 日期       | 複習項目數 |
@@ -281,10 +265,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 新增科目 Modal ==========
 
-  @ignore
   Rule: 後置（狀態）- 從儀表板新增備考科目
 
-    @ignore
     Example: 新增科目 Modal 成功新增科目
       When 使用者 "alice@example.com" 從儀表板新增備考科目：
         | 科目     | 考試日期   |
@@ -298,10 +280,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 任務模式 Badge ==========
 
-  @ignore
   Rule: 後置（回應）- 任務模式 Badge 點擊應顯示 tooltip 說明
 
-    @ignore
     Example: 任務模式 Badge 點擊顯示 tooltip
       Given 使用者 "alice@example.com" 有一個類型為 "quiz" 的任務「完成一份 15 題測驗」，狀態為 "pending"
       When 使用者 "alice@example.com" 查看每日任務列表
@@ -313,10 +293,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 帳戶頁面 - 大頭貼 ==========
 
-  @ignore
   Rule: 後置（狀態）- 帳戶頁面更換大頭貼上傳
 
-    @ignore
     Example: 帳戶頁面更換大頭貼上傳成功
       When 使用者 "alice@example.com" 在帳戶頁面上傳新大頭貼：
         | 檔名            | 格式 | 大小    |
@@ -326,16 +304,13 @@ Feature: 個人儀表板與成就系統
 
   # ========== 帳戶頁面 - 訂閱管理 ==========
 
-  @ignore
   Rule: 後置（狀態）- 帳戶頁面訂閱升級與取消
 
-    @ignore
     Example: 帳戶頁面訂閱升級 Pro 成功
       When 使用者 "alice@example.com" 在帳戶頁面升級訂閱方案至 "PRO_199"
       Then 操作成功
       And 使用者 "alice@example.com" 的訂閱方案應為 "PRO_199"
 
-    @ignore
     Example: 帳戶頁面取消訂閱成功
       Given 系統中有以下使用者帳號：
         | 使用者 ID | Email             | 訂閱方案  | Onboarding |
@@ -346,10 +321,8 @@ Feature: 個人儀表板與成就系統
 
   # ========== 帳戶頁面 - 偏好設定 ==========
 
-  @ignore
   Rule: 後置（狀態）- 帳戶頁面通知偏好與深色模式切換
 
-    @ignore
     Example: 通知偏好設定切換
       When 使用者 "alice@example.com" 更新通知偏好設定：
         | 設定項目         | 值    |
@@ -361,7 +334,6 @@ Feature: 個人儀表板與成就系統
         | email_notify     | false |
         | push_notify      | true  |
 
-    @ignore
     Example: 深色模式切換
       When 使用者 "alice@example.com" 切換深色模式為 "enabled"
       Then 操作成功
@@ -369,32 +341,26 @@ Feature: 個人儀表板與成就系統
 
   # ========== 帳戶頁面 - 刪除帳號 ==========
 
-  @ignore
   Rule: 前置（參數）- 刪除帳號需輸入 DELETE 確認文字
 
-    @ignore
     Example: 刪除帳號需輸入 DELETE 確認
       When 使用者 "alice@example.com" 提交刪除帳號請求，確認文字為 "DELETE"
       Then 操作成功
       And 使用者 "alice@example.com" 的帳號狀態應為 "deleted"
 
-    @ignore
     Example: 刪除帳號確認文字錯誤被拒絕
       When 使用者 "alice@example.com" 提交刪除帳號請求，確認文字為 "delete"
       Then 操作失敗，錯誤為「請輸入大寫 DELETE 以確認刪除帳號」
 
   # ========== 帳戶頁面 - 科目管理 ==========
 
-  @ignore
   Rule: 後置（狀態）- 帳戶頁面科目編輯與移除
 
-    @ignore
     Example: 科目編輯導航至 onboarding
       When 使用者 "alice@example.com" 在帳戶頁面點擊編輯科目 "AWS SAA"
       Then 操作成功
       And 系統應導向至 Onboarding 科目編輯頁，帶入 "AWS SAA" 的現有設定
 
-    @ignore
     Example: 科目移除成功
       When 使用者 "alice@example.com" 在帳戶頁面移除科目 "TOEIC"
       Then 操作成功
