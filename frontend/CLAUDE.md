@@ -65,8 +65,8 @@ npm run dev    # http://localhost:3005
 ### 資源 / 學習庫
 - `/account/resource-library` — 學習庫總覽（素材 + 知識地圖 Tab）
 - `/resources/[id]/` — 資源詳情
-- `/resources/[id]/parsed/` — 解析內容（學習鷹架 Layer A）
 - `/resources/[id]/candidates/` — 題目抽取確認（T2/T3）
+- 學習鷹架（解析內容）整合於 `/knowledge?resourceId=...` — 知識地圖右側欄
 
 ### B2B
 `/edu-console`
@@ -143,7 +143,7 @@ GEMINI_API_KEY=
 
 ## 動態路由 + 靜態匯出陷阱
 
-**不可用 `useParams()` 讀動態路由的 param**。靜態匯出時 `generateStaticParams()` 產出單一 stub 檔（例：`/resources/[id]/parsed/`），Firebase rewrite 把所有 UUID 都指到該 stub 的 `index.html`，`useParams()` 只會讀到 stub 檔名字面值（例如 `"detail"`），不是實際 URL 的 UUID。
+**不可用 `useParams()` 讀動態路由的 param**。靜態匯出時 `generateStaticParams()` 產出單一 stub 檔（例：`/resources/[id]/candidates/`），Firebase rewrite 把所有 UUID 都指到該 stub 的 `index.html`，`useParams()` 只會讀到 stub 檔名字面值（例如 `"detail"`），不是實際 URL 的 UUID。
 
 **正確做法**：從 `window.location.pathname` regex 解析：
 
@@ -160,7 +160,7 @@ function useResourceIdFromPath(): string {
 
 ## Firebase Rewrite 注意事項
 
-- `<Link href="/resources/x/parsed">` 會產生**無尾斜線** URL；Firebase rewrite 必須同時設有尾 / 無尾兩版
+- `<Link href="/resources/x/candidates">` 會產生**無尾斜線** URL；Firebase rewrite 必須同時設有尾 / 無尾兩版
 - 驗證導航必須**實際 click `<Link>`**，禁用 `window.location` 或直接輸網址（會繞過 Link 與 rewrite）
 
 ## 訂閱方案 Enum

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Search, RefreshCw, Trash2, Loader2, FileText, AlertTriangle, Share2, Sparkles, CheckCircle2, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, Search, RefreshCw, Trash2, Loader2, FileText, AlertTriangle, Share2, CheckCircle2, BookOpenCheck } from 'lucide-react';
 import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
@@ -205,11 +205,11 @@ export default function ResourceLibraryPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={`/resources/${r.resource_id}/parsed`}
-                        className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 rounded hover:bg-purple-50"
-                        title="EPIC-035 LLM 統一解析"
+                        href={`/knowledge?resourceId=${r.resource_id}`}
+                        className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
+                        title="於知識地圖檢視解析內容與學習鷹架"
                       >
-                        <Sparkles className="w-3 h-3" /> LLM 解析
+                        <BookOpenCheck className="w-3 h-3" /> 解析內容
                       </Link>
                       <Link
                         href={`/resources/${r.resource_id}/candidates`}
@@ -217,13 +217,6 @@ export default function ResourceLibraryPage() {
                         title="確認抽取的題目"
                       >
                         <CheckCircle2 className="w-3 h-3" /> 題目確認
-                      </Link>
-                      <Link
-                        href={`/resources/${r.resource_id}/parsed`}
-                        className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
-                        title="檢視解析內容與學習鷹架"
-                      >
-                        <BookOpenCheck className="w-3 h-3" /> 解析內容
                       </Link>
                       {isUltra && (r.scope === 'personal' || r.scope === 'shared') && (
                         <button
