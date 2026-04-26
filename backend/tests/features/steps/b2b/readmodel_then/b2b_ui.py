@@ -106,6 +106,17 @@ def step_impl_node_progress_bar_fields(context):
                 assert field in n, f"知識節點應包含欄位 '{field}'，實際: {n.keys()}"
 
 
+@then('回應學員列表應為空')
+def step_impl_empty_student_list(context):
+    """驗證回應的學員列表為空。"""
+    response = context.last_response
+    assert response.status_code in (200, 201), \
+        f"預期成功回應，實際 {response.status_code}: {response.text}"
+    data = response.json()
+    students = data if isinstance(data, list) else data.get("students", [])
+    assert students == [], f"預期空列表，實際: {students}"
+
+
 @then('系統應顯示提示訊息「此功能即將推出，敬請期待」')
 def step_impl_coming_soon_hint(context):
     """驗證即將推出提示（Red 階段允許 200/404）。"""

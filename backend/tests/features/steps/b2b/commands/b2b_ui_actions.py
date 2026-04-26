@@ -10,8 +10,9 @@ def step_impl_view_schedule(context, email, student_id):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
+    target_id = context.ids.get(str(student_id), str(student_id))
     response = context.api_client.get(
-        f"/api/v1/b2b/students/{student_id}/review-schedule",
+        f"/api/v1/b2b/students/{target_id}/review-schedule",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -41,8 +42,9 @@ def step_impl_expand_competency(context, email, student_id):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
+    target_id = context.ids.get(str(student_id), str(student_id))
     response = context.api_client.get(
-        f"/api/v1/b2b/students/{student_id}/competency",
+        f"/api/v1/b2b/students/{target_id}/competency",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response

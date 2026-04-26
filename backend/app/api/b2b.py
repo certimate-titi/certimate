@@ -193,11 +193,34 @@ def request_ai_suggestions(
 @router.get("/institutions/{inst_id}/students")
 def get_institution_students(
     inst_id: str,
+    search: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
     service = B2BService(db)
-    result = service.get_institution_students(user_id=user_id, institution_id=inst_id)
+    result = service.get_institution_students(user_id=user_id, institution_id=inst_id, search=search)
+    return _handle_result(result)
+
+
+@router.get("/students/{student_id}/review-schedule")
+def get_student_review_schedule(
+    student_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.get_student_review_schedule(user_id=user_id, student_id=student_id)
+    return _handle_result(result)
+
+
+@router.get("/groups/{group_id}/weakness-analysis")
+def get_group_weakness_analysis(
+    group_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = B2BService(db)
+    result = service.get_class_weakness_analysis(user_id=user_id, group_id=group_id)
     return _handle_result(result)
 
 

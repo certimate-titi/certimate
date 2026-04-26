@@ -1,4 +1,4 @@
-@ignore @command
+@command
 Feature: B2B 機構管理後台
 
   Background:
@@ -431,8 +431,6 @@ Feature: B2B 機構管理後台
       And 各能力的預設比例總和應等於 100%
 
   # ========== 學員複習排程 ==========
-
-  @ignore
   Rule: 後置（回應）- 機構管理員可查看學員的艾賓浩斯複習排程
 
     Example: 查看學員複習排程取得未來複習日程
@@ -465,8 +463,6 @@ Feature: B2B 機構管理後台
         | 差距在 ±5 分以內         | flat  |
 
   # ========== 學員搜尋與過濾 ==========
-
-  @ignore
   Rule: 後置（回應）- 學員列表支援依名稱或 Email 搜尋過濾
 
     Example: 依學員名稱搜尋過濾學員列表
@@ -487,8 +483,6 @@ Feature: B2B 機構管理後台
       And 回應學員列表應為空
 
   # ========== 學員能力表展開 ==========
-
-  @ignore
   Rule: 後置（回應）- 學員能力表展開應顯示 CompetencyBar 元件
 
     Example: 展開學員能力表顯示 CompetencyBar
@@ -503,8 +497,6 @@ Feature: B2B 機構管理後台
         | color      | green（>= 70）/ orange（40-69）/ red（< 40）|
 
   # ========== 班級弱點分析 ==========
-
-  @ignore
   Rule: 後置（回應）- 班級弱點分析應回傳各知識節點的進度條資料
 
     Example: 查看班級弱點分析取得進度條資料
@@ -582,22 +574,16 @@ Feature: B2B 機構管理後台
       Then 操作失敗，錯誤為「找不到該學生」
 
   # ========== 未實作功能 Placeholder ==========
-
-  @ignore
   Rule: 後置（回應）- 匯入學生名單按鈕顯示未實作提示
 
     Example: 點擊匯入學生名單按鈕顯示即將推出提示
       When 使用者 "org-admin@school.com" 在機構管理後台點擊「匯入學生名單」按鈕
       Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
-
-  @ignore
   Rule: 後置（回應）- 快速操作卡片點擊顯示未實作提示
 
     Example: 點擊快速操作卡片顯示即將推出提示
       When 使用者 "org-admin@school.com" 在機構管理後台點擊快速操作卡片
       Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
-
-  @ignore
   Rule: 後置（回應）- 匯出詳細報告按鈕顯示未實作提示
 
     Example: 點擊匯出詳細報告按鈕顯示即將推出提示

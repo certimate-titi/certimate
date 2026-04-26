@@ -562,7 +562,7 @@ class B2BService:
             return result
         _, institution = result
 
-        student_uuid = uuid.UUID(student_id)
+        student_uuid = uuid.UUID(int=int(student_id)) if str(student_id).isdigit() else uuid.UUID(student_id)
         student = self.db.query(User).filter_by(id=student_uuid).first()
         if not student:
             return {"error": True, "status_code": 404, "message": "找不到此學生"}
@@ -577,7 +577,7 @@ class B2BService:
                 return "orange"
             return "red"
         competencies = [
-            {"label": label, "score": score, "color": _color(score)}
+            {"label": label, "score": score, "max_score": 100, "color": _color(score)}
             for label, score in COMPETENCY_PROFILES[variant]
         ]
 
@@ -689,7 +689,7 @@ class B2BService:
 
     # ========== Institution Students ==========
 
-    def get_institution_students(self, user_id: str, institution_id: str) -> dict:
+    def get_institution_students(self, user_id: str, institution_id: str, search: str | None = None) -> dict:
         """取得機構的學員列表。"""
         result = self._validate_org_admin_for_inst(user_id, institution_id)
         if isinstance(result, dict):
@@ -706,10 +706,16 @@ class B2BService:
 
         students = []
         seen_ids = set()
+        keyword = (search or "").strip().lower()
         for member, user, group in members:
             if str(user.id) in seen_ids:
                 continue
             seen_ids.add(str(user.id))
+            if keyword:
+                name = (user.display_name or user.email.split("@")[0] or "").lower()
+                email = (user.email or "").lower()
+                if keyword not in name and keyword not in email:
+                    continue
             students.append({
                 "id": str(user.id),
                 "name": user.display_name or user.email.split("@")[0],
@@ -965,6 +971,78 @@ class B2BService:
             "group_name": group.name,
             "total_students": self.db.query(StudentGroupMember).filter_by(group_id=group_uuid).count(),
             "weaknesses": [],
+        }
+
+    def get_class_weakness_analysis(self, user_id: str, group_id: str) -> dict:
+        """取得班級弱點分析（進度條資料）。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        group_uuid = uuid.UUID(int=int(group_id)) if str(group_id).isdigit() else uuid.UUID(group_id)
+        group = self.db.query(StudentGroup).filter_by(id=group_uuid, institution_id=institution.id).first()
+        if not group:
+            return {"error": True, "status_code": 404, "message": "找不到此群組"}
+
+        total_students = self.db.query(StudentGroupMember).filter_by(group_id=group_uuid).count()
+
+        # Deterministic weakness nodes (mock data, similar to COMPETENCY_PROFILES)
+        node_specs = [
+            ("雲端運算基礎", 78),
+            ("網路安全", 55),
+            ("IAM 身分管理", 42),
+            ("資料庫管理", 88),
+            ("成本最佳化", 60),
+        ]
+        nodes = []
+        for name, mastery in node_specs:
+            unmastered = round(total_students * (100 - mastery) / 100) if total_students else 0
+            nodes.append({
+                "node_name": name,
+                "mastery_rate": mastery,
+                "student_count": unmastered,
+                "total_students": total_students,
+            })
+
+        return {
+            "group_id": str(group.id),
+            "group_name": group.name,
+            "total_students": total_students,
+            "nodes": nodes,
+        }
+
+    # ========== Review Schedule ==========
+
+    def get_student_review_schedule(self, user_id: str, student_id: str) -> dict:
+        """取得學員的艾賓浩斯複習排程（mock 資料）。"""
+        result = self._validate_org_admin(user_id)
+        if isinstance(result, dict):
+            return result
+        _, institution = result
+
+        student_uuid = uuid.UUID(int=int(student_id)) if str(student_id).isdigit() else uuid.UUID(student_id)
+        student = self.db.query(User).filter_by(id=student_uuid).first()
+        if not student:
+            return {"error": True, "status_code": 404, "message": "找不到此學生"}
+
+        from datetime import timedelta
+        today = datetime.now(timezone.utc).date()
+        nodes = ["雲端運算基礎", "網路安全", "IAM 身分管理"]
+        intervals = [1, 3, 7]
+        schedules = [
+            {
+                "knowledge_node": node,
+                "scheduled_date": (today + timedelta(days=interval)).isoformat(),
+                "interval_days": interval,
+                "status": "pending",
+            }
+            for node, interval in zip(nodes, intervals)
+        ]
+
+        return {
+            "student_id": str(student_uuid),
+            "schedules": schedules,
         }
 
     # ========== Remediation Exam ==========
