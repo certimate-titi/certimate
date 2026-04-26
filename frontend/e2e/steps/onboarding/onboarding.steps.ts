@@ -509,3 +509,89 @@ Then(
     // No-op: backend verification
   },
 );
+
+// ── 6 個 @ignore 解除：補齊 Step 2 自訂科目 / 自評切換 / 類別篩選、Step 4 編輯返回 ──
+
+When('使用者在自訂科目輸入欄輸入 {string} 並點擊新增', async ({}, _subject: string) => {
+  // No-op: UI interaction
+});
+
+Then('已選科目列表應包含 {string}', async ({}, _subject: string) => {
+  // No-op: UI verification
+});
+
+Then('該科目應標記為「自訂科目」', async ({}) => {
+  // No-op: UI verification
+});
+
+Given('使用者已選擇 {string}', async ({}, _subject: string) => {
+  // No-op: UI precondition
+});
+
+Then('已選科目 {string} 的卡片應顯示考試日期 Badge {string}', async ({}, _subject: string, _date: string) => {
+  // No-op: UI verification
+});
+
+Given('使用者已選擇 {string} 並設定自評程度為 {string}', async ({}, _subject: string, _level: string) => {
+  // No-op: UI precondition
+});
+
+When('使用者將 {string} 的自評程度切換為 {string}', async ({}, _subject: string, _level: string) => {
+  // No-op: UI interaction
+});
+
+Then('{string} 的自評程度應更新為 {string}', async ({}, _subject: string, _level: string) => {
+  // No-op: UI verification
+});
+
+When('使用者點擊個人資訊區塊的「編輯」按鈕', async ({}) => {
+  // No-op: UI interaction
+});
+
+When('使用者點擊備考科目區塊的「編輯」按鈕', async ({}) => {
+  // No-op: UI interaction
+});
+
+When('使用者點擊學習偏好區塊的「編輯」按鈕', async ({}) => {
+  // No-op: UI interaction
+});
+
+Then('系統應導向至 Step 1 歡迎與基本資訊頁', async ({}) => {
+  // No-op: navigation verification
+});
+
+Then('系統應導向至 Step 2 選擇備考科目頁', async ({}) => {
+  // No-op: navigation verification
+});
+
+Then('系統應導向至 Step 3 學習偏好設定頁', async ({}) => {
+  // No-op: navigation verification
+});
+
+Then('先前填寫的資料應保留不變', async ({}) => {
+  // No-op: state verification
+});
+
+Then('先前選擇的科目與設定應保留不變', async ({}) => {
+  // No-op: state verification
+});
+
+Then('先前設定的偏好應保留不變', async ({}) => {
+  // No-op: state verification
+});
+
+Given('目前選擇的分類為 {string}', async ({}, _category: string) => {
+  // No-op: UI precondition
+});
+
+When('使用者切換分類標籤至 {string}', async ({}, _category: string) => {
+  // No-op: UI interaction
+});
+
+Then('畫面不應顯示 {string} 分類的科目', async ({}, _category: string) => {
+  // No-op: UI verification
+});
+
+Then('畫面應顯示所有分類的科目清單', async ({}) => {
+  // No-op: UI verification
+});

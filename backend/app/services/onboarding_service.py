@@ -476,6 +476,21 @@ class OnboardingService:
                 "hint_text": "填寫個人資訊有助於 AI 教練提供更適合您的學習建議",
             }
 
+        if step == 2:
+            return {
+                "step": 2,
+                "title": "選擇備考科目",
+                "can_skip": False,
+            }
+
+        if step == 3:
+            return {
+                "step": 3,
+                "title": "學習偏好設定",
+                "can_skip": False,
+                "daily_study_minutes": user.daily_study_minutes or 30,
+            }
+
         return {"error": True, "status_code": 400, "message": "無效的步驟"}
 
     def next_step(self, user_id: str, data: dict):
@@ -595,6 +610,13 @@ class OnboardingService:
 
         minutes = data.get("daily_study_minutes", 30)
         pref = data.get("learning_preference", "mixed")
+
+        if pref == "custom" and (minutes < 5 or minutes > 480):
+            return {
+                "error": True,
+                "status_code": 400,
+                "message": "每日學習時間需介於 5 至 480 分鐘",
+            }
 
         user.daily_study_minutes = minutes
         user.learning_preference = PREF_MAP.get(pref, LearningPreference.MIXED)
