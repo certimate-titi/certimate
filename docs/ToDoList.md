@@ -1,29 +1,38 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
+**最後更新**：2026-04-27
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
-- [ ] `/dashboard` — 科目切換器 (SubjectSwitcher) 缺 Feature Scenario（Feature 13 全 35 個 @ignore 需解封或重寫）（首見：2026-04-24）
-- [ ] `/dashboard` — 複習日曆 + 月份切換缺 Feature Scenario（Feature 13 全 @ignore）（首見：2026-04-24）
-- [ ] `/dashboard` — 每日任務 (DailyQuestCard) 缺 Feature Scenario（Feature 13 全 @ignore）（首見：2026-04-24）
+- [x] `/dashboard` — ~~科目切換器 (SubjectSwitcher) 缺 Feature Scenario（Feature 13 全 35 個 @ignore 需解封或重寫）~~ Feature 13 已有 36 個 active Example（0 @ignore），含科目切換器 Rule (L40)（確認：2026-04-27 自動巡檢）
+- [x] `/dashboard` — ~~複習日曆 + 月份切換缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「艾賓浩斯複習月曆」(L250) 含月份參數驗證（確認：2026-04-27 自動巡檢）
+- [x] `/dashboard` — ~~每日任務 (DailyQuestCard) 缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「每日首次登入應自動產生 1-3 個微任務」(L96) + 任務完成觸發 (L108)（確認：2026-04-27 自動巡檢）
 - [ ] `/dashboard` — 備考模式標籤 Sprint/Standard/Mastery 無任何 Feature 覆蓋（首見：2026-04-24）
-- [ ] `/dashboard` — 核心指標卡（streak、答題數、答對率、預測及格率）缺 Feature Scenario（首見：2026-04-24）
+- [x] `/dashboard` — ~~核心指標卡（streak、答題數、答對率、預測及格率）缺 Feature Scenario~~ Feature 13 Rule「每日登入並學習應累積連勝天數」(L73) 含 streak_7 驗證（確認：2026-04-27 自動巡檢）
 - [x] `/knowledge` — ~~科目切換器無 active Scenario（Feature 03 全 @ignore）~~ Feature 03 有 8 個 active scenario（科目切換、佈局、AI 教練互動、節點顏色），9 個仍 @ignore（確認：2026-04-26 自動巡檢）
 - [ ] `/knowledge/mindmap` — ForceGraph/MindMapTree 視圖切換無任何 Feature 覆蓋（首見：2026-04-24）
 - [ ] `/exam/results` — 成績卡片下載按鈕無 Feature Scenario（功能目前為 stub）（首見：2026-04-24）
 - [x] `/exam/workspace` — ~~番茄鐘計時器 Feature 21 存在但 0 active Scenario~~ Feature 21 已有 15 個 active Scenario，無 @ignore 標記（確認：2026-04-25 自動巡檢）
-- [ ] `/account/my-subjects` — 刪除科目功能無任何 Feature 覆蓋（首見：2026-04-24）
+- [x] `/account/my-subjects` — ~~刪除科目功能無任何 Feature 覆蓋~~ Feature 13 Rule「帳戶頁面科目編輯與移除」(L357) + 前端 handleDelete 已實作（確認：2026-04-27 自動巡檢）
 - [x] `/account/resource-library` — ~~資源分享功能無 active Feature Scenario（Feature 11 @wip）~~ Feature 11 已有 15 個 active Scenario，無 @wip 標記（確認：2026-04-25 自動巡檢）
 - [ ] `/library` — Tab 切換無任何 Feature 覆蓋（首見：2026-04-24）
-- [ ] `/edu-console` — CSV 匯入 / 新增學員 Feature 10 全 @ignore，無 active Scenario（首見：2026-04-24）
-- [ ] `/super-admin/settings/flags` — Feature Flag 設定無任何 Feature 覆蓋（首見：2026-04-24）
-- [ ] `/super-admin/settings/plans` — 方案配額管理無 active Feature Scenario（首見：2026-04-24）
-- [ ] `/super-admin/users/[userId]` — 用戶詳情頁無 active Feature Scenario（首見：2026-04-24）
+- [x] `/edu-console` — ~~CSV 匯入 / 新增學員 Feature 10 全 @ignore，無 active Scenario~~ Feature 10 已有 55 個 active Example（@command 標記非 @ignore），含 CSV 匯入、DPA 簽署、學員上限等 Scenario（確認：2026-04-27 自動巡檢）
+- [x] `/super-admin/settings/flags` — ~~Feature Flag 設定無任何 Feature 覆蓋~~ Feature 12c 含「更新 Feature Flag 上線比例」+「Feature Flag 切換開關」Rule（確認：2026-04-27 自動巡檢）
+- [x] `/super-admin/settings/plans` — ~~方案配額管理無 active Feature Scenario~~ Feature 12c Rule「方案配額表格應支援行內編輯與儲存」已 active（確認：2026-04-27 自動巡檢）
+- [x] `/super-admin/users/[userId]` — ~~用戶詳情頁無 active Feature Scenario~~ Feature 12 Rule「用戶詳情頁應回傳六個資訊區塊」已 active（確認：2026-04-27 自動巡檢）
 - [x] `/review` — ~~Feature 07（錯題複習與 AI 教練）整個 Feature 全 @ignore~~ Feature-level @ignore 已移除（改為 @query），6 個 scenario-level @ignore 已解封（側邊列表切換→@playwright-e2e、答案對比→@playwright-e2e、引用來源切換、毛玻璃遮罩、月配額限制、空狀態）。後端 step definitions 齊全。13 個 AI 安全 scenario 維持 @skip（標記 @infra-heavy，待基礎設施就緒）（修復：2026-04-25 自動巡檢，**高優先已解決**）
 - [x] `/practice` — blindInferenceService（信心度校準）Feature 20 核心後端 Scenario 已全部 active，僅 2 個 UI scenario 仍 @ignore（確認：2026-04-24 15:08 自動巡檢）
 - [ ] `/super-admin/settings/version` — 版本資訊頁無任何 Feature 覆蓋（首見：2026-04-24）
 - [x] `19-交錯練習.feature` + `32-節點練習模式.feature` + `46-知識地圖Canvas.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples, 46：6 Examples）（確認：2026-04-24 自動巡檢）
+- [x] `/dashboard` — ~~待辦提醒（activityItems）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒」(L59) 已 active（確認：2026-04-27 自動巡檢）
+- [x] `/dashboard` — ~~DomainRadarChart（領域雷達圖）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「雷達圖應顯示各領域的強度資料」(L228) 含能力分布驗證（確認：2026-04-27 自動巡檢）
+- [ ] `/dashboard` — StudyBuddyBanner（ULTRA 共讀橫幅）無任何 Feature 覆蓋（首見：2026-04-27）
+- [x] `/super-admin/audit-logs` — ~~審計日誌無 active Feature Scenario（Feature 12 全 @ignore）~~ Feature 12 已有 35 個 active Example（0 @ignore），含 10 處審計日誌記錄驗證（確認：2026-04-27 自動巡檢）
+- [x] `/super-admin/retirement` — ~~Feature 25（AI 考題退場與放榜確認）全 @ignore，無 active Scenario~~ Feature 25 已有 36 個 active Example（0 @ignore），涵蓋來源標記、品質管理、退場流程（確認：2026-04-27 自動巡檢）
+- [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
+- [ ] `/super-admin/platform-subjects` — 平台科目管理無任何 Feature 覆蓋（首見：2026-04-27）
+- [ ] `/resources/[id]/candidates` — 候選考題管理頁面無任何 Feature 覆蓋（Feature 23/25 未對應此路徑）（首見：2026-04-27）
 
 ---
 
