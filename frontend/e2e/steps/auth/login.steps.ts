@@ -91,7 +91,25 @@ Then('密碼欄位應從明文顯示模式切換為遮蔽模式', async ({ page 
 
 When('使用者在登入頁面勾選「記住我」', async ({ page }) => {
   await page.goto('/login');
-  await page.locator('#remember-me').check();
+  await page.getByLabel('記住我').check();
+});
+
+Then('系統應將登入狀態持久化至本地儲存', async ({ page }) => {
+  // Remember Me → localStorage（非 sessionStorage）
+  const persisted = await page.evaluate(() =>
+    Boolean(window.localStorage.getItem('certimate_jwt_token')),
+  );
+  expect(persisted).toBe(true);
+});
+
+Then('使用者關閉瀏覽器後重新開啟應仍為登入狀態', async ({ page, context }) => {
+  // 用同 storageState 的新分頁模擬「重開瀏覽器」（localStorage 同源仍保留）
+  const newPage = await context.newPage();
+  await newPage.goto('/dashboard');
+  // 仍然能訪問受保護頁，未被導回登入頁
+  await newPage.waitForLoadState('domcontentloaded');
+  expect(newPage.url()).not.toContain('/login');
+  await newPage.close();
 });
 
 // ── Forgot password link ──

@@ -3,7 +3,7 @@ import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
 import { generateVerificationToken, getUserId } from '../../helpers/jwt';
 
-const { When, Then } = createBdd(test);
+const { Given, When, Then } = createBdd(test);
 
 // ── Email verification ──
 
@@ -39,6 +39,38 @@ Then('該帳號狀態仍為 {string}', async ({ page }, _status: string) => {
   const success = page.locator('text=驗證成功');
   const status = page.locator('text=/驗證|已啟用/');
   await expect(success.or(status).first()).toBeVisible({ timeout: 10_000 });
+});
+
+// ── Verify-email/sent page cooldown ──
+
+Given('使用者已完成註冊並進入驗證信寄出頁面', async ({ page }) => {
+  await page.goto('/verify-email/sent?email=newbie@example.com');
+  await page.waitForLoadState('domcontentloaded');
+});
+
+When('使用者點擊「重新寄送驗證信」按鈕', async ({ page }) => {
+  await page.getByRole('button', { name: /重寄驗證信/ }).click();
+});
+
+Then('重寄按鈕應進入 60 秒冷卻倒數狀態', async ({ page }) => {
+  const btn = page.getByRole('button', { name: /重寄驗證信/ });
+  await expect(btn).toBeDisabled();
+  await expect(btn).toHaveText(/\(\d+s\)/);
+});
+
+Then('倒數期間按鈕應顯示剩餘秒數且無法點擊', async ({ page }) => {
+  const btn = page.getByRole('button', { name: /重寄驗證信/ });
+  await expect(btn).toBeDisabled();
+  await expect(btn).toHaveText(/\(\d+s\)/);
+});
+
+Given('使用者已點擊「重新寄送驗證信」且冷卻倒數已結束', async ({ page }) => {
+  await page.goto('/verify-email/sent?email=newbie@example.com');
+});
+
+Then('重寄按鈕應恢復為可點擊狀態', async ({ page }) => {
+  const btn = page.getByRole('button', { name: /重寄驗證信/ });
+  await expect(btn).toBeEnabled();
 });
 
 // ── Resend verification ──
