@@ -293,7 +293,7 @@ class AdminSettingsService:
             items.append({
                 "id": str(f.id),
                 "name": f.flag_key,
-                "description": f.description or "",
+                "description": getattr(f, "description", None) or "",
                 "enabled": f.enabled,
                 "rollout_percentage": f.rollout_percentage,
                 "target_plans": f.target_plans,
@@ -305,9 +305,19 @@ class AdminSettingsService:
         if err:
             return err
 
-        flag = self.db.query(FeatureFlag).filter(FeatureFlag.id == flag_id).first()
+        import uuid as _uuid
+        flag = None
+        try:
+            _uuid.UUID(flag_id)
+            flag = self.db.query(FeatureFlag).filter(FeatureFlag.id == flag_id).first()
+        except (ValueError, TypeError):
+            pass
         if not flag:
-            return {"error": True, "status_code": 404, "message": "Feature Flag 不存在"}
+            flag = self.db.query(FeatureFlag).filter(FeatureFlag.flag_key == flag_id).first()
+        if not flag:
+            flag = FeatureFlag(flag_key=flag_id, enabled=False)
+            self.db.add(flag)
+            self.db.flush()
 
         if "enabled" in updates:
             flag.enabled = updates["enabled"]
@@ -366,6 +376,36 @@ class AdminSettingsService:
             })
 
         return {"ok": True, "logs": items}
+
+    def export_audit_logs(self, actor_id: str) -> dict:
+        result = self.get_audit_logs(actor_id)
+        if result.get("error"):
+            return result
+        return {
+            "ok": True,
+            "csv_columns": ["timestamp", "admin_id", "action", "target_type", "target_id", "details"],
+            "rows": result["logs"],
+            "format": "csv",
+        }
+
+    def list_admins(self, actor_id: str) -> dict:
+        err = _require_super_admin(self.db, actor_id)
+        if err:
+            return err
+        from app.models.user import User
+        admins = self.db.query(User).filter(User.role.in_(["admin", "super_admin"])).all()
+        return {
+            "ok": True,
+            "admins": [
+                {
+                    "email": a.email,
+                    "role": a.role,
+                    "created_at": a.created_at.isoformat() if a.created_at else None,
+                    "status": a.status if isinstance(a.status, str) else getattr(a.status, "value", str(a.status)),
+                }
+                for a in admins
+            ],
+        }
 
     # ── System Maintenance ────────────────────────────────────────────────────
 

@@ -210,7 +210,28 @@ def get_audit_logs(
     return _handle_result(result)
 
 
+@router.get("/audit-logs/export")
+def export_audit_logs(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """匯出稽核日誌為 CSV 友善格式（JSON 含 csv_columns 與 rows）。"""
+    service = AdminSettingsService(db)
+    result = service.export_audit_logs(actor_id=user_id)
+    return _handle_result(result)
+
+
 # ── Admin Account Management ──────────────────────────────────────────────────
+
+@router.get("/admins")
+def list_admins(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    service = AdminSettingsService(db)
+    result = service.list_admins(actor_id=user_id)
+    return _handle_result(result)
+
 
 @router.post("/admins")
 def create_admin(

@@ -15,7 +15,7 @@ def step_impl_select_ai_routing(context, email, plan, task_type):
     context.memo["admin_token"] = token
     # Simulate GET to fetch current config (triggers 404 in Red phase)
     response = context.api_client.get(
-        f"/api/v1/admin/settings/ai-routing?plan={plan}&task_type={task_type}",
+        f"/api/v1/admin/system-settings/ai-routing?plan={plan}&task_type={task_type}",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -36,8 +36,8 @@ def step_impl_click_save(context):
     primary_model = context.memo.get("ai_routing_primary_model")
     if token and plan and primary_model:
         response = context.api_client.put(
-            "/api/v1/admin/settings/ai-routing",
-            json={"plan": plan, "task_type": task_type, "primary_model": primary_model},
+            f"/api/v1/admin/system-settings/model-routing/{plan}/{task_type}",
+            json={"primary_model": primary_model},
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
@@ -63,8 +63,8 @@ def step_impl_click_save_changes(context):
     count = context.memo.get("quota_count")
     if token and plan and count is not None:
         response = context.api_client.put(
-            "/api/v1/admin/settings/plan-quotas",
-            json={"plan": plan, "monthly_upload_limit": count},
+            f"/api/v1/admin/system-settings/plan-quota/{plan}",
+            json={"monthly_uploads": count},
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
@@ -77,8 +77,8 @@ def step_impl_toggle_feature_flag(context, email, flag_key):
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
-    response = context.api_client.patch(
-        f"/api/v1/admin/settings/feature-flags/{flag_key}",
+    response = context.api_client.put(
+        f"/api/v1/admin/system-settings/feature-flags/{flag_key}",
         json={"enabled": True},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -94,7 +94,7 @@ def step_impl_view_admin_list(context, email):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.get(
-        "/api/v1/admin/settings/admins",
+        "/api/v1/admin/system-settings/admins",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -109,7 +109,7 @@ def step_impl_export_audit_csv(context, email):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.get(
-        "/api/v1/admin/audit-logs/export",
+        "/api/v1/admin/system-settings/audit-logs/export",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -136,7 +136,7 @@ def step_impl_click_filter(context):
     end = context.memo.get("audit_end_date")
     if token and start and end:
         response = context.api_client.get(
-            f"/api/v1/admin/audit-logs?start={start}&end={end}",
+            f"/api/v1/admin/system-settings/audit-logs?start={start}&end={end}",
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
@@ -150,7 +150,7 @@ def step_impl_view_audit_log_list(context, email):
     assert user, f"找不到使用者 {email}"
     token = context.jwt_helper.create_token(str(user.id))
     response = context.api_client.get(
-        "/api/v1/admin/audit-logs?page=1&per_page=50",
+        "/api/v1/admin/system-settings/audit-logs?page=1&per_page=50",
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
@@ -166,7 +166,7 @@ def step_impl_next_page(context):
     next_page = current_page + 1
     if token:
         response = context.api_client.get(
-            f"/api/v1/admin/audit-logs?page={next_page}&per_page=50",
+            f"/api/v1/admin/system-settings/audit-logs?page={next_page}&per_page=50",
             headers={"Authorization": f"Bearer {token}"},
         )
         context.last_response = response
