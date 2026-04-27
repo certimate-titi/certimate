@@ -1,19 +1,35 @@
+/**
+ * @file 考試結算全螢幕成長敘事動畫元件。
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, AlertTriangle, Target, Sparkles } from 'lucide-react';
 
+/**
+ * 結算動畫呈現的資料。
+ */
 interface SettlementData {
+  /** 此次測驗升級的考點數 */
   upgradedTopics: number;
+  /** 此次偵測到的盲點數 */
   blindSpots: number;
+  /** 測驗前整體進度（0–1） */
   previousProgress: number;
+  /** 測驗後整體進度（0–1） */
   newProgress: number;
 }
 
+/**
+ * ExamSettlementScreen 的 props。
+ */
 interface ExamSettlementScreenProps {
+  /** 是否顯示遮罩 */
   isVisible: boolean;
+  /** 結算資料；為 null 時不渲染 */
   data: SettlementData | null;
+  /** 動畫播完（約 7s）後的回呼 */
   onComplete: () => void;
 }
 

@@ -1,10 +1,17 @@
+/**
+ * @file 每日任務卡——顯示任務描述、進度、XP 獎勵與完成狀態。
+ */
 'use client';
 
 import { CheckCircle2, Circle, BookOpen, Compass, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { DailyQuest } from '@/types';
 
+/**
+ * DailyQuestCard 的 props。
+ */
 interface DailyQuestCardProps {
+  /** 每日任務資料 */
   quest: DailyQuest;
 }
 
@@ -14,6 +21,14 @@ const questIcons = {
   quiz: Zap,
 };
 
+/**
+ * 每日任務卡。
+ *
+ * 依 `quest.type`（review / explore / quiz）切換圖示，完成後標題加上刪除線並顯示綠色勾選；
+ * 含 progress / target 時顯示進度標籤，xpReward > 0 顯示 XP 徽章。
+ *
+ * @param props.quest - 每日任務資料
+ */
 export default function DailyQuestCard({ quest }: DailyQuestCardProps) {
   const Icon = questIcons[quest.type];
 

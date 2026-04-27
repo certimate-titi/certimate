@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/edu-console/student/[id]` — 學生詳情客戶端元件。
+ *
+ * 由同目錄 `page.tsx`（generateStaticParams stub）載入；
+ * 顯示單一學生的學習指標、領域強弱、最近活動與作答紀錄。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

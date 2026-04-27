@@ -1,17 +1,36 @@
+/**
+ * @file 節點掌握後的「鷹架回顧」卡片——慶祝精熟並提供深讀筆記回顧入口。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Trophy, Eye, X } from 'lucide-react';
 import { knowledgeService, type NodeScaffoldItem } from '@/lib/api/services';
 
+/**
+ * ScaffoldReplayCard 的 props。
+ */
 export interface ScaffoldReplayCardProps {
+  /** 當前節點 ID */
   nodeId: string | null;
+  /** 節點掌握等級（僅 'mastered' 才會顯示卡片） */
   masteryLevel: string | null | undefined;
+  /** 使用者是否為 PRO 訂戶（非 PRO 不顯示） */
   isPro: boolean;
 }
 
 const STORAGE_PREFIX = 'certimate_scaffold_replay_dismissed_';
 
+/**
+ * 鷹架回顧卡片。
+ *
+ * 當節點 `masteryLevel='mastered'` 且為 PRO 時顯示，點擊 X 後以 localStorage
+ * （key 前綴 `certimate_scaffold_replay_dismissed_`）記憶忽略，避免重複打擾。
+ *
+ * @param props.nodeId - 節點 ID
+ * @param props.masteryLevel - 掌握等級
+ * @param props.isPro - 是否 PRO
+ */
 export default function ScaffoldReplayCard({ nodeId, masteryLevel, isPro }: ScaffoldReplayCardProps) {
   const [dismissed, setDismissed] = useState(false);
   const [entries, setEntries] = useState<NodeScaffoldItem[]>([]);

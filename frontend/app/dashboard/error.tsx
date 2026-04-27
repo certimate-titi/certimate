@@ -1,9 +1,18 @@
+/**
+ * @file 路由 `/dashboard` — 區段錯誤邊界。
+ *
+ * Next.js segment-level error boundary：當 `/dashboard` 子樹拋出錯誤時，
+ * 顯示友善訊息並提供「重試」按鈕（呼叫 `reset()`）。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * Dashboard 區段錯誤頁。將錯誤輸出到 console 並提供 reset 重試。
+ */
 export default function SegmentError({
   error,
   reset,

@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/invite/setup-password` — 受邀使用者設定密碼頁。
+ *
+ * EDU 學生／機構成員透過 email 邀請連結進入；以 query 中的 `token` 驗證
+ * 邀請是否有效（valid / expired / used），有效時讓使用者設定首次密碼。
+ */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';

@@ -1,9 +1,17 @@
+/**
+ * @file 路由 `/knowledge` — 區段錯誤邊界。
+ *
+ * 知識地圖子樹（含 mindmap）的 segment-level error boundary。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * 知識地圖區段錯誤頁。
+ */
 export default function SegmentError({
   error,
   reset,

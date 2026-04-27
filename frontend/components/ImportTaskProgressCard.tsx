@@ -1,13 +1,28 @@
+/**
+ * @file 單一考古題匯入工作進度卡——含狀態、進度條、統計、錯誤訊息與人工審查標記。
+ */
 'use client';
 
 import { motion } from 'motion/react';
 import { CheckCircle, AlertCircle, Clock, Loader } from 'lucide-react';
 import type { ImportTask } from '@/types/models';
 
+/**
+ * ImportTaskProgressCard 的 props。
+ */
 interface ImportTaskProgressCardProps {
+  /** 匯入工作（含狀態、進度、統計、錯誤資訊） */
   task: ImportTask;
 }
 
+/**
+ * 匯入工作進度卡。
+ *
+ * 依狀態切換配色與圖示（pending/processing 動畫、completed 綠、failed 紅、cancelled 黃）；
+ * 失敗時展開錯誤訊息與最多 2 條驗證錯誤明細。
+ *
+ * @param props.task - 匯入工作資料
+ */
 export default function ImportTaskProgressCard({ task }: ImportTaskProgressCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -133,11 +148,22 @@ export default function ImportTaskProgressCard({ task }: ImportTaskProgressCardP
   );
 }
 
+/**
+ * 內部 StatItem 的 props。
+ */
 interface StatItemProps {
+  /** 統計項標籤 */
   label: string;
+  /** 統計值 */
   value: string | number;
 }
 
+/**
+ * 單一統計欄位（內部子元件，呈現 label / value 一行）。
+ *
+ * @param props.label - 標籤
+ * @param props.value - 數值
+ */
 function StatItem({ label, value }: StatItemProps) {
   return (
     <div className="flex justify-between">

@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/exam/results` — 考試結果頁。
+ *
+ * 顯示模擬考成績、答對率、領域強弱、錯題回顧；及格時播 Confetti 動畫，
+ * 並用 ForceGraph 視覺化作答涉及的知識節點。透過 query string `examId` 取得結果。
+ */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -10,6 +16,9 @@ import type { GetExamResultsResponse } from '@/types';
 import Confetti from '@/components/Confetti';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 
+/**
+ * 考試結果頁外層 Suspense 包裝（`useSearchParams` 需在 Suspense 內使用）。
+ */
 export default function ExamResultsPageWrapper() {
   return (
     <Suspense fallback={<div className="container mx-auto px-4 py-12 max-w-5xl"><div className="animate-pulse space-y-8"><div className="h-10 bg-slate-200 rounded w-64 mx-auto" /></div></div>}>

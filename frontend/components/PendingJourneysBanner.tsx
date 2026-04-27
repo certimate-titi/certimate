@@ -1,8 +1,17 @@
+/**
+ * @file 待確認學習旅程結果 banner——放榜日已到時提示使用者回填考取結果。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { learningJourneyService, type PendingJourneyItem } from '@/lib/api/services';
 
+/**
+ * 待確認學習旅程 banner。
+ *
+ * 載入 `learningJourneyService.listPending()`，未考取者額外提供「不再報考」入口
+ *（30 天保留期），按下後刷新清單。
+ */
 export default function PendingJourneysBanner() {
   const [items, setItems] = useState<PendingJourneyItem[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);

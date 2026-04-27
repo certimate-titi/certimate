@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/users/[userId]` — 使用者詳情客戶端元件。
+ *
+ * 由同目錄 `page.tsx`（generateStaticParams stub）載入；顯示單一使用者的
+ * 訂閱、消費、AI token 用量、活動紀錄等資訊。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

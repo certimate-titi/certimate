@@ -129,6 +129,15 @@ async function delay(ms: number): Promise<void> {
 
 // ── 匯出 mock apiClient ─────────────────────────────────────────
 
+/**
+ * 離線開發用 mock API client。
+ *
+ * 實作與 {@link import('./client').ApiClient} 相同的介面：
+ * - 命中 `MOCK_OVERRIDES` 的精確 / 前綴路徑時回傳預設值
+ * - 否則由 `inferResponse` 依方法與路徑推斷骨架回應
+ *
+ * 透過 `NEXT_PUBLIC_API_MODE=mock` 啟用。
+ */
 export const mockApiClient = {
   async get<T>(path: string): Promise<T> {
     await delay(MOCK_DELAY_MS);

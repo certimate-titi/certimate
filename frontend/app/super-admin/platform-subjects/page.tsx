@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/platform-subjects` — 平台科目管理頁。
+ *
+ * Super Admin 專屬：管理平台級科目主檔（subjects）、版本發佈與回滾，
+ * 透過 `platformSubjectAdminService` 操作。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

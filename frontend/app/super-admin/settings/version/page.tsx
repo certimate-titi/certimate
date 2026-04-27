@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/settings/version` — 版本資訊頁。
+ *
+ * Super Admin 專屬：顯示前後端 commit / build time / API prefix 等部署資訊，
+ * 用於確認雲端版本與健康狀態。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,6 +13,7 @@ import { twMerge } from 'tailwind-merge';
 import { superAdminService } from '@/lib/api/services';
 import { BUILD_INFO } from '@/lib/build-info';
 
+/** TailwindCSS class 合併工具。 */
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 interface VersionInfo {

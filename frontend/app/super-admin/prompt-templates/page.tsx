@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/super-admin/prompt-templates` — Prompt 範本列表頁。
+ *
+ * Super Admin 專屬：列出所有 prompt 範本，支援搜尋、分類過濾與啟用狀態切換。
+ */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';

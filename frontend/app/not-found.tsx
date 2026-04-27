@@ -1,6 +1,14 @@
+/**
+ * @file 全站 404 頁。
+ *
+ * Next.js 內建慣例：當 URL 找不到對應路由時自動渲染此元件。
+ */
 import Link from 'next/link';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 
+/**
+ * 全站 404 找不到頁面。提供返回首頁的連結。
+ */
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">

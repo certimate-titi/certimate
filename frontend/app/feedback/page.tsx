@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/feedback` — 使用者意見回饋頁。
+ *
+ * 提供回報錯誤、功能建議、內容勘誤等四類 feedback 表單，
+ * 支援上傳截圖；並列出使用者過往回饋紀錄與管理員回覆。
+ */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';

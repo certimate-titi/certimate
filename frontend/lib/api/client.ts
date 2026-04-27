@@ -1,23 +1,57 @@
+/**
+ * 前端 HTTP API client 與 JWT token 儲存工具。
+ *
+ * - 自動為每個請求注入 `Authorization: Bearer <token>`
+ * - 401 時清除 token 並導向 `/login?expired=1`
+ * - 透過 `NEXT_PUBLIC_API_MODE=mock` 切換到離線 mock client
+ */
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 const TOKEN_KEY = 'certimate_jwt_token';
 const REMEMBER_KEY = 'certimate_remember';
 
+/**
+ * 設定「Remember Me」偏好。
+ *
+ * 影響後續 {@link setStoredToken} 寫入 `localStorage`（true）或 `sessionStorage`（false）。
+ *
+ * @param val - 是否記住登入
+ */
 export function setRememberMe(val: boolean): void {
   localStorage.setItem(REMEMBER_KEY, String(val));
 }
 
+/**
+ * 取得目前的「Remember Me」偏好。
+ *
+ * @returns 預設 true；SSR 環境同樣回傳 true
+ */
 export function getRememberMe(): boolean {
   if (typeof window === 'undefined') return true;
   const v = localStorage.getItem(REMEMBER_KEY);
   return v === null ? true : v === 'true';
 }
 
+/**
+ * 讀取目前的 JWT token。
+ *
+ * 優先從 `localStorage` 取（Remember Me 啟用），找不到則退回 `sessionStorage`。
+ *
+ * @returns Token 字串；未登入或 SSR 時回傳 null
+ */
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 }
 
+/**
+ * 寫入 JWT token 至瀏覽器 storage。
+ *
+ * 依 {@link getRememberMe} 決定使用 `localStorage` 或 `sessionStorage`。
+ *
+ * @param token - JWT 字串
+ */
 export function setStoredToken(token: string): void {
   if (getRememberMe()) {
     localStorage.setItem(TOKEN_KEY, token);
@@ -26,6 +60,9 @@ export function setStoredToken(token: string): void {
   }
 }
 
+/**
+ * 清除兩種 storage 中的 JWT token（登出 / token 過期時呼叫）。
+ */
 export function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(TOKEN_KEY);
@@ -89,12 +126,24 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Prom
 
 // ── API Client Interface ───────────────────────────────────────────
 
+/**
+ * HTTP API client 介面。
+ *
+ * 真實 / Mock 兩種實作（`realApiClient` 與 `mockApiClient`）都實作此介面，
+ * 供 {@link apiClient} 在執行時依環境變數切換。
+ */
 export interface ApiClient {
+  /** 發 GET 請求並解析為型別 T */
   get<T>(path: string): Promise<T>;
+  /** 發 POST 請求；body 會 JSON.stringify */
   post<T>(path: string, body?: unknown): Promise<T>;
+  /** 發 PUT 請求 */
   put<T>(path: string, body?: unknown): Promise<T>;
+  /** 發 PATCH 請求 */
   patch<T>(path: string, body?: unknown): Promise<T>;
+  /** 發 DELETE 請求 */
   delete<T>(path: string): Promise<T>;
+  /** 以 multipart/form-data 上傳檔案；不可手動設 Content-Type */
   upload<T>(path: string, formData: FormData): Promise<T>;
 }
 
@@ -172,6 +221,13 @@ function loadMockClient(): ApiClient {
   return require('./mock-client').mockApiClient as ApiClient;
 }
 
+/**
+ * 全域共用的 API client 實例。
+ *
+ * 依 `NEXT_PUBLIC_API_MODE` 環境變數動態切換：
+ * - `'mock'` → 載入 `./mock-client` 的 `mockApiClient`
+ * - 其他 → 使用呼叫真實後端的 `realApiClient`
+ */
 export const apiClient: ApiClient = process.env.NEXT_PUBLIC_API_MODE === 'mock'
   ? loadMockClient()
   : realApiClient;

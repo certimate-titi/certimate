@@ -1,7 +1,15 @@
+/**
+ * @file TiTi 品牌 SVG Logo 元件。
+ */
 'use client';
 
+/**
+ * TiTiLogo 的 props。
+ */
 interface TiTiLogoProps {
+  /** 額外自訂 CSS class */
   className?: string;
+  /** Logo 高度（px），寬度為高度 × 2.5；預設 32 */
   size?: number;
 }
 

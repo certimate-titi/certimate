@@ -1,24 +1,46 @@
+/**
+ * @file Obsidian 風格力導向知識圖譜元件——基於 d3-force 渲染節點、進度環、連線與 tooltip。
+ */
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 
+/**
+ * 力導向圖節點資料。
+ */
 export interface GraphNode {
+  /** 節點 ID */
   id: string;
+  /** 顯示名稱 */
   name: string;
+  /** 節點深度（0 = 根） */
   depth: number;
+  /** 掌握度進度（0–100） */
   progress: number; // 0-100
+  /** 掌握度顏色（green / yellow / red / gray） */
   color: string;
+  /** 父節點 ID，根節點為 null */
   parentId: string | null;
+  /** 節點狀態（如 mastered / learning / unseen） */
   status: string;
+  /** 此節點可用題目數 */
   availableQuestions: number;
 }
 
+/**
+ * ForceGraph 的 props。
+ */
 interface ForceGraphProps {
+  /** 節點清單（含父子關係） */
   nodes: GraphNode[];
+  /** 點擊節點時觸發 */
   onNodeClick: (nodeId: string) => void;
+  /** 當前選取的節點 ID（會渲染光暈） */
   selectedNodeId?: string | null;
+  /** SVG 寬度（預設 800） */
   width?: number;
+  /** SVG 高度（預設 600） */
   height?: number;
 }
 

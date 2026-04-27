@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/reset-password` — 密碼重設頁。
+ *
+ * 由 `/forgot-password` 寄出的信中連結進入，query `token` 驗證後讓使用者輸入新密碼。
+ */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';

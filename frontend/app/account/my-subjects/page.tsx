@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/account/my-subjects` — 我的自訂科目頁。
+ *
+ * 列出使用者建立的自訂科目並提供刪除功能；未登入時不發 API 請求。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -13,6 +18,11 @@ interface CustomSubject {
   created_at?: string;
 }
 
+/**
+ * 我的自訂科目頁。
+ *
+ * 透過 `subjectService.getMyCustomSubjects` 載入清單，支援單筆刪除。
+ */
 export default function MySubjectsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [subjects, setSubjects] = useState<CustomSubject[]>([]);

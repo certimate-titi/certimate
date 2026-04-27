@@ -1,9 +1,18 @@
+/**
+ * @file 應用程式 root error boundary。
+ *
+ * 當任何子路由未自行捕捉錯誤時，由此 root-level error boundary 接住，
+ * 顯示通用錯誤訊息並提供「重試」與「返回首頁」按鈕。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * 全站根錯誤頁。將錯誤輸出 console 並提供 reset 重試。
+ */
 export default function Error({
   error,
   reset,

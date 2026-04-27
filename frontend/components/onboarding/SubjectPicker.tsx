@@ -1,3 +1,6 @@
+/**
+ * @file 備考科目選擇器——支援分類篩選、搜尋、自訂科目，提供 onboarding / add 兩種模式。
+ */
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,14 +20,34 @@ const categories: { value: SubjectCategory | 'ALL'; label: string }[] = [
   { value: '其他', label: '其他' },
 ];
 
+/**
+ * SubjectPicker 的 props。
+ */
 interface SubjectPickerProps {
+  /** 使用情境：onboarding（即時同步父層）或 add（送出後才回呼） */
   mode: 'onboarding' | 'add';
+  /** 預先選取的科目 */
   initialSelected?: SelectedSubject[];
+  /** 不允許再次選取的科目 ID（已加入帳號的科目） */
   excludeSubjectIds?: string[];
+  /** 確認 / 即時更新時呼叫，傳回目前選取的科目陣列 */
   onConfirm: (subjects: SelectedSubject[]) => void;
+  /** 取消按鈕回呼（僅 add 模式顯示） */
   onCancel?: () => void;
 }
 
+/**
+ * 備考科目選擇器。
+ *
+ * 從 `onboardingService.getSubjectCatalog()` 載入科目目錄，提供分類 tab、關鍵字搜尋、
+ * 自訂科目等功能；onboarding 模式會即時同步至父層，add 模式則於使用者按下「確認新增」才回呼。
+ *
+ * @param props.mode - 使用情境
+ * @param props.initialSelected - 預先選取的科目
+ * @param props.excludeSubjectIds - 排除的科目 ID
+ * @param props.onConfirm - 確認 / 即時更新回呼
+ * @param props.onCancel - 取消回呼
+ */
 export default function SubjectPicker({
   mode,
   initialSelected = [],

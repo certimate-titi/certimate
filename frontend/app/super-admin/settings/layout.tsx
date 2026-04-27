@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/settings` — 設定子樹 layout。
+ *
+ * 在 super-admin layout 內再嵌入一層側欄，列出 settings 各子頁
+ * （AI 路由、Plans、Announcements、Flags、Admins、Version）。
+ */
 'use client';
 
 import React from 'react';

@@ -1,21 +1,45 @@
+/**
+ * @file 測驗載入過場全螢幕動畫元件——用於 AI 出題等待過程。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
 
+/**
+ * 載入動畫的單一階段。
+ */
 interface Stage {
+  /** 階段顯示文字 */
   label: string;
+  /** 階段持續毫秒數 */
   duration: number; // ms
+  /** 階段結束時的目標進度百分比（0–100），可選 */
   progress?: number; // target progress percentage (0-100)
 }
 
+/**
+ * ExamLoadingOverlay 的 props。
+ */
 interface ExamLoadingOverlayProps {
+  /** 載入階段定義（依序播放） */
   stages: Stage[];
+  /** 全部階段播完且進度達 100% 後的回呼 */
   onComplete: () => void;
+  /** 是否顯示遮罩 */
   isVisible: boolean;
 }
 
+/**
+ * 測驗載入全螢幕遮罩。
+ *
+ * 依序播放 `stages`，每階段內以 20 步插值更新進度條；隱藏時自動重置內部狀態。
+ *
+ * @param props.stages - 階段清單
+ * @param props.onComplete - 完成回呼
+ * @param props.isVisible - 顯示開關
+ */
 export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: ExamLoadingOverlayProps) {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);

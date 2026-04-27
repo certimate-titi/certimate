@@ -57,7 +57,16 @@ import type {
 // Auth Service
 // ===========================
 
+/**
+ * 認證服務：登入、註冊、Email 驗證、Google SSO 與目前使用者查詢。
+ */
 export const authService = {
+  /**
+   * 帳密登入。
+   *
+   * @param req - 含 email / password / rememberMe 的登入表單
+   * @returns 含 JWT token 與 user 資訊的回應
+   */
   async login(req: LoginRequest): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>('/auth/login', req);
   },
@@ -95,6 +104,9 @@ export const authService = {
 // Document Service
 // ===========================
 
+/**
+ * 學習文件 / 資源服務：上傳（檔案、YouTube、分塊）、列表、刪除、考古題 markdown 取得。
+ */
 export const documentService = {
   async upload(req: UploadDocumentRequest): Promise<UploadDocumentResponse> {
     if (req.youtubeUrl) {
@@ -172,6 +184,12 @@ export const documentService = {
 // Exam Service
 // ===========================
 
+/**
+ * 模擬考試服務：建立 / 恢復考試、提交作答、取得結果。
+ *
+ * `create` 為兩階段流程：先 POST `/exams/config`，若回傳 `READY`（考古題模式）
+ * 直接回傳，否則再呼叫 `/exams/{id}/generate` 觸發 AI 生題。
+ */
 export const examService = {
   async create(req: CreateExamRequest): Promise<CreateExamResponse> {
     // Step 1: Create exam config
@@ -276,6 +294,9 @@ export const examService = {
 // Review Service
 // ===========================
 
+/**
+ * 錯題複習服務：錯題列表、AI 教練聊天、進階教練學習歷史。
+ */
 export const reviewService = {
   async getWrongQuestions(examId?: string, subjectId?: string): Promise<GetReviewQuestionsResponse> {
     const params = new URLSearchParams();
@@ -345,6 +366,9 @@ export const reviewService = {
 // Announcements (Public)
 // ===========================
 
+/**
+ * 公告服務：取得目前 active 的公開公告（橫幅 / Modal）。
+ */
 export const announcementService = {
   async getActive(): Promise<{ announcements: { id: string; title: string; content: string; type: string; display_mode: string }[] }> {
     return apiClient.get('/announcements');
@@ -353,6 +377,9 @@ export const announcementService = {
 
 // ===========================
 
+/**
+ * Dashboard 服務：每日任務、首頁總覽、複習日曆。
+ */
 export const dashboardService = {
   async get(subjectId?: string): Promise<GetDashboardResponse> {
     const params = subjectId ? `?subject_id=${subjectId}` : '';
@@ -380,8 +407,13 @@ export const dashboardService = {
 // Knowledge Service
 // ===========================
 
+/**
+ * 知識節點下的單一學習鷹架（takeaway / elaborative / strategy）。
+ */
 export interface NodeScaffoldItem {
+  /** Scaffold UUID */
   id: string;
+  /** 鷹架類型 */
   type: 'takeaway' | 'elaborative' | 'strategy';
   chapter_heading: string | null;
   content: string;
@@ -392,11 +424,19 @@ export interface NodeScaffoldItem {
   reference_answer?: string | null;
 }
 
+/**
+ * 取得知識節點下所有鷹架的回應結構。
+ */
 export interface NodeScaffoldsResponse {
+  /** 節點 UUID */
   node_id: string;
+  /** 該節點下的鷹架列表 */
   scaffolds: NodeScaffoldItem[];
 }
 
+/**
+ * 知識圖譜服務：節點層級、節點細節、鷹架、資源摘要與反向工程。
+ */
 export const knowledgeService = {
   async getMap(subjectId?: string): Promise<Record<string, unknown>> {
     const path = subjectId
@@ -430,6 +470,9 @@ export const knowledgeService = {
 // Account Service
 // ===========================
 
+/**
+ * 帳號服務：個人資料 / 頭像、用量、成就、帳單與帳號刪除。
+ */
 export const accountService = {
   async updateProfile(req: UpdateProfileRequest): Promise<void> {
     await apiClient.patch('/dashboard/profile', {
@@ -469,6 +512,9 @@ export const accountService = {
 // Subscription Service
 // ===========================
 
+/**
+ * 訂閱方案服務：升級 / 取消、Trial 流程、FUP 檢查、退款與 Coupon 驗證。
+ */
 export const subscriptionService = {
   async upgrade(plan: string): Promise<void> {
     await apiClient.post('/subscriptions/upgrade', { plan });
@@ -513,14 +559,24 @@ export const subscriptionService = {
 // Difficulty Progression Service
 // ===========================
 
+/**
+ * 難度推進「下一步策略」的回應（後端可擴充任意欄位）。
+ */
 export interface NextStrategyResponse {
+  /** 建議動作（例：advance / retry / switch_node） */
   action?: string;
+  /** 下一個節點 UUID */
   next_node_id?: string;
+  /** 目標難度等級 */
   target_difficulty?: string;
+  /** 後端決策的人類可讀理由 */
   reason?: string;
   [key: string]: unknown;
 }
 
+/**
+ * 難度自動推進服務：開始流程、查下一步策略、取得整條 trail。
+ */
 export const difficultyProgressionService = {
   async start(subjectId: string): Promise<{ message: string; status: string }> {
     return apiClient.post(`/difficulty-progression/subjects/${subjectId}/start`);
@@ -547,11 +603,19 @@ export const difficultyProgressionService = {
 // Community Service
 // ===========================
 
+/**
+ * 社群儀表板上的橫幅通知。
+ */
 export interface CommunityBanner {
+  /** 橫幅樣式分類 */
   type: string;
+  /** 顯示訊息 */
   message: string;
 }
 
+/**
+ * 每週學習報告的單一週紀錄。
+ */
 export interface WeeklyReportItem {
   id: string;
   week_start: string;
@@ -562,12 +626,21 @@ export interface WeeklyReportItem {
   progress_summary: string;
 }
 
+/**
+ * 考後 AI 教練回饋。
+ */
 export interface ExamCoaching {
+  /** 是否觸發教練介入 */
   coaching_triggered: boolean;
+  /** 觸發的教練名稱 */
   coach_name?: string;
+  /** 多語系或多段訊息 map */
   message?: Record<string, string>;
 }
 
+/**
+ * 社群服務：社群橫幅、每週報告、考後教練。
+ */
 export const communityService = {
   async getDashboard(): Promise<{ banner: CommunityBanner | null }> {
     return apiClient.get('/community/dashboard');
@@ -584,15 +657,27 @@ export const communityService = {
 // Learning Journey Service
 // ===========================
 
+/**
+ * 待確認結果的學習旅程紀錄。
+ */
 export interface PendingJourneyItem {
+  /** Journey UUID */
   id: string;
+  /** 對應科目 ID */
   subject_id: string;
+  /** 科目名稱 */
   subject_name: string;
+  /** 應試日 ISO 日期 */
   exam_date: string | null;
+  /** 放榜日 ISO 日期 */
   result_date: string | null;
+  /** 結果狀態（passed / failed / null = 尚未填寫） */
   exam_result_status: string | null;
 }
 
+/**
+ * 學習旅程服務：列出待確認、回填考試結果、再戰 / 放棄、更新放榜日。
+ */
 export const learningJourneyService = {
   async listPending(): Promise<{ items: PendingJourneyItem[] }> {
     return apiClient.get('/learning-journeys/pending');
@@ -622,18 +707,33 @@ export const learningJourneyService = {
 // Anomaly Service (Admin)
 // ===========================
 
+/**
+ * 系統異常單一筆紀錄（admin 監控用）。
+ */
 export interface AnomalyItem {
+  /** 錯誤事件 ID */
   error_id: string;
+  /** 錯誤分類 */
   error_type: string;
+  /** 出現次數 */
   occurrence_count: number;
+  /** 處理狀態 */
   status: string;
+  /** 受影響範圍描述 */
   impact_scope: string | null;
+  /** 指派處理人 ID */
   assigned_to: string | null;
+  /** 首次出現時間 */
   first_seen_at: string | null;
+  /** 最近出現時間 */
   last_seen_at: string | null;
+  /** 是否已被分類 */
   classified: boolean;
 }
 
+/**
+ * 異常管理服務（Admin）：列表、更新、維運任務 / 排程 / 維護模式。
+ */
 export const anomalyService = {
   async listAnomalies(): Promise<{ items: AnomalyItem[] }> {
     return apiClient.get('/admin/anomalies');
@@ -659,6 +759,11 @@ export const anomalyService = {
 // B2B Admin Service
 // ===========================
 
+/**
+ * B2B 機構管理服務：學員管理、匯入、DPA、補救考試、機構級指標。
+ *
+ * 涵蓋三層：學員 / 班級（group）/ 機構（institution）。
+ */
 export const adminService = {
   async getStudentList(subjectId?: string): Promise<GetStudentListResponse> {
     const params = subjectId ? `?subject_id=${subjectId}` : '';
@@ -767,6 +872,9 @@ export const adminService = {
 // Feedback Service (User)
 // ===========================
 
+/**
+ * 使用者意見回饋服務：列出我送出的意見、查看詳情。
+ */
 export const feedbackService = {
   async listMyFeedbacks(): Promise<{ feedbacks: { feedback_id: string; type: string; subject: string; content: string; status: string; admin_reply: string; resolved_at: string | null; created_at: string | null }[]; count: number }> {
     return apiClient.get('/feedback');
@@ -781,6 +889,11 @@ export const feedbackService = {
 // Super Admin Service
 // ===========================
 
+/**
+ * Super Admin 服務：使用者管理、系統設定、財務、內容審核、稽核日誌、儀表板等。
+ *
+ * 僅 `ADMIN` / `SUPER_ADMIN` role 能呼叫；後端會驗證權限。
+ */
 export const superAdminService = {
   async getUsers(params?: { search?: string; tier?: string; page?: number }): Promise<{ users: unknown[]; total: number }> {
     const qs = new URLSearchParams();
@@ -1058,6 +1171,9 @@ export const superAdminService = {
 // Onboarding Service
 // ===========================
 
+/**
+ * 使用者新手引導服務：科目目錄、提交引導完成。
+ */
 export const onboardingService = {
   async getSubjectCatalog(): Promise<GetSubjectCatalogResponse> {
     return apiClient.get<GetSubjectCatalogResponse>('/onboarding/subjects');
@@ -1081,6 +1197,9 @@ export const onboardingService = {
 // Subject Service
 // ===========================
 
+/**
+ * 使用者科目服務：取得 / 新增 / 刪除使用者已選擇的考科。
+ */
 export const subjectService = {
   async getUserSubjects(): Promise<GetUserSubjectsResponse> {
     const raw = await apiClient.get<{
@@ -1128,6 +1247,9 @@ export const subjectService = {
 
 // ── PRD-033 資源分享與預設綁定 ────────────────────────────────────────────
 
+/**
+ * 資源分享服務（PRD-033 US-03）：Ultra 用戶將資源分享給 EDU 機構。
+ */
 export const resourceShareService = {
   // US-03：Ultra 分享資源給 EDU
   async shareToInstitution(resourceId: string, targetInstitutionId: string) {
@@ -1140,6 +1262,9 @@ export const resourceShareService = {
   },
 };
 
+/**
+ * 平台預設資源綁定服務（PRD-033 US-04）：管理員為科目綁定 / 解除預設資源。
+ */
 export const adminDefaultResourceService = {
   // US-04：管理員綁定平台預設資源
   async bindDefault(subjectId: string, resourceId: string) {
@@ -1154,6 +1279,9 @@ export const adminDefaultResourceService = {
 
 // ── Prompt Template Service ────────────────────────────────────────────────
 
+/**
+ * Prompt 模板列表項摘要。
+ */
 export interface PromptTemplateSummary {
   template_id: string;
   name: string;
@@ -1165,6 +1293,9 @@ export interface PromptTemplateSummary {
   is_active: boolean;
 }
 
+/**
+ * Prompt 模板詳細資料；繼承摘要欄位並加上 prompt 內容與配額限制。
+ */
 export interface PromptTemplateDetail extends PromptTemplateSummary {
   system_prompt: string;
   user_prompt: string;
@@ -1175,6 +1306,9 @@ export interface PromptTemplateDetail extends PromptTemplateSummary {
   created_at?: string;
 }
 
+/**
+ * Prompt 模板的歷史版本紀錄。
+ */
 export interface PromptTemplateVersion {
   version: number;
   model: string;
@@ -1186,6 +1320,9 @@ export interface PromptTemplateVersion {
   created_at?: string;
 }
 
+/**
+ * Prompt A/B 測試紀錄。
+ */
 export interface PromptAbTest {
   id: string;
   template_id: string;
@@ -1199,6 +1336,9 @@ export interface PromptAbTest {
   ended_at?: string;
 }
 
+/**
+ * Prompt 模板管理服務（Admin）：CRUD、版本回溯、A/B 測試。
+ */
 export const promptTemplateService = {
   async listTemplates(category?: string): Promise<{ templates: PromptTemplateSummary[]; total: number }> {
     const q = category ? `?category=${category}` : '';
@@ -1257,6 +1397,9 @@ export const promptTemplateService = {
 // Exam Import Service (Phase 3)
 // ===========================
 
+/**
+ * 考古題匯入服務（Phase 3）：非同步任務送出、進度追蹤、儀表板統計與失敗分析。
+ */
 export const importService = {
   // --- Task Submission ---
 
@@ -1426,6 +1569,9 @@ function normalizeImportTask(data: Record<string, unknown>): ImportTask {
 }
 // ─── Resource Library Service ───────────────────────────────────────────────
 
+/**
+ * 學習庫中的單一資源（個人 / 機構 / 平台預設 / 分享）。
+ */
 export interface LibraryResource {
   resource_id: string;
   name: string;
@@ -1435,6 +1581,9 @@ export interface LibraryResource {
   badge?: 'personal' | 'institution' | 'official_default' | 'edu_shared';
 }
 
+/**
+ * 學習庫服務：列出 / 刪除 / 重新解析個人與分享資源。
+ */
 export const resourceLibraryService = {
   async list(keyword?: string): Promise<{ resources: LibraryResource[] }> {
     const q = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
@@ -1450,6 +1599,11 @@ export const resourceLibraryService = {
 
 // ─── Retirement & Result Notification Service (super_admin) ────────────────
 
+/**
+ * 退役 / 結果通知服務（super_admin 排程觸發）。
+ *
+ * 涵蓋學習旅程的掃描、硬刪除、放榜通知與跨科推薦等批次任務。
+ */
 export const retirementService = {
   async scan() { return apiClient.post('/admin/retirement/scan', {}); },
   async hardDelete() { return apiClient.post('/admin/retirement/hard-delete', {}); },
@@ -1463,6 +1617,9 @@ export const retirementService = {
 
 // ─── Practice Service ───────────────────────────────────────────────────────
 
+/**
+ * 練習模式的單一題目（與正式考試題目欄位略異）。
+ */
 export interface PracticeQuestion {
   id: string;
   content: string;
@@ -1481,12 +1638,21 @@ export interface PracticeQuestion {
   never_for_scoring?: boolean;
 }
 
+/**
+ * 取得知識節點下練習題列表的回應結構。
+ */
 export interface PracticeQuestionsResponse {
+  /** 節點 UUID */
   node_id: string;
+  /** 題目陣列 */
   questions: PracticeQuestion[];
+  /** 題目總數 */
   total: number;
 }
 
+/**
+ * 提交練習作答後的即時回饋（含進度更新與向上傳播）。
+ */
 export interface PracticeSubmitResponse {
   ok: boolean;
   is_correct: boolean;
@@ -1513,6 +1679,9 @@ export interface PracticeSubmitResponse {
   never_for_scoring?: boolean;
 }
 
+/**
+ * 練習服務：依知識節點取題並提交作答以更新進度。
+ */
 export const practiceService = {
   /** 查詢知識節點下的練習題列表 */
   async getNodeQuestions(nodeId: string): Promise<PracticeQuestionsResponse> {
@@ -1543,6 +1712,9 @@ import type {
   BudgetUpdateResponse,
 } from '@/types/cost-monitor';
 
+/**
+ * 成本監控服務（Feature 33）：AI provider 費用、GCP 服務費用、預算控制。
+ */
 export const costMonitorService = {
   async getSummary(): Promise<CostSummaryResponse> {
     return apiClient.get('/admin/cost/summary');
@@ -1577,12 +1749,21 @@ export const costMonitorService = {
 // PRD-034 — Platform Subject Fork / Admin
 // ===========================
 
+/**
+ * 平台科目版本資訊（PRD-034）。
+ */
 export interface PlatformSubjectVersionInfo {
+  /** 平台科目 UUID */
   subject_id: string;
+  /** 目前已發布版本號 */
   current_version: number;
+  /** 最近一次發布時間（ISO） */
   published_at: string | null;
 }
 
+/**
+ * 平台科目管理服務（PRD-034）：草稿更新、發布、回溯、版本查詢。
+ */
 export const platformSubjectAdminService = {
   async updateDraft(
     subjectId: string,
@@ -1610,6 +1791,9 @@ export const platformSubjectAdminService = {
   },
 };
 
+/**
+ * 科目 fork 服務：從平台科目分叉一份至使用者個人空間。
+ */
 export const subjectForkService = {
   async forkFromPlatform(platformSubjectId: string): Promise<{
     user_subject_id: string;
@@ -1635,6 +1819,9 @@ import type {
   InferenceJudgment,
 } from '@/types/api';
 
+/**
+ * 資源 LLM 解析服務（EPIC-035）：觸發解析、查狀態、取得解析結果。
+ */
 export const resourceParseService = {
   async triggerParse(resourceId: string): Promise<ParseJobResponse> {
     return apiClient.post(`/resources/${resourceId}/parse`, {});
@@ -1647,6 +1834,9 @@ export const resourceParseService = {
   },
 };
 
+/**
+ * 題目候選服務（EPIC-035）：列出 LLM 抽取的候選題並批次核准 / 駁回。
+ */
 export const questionCandidateService = {
   async list(resourceId: string): Promise<CandidateListResponse> {
     return apiClient.get(`/resources/${resourceId}/question-candidates`);
@@ -1662,12 +1852,18 @@ export const questionCandidateService = {
   },
 };
 
+/**
+ * 學習鷹架回應服務：使用者對 takeaway / elaborative / strategy 鷹架的作答。
+ */
 export const scaffoldService = {
   async submitResponse(scaffoldId: string, content: string): Promise<{ status: string }> {
     return apiClient.post(`/resource-scaffolds/${scaffoldId}/response`, { content });
   },
 };
 
+/**
+ * 盲答推理服務（EPIC-035）：未顯示選項前先讓使用者盲答，再判斷推理品質與寫筆記。
+ */
 export const blindInferenceService = {
   async submitBlindAnswer(
     questionId: string,

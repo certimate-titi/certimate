@@ -1,9 +1,17 @@
+/**
+ * @file 路由 `/super-admin` — 區段錯誤邊界。
+ *
+ * Super Admin 子樹的 segment-level error boundary。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * Super Admin 區段錯誤頁。
+ */
 export default function SegmentError({
   error,
   reset,

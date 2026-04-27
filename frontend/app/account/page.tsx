@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/account` — 個人帳戶設定頁。
+ *
+ * 包含 5 個 Tab：個人資料、訂閱與帳單、安全（密碼／刪除帳號）、
+ * 偏好（學習風格、深色模式）、成就。未登入會被導回 `/login`。
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +19,12 @@ import GrowthTimeline from '@/components/GrowthTimeline';
 
 type TabId = 'profile' | 'billing' | 'security' | 'preferences' | 'achievements';
 
+/**
+ * 個人帳戶設定頁。
+ *
+ * 從 useAuth 取得使用者狀態，並透過 `accountService` / `subscriptionService` /
+ * `subjectService` 處理個人資料更新、訂閱與成就資料載入。
+ */
 export default function AccountPage() {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated, isPro, isProPlus, isUltra, subscriptionTier, setSubscriptionTier, signOut } = useAuth();

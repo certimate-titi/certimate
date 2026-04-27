@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/settings/plans` — 訂閱方案配額管理頁。
+ *
+ * Super Admin 專屬：調整各訂閱方案（FREE / PRO / PRO_PLUS / ULTRA）的功能配額，
+ * 例如每日題數、上傳大小限制等。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,6 +11,9 @@ import { Save, RefreshCw } from 'lucide-react';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
 
+/**
+ * 訂閱方案配額管理頁。
+ */
 export default function PlansPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [planQuotas, setPlanQuotas] = useState<{ label: string; key: string; free: number | string; pro: number | string; pro_plus: number | string; ultra: number | string }[]>([]);

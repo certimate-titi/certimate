@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/account/resource-library` — 個人學習資源庫頁。
+ *
+ * 顯示使用者擁有或被分享的學習資源（含官方預設、EDU 分享、機構、個人四類），
+ * 提供搜尋、刪除、重新解析、分享等操作；同時輪詢 parse status 顯示處理進度。
+ */
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,6 +29,12 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-100 text-red-700',
 };
 
+/**
+ * 個人學習資源庫頁。
+ *
+ * 透過 `resourceLibraryService` 載入資源清單，並依狀態（pending/processing/ready/failed）
+ * 顯示色彩標籤；支援嵌入模式（embed）以隱藏部分外層 chrome。
+ */
 export default function ResourceLibraryPage() {
   const embedded = useIsEmbedded();
   const { isUltra } = useAuth();

@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/prompt-templates/[templateId]` — Prompt 範本詳情客戶端元件。
+ *
+ * 由同目錄 `page.tsx`（generateStaticParams stub）載入；編輯單一 prompt 範本，
+ * 支援版本切換、Save / Rollback 與 inline diff。
+ */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';

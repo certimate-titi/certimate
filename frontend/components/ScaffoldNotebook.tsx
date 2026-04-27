@@ -1,16 +1,36 @@
+/**
+ * @file 知識節點筆記分頁——彙整使用者深讀提問的回答並支援匯出 Markdown。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { NotebookPen, Download, Sparkles } from 'lucide-react';
 import { knowledgeService, type NodeScaffoldItem } from '@/lib/api/services';
 
+/**
+ * ScaffoldNotebook 的 props。
+ */
 export interface ScaffoldNotebookProps {
+  /** 當前節點 ID */
   nodeId: string | null;
+  /** 節點顯示名稱（用於匯出檔名與 Markdown 標題） */
   nodeLabel: string | null;
+  /** 使用者是否為 PRO 訂戶 */
   isPro: boolean;
+  /** 點擊「升級 PRO」按鈕的回呼 */
   onUpgradeClick?: () => void;
 }
 
+/**
+ * 知識節點筆記分頁。
+ *
+ * PRO 專屬；只列出 `user_response` 非空的鷹架，按下「匯出 Markdown」可下載為 .md 檔。
+ *
+ * @param props.nodeId - 節點 ID
+ * @param props.nodeLabel - 節點名稱
+ * @param props.isPro - 是否 PRO
+ * @param props.onUpgradeClick - 升級回呼
+ */
 export default function ScaffoldNotebook({ nodeId, nodeLabel, isPro, onUpgradeClick }: ScaffoldNotebookProps) {
   const [entries, setEntries] = useState<NodeScaffoldItem[]>([]);
   const [loading, setLoading] = useState(false);

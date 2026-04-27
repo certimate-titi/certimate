@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/pricing` — 訂閱方案定價頁。
+ *
+ * 列出 FREE / PRO_199 / PRO_PLUS_399 / ULTRA_1599 四個方案的功能對照與價格；
+ * 已登入時點選方案會跳轉到綠界 ECPay 結帳流程。
+ */
 'use client';
 
 import { useState } from 'react';

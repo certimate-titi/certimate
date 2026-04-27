@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/radar-demo` — 領域雷達圖開發示範頁。
+ *
+ * 開發者用沙盒：以 mock 資料展示領域雷達圖與長條圖在不同概念數量下的視覺效果。
+ */
 'use client';
 
 import { useState } from 'react';

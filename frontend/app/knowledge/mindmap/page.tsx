@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/knowledge/mindmap` — 全螢幕知識地圖頁。
+ *
+ * 以 ForceGraph + MindMapTree 兩種視圖呈現整個科目的知識結構；
+ * 透過 query string `subjectId` 切換科目。
+ */
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -10,6 +16,9 @@ import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 
+/**
+ * 全螢幕知識地圖頁外層（Suspense 包裝以滿足 `useSearchParams` 需求）。
+ */
 export default function FullMindMapPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>

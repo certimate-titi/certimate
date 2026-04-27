@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/library` — 學習庫總覽頁。
+ *
+ * 雙 Tab：「我的素材」（重用 `/account/resource-library` 元件）與
+ * 「知識地圖」（重用 `/knowledge` 元件），以 EmbedProvider 標記為嵌入模式。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

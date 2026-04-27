@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/anomaly` — 平台異常事件管理頁。
+ *
+ * Super Admin 專屬：列出系統偵測到的異常（open/assigned/in_progress/resolved/closed），
+ * 支援指派、處理、關閉等狀態流轉。
+ */
 'use client';
 
 import React, { useEffect, useState } from 'react';

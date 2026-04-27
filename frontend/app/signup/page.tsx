@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/signup` — 註冊頁。
+ *
+ * 支援帳密註冊與 Google SSO。註冊成功後寄送 email 驗證信並導向 `/verify-email/sent`。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +14,7 @@ import TiTiLogo from '@/components/TiTiLogo';
 import { useAuth } from '@/lib/auth-context';
 import { authService } from '@/lib/api/services';
 
+/** Google 品牌圖示（內嵌 SVG）。 */
 function GoogleIcon() {
   return (
     <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">

@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/dashboard` — 使用者主控台首頁。
+ *
+ * 登入後的主入口；顯示今日任務、學習連勝、待處理學習旅程、公告、
+ * 訂閱橫幅、領域雷達圖，以及上傳講義／貼 YouTube 連結的快速入口。
+ */
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,6 +23,12 @@ import StudyBuddyBanner from '@/components/StudyBuddyBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
+/**
+ * 使用者主控台首頁。
+ *
+ * 透過 `dashboardService` 載入儀表板資料，並支援上傳檔案、貼 YouTube
+ * 連結後輪詢解析狀態（pending → processing → completed/failed）。
+ */
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra, subscriptionTier } = useAuth();
   const router = useRouter();

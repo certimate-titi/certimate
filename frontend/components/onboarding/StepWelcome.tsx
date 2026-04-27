@@ -1,3 +1,6 @@
+/**
+ * @file 引導流程「歡迎」步驟元件——收集顯示名稱、年齡、學歷、職業等個人資訊。
+ */
 'use client';
 
 import { useOnboarding } from '@/lib/onboarding-context';
@@ -15,6 +18,12 @@ const educationOptions = [
 
 const ageOptions = Array.from({ length: 56 }, (_, i) => i + 15); // 15–70
 
+/**
+ * 引導第一步：歡迎與個人資訊。
+ *
+ * 收集顯示名稱（必填會再放寬為可跳過）與年齡 / 學歷 / 職業（皆選填），
+ * 表單值由 onboarding-context 統一管理。
+ */
 export default function StepWelcome() {
   const { formData, updateFormData } = useOnboarding();
 

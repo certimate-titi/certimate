@@ -1,9 +1,16 @@
+/**
+ * @file 路由 `/exam/setup` — 考試設定頁。
+ *
+ * 讓使用者選擇科目、知識節點、題型、題數與難度，並建立模擬考；
+ * 建立成功後導向 `/exam/workspace`。包含訂閱方案題數上限檢查、
+ * 中斷考試恢復與向量庫知識點載入動畫。
+ */
 'use client';
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw } from 'lucide-react';
-import { documentService, examService, subjectService, knowledgeService } from '@/lib/api/services';
+import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw, AlertTriangle } from 'lucide-react';
+import { documentService, examService, subjectService, knowledgeService, resourceParseService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
 import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
 
@@ -536,6 +543,7 @@ function ExamSetupPage() {
               <div className="text-center text-slate-400 py-8">
                 <p className="text-sm">尚無可用的測驗範圍</p>
                 <p className="text-xs mt-1">上傳文件後即可生成考題</p>
+                <p className="text-xs mt-2 text-slate-300">若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態</p>
               </div>
             ) : null}
             </div>

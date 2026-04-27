@@ -1,9 +1,16 @@
+/**
+ * @file 學習成長里程碑時間軸元件，依時序垂直呈現各類學習事件。
+ */
 'use client';
 
 import { Upload, FileText, Trophy, Star, Flame } from 'lucide-react';
 import type { GrowthMilestone } from '@/types';
 
+/**
+ * GrowthTimeline 的 props。
+ */
 interface GrowthTimelineProps {
+  /** 里程碑清單（含類型、標籤、日期） */
   milestones: GrowthMilestone[];
 }
 
@@ -23,6 +30,13 @@ const milestoneColors = {
   streak: 'bg-orange-100 text-orange-600',
 };
 
+/**
+ * 成長時間軸。
+ *
+ * 為每個里程碑依 `type` 渲染對應 icon 與配色；空清單時顯示鼓勵性提示。
+ *
+ * @param props.milestones - 里程碑清單
+ */
 export default function GrowthTimeline({ milestones }: GrowthTimelineProps) {
   if (milestones.length === 0) {
     return (

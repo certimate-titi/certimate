@@ -1,3 +1,6 @@
+/**
+ * @file 引導流程「確認啟動」步驟元件——彙整使用者輸入並送出 onboarding。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +20,12 @@ const styleLabels = {
   hybrid: '混合模式',
 };
 
+/**
+ * 引導第四步：確認啟動。
+ *
+ * 摘要顯示個人資訊、選擇科目、學習偏好；點擊「開始我的學習旅程」會送出 onboarding，
+ * 接著播放 1.5 秒慶祝動畫，動畫結束後由 onboarding-context 觸發導頁。
+ */
 export default function StepConfirmation() {
   const { formData, goToStep, submitOnboarding, submitting } = useOnboarding();
   const [showLaunchAnimation, setShowLaunchAnimation] = useState(false);

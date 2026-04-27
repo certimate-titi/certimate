@@ -1,8 +1,14 @@
+/**
+ * @file 知識心智圖樹狀檢視元件——遞迴渲染章節節點，支援展開、選取與掌握度視覺化。
+ */
 'use client';
 
 import { useState, useCallback } from 'react';
 import { ChevronRight, ChevronDown, FileText, BookOpen } from 'lucide-react';
 
+/**
+ * 心智圖節點的領域模型。
+ */
 export interface MindMapNode {
   id: string;
   name: string;
@@ -24,9 +30,15 @@ export interface MindMapNode {
   node_source?: 'syllabus' | 'user_data' | 'hybrid';
 }
 
+/**
+ * MindMapTree 的 props。
+ */
 interface MindMapTreeProps {
+  /** 樹狀根節點陣列（每個含 children 子節點） */
   nodes: MindMapNode[];
+  /** 當前選取的節點 ID */
   selectedNodeId: string | null;
+  /** 點擊節點時觸發 */
   onNodeClick: (nodeId: string) => void;
 }
 
@@ -176,6 +188,16 @@ function TreeNode({
   );
 }
 
+/**
+ * 知識心智圖樹狀檢視。
+ *
+ * 預設展開根節點與 depth 1 節點；點擊節點同時觸發 `onNodeClick` 並切換展開狀態。
+ * 底部附顏色圖例（精熟 / 部分 / 需加強 / 未測驗 / 待補充）。
+ *
+ * @param props.nodes - 樹狀根節點陣列
+ * @param props.selectedNodeId - 當前選取節點 ID
+ * @param props.onNodeClick - 節點點擊回呼
+ */
 export default function MindMapTree({ nodes, selectedNodeId, onNodeClick }: MindMapTreeProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     // Auto-expand root and depth-1 nodes

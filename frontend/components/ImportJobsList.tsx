@@ -1,15 +1,33 @@
+/**
+ * @file 考古題匯入工作清單元件——支援 recent / failed 兩種模式。
+ */
 'use client';
 
 import { motion } from 'motion/react';
 import { CheckCircle, AlertCircle, Clock, XCircle } from 'lucide-react';
 import type { RecentJob, FailedJob } from '@/types/models';
 
+/**
+ * ImportJobsList 的 props。
+ */
 interface ImportJobsListProps {
+  /** 工作清單（依 type 傳入對應型別陣列） */
   jobs: RecentJob[] | FailedJob[];
+  /** 顯示模式：recent（最近）或 failed（失敗） */
   type: 'recent' | 'failed';
+  /** 是否載入中 */
   loading?: boolean;
 }
 
+/**
+ * 考古題匯入工作清單。
+ *
+ * 依 `type` 切換顯示樣式；空清單顯示提示文字，loading 時顯示骨架條。
+ *
+ * @param props.jobs - 工作清單
+ * @param props.type - 顯示模式
+ * @param props.loading - 載入狀態
+ */
 export default function ImportJobsList({
   jobs,
   type,
@@ -50,11 +68,24 @@ export default function ImportJobsList({
   );
 }
 
+/**
+ * 內部 JobRow 的 props。
+ */
 interface JobRowProps {
+  /** 單筆工作資料 */
   job: RecentJob | FailedJob;
+  /** 顯示模式 */
   type: 'recent' | 'failed';
 }
 
+/**
+ * 單筆匯入工作列（內部子元件）。
+ *
+ * 透過 type guard 區分 RecentJob / FailedJob 以渲染對應樣式（進度條 vs 錯誤訊息）。
+ *
+ * @param props.job - 工作資料
+ * @param props.type - 顯示模式
+ */
 function JobRow({ job, type }: JobRowProps) {
   const isFailedJob = (job: any): job is FailedJob => 'errorMessage' in job;
   const isRecentJob = (job: any): job is RecentJob => 'progressPercent' in job;

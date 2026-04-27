@@ -1,3 +1,6 @@
+/**
+ * @file 全站主導覽列——含品牌標誌、主要連結、訂閱徽章、行動裝置選單與登入登出入口。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -7,6 +10,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/lib/auth-context';
 import TiTiLogo from '@/components/TiTiLogo';
 
+/**
+ * 全站 Navbar。
+ *
+ * 主連結固定為儀表板 / 學習庫 / 測驗 / 練習 / AI 教練；ULTRA 或 ADMIN 額外顯示「教育管理」，
+ * ADMIN 另顯示「平台管理」入口；右側依訂閱方案顯示 Pro / Ultra / Admin 徽章；
+ * < md 寬度顯示漢堡選單。
+ */
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();

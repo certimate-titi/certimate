@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin` — 平台管理 layout。
+ *
+ * Super Admin 子樹共用框架：左側導航（dashboard / users / finance /
+ * audit-logs / settings 等）、頂部使用者列、權限守衛（非 ADMIN 會被導離）。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

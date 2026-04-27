@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/settings` — AI 模型路由設定頁。
+ *
+ * Super Admin 專屬：設定不同訂閱方案使用的 AI 模型（基本 + 備援），
+ * 例如 FREE 用 gemini-1.5-flash，PRO 用 claude-3.5-sonnet。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,6 +11,9 @@ import { Info, Save, RefreshCw } from 'lucide-react';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
 
+/**
+ * AI 模型路由設定頁（settings 預設子頁）。
+ */
 export default function AiRoutingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [aiRouting, setAiRouting] = useState({

@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/verify-email` — Email 驗證結果頁。
+ *
+ * 由註冊驗證信中的連結進入；以 query 中的 `token` 呼叫
+ * `authService.verifyEmail` 並顯示成功 / 失敗結果。
+ */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,6 +13,7 @@ import { CheckCircle, XCircle, ArrowRight, Loader2 } from 'lucide-react';
 import TiTiLogo from '@/components/TiTiLogo';
 import { authService } from '@/lib/api/services';
 
+/** 實際內容元件：讀取 token 並呼叫驗證 API。 */
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';

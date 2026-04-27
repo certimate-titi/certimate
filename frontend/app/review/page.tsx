@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/review` — 錯題複習簿頁。
+ *
+ * 列出使用者標記為「需要複習」的題目並支援與蘇格拉底教練對話；
+ * 透過 `reviewService` / `subjectService` 載入資料。
+ */
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';

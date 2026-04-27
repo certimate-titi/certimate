@@ -1,12 +1,26 @@
+/**
+ * @file 成就徽章卡片元件，呈現單一 Achievement 的解鎖狀態與圖示。
+ */
 'use client';
 
 import { motion } from 'motion/react';
 import type { Achievement } from '@/types';
 
+/**
+ * AchievementBadge 的 props。
+ */
 interface AchievementBadgeProps {
+  /** 成就資料（含 unlockedAt 解鎖時間） */
   achievement: Achievement;
 }
 
+/**
+ * 成就徽章。
+ *
+ * 依 `achievement.unlockedAt` 決定是否點亮；未解鎖呈現灰階虛線框樣式。
+ *
+ * @param props.achievement - 成就資料
+ */
 export default function AchievementBadge({ achievement }: AchievementBadgeProps) {
   const unlocked = !!achievement.unlockedAt;
 

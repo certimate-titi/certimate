@@ -1,11 +1,11 @@
+/**
+ * @file 路由 `/super-admin/cost-monitor` — 成本監控中心（Feature 33）。
+ *
+ * Super Admin 專屬：監控 GCS / Cloud Run / AI API token 等雲端成本，
+ * 顯示日／月趨勢、異常告警、各服務拆分。延續 dashboard 的淺色主題。
+ */
 'use client';
 
-/**
- * Feature 33 — 成本監控中心（Super Admin 專屬）
- *
- * 路徑：/super-admin/cost-monitor
- * 風格：延續 super-admin/dashboard 的淺色主題（bg-white + slate-200 + rounded-2xl + shadow-sm）
- */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {

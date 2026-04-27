@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/edu-console` — EDU 機構主控台頁。
+ *
+ * 教育機構（B2B）管理員專屬頁面：學生名單、學習成效、批次邀請、
+ * 機構級分析；透過 `adminService` 取得學生資料與統計。
+ */
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';

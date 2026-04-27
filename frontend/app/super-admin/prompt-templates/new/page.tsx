@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/prompt-templates/new` — 新增 Prompt 範本頁。
+ *
+ * Super Admin 專屬：建立新 prompt 範本（safety / knowledge / exam / teaching / emotion）；
+ * 儲存後導向該範本的詳情頁。
+ */
 'use client';
 
 import React, { useState } from 'react';

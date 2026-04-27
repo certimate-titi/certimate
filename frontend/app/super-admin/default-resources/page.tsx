@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/super-admin/default-resources` — 官方預設資源管理頁。
+ *
+ * Super Admin 專屬：管理各科目綁定的官方預設學習資源（official_default badge）。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

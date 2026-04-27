@@ -1,3 +1,10 @@
+/**
+ * @file 路由 `/resources/[id]/candidates` — 題目候選審核客戶端元件。
+ *
+ * 由同目錄 `page.tsx`（generateStaticParams stub）載入；列出資源解析後
+ * 抽取的候選題目（T2/T3 流程），讓使用者勾選確認以併入個人題庫。
+ * 因應靜態匯出限制，從 `window.location.pathname` 解析 resource id。
+ */
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -6,6 +13,7 @@ import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide
 import { questionCandidateService } from '@/lib/api/services';
 import type { CandidateListResponse, QuestionCandidate } from '@/types/api';
 
+/** 從 `window.location.pathname` 解析 `/resources/{id}/candidates` 的 resource id。 */
 function useResourceIdFromPath(): string {
   const [id, setId] = useState('');
   useEffect(() => {

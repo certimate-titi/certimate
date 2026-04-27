@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/onboarding` — 新手引導流程頁。
+ *
+ * 四步驟（Welcome → SubjectPicker → Preferences → Confirmation），
+ * 由 `OnboardingProvider` 管理狀態；草稿存於 `localStorage.certimate_onboarding_draft`。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';

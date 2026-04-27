@@ -1,9 +1,17 @@
+/**
+ * @file 共同備考夥伴 banner——展示同科目其他學員的鼓勵性訊息。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
 import { communityService, type CommunityBanner } from '@/lib/api/services';
 
+/**
+ * 共同備考夥伴 banner。
+ *
+ * 從 `communityService.getDashboard()` 取出 `banner` 訊息渲染；無資料時不顯示。
+ */
 export default function StudyBuddyBanner() {
   const [banner, setBanner] = useState<CommunityBanner | null>(null);
 

@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/super-admin/settings/admins` — 管理員帳號管理頁。
+ *
+ * Super Admin 專屬：列出所有 ADMIN / SUPER_ADMIN，支援新增與移除。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,8 +12,10 @@ import { twMerge } from 'tailwind-merge';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
 
+/** TailwindCSS class 合併工具。 */
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
+/** 將後端回傳的管理員清單（可能為 `users` 或 `admins`）統一轉成顯示用結構。 */
 function parseAdmins(res: unknown): { id: string; name: string; email: string; role: string; joined: string }[] {
   const raw = (res as { users?: unknown[]; admins?: unknown[] }).users || (res as { admins?: unknown[] }).admins || [];
   return (raw as Record<string, unknown>[]).map(u => ({

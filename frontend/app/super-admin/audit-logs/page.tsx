@@ -1,8 +1,14 @@
+/**
+ * @file 路由 `/super-admin/audit-logs` — 平台稽核日誌頁。
+ *
+ * Super Admin 專屬：查詢管理操作稽核紀錄（admin action logs），
+ * 支援搜尋、過濾、分頁、匯出 CSV。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
+import {
+  Search,
   Filter, 
   Download, 
   History,

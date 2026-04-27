@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/login` — 登入頁。
+ *
+ * 支援帳密登入、Google SSO、Demo 帳號快登；以 `Remember Me` 控制 token
+ * 儲存於 localStorage（持久）或 sessionStorage（瀏覽器關閉即失效）。
+ */
 'use client';
 
 import React, { useState } from 'react';
@@ -9,6 +15,9 @@ import TiTiLogo from '@/components/TiTiLogo';
 import { useAuth } from '@/lib/auth-context';
 import { setRememberMe as setRememberMePref } from '@/lib/api/client';
 
+/**
+ * 登入頁。透過 `useAuth` 的 `loginWithCredentials` / `loginWithGoogle` 完成驗證。
+ */
 export default function LoginPage() {
   const router = useRouter();
   const { loginWithCredentials, loginWithGoogle } = useAuth();

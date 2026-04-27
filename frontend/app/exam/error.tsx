@@ -1,9 +1,17 @@
+/**
+ * @file 路由 `/exam` — 區段錯誤邊界。
+ *
+ * 考試流程子樹（setup / workspace / results）的 segment-level error boundary。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * 考試流程區段錯誤頁。
+ */
 export default function SegmentError({
   error,
   reset,

@@ -1,8 +1,15 @@
+/**
+ * @file 引導流程四步驟進度指示器元件。
+ */
 'use client';
 
 import { Check } from 'lucide-react';
 
+/**
+ * OnboardingProgress 的 props。
+ */
 interface OnboardingProgressProps {
+  /** 當前步驟（1: 歡迎、2: 選擇科目、3: 學習偏好、4: 確認啟動） */
   currentStep: 1 | 2 | 3 | 4;
 }
 
@@ -13,6 +20,13 @@ const steps = [
   { label: '確認啟動' },
 ];
 
+/**
+ * 引導步驟進度指示。
+ *
+ * 以 4 個圓點 + 連接線呈現完成、進行中、未開始三種狀態。
+ *
+ * @param props.currentStep - 當前步驟
+ */
 export default function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
   return (
     <div className="flex items-center justify-center gap-0">

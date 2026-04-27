@@ -7,15 +7,29 @@
 
 import type { Achievement } from '@/types';
 
+/**
+ * 單一成就徽章的設計定義。
+ */
 export interface AchievementDefinition {
+  /** 成就唯一 ID（以 `ach_` 為前綴） */
   id: string;
+  /** 顯示名稱（含 emoji） */
   name: string;
+  /** 解鎖條件的人類可讀描述 */
   description: string;
+  /** 圖示 emoji */
   iconEmoji: string;
+  /** 觸發條件的虛擬碼描述（僅供文件，非實際求值） */
   triggerCondition: string;
+  /** 此徽章的情感化設計目的 */
   designPurpose: string;
 }
 
+/**
+ * 9 種成就徽章的完整定義清單。
+ *
+ * 順序對應 UI 預設陳列順序；新增徽章請維持向後相容並避免移除既有 id。
+ */
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'ach_seeder',
@@ -92,8 +106,11 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 /**
- * Create initial achievement state for a new user.
- * All achievements start as locked (unlockedAt = null).
+ * 為新使用者建立初始成就狀態。
+ *
+ * 全部徽章預設為未解鎖（`unlockedAt = null`）。
+ *
+ * @returns 與 {@link ACHIEVEMENT_DEFINITIONS} 對齊、皆為鎖定狀態的成就陣列
  */
 export function createInitialAchievements(): Achievement[] {
   return ACHIEVEMENT_DEFINITIONS.map(def => ({
@@ -106,8 +123,12 @@ export function createInitialAchievements(): Achievement[] {
 }
 
 /**
- * Check if a specific achievement should be unlocked based on user metrics.
- * In a real implementation, this would evaluate against actual user data.
+ * 依使用者統計指標計算應解鎖的成就 ID 清單。
+ *
+ * 此為純函式；實際生產應以後端 API 取得真實指標後再代入。
+ *
+ * @param metrics - 使用者各項學習行為指標
+ * @returns 已達成解鎖條件的成就 ID 陣列
  */
 export function getUnlockedAchievementIds(metrics: {
   documentsUploaded: number;

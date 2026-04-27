@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/` — 應用程式根 layout。
+ *
+ * 套用全域字型（Inter）、全域樣式、Google OAuth Wrapper、
+ * 認證狀態 Provider、全站 Navbar，並提供 `<main>` 容器給所有子路由。
+ */
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css'; // Global styles
@@ -12,6 +18,11 @@ export const metadata: Metadata = {
   description: 'AI 賦能證照考試平台，打破單向學習',
 };
 
+/**
+ * 應用程式根 layout。
+ *
+ * 包覆所有子路由並提供認證、Google OAuth、全站導覽列等全域 context。
+ */
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} font-sans`}>

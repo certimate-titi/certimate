@@ -1,3 +1,6 @@
+/**
+ * @file 新增備考科目 Modal——包裝 SubjectPicker 並提供「自訂考科」入口（PRD-033 §8）。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -6,12 +9,28 @@ import SubjectPicker from '@/components/onboarding/SubjectPicker';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 import { subjectService } from '@/lib/api/services';
 
+/**
+ * SubjectPickerModal 的 props。
+ */
 interface SubjectPickerModalProps {
+  /** 不允許再次選取的科目 ID（已加入帳號） */
   excludeSubjectIds: string[];
+  /** 確認新增時觸發 */
   onConfirm: (subjects: SelectedSubject[]) => void;
+  /** 關閉 Modal 時觸發 */
   onClose: () => void;
 }
 
+/**
+ * 新增備考科目 Modal。
+ *
+ * 主體為 SubjectPicker（add 模式），底部提供「+ 新增自訂考科」展開區，
+ * 自訂科目透過 `subjectService.addSubject` 寫入後端（僅本人可見）。
+ *
+ * @param props.excludeSubjectIds - 排除的科目 ID
+ * @param props.onConfirm - 確認回呼
+ * @param props.onClose - 關閉回呼
+ */
 export default function SubjectPickerModal({
   excludeSubjectIds,
   onConfirm,

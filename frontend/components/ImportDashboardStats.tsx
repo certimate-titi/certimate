@@ -1,14 +1,30 @@
+/**
+ * @file 考古題匯入儀表板統計卡片群——進行中、成功率、失敗、總匯入題數。
+ */
 'use client';
 
 import { motion } from 'motion/react';
 import { TrendingUp, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import type { ImportDashboardStats } from '@/types/models';
 
+/**
+ * ImportDashboardStatsCard 的 props。
+ */
 interface ImportDashboardStatsProps {
+  /** 後端聚合統計資料；null 表示 API 失敗 */
   stats: ImportDashboardStats | null;
+  /** 是否載入中（顯示骨架圖） */
   loading?: boolean;
 }
 
+/**
+ * 考古題匯入儀表板統計卡片群。
+ *
+ * 以 4 張卡片呈現工作佇列狀態與匯入量；loading 時顯示灰色骨架，stats=null 顯示提示文字。
+ *
+ * @param props.stats - 統計資料
+ * @param props.loading - 載入狀態
+ */
 export default function ImportDashboardStatsCard({
   stats,
   loading = false,
@@ -88,11 +104,19 @@ export default function ImportDashboardStatsCard({
   );
 }
 
+/**
+ * 內部 StatsCard 的 props。
+ */
 interface StatsCardProps {
+  /** 卡片圖示 */
   icon: React.ReactNode;
+  /** 指標名稱 */
   label: string;
+  /** 主數值 */
   value: string | number;
+  /** 副說明（如變化量、組成） */
   change: string;
+  /** 卡片色調 */
   variant: 'blue' | 'green' | 'red' | 'purple';
 }
 
@@ -119,6 +143,15 @@ const variantStyles: Record<string, { bg: string; text: string; icon: string }> 
   },
 };
 
+/**
+ * 單張統計卡片（內部子元件）。
+ *
+ * @param props.icon - 卡片圖示
+ * @param props.label - 指標名稱
+ * @param props.value - 主數值
+ * @param props.change - 副說明
+ * @param props.variant - 色調
+ */
 function StatsCard({ icon, label, value, change, variant }: StatsCardProps) {
   const styles = variantStyles[variant];
 

@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/forgot-password` — 忘記密碼頁。
+ *
+ * 讓使用者輸入 email，後端寄送密碼重設連結（見 `/reset-password`）。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -5,6 +10,9 @@ import Link from 'next/link';
 import { BrainCircuit, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 
+/**
+ * 忘記密碼頁。送出 email 後顯示「已寄出」狀態畫面。
+ */
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);

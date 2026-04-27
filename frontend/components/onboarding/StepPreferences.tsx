@@ -1,3 +1,6 @@
+/**
+ * @file 引導流程「學習偏好」步驟元件——選擇每日學習時間與學習風格。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -18,6 +21,12 @@ const styleOptions: { value: LearningStyle; icon: typeof Zap; title: string; des
   { value: 'hybrid', icon: Sparkles, title: '混合模式', desc: '系統智慧搭配，兼顧理解與練習' },
 ];
 
+/**
+ * 引導第三步：學習偏好。
+ *
+ * 收集每日可投入學習時間與偏好學習方式（drill / concept / hybrid），
+ * 全為選填，預設值由 onboarding-context 提供。
+ */
 export default function StepPreferences() {
   const { formData, updateFormData } = useOnboarding();
   const [showCustom, setShowCustom] = useState(

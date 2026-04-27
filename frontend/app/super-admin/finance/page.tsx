@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/finance` — 平台財務管理頁。
+ *
+ * Super Admin 專屬：顯示營收、訂閱數、退款、付款失敗等指標；
+ * 列出帳單交易紀錄並支援匯出 CSV。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

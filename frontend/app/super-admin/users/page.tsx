@@ -1,9 +1,15 @@
+/**
+ * @file 路由 `/super-admin/users` — 使用者管理列表頁。
+ *
+ * Super Admin 專屬：搜尋、過濾、邀請與停用平台使用者；點選列進入
+ * `/super-admin/users/[userId]` 詳情頁。
+ */
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Search, 
+import {
+  Search,
   Filter, 
   MoreVertical, 
   UserPlus, 

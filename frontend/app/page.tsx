@@ -1,6 +1,16 @@
+/**
+ * @file 路由 `/` — 公開行銷首頁（Landing Page）。
+ *
+ * 介紹 TiTi 平台的核心價值、功能特色與訂閱方案，導引未登入訪客至 `/signup` 註冊。
+ */
 import Link from 'next/link';
 import { ArrowRight, BrainCircuit, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Play, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 
+/**
+ * 公開行銷首頁。
+ *
+ * 純靜態內容，無需登入即可瀏覽；包含 Hero 區、特色介紹、定價導引等。
+ */
 export default function LandingPage() {
   return (
     <div className="flex flex-col">

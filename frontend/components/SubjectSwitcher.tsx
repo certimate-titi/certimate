@@ -1,18 +1,43 @@
+/**
+ * @file 備考科目切換 Tab——含距考天數徽章與「+ 新增科目」入口。
+ */
 'use client';
 
 import { Plus } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { UserSubject } from '@/types';
 
+/**
+ * SubjectSwitcher 的 props。
+ */
 interface SubjectSwitcherProps {
+  /** 使用者已加入的備考科目 */
   subjects: UserSubject[];
+  /** 當前 active 科目 ID */
   activeSubjectId: string;
+  /** 切換科目時觸發 */
   onSwitch: (subjectId: string) => void;
+  /** 點擊「+」新增科目按鈕時觸發 */
   onAddSubject: () => void;
+  /** 是否顯示新增按鈕（預設 true） */
   allowAdd?: boolean;
+  /** 顯示樣式：default 含外層 container，compact 僅 tabs */
   variant?: 'default' | 'compact';
 }
 
+/**
+ * 備考科目切換 Tab。
+ *
+ * 每個 tab 顯示科目名稱與距考剩餘天數徽章（≤7 紅 / ≤30 黃 / 其餘灰）；
+ * compact 模式只回傳 tabs 本體，default 模式包覆白底 container。
+ *
+ * @param props.subjects - 備考科目清單
+ * @param props.activeSubjectId - 當前科目 ID
+ * @param props.onSwitch - 切換回呼
+ * @param props.onAddSubject - 新增回呼
+ * @param props.allowAdd - 是否允許新增
+ * @param props.variant - 顯示樣式
+ */
 export default function SubjectSwitcher({
   subjects,
   activeSubjectId,

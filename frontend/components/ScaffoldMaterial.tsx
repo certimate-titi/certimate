@@ -1,17 +1,37 @@
+/**
+ * @file 學習鷹架教材元件——以快讀 / 深讀兩模式呈現節點對應的 takeaway 與 elaborative 鷹架。
+ */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { BookOpen, Zap, Telescope, Send, Sparkles } from 'lucide-react';
 import { knowledgeService, scaffoldService, type NodeScaffoldItem } from '@/lib/api/services';
 
+/** 教材閱讀模式：speed（快讀重點）或 deep（深讀提問）。 */
 export type ReadMode = 'speed' | 'deep';
 
+/**
+ * ScaffoldMaterial 的 props。
+ */
 export interface ScaffoldMaterialProps {
+  /** 當前節點 ID；null 時顯示提示 */
   nodeId: string | null;
+  /** 使用者是否為 PRO 訂戶（決定是否顯示付費牆） */
   isPro: boolean;
+  /** 點擊「升級 PRO」按鈕的回呼 */
   onUpgradeClick?: () => void;
 }
 
+/**
+ * 學習鷹架教材分頁。
+ *
+ * PRO 專屬功能；非 PRO 顯示付費牆，PRO 載入 `knowledgeService.getNodeScaffolds`，
+ * 依 type 分為 takeaway（快讀）與 elaborative（深讀），深讀模式可送出回答並查看參考答案。
+ *
+ * @param props.nodeId - 節點 ID
+ * @param props.isPro - 是否 PRO
+ * @param props.onUpgradeClick - 升級回呼
+ */
 export default function ScaffoldMaterial({ nodeId, isPro, onUpgradeClick }: ScaffoldMaterialProps) {
   const [mode, setMode] = useState<ReadMode>('speed');
   const [scaffolds, setScaffolds] = useState<NodeScaffoldItem[]>([]);
@@ -125,6 +145,11 @@ export default function ScaffoldMaterial({ nodeId, isPro, onUpgradeClick }: Scaf
   );
 }
 
+/**
+ * 快讀模式（內部子元件）——條列重點 takeaway 卡片，附頁碼。
+ *
+ * @param props.items - takeaway 鷹架清單
+ */
 function SpeedMode({ items }: { items: NodeScaffoldItem[] }) {
   if (items.length === 0) {
     return <p className="text-xs text-slate-400 text-center py-4">無快讀卡片</p>;
@@ -148,6 +173,11 @@ function SpeedMode({ items }: { items: NodeScaffoldItem[] }) {
   );
 }
 
+/**
+ * 深讀模式（內部子元件）——展開 elaborative 提問清單。
+ *
+ * @param props.items - elaborative 鷹架清單
+ */
 function DeepMode({ items }: { items: NodeScaffoldItem[] }) {
   if (items.length === 0) {
     return <p className="text-xs text-slate-400 text-center py-4">無深讀提問</p>;
@@ -161,6 +191,13 @@ function DeepMode({ items }: { items: NodeScaffoldItem[] }) {
   );
 }
 
+/**
+ * 單一深讀提問項（內部子元件）。
+ *
+ * 提供 textarea 收集使用者回答，呼叫 `scaffoldService.submitResponse` 儲存後解鎖參考答案。
+ *
+ * @param props.item - 單筆 elaborative 鷹架
+ */
 function DeepItem({ item }: { item: NodeScaffoldItem }) {
   const [response, setResponse] = useState(item.user_response || '');
   const [saved, setSaved] = useState(Boolean(item.user_response));

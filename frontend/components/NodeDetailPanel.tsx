@@ -1,18 +1,33 @@
+/**
+ * @file 知識節點詳情側欄——四分頁（節點資訊 / 教材 / 我的筆記 / AI 教練）容器元件。
+ */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, FileText, NotebookPen, Sparkles } from 'lucide-react';
 
+/** 節點詳情側欄分頁類型。 */
 export type NodeDetailTab = 'info' | 'material' | 'notebook' | 'coach';
 
+/**
+ * NodeDetailPanel 的 props。
+ */
 export interface NodeDetailPanelProps {
+  /** 當前選取的節點 ID；null 時顯示提示 */
   nodeId: string | null;
+  /** 節點顯示名稱（含 fallback） */
   nodeLabel: string | null;
+  /** 當前 active 的分頁 */
   activeTab: NodeDetailTab;
+  /** 切換分頁時觸發 */
   onTabChange: (tab: NodeDetailTab) => void;
+  /** 節點資訊分頁的內容 */
   infoSlot: React.ReactNode;
+  /** 教材分頁的內容 */
   materialSlot: React.ReactNode;
+  /** 我的筆記分頁的內容 */
   notebookSlot: React.ReactNode;
+  /** AI 教練分頁的內容 */
   coachSlot: React.ReactNode;
 }
 
@@ -25,6 +40,21 @@ const TAB_META: Record<NodeDetailTab, { label: string; Icon: React.ComponentType
   coach: { label: 'AI 教練', Icon: Sparkles },
 };
 
+/**
+ * 節點詳情側欄。
+ *
+ * 採 slot 注入模式（4 個 ReactNode 由父層傳入），支援鍵盤左右鍵切換 tab；
+ * `nodeId` 為 null 時顯示「點選左側節點以查看詳情」提示。
+ *
+ * @param props.nodeId - 當前節點 ID
+ * @param props.nodeLabel - 節點顯示名稱
+ * @param props.activeTab - 當前分頁
+ * @param props.onTabChange - 分頁切換回呼
+ * @param props.infoSlot - 節點資訊內容
+ * @param props.materialSlot - 教材內容
+ * @param props.notebookSlot - 筆記內容
+ * @param props.coachSlot - AI 教練內容
+ */
 export default function NodeDetailPanel({
   nodeId,
   nodeLabel,

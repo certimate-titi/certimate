@@ -1,3 +1,6 @@
+/**
+ * @file 引導流程中已選備考科目卡片——可編輯考試 / 放榜日期與自評程度。
+ */
 'use client';
 
 import { useMemo } from 'react';
@@ -5,17 +8,31 @@ import { X } from 'lucide-react';
 import { differenceInCalendarDays } from 'date-fns';
 import type { SelfAssessmentLevel } from '@/types';
 
+/**
+ * 引導流程選定的單一備考科目資料。
+ */
 export interface SelectedSubject {
+  /** 科目 ID（自訂科目以 `custom_` 開頭） */
   subjectId: string;
+  /** 科目顯示名稱 */
   subjectName: string;
+  /** 預計考試日期（yyyy-MM-dd） */
   examDate: string;
+  /** 預計放榜日期（yyyy-MM-dd） */
   resultDate: string;
+  /** 自評程度 */
   selfAssessment: SelfAssessmentLevel;
 }
 
+/**
+ * SelectedSubjectCard 的 props。
+ */
 interface SelectedSubjectCardProps {
+  /** 此卡片代表的科目資料 */
   subject: SelectedSubject;
+  /** 編輯時呼叫，傳回完整更新後的物件 */
   onUpdate: (updated: SelectedSubject) => void;
+  /** 點擊移除（X）按鈕時觸發 */
   onRemove: () => void;
 }
 
@@ -25,6 +42,15 @@ const assessmentOptions: { value: SelfAssessmentLevel; label: string }[] = [
   { value: 'advanced', label: '進階複習' },
 ];
 
+/**
+ * 依考試日期距今天的剩餘天數，回傳對應的備考模式徽章。
+ *
+ * 規則：≤30 天「短期衝刺」、≤90 天「穩步前進」、其餘「長期備戰」；
+ * 已過期或未填日期回傳 null。
+ *
+ * @param examDate - 考試日期字串（yyyy-MM-dd）
+ * @returns 徽章 label / className，或 null
+ */
 export function getModeBadge(examDate: string): { label: string; className: string } | null {
   if (!examDate) return null;
   const days = differenceInCalendarDays(new Date(examDate), new Date());
@@ -38,6 +64,15 @@ export function getModeBadge(examDate: string): { label: string; className: stri
   return { label: '長期備戰', className: 'bg-green-100 text-green-700' };
 }
 
+/**
+ * 已選備考科目卡片。
+ *
+ * 可編輯考試日期、放榜日期、自評程度；標題列依距考試天數顯示模式徽章。
+ *
+ * @param props.subject - 科目資料
+ * @param props.onUpdate - 欄位變更回呼
+ * @param props.onRemove - 移除回呼
+ */
 export default function SelectedSubjectCard({ subject, onUpdate, onRemove }: SelectedSubjectCardProps) {
   const badge = useMemo(() => getModeBadge(subject.examDate), [subject.examDate]);
 

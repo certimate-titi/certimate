@@ -1,3 +1,6 @@
+/**
+ * @file 考古題匯入表單——上傳試題 / 答案 PDF 並送出非同步匯入任務。
+ */
 'use client';
 
 import { useState } from 'react';
@@ -5,11 +8,25 @@ import { Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { motion } from 'motion/react';
 import { importService } from '@/lib/api/services';
 
+/**
+ * ExamImportForm 的 props。
+ */
 interface ExamImportFormProps {
+  /** 任務提交成功時回呼，傳回 task_id */
   onSuccess?: (taskId: string) => void;
+  /** 任務提交失敗時回呼，傳回錯誤訊息 */
   onError?: (error: string) => void;
 }
 
+/**
+ * 考古題匯入表單。
+ *
+ * 收集試題 PDF、答案 PDF 與三個代碼（exam / category / subject），通過驗證後呼叫
+ * `importService.submitAsync()`；提交成功會重置表單並觸發 onSuccess。
+ *
+ * @param props.onSuccess - 成功回呼
+ * @param props.onError - 失敗回呼
+ */
 export default function ExamImportForm({ onSuccess, onError }: ExamImportFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,12 +229,25 @@ export default function ExamImportForm({ onSuccess, onError }: ExamImportFormPro
   );
 }
 
+/**
+ * 內部 FileInput 的 props。
+ */
 interface FileInputProps {
+  /** 當前選取檔案 */
   file: File | null;
+  /** 檔案變更回呼 */
   onChange: (file: File | null) => void;
+  /** 未選取時顯示的提示文字 */
   placeholder: string;
 }
 
+/**
+ * 拖放樣式檔案選擇器（內部子元件，僅接受 .pdf）。
+ *
+ * @param props.file - 當前檔案
+ * @param props.onChange - 檔案變更回呼
+ * @param props.placeholder - 提示文字
+ */
 function FileInput({ file, onChange, placeholder }: FileInputProps) {
   return (
     <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">

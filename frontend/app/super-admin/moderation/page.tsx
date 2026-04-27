@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/moderation` — 內容審核佇列頁。
+ *
+ * Super Admin 專屬：審核使用者上傳的圖片、文件、文字內容；
+ * 提供通過 / 拒絕 / 標記等動作。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

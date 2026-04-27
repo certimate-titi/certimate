@@ -1,3 +1,10 @@
+/**
+ * @file 路由 `/exam/workspace` — 模擬考作答頁。
+ *
+ * 顯示題目與計時器、支援標記題目、暫停／繼續、題目導航網格；
+ * 答題狀態以 `localStorage`（key 前綴 `certimate_exam_`）持久化以利中斷續答；
+ * 提交後導向 `/exam/results`。
+ */
 'use client';
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';

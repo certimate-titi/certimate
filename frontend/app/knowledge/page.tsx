@@ -1,3 +1,10 @@
+/**
+ * @file 路由 `/knowledge` — 知識地圖頁。
+ *
+ * 主學習介面：左側知識樹／圖譜，右側節點詳情面板（含學習鷹架）；
+ * 透過 query string `subjectId` 與 `resourceId` 切換科目／聚焦特定資源；
+ * 整合 `knowledgeService` / `documentService` / `resourceParseService`。
+ */
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';

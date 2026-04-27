@@ -1,9 +1,17 @@
+/**
+ * @file 路由 `/edu-console` — 區段錯誤邊界。
+ *
+ * EDU 機構主控台子樹的 Next.js segment-level error boundary。
+ */
 'use client';
 
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * EDU 主控台區段錯誤頁。輸出 console 並提供 reset 重試。
+ */
 export default function SegmentError({
   error,
   reset,

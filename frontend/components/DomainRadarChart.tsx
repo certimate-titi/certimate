@@ -1,3 +1,6 @@
+/**
+ * @file 能力分佈雷達圖元件——支援後端分組與前端 fallback 自動分組（最多 6 組）。
+ */
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -22,13 +25,28 @@ const MAX_GROUPS = 6;
 const EMERALD = '#10b981';
 const EMERALD_LIGHT = 'rgba(16, 185, 129, 0.2)';
 
+/**
+ * 雷達圖內部一筆資料（已分組）。
+ */
 interface RadarItem {
+  /** 分組顯示名稱 */
   domain: string;
+  /** 強度（0–100） */
   strength: number;
+  /** 對應知識節點 ID（單一概念時才有） */
   node_id?: string;
+  /** 子概念展開資料 */
   children: { domain: string; strength: number }[];
 }
 
+/**
+ * 將後端 `DomainAnalysis[]` 轉成雷達圖資料。
+ *
+ * 若 API 已分組或項目 ≤ 6 直接使用；否則前端自動均分（fallback 相容舊版 API）。
+ *
+ * @param domains - 後端能力分析資料
+ * @returns 雷達圖資料項目
+ */
 function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
   // 如果 API 已提供 children，直接使用
   const hasApiGrouping = domains.some(d => d.children && d.children.length > 0);
@@ -63,12 +81,27 @@ function toRadarItems(domains: DomainAnalysis[]): RadarItem[] {
   return groups;
 }
 
+/**
+ * DomainRadarChart 的 props。
+ */
 interface DomainRadarChartProps {
+  /** 後端能力分析資料 */
   domains: DomainAnalysis[];
+  /** 點擊單一概念（葉節點）時觸發 */
   onDomainClick?: (domain: string, nodeId?: string) => void;
+  /** 滑鼠懸停單一概念時觸發 */
   onDomainHover?: (domain: string, nodeId?: string) => void;
 }
 
+/**
+ * 能力分佈雷達圖。
+ *
+ * 上方 Recharts 雷達圖、下方分類列表；含子概念的分組可展開查看，單一概念則可點擊跳轉。
+ *
+ * @param props.domains - 能力分析資料
+ * @param props.onDomainClick - 點擊概念回呼
+ * @param props.onDomainHover - 懸停概念回呼
+ */
 export default function DomainRadarChart({ domains, onDomainClick, onDomainHover }: DomainRadarChartProps) {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const items = useMemo(() => toRadarItems(domains), [domains]);

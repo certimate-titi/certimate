@@ -1,14 +1,25 @@
+/**
+ * @file 全站系統公告 banner 元件——載入並顯示 display_mode='banner' 的公告。
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { X, Bell, AlertTriangle, Wrench, Sparkles, Info } from 'lucide-react';
 import { announcementService } from '@/lib/api/services';
 
+/**
+ * 後端公告 API 回應的單一公告結構（snake_case）。
+ */
 interface Announcement {
+  /** 公告 ID */
   id: string;
+  /** 公告標題 */
   title: string;
+  /** 公告內文 */
   content: string;
+  /** 類型：info / warning / maintenance / feature */
   type: string;
+  /** 顯示模式：banner / modal / toast 等 */
   display_mode: string;
 }
 
@@ -19,6 +30,12 @@ const typeConfig: Record<string, { icon: typeof Info; bg: string; border: string
   feature: { icon: Sparkles, bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', iconColor: 'text-emerald-500' },
 };
 
+/**
+ * 系統公告 banner。
+ *
+ * 進站時呼叫 `announcementService.getActive()` 取得公告，僅渲染 banner 模式項目；
+ * 使用者可逐則關閉，關閉狀態僅保留於 component state（不持久化）。
+ */
 export default function AnnouncementBanner() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());

@@ -1,9 +1,17 @@
+/**
+ * @file 路由 `/super-admin/settings/announcements` — 站內公告管理頁。
+ *
+ * Super Admin 專屬：建立、排程、刪除站內公告；公告會在使用者主控台顯示為 Banner。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Bell } from 'lucide-react';
 import { superAdminService } from '@/lib/api/services';
 
+/**
+ * 站內公告管理頁。透過 `superAdminService.getAnnouncements` 載入清單。
+ */
 export default function AnnouncementsPage() {
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', displayMode: 'banner', scheduleDate: '' });
   const [announcements, setAnnouncements] = useState<{ id: string; title: string; content: string; display_mode: string; created_at: string; status?: string }[]>([]);

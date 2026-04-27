@@ -1,13 +1,27 @@
+/**
+ * @file 連續學習天數計數器元件，顯示火焰圖示、連續天數與凍結保護次數。
+ */
 'use client';
 
 import { Flame, Snowflake } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { LearningStreak } from '@/types';
 
+/**
+ * StreakCounter 的 props。
+ */
 interface StreakCounterProps {
+  /** 連續學習狀態（含 currentStreak、freezesRemaining） */
   streak: LearningStreak;
 }
 
+/**
+ * 連續學習天數計數器。
+ *
+ * 連續天數 > 0 時火焰點亮並有抖動動畫；剩餘凍結次數會以雪花圖示呈現。
+ *
+ * @param props.streak - 連續學習狀態
+ */
 export default function StreakCounter({ streak }: StreakCounterProps) {
   const isActive = streak.currentStreak > 0;
 

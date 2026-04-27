@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/super-admin/settings/flags` — 功能旗標管理頁。
+ *
+ * Super Admin 專屬：切換各 feature flag 的 enable / disable，修改後會記錄稽核 log。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,8 +12,12 @@ import { twMerge } from 'tailwind-merge';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
 
+/** TailwindCSS class 合併工具。 */
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
+/**
+ * 功能旗標管理頁。
+ */
 export default function FlagsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<{ id: string; name: string; description: string; enabled: boolean }[]>([]);

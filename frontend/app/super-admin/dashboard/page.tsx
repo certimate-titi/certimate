@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/dashboard` — 平台管理員主控台。
+ *
+ * Super Admin 專屬：顯示平台關鍵指標（DAU、營收、AI token 用量、異常數），
+ * 並提供快速跳轉至各管理子頁的入口。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

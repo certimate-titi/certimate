@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/exam-import` — 考古題匯入後台。
+ *
+ * Super Admin 專屬：上傳考古題 JSON 匯入、監控匯入任務、檢視最近／失敗紀錄、
+ * 觀察解析效能指標。任務進度透過 `use-import-task-polling` hook 輪詢。
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

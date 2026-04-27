@@ -1,3 +1,8 @@
+/**
+ * @file 路由 `/verify-email/sent` — Email 驗證信寄送完成頁。
+ *
+ * 註冊後跳轉於此，提示使用者收信；提供 60 秒冷卻的「重寄」按鈕。
+ */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,6 +12,7 @@ import { Mail, ArrowRight, RefreshCw, Loader2 } from 'lucide-react';
 import TiTiLogo from '@/components/TiTiLogo';
 import { authService } from '@/lib/api/services';
 
+/** 實際內容元件：管理重寄冷卻計時與重寄請求。 */
 function SentContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';

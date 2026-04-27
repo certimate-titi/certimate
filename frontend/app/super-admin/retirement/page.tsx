@@ -1,3 +1,9 @@
+/**
+ * @file 路由 `/super-admin/retirement` — 退役題庫批次任務頁。
+ *
+ * Super Admin 專屬：手動觸發退役掃描、硬刪除、考後重算、跨域推薦等批次工作；
+ * 各任務支援獨立啟動與結果查看。
+ */
 'use client';
 
 import React, { useState } from 'react';
