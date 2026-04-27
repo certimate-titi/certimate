@@ -20,12 +20,13 @@ Feature: 考古題資料庫集成 (Phase 2: Database Integration)
       And 可透過 GET /api/v1/exam-import/exams/.../questions 檢索題目
       And 驗證 POST /api/v1/exam-import/exams/.../validate 應通過
 
-  Rule: 重複匯入防護 (Duplicate Import Protection)
+  Rule: 重複匯入處理 (Duplicate Import Handling)
 
-    Example: 重複匯入同一份考古題應被拒絕
+    # 設計：預設重新匯入會覆蓋（update）既存記錄；如要安全略過請帶 skip_existing=true
+    Example: 重複匯入同一份考古題應更新既存記錄
       Given 系統中已匯入考古題：TEST/00/0000
       When 重新匯入同一份考古題（skip_existing=false）
-      Then 重複匯入應返回 success=false 且 message 包含 'already exists'
+      Then 重複匯入應成功更新既存 HistoricalExam（不新增新記錄）
       And 資料庫應仍包含 1 個 HistoricalExam 記錄
 
     Example: 使用 skip_existing=true 應安全略過重複

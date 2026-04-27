@@ -264,15 +264,17 @@ def step_verify_import_success(context):
     assert result.get("questions_imported", 0) > 0, "No questions imported"
 
 
-@then("重複匯入應返回 success=false 且 message 包含 'already exists'")
-def step_verify_duplicate_handling(context):
-    """Verify duplicate exam is properly handled."""
+@then("重複匯入應成功更新既存 HistoricalExam（不新增新記錄）")
+def step_verify_duplicate_update(context):
+    """Verify duplicate re-import updates existing HistoricalExam in place."""
     result = context.memo.get("reimport_result")
 
     assert result is not None, "No reimport result"
-    assert result.get("import_success") == False, "Should fail on duplicate"
-    assert "already exists" in result.get("message", "").lower(), \
-        f"Expected 'already exists' in message, got: {result.get('message')}"
+    assert result.get("error") is False, f"Import error: {result.get('message')}"
+    assert result.get("import_success") is True, (
+        f"Re-import should update existing exam, got: {result.get('message')}"
+    )
+    assert result.get("questions_imported", 0) > 0, "Questions should be re-inserted"
 
 
 @then("跳過重複匯入（skip=true）應返回 success=false 但標記為已跳過")
@@ -285,6 +287,58 @@ def step_verify_skip_duplicate(context):
     assert "skipped" in result.get("message", "").lower(), \
         f"Expected 'skipped' in message"
     assert result.get("questions_imported", 0) == 0, "No questions should be imported"
+
+
+@then("資料庫應仍包含 {count:d} 個 HistoricalExam 記錄")
+def step_verify_exam_count_unchanged(context, count):
+    """Verify exam count after duplicate import attempt."""
+    from app.models.historical_exam import HistoricalExam
+    actual = context.db_session.query(HistoricalExam).count()
+    assert actual == count, f"Expected {count} exams, got {actual}"
+
+
+@when("重新匯入同一份考古題（force_update=true）")
+def step_force_update_exam(context):
+    """Re-import with force_update=True to overwrite existing."""
+    from app.services.historical_exam_import_service import HistoricalExamImportService
+    from app.schemas.exam_import import LegacyImportOutput, LegacyQuestionOutput
+
+    service = HistoricalExamImportService(context.db_session)
+    questions = [
+        LegacyQuestionOutput(
+            question_number=i,
+            content=f"Question {i} (force-updated)",
+            type="single_choice",
+            option_a="A", option_b="B", option_c="C", option_d="D",
+            correct_answer="B",
+        )
+        for i in range(1, 6)
+    ]
+    legacy_output = LegacyImportOutput(
+        import_meta={
+            "source": "Test Pipeline",
+            "exam_code": "TEST", "category_code": "00", "subject_code": "0000",
+            "total_questions": 5, "questions_with_answer": 5,
+        },
+        questions=questions,
+    )
+    result = service.import_exam_paper(
+        legacy_output=legacy_output,
+        exam_code="TEST", category_code="00", subject_code="0000",
+        force_update=True,
+    )
+    context.memo["reimport_result"] = result
+
+
+@then("force_update 應成功 update 既存記錄")
+def step_verify_force_update_success(context):
+    result = context.memo.get("reimport_result")
+    assert result is not None, "No reimport result"
+    assert result.get("error") is False
+    assert result.get("import_success") is True, (
+        f"force_update should succeed, got: {result.get('message')}"
+    )
+    assert result.get("questions_imported", 0) > 0
 
 
 @then("可透過 GET /api/v1/exam-import/exams/... 查詢匯入的考古題")

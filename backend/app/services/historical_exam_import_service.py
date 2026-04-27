@@ -91,7 +91,10 @@ class HistoricalExamImportService(BaseService):
                         "questions_imported": 0,
                     }
                 else:
-                    # Update existing exam (for re-imports)
+                    # Update existing exam (for re-imports): delete old questions then re-insert
+                    self.db.query(Question).filter(
+                        Question.historical_exam_id == existing_exam.id
+                    ).delete(synchronize_session=False)
                     existing_exam.total_questions = len(legacy_output.questions)
                     self.db.flush()
                     exam = existing_exam

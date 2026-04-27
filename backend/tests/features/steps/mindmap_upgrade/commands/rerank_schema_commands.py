@@ -60,7 +60,7 @@ def step_inspect_response_schema(context):
     # Since the schema is defined inline in the method, inspect source.
     import inspect
     import app.services.unified_knowledge_extraction_service as m
-    source = inspect.getsource(m.UnifiedKnowledgeExtractionService._call_gemini)
+    source = inspect.getsource(m.UnifiedKnowledgeExtractionService._call_gemini_inner)
     # Record for assertion: source must contain maxItems: 6
     context.memo["call_gemini_source"] = source
 

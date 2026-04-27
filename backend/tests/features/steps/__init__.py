@@ -1324,7 +1324,7 @@ from .exam_import.database_import import step_verify_question_count  # noqa: F40
 from .exam_import.database_import import step_verify_foreign_keys  # noqa: F401
 from .exam_import.database_import import step_verify_question_content  # noqa: F401
 from .exam_import.database_import import step_verify_import_success  # noqa: F401
-from .exam_import.database_import import step_verify_duplicate_handling  # noqa: F401
+from .exam_import.database_import import step_verify_duplicate_update  # noqa: F401
 from .exam_import.database_import import step_verify_skip_duplicate  # noqa: F401
 from .exam_import.database_import import step_verify_query_endpoint  # noqa: F401
 from .exam_import.database_import import step_verify_questions_endpoint  # noqa: F401
