@@ -39,7 +39,7 @@ async def get_dashboard_statistics(
                 detail={"message": "Failed to compute statistics"}
             )
 
-        audit_data = audit_stats.get("data", {})
+        audit_data = audit_stats  # ok() flattened
 
         # Calculate average duration
         avg_duration_ms = audit_data.get("average_duration_ms", 0)
@@ -94,8 +94,11 @@ async def get_recent_jobs(
         List of recent jobs with status
     """
     try:
+        # ImportTask has no `updated_at` column; sort by completed_at when
+        # present, falling back to created_at.
+        from sqlalchemy import desc, func as sa_func
         jobs = db.query(ImportTask).order_by(
-            ImportTask.updated_at.desc()
+            desc(sa_func.coalesce(ImportTask.completed_at, ImportTask.created_at))
         ).limit(limit).all()
 
         recent_jobs = [
@@ -257,21 +260,28 @@ async def get_job_details(
         if task_result.get("error"):
             raise HTTPException(status_code=404, detail={"message": "Task not found"})
 
-        task_data = task_result.get("data", {})
+        task_data = task_result  # ok() flattened
 
         # Get audit trail
         audit_result = audit_service.get_task_audit_trail(task_uuid)
-        audit_trail = audit_result.get("data", {}).get("audit_trail", []) if not audit_result.get("error") else []
+        audit_trail = audit_result.get("audit_trail", []) if not audit_result.get("error") else []
 
         # Calculate timeline
         start_time = task_data.get("started_at")
         end_time = task_data.get("completed_at")
         duration_sec = None
         if start_time and end_time:
-            from datetime import datetime
-            start = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-            end = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
-            duration_sec = int((end - start).total_seconds())
+            from datetime import datetime as _dt
+            def _to_dt(v):
+                if isinstance(v, _dt):
+                    return v
+                if isinstance(v, str):
+                    return _dt.fromisoformat(v.replace('Z', '+00:00'))
+                return None
+            start = _to_dt(start_time)
+            end = _to_dt(end_time)
+            if start and end:
+                duration_sec = int((end - start).total_seconds())
 
         return {
             "task": {

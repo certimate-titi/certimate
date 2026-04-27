@@ -3,7 +3,12 @@
 import logging
 from pathlib import Path
 from typing import Optional
-import PyPDF2
+import pypdf as PyPDF2  # noqa: N812 — keep alias for backward compatibility
+from pypdf.errors import PdfReadError as _PdfReadError
+
+# Expose PdfReadError on the PyPDF2 alias so existing `PyPDF2.PdfReadError`
+# call sites keep working with the new pypdf package
+PyPDF2.PdfReadError = _PdfReadError  # type: ignore[attr-defined]
 from app.services.base import BaseService
 
 logger = logging.getLogger(__name__)

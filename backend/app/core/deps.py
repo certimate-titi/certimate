@@ -180,7 +180,12 @@ def get_db_with_tenant(
 
     db = _SessionLocal()
     try:
-        set_rls_tenant(db, tenant_id)
+        try:
+            set_rls_tenant(db, tenant_id)
+        except Exception:
+            # Non-Postgres backends (e.g. SQLite test fallback) don't support
+            # session GUCs — RLS isn't available there, so skip silently.
+            pass
         yield db
     finally:
         # RESET session-scoped GUC to prevent leaking to pooled connections

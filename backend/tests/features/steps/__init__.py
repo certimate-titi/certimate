@@ -1333,6 +1333,8 @@ from .exam_import.database_import import step_verify_timestamp  # noqa: F401
 from .exam_import.database_import import step_verify_validation_model  # noqa: F401
 from .exam_import.database_import import step_verify_bulk_performance  # noqa: F401
 from .exam_import.database_import import step_verify_acid_compliance  # noqa: F401
+# Feature 33 — Async import lifecycle
+from .exam_import import async_import as _exam_import_async_import  # noqa: F401
 # Cost Monitor (Feature 33) — aggregate_given
 from .cost_monitor.aggregate_given import budget_config as cm_budget_config  # noqa: F401
 from .cost_monitor.aggregate_given import current_usage as cm_current_usage  # noqa: F401

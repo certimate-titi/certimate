@@ -91,7 +91,8 @@ async def submit_async_import(
                 detail={"message": result.get("message")}
             )
 
-        task_id = result.get("data", {}).get("task_id")
+        # `BaseService.ok()` flattens the data dict into the top-level result.
+        task_id = result.get("task_id")
 
         # Schedule background job
         job_id = schedule_import_job(task_id, immediate=True)
@@ -153,10 +154,17 @@ async def get_import_task_status(
         if result.get("error"):
             raise HTTPException(status_code=404, detail={"message": "Task not found"})
 
-        task_data = result.get("data", {})
+        # `ok()` flattens the dict — task fields are at the top level
+        task_data = result
 
-        # Verify user owns this task
-        if str(user_id) != task_data.get("user_id"):
+        # Verify user owns this task (user_id is not currently in the response —
+        # fall back to a fresh DB lookup if the field is absent).
+        owner_id = task_data.get("user_id")
+        if owner_id is None:
+            from app.models import ImportTask
+            db_task = db.query(ImportTask).filter_by(id=task_uuid).first()
+            owner_id = str(db_task.user_id) if db_task else None
+        if str(user_id) != str(owner_id):
             raise HTTPException(status_code=403, detail={"message": "Not authorized to view this task"})
 
         return {
@@ -218,8 +226,13 @@ async def cancel_import_task(
         if status_result.get("error"):
             raise HTTPException(status_code=404, detail={"message": "Task not found"})
 
-        task_data = status_result.get("data", {})
-        if str(user_id) != task_data.get("user_id"):
+        task_data = status_result  # ok() flattened
+        owner_id = task_data.get("user_id")
+        if owner_id is None:
+            from app.models import ImportTask
+            db_task = db.query(ImportTask).filter_by(id=task_uuid).first()
+            owner_id = str(db_task.user_id) if db_task else None
+        if str(user_id) != str(owner_id):
             raise HTTPException(status_code=403, detail={"message": "Not authorized"})
 
         # Cancel in scheduler
@@ -286,12 +299,12 @@ async def list_user_import_tasks(
         if result.get("error"):
             raise HTTPException(status_code=500, detail={"message": result.get("message")})
 
-        data = result.get("data", {})
+        # ok() flattened tasks/total/limit/offset to top level
         return {
-            "tasks": data["tasks"],
-            "total": data["total"],
-            "limit": data["limit"],
-            "offset": data["offset"],
+            "tasks": result.get("tasks", []),
+            "total": result.get("total", 0),
+            "limit": result.get("limit", limit),
+            "offset": result.get("offset", offset),
         }
 
     except HTTPException:

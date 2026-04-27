@@ -30,6 +30,11 @@ ROLE_MAP = {
     "admin": UserRole.ADMIN,
     "org_admin": UserRole.ORG_ADMIN,
     "super_admin": UserRole.SUPER_ADMIN,
+    # Chinese display labels
+    "一般使用者": UserRole.USER,
+    "平台管理員": UserRole.ADMIN,
+    "機構管理員": UserRole.ORG_ADMIN,
+    "超級管理員": UserRole.SUPER_ADMIN,
 }
 
 PLAN_MAP = {
