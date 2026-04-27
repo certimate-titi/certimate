@@ -19,7 +19,6 @@ import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import PendingJourneysBanner from '@/components/PendingJourneysBanner';
-import StudyBuddyBanner from '@/components/StudyBuddyBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 
@@ -346,9 +345,6 @@ export default function DashboardPage() {
     <>
       {/* System Announcements */}
       <AnnouncementBanner />
-
-      {/* Study buddy (ULTRA only) */}
-      <StudyBuddyBanner />
 
       {/* Pending exam result confirmations */}
       <PendingJourneysBanner />
