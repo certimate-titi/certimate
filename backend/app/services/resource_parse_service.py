@@ -240,6 +240,22 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     local_pdf = storage.download_to_temp(resource.gcs_path)
 
     ext = (resource.gcs_path or resource.name or "").lower().rsplit(".", 1)[-1]
+
+    # Workaround: Gemini SDK 上傳檔名含中文時觸發 'ascii' codec error。
+    # 複製到 ASCII-named tempfile 後再上傳。
+    import tempfile, shutil, os as _os
+    try:
+        local_pdf.encode("ascii")
+        ascii_path = local_pdf  # 已是純 ASCII
+        ascii_temp = None
+    except UnicodeEncodeError:
+        suffix = f".{ext}" if ext and len(ext) <= 5 else ".bin"
+        with tempfile.NamedTemporaryFile(prefix="parse_", suffix=suffix, delete=False) as dst:
+            with open(local_pdf, "rb") as src:
+                shutil.copyfileobj(src, dst)
+            ascii_path = dst.name
+        ascii_temp = ascii_path
+        logger.info(f"copied non-ascii filename to {ascii_path} for Gemini upload")
     mime_map = {
         "pdf": "application/pdf",
         "md": "text/markdown",
@@ -256,7 +272,7 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
 
     try:
         uploaded = client.files.upload(
-            file=local_pdf,
+            file=ascii_path,
             config={"mime_type": mime},
         )
         resp = client.models.generate_content(
@@ -273,6 +289,13 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
         if "429" in msg or "quota" in msg or "timeout" in msg or "unavailable" in msg:
             raise _RetryableError(str(e)) from e
         raise
+    finally:
+        # 清掉 ASCII tempfile（如果有建）
+        if ascii_temp:
+            try:
+                _os.unlink(ascii_temp)
+            except Exception:
+                pass
 
     text = getattr(resp, "text", None) or ""
     try:

@@ -497,16 +497,20 @@ def _process_resource_background(resource_id: str, user_id: str, tenant_id: str 
             if resource and resource.gcs_path:
                 job = create_parse_job(db, resource)
                 db.commit()
-                run_parse_job(db, job.id)
+                outcome = run_parse_job(db, job.id)
                 db.commit()
-                logger.info(f"[BG Parse] resource={resource_id} scaffold+candidate parse done")
+                logger.info(f"[BG Parse] resource={resource_id} parse outcome={outcome.status}")
 
-                # parse_job 成功後再 cleanup 原始檔（先前在 chunking 完成後就刪會導致 parse 失敗）
-                try:
-                    from app.services.document_processing_service import DocumentProcessingService
-                    DocumentProcessingService(db)._cleanup_original_file(resource)
-                except Exception as ce:
-                    logger.warning(f"[BG Cleanup] resource={resource_id} cleanup failed (non-fatal): {ce}")
+                # 只在 parse_job SUCCESS 時 cleanup 原始檔，避免失敗也刪檔導致無法 retry
+                from app.models.resource_parse_job import ParseJobStatus
+                if outcome and outcome.status == ParseJobStatus.SUCCESS.value:
+                    try:
+                        from app.services.document_processing_service import DocumentProcessingService
+                        DocumentProcessingService(db)._cleanup_original_file(resource)
+                    except Exception as ce:
+                        logger.warning(f"[BG Cleanup] resource={resource_id} cleanup failed (non-fatal): {ce}")
+                else:
+                    logger.info(f"[BG Cleanup] resource={resource_id} skipped (parse not success)")
             else:
                 logger.info(f"[BG Parse] resource={resource_id} skipped (no gcs_path)")
         except Exception as e:
