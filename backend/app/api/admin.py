@@ -92,6 +92,28 @@ def _handle_result(result: dict):
     return result
 
 
+# ── Resource Healing ─────────────────────────────────────────────────────────
+
+@router.post("/resources/heal-orphans")
+def heal_orphan_resources(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """掃描儲存體中遺失的資源檔案，標記為失敗以便用戶重新上傳。
+
+    Spec 11 §「Admin healing endpoint 自動掃描並標記孤兒資源」
+    僅 ADMIN / SUPER_ADMIN 可呼叫。
+    """
+    import uuid
+    from app.models.user import User, UserRole
+    user = db.query(User).filter_by(id=uuid.UUID(user_id)).first()
+    if not user or user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+        raise HTTPException(status_code=403, detail={"message": "需要管理員權限"})
+    from app.services.resource_library_service import ResourceLibraryService
+    result = ResourceLibraryService(db).heal_orphan_resources()
+    return result
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")

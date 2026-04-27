@@ -91,6 +91,34 @@ Feature: 資源庫管理與連鎖清除防呆機制
       And 資源 3 應標記為已刪除
       And 資源 3 的原始 PDF 應從 GCS 永久刪除
 
+  Rule: 後置（自我修復）- 系統應偵測檔案遺失並引導用戶重新上傳
+
+    # 背景：dev/雲端環境若儲存體被清理或上傳中斷，DB 中的 gcs_path 會指向不存在的
+    # 檔案。chunking 中繼產出（.md）可能已存在，但 LLM 鷹架（需重讀 PDF）會失敗。
+    # 此 Rule 確保系統能主動辨識此類「孤兒資源」並引導使用者修復。
+
+    Example: 列表 API 對「檔案遺失」資源回傳 needs_reupload=true
+      Given 資源 X 的 gcs_path 對應檔案不存在
+      And 資源 X 的最近一次 parse_job failure_reason 包含「檔案不存在」
+      When 使用者 "alice@example.com" 查詢自己的資源列表
+      Then 操作成功
+      And 資源 X 的 needs_reupload 應為 true
+      And 資源 X 的 scaffold_status 應為 "failed"
+
+    Example: 「重新上傳」入口應在資源列表呈現
+      Given 資源 X 的 needs_reupload 為 true
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 X 那一列應顯示「需重新上傳」徽章
+      And 「解析內容」與「題目確認」連結應隱藏（避免引導至空鷹架）
+      And 應提供一鍵刪除按鈕以便重新上傳
+
+    Example: Admin healing endpoint 自動掃描並標記孤兒資源
+      Given 系統中存在資源 Y，其 gcs_path 對應檔案不存在
+      And 資源 Y 的 parse_job 狀態為 "success"（過去成功但檔案後來消失）
+      When admin 觸發 POST /api/v1/admin/resources/heal-orphans
+      Then 操作成功
+      And 資源 Y 的最新 parse_job 應被新增一筆 status=failed、failure_reason="檔案不存在"
+
   Rule: 後置（API 契約）- 資源列表應反映「鷹架生成」子任務的真實狀態
 
     # 背景：resources.status 反映「整體可用性」（chunks/embeddings 是否就緒），

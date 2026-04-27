@@ -1586,6 +1586,8 @@ export interface LibraryResource {
   subject_id?: string | null;
   /** Spec 11 §鷹架生成子任務狀態 */
   scaffold_status?: 'ready' | 'pending' | 'failed' | 'none';
+  /** Spec 11 §「系統應偵測檔案遺失並引導用戶重新上傳」 */
+  needs_reupload?: boolean;
 }
 
 /**

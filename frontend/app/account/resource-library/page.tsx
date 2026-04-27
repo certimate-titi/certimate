@@ -245,6 +245,12 @@ export default function ResourceLibraryPage() {
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || 'bg-gray-100 text-gray-600'}`}>
                       {r.status}
                     </span>
+                    {r.needs_reupload && (
+                      <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[10px] font-medium border border-rose-200" title="原始檔案遺失，請刪除後重新上傳">
+                        <AlertTriangle className="w-3 h-3" />
+                        需重新上傳
+                      </div>
+                    )}
                     {parseStatus[r.resource_id] && parseStatus[r.resource_id].status !== 'COMPLETED' && parseStatus[r.resource_id].status !== 'FAILED' && (
                       <div className="mt-1 flex items-center gap-1 text-xs text-blue-600">
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -263,7 +269,7 @@ export default function ResourceLibraryPage() {
                       {(() => {
                         const ss = r.scaffold_status;
                         const isFailed = r.status === 'FAILED' || r.status === 'failed';
-                        if (isFailed || ss === 'none') {
+                        if (isFailed || ss === 'none' || r.needs_reupload) {
                           return null; // 完全不顯示
                         }
                         if (ss === 'pending' || ss === 'failed') {
@@ -293,7 +299,7 @@ export default function ResourceLibraryPage() {
                         const isFailed = r.status === 'FAILED' || r.status === 'failed';
                         const isProcessing = r.status === 'PROCESSING' || r.status === 'processing' || r.status === 'pending' || r.status === 'PENDING';
                         const isVirtual = r.type === 'historical_exam' || (r.name || '').endsWith('題庫');
-                        if (isFailed || isProcessing || isVirtual) return null;
+                        if (isFailed || isProcessing || isVirtual || r.needs_reupload) return null;
                         return (
                           <Link
                             href={`/resources/${r.resource_id}/candidates`}

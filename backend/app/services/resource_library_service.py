@@ -46,6 +46,7 @@ class ResourceLibraryService:
         resource_ids = [r.id for r in resources]
         scaffold_counts: dict = {}
         last_job_status: dict = {}
+        last_job_reason: dict = {}
         if resource_ids:
             rows = (
                 self.db.query(ResourceScaffold.resource_id, func.count(ResourceScaffold.id))
@@ -55,16 +56,21 @@ class ResourceLibraryService:
             )
             scaffold_counts = {rid: cnt for rid, cnt in rows}
 
-            # 每個 resource 取最新一筆 parse_job 狀態
+            # 每個 resource 取最新一筆 parse_job 狀態 + failure_reason
             jobs = (
-                self.db.query(ResourceParseJob.resource_id, ResourceParseJob.status)
+                self.db.query(
+                    ResourceParseJob.resource_id,
+                    ResourceParseJob.status,
+                    ResourceParseJob.failure_reason,
+                )
                 .filter(ResourceParseJob.resource_id.in_(resource_ids))
                 .order_by(ResourceParseJob.resource_id, ResourceParseJob.created_at.desc())
                 .all()
             )
-            for rid, status in jobs:
+            for rid, status, reason in jobs:
                 if rid not in last_job_status:  # 取最新一筆
                     last_job_status[rid] = status
+                    last_job_reason[rid] = reason
 
         items = []
         for r in resources:
@@ -97,6 +103,13 @@ class ResourceLibraryService:
                 # 沒 job 紀錄、沒 scaffold — 視為失敗（chunking 完但 parse 沒跑或無紀錄）
                 scaffold_status = 'failed' if r.status.value == 'completed' else 'pending'
 
+            # Spec 11 §「系統應偵測檔案遺失並引導用戶重新上傳」
+            reason = (last_job_reason.get(r.id) or '')
+            needs_reupload = (
+                scaffold_status == 'failed'
+                and ('檔案不存在' in reason or 'FileNotFoundError' in reason or 'file not found' in reason.lower())
+            )
+
             items.append({
                 "resource_id": str(r.id),
                 "name": r.name,
@@ -106,6 +119,7 @@ class ResourceLibraryService:
                 "badge": badge,
                 "subject_id": str(r.subject_id) if r.subject_id else None,
                 "scaffold_status": scaffold_status,
+                "needs_reupload": needs_reupload,
             })
 
         return {"resources": items}
@@ -125,6 +139,55 @@ class ResourceLibraryService:
         self.db.delete(resource)
         self.db.commit()
         return {"message": "資源已刪除"}
+
+    def heal_orphan_resources(self) -> dict:
+        """掃描所有資源，對 gcs_path 對應檔案不存在者新增一筆 failed parse_job。
+
+        Spec 11 §「Admin healing endpoint 自動掃描並標記孤兒資源」
+        - 由 admin / 排程觸發
+        - 不刪除資源（避免誤刪），只標記 scaffold_status 失敗
+        - 重複掃描安全（已標記 failed 的不重複新增）
+        """
+        from datetime import datetime, timezone
+        from app.services.storage_service import get_storage_service
+        from app.models.resource_parse_job import ResourceParseJob
+
+        storage = get_storage_service()
+        resources = self.db.query(Resource).all()
+        marked = 0
+        skipped = 0
+        for r in resources:
+            if not r.gcs_path:
+                continue
+            try:
+                if storage.exists(r.gcs_path):
+                    continue
+            except Exception:
+                continue
+
+            # 檔案不存在；檢查是否已有最新 failed 紀錄
+            last_job = (
+                self.db.query(ResourceParseJob)
+                .filter(ResourceParseJob.resource_id == r.id)
+                .order_by(ResourceParseJob.created_at.desc())
+                .first()
+            )
+            reason_text = '檔案不存在'
+            if last_job and last_job.status == 'failed' and reason_text in (last_job.failure_reason or ''):
+                skipped += 1
+                continue
+
+            new_job = ResourceParseJob(
+                resource_id=r.id,
+                tenant_id=r.tenant_id,
+                status='failed',
+                failure_reason=f'{reason_text}: {r.gcs_path}（healing job 偵測）',
+                finished_at=datetime.now(timezone.utc),
+            )
+            self.db.add(new_job)
+            marked += 1
+        self.db.commit()
+        return {"marked": marked, "skipped": skipped, "total_scanned": len(resources)}
 
     def reparse_resource(self, user_id: str, resource_id: str):
         """重新解析資源。"""
