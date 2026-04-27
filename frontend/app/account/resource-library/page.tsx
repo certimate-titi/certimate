@@ -9,9 +9,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Search, RefreshCw, Trash2, Loader2, FileText, AlertTriangle, Share2, CheckCircle2, BookOpenCheck } from 'lucide-react';
-import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService } from '@/lib/api/services';
+import { resourceLibraryService, LibraryResource, resourceShareService, resourceParseService, subjectService } from '@/lib/api/services';
+import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
+import SubjectSwitcher from '@/components/SubjectSwitcher';
 import type { ParseStatusResponse } from '@/types/api';
 
 const BADGE_META: Record<string, { label: string; cls: string }> = {
@@ -45,20 +47,44 @@ export default function ResourceLibraryPage() {
   const [parseStatus, setParseStatus] = useState<Record<string, ParseStatusResponse>>({});
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetch = useCallback(async (kw?: string) => {
+  // Spec 11 §「提供學科切換器過濾不同學科的資源列表」
+  const [subjects, setSubjects] = useState<UserSubject[]>([]);
+  const [activeSubjectId, setActiveSubjectId] = useState<string>('');
+
+  // 載入科目（與 /knowledge 一致：localStorage > 第一筆）
+  useEffect(() => {
+    subjectService.getUserSubjects().then((res) => {
+      setSubjects(res.subjects || []);
+      if (res.subjects && res.subjects.length > 0) {
+        const saved = localStorage.getItem('certimate_active_subject_id');
+        const match = saved && res.subjects.find((s) => s.id === saved);
+        setActiveSubjectId(match ? saved : res.subjects[0].id);
+      }
+    }).catch(() => { /* silent */ });
+  }, []);
+
+  const fetch = useCallback(async (kw?: string, sid?: string) => {
     setLoading(true);
     setError('');
     try {
-      const res = await resourceLibraryService.list(kw);
+      // 從 UserSubject.id 解出 underlying subjectId（後端用此過濾）
+      const subj = subjects.find((s) => s.id === sid);
+      const filterSubjectId = subj?.subjectId || sid || undefined;
+      const res = await resourceLibraryService.list({ keyword: kw, subjectId: filterSubjectId });
       setItems(res.resources || []);
-    } catch (e: any) {
-      setError(e?.message || '載入失敗');
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err?.message || '載入失敗');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [subjects]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  // 切換科目或科目載入完成 → 重新 fetch
+  useEffect(() => {
+    if (activeSubjectId) fetch(keyword, activeSubjectId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSubjectId, fetch]);
 
   // EPIC-035: poll parse status for in-progress resources
   useEffect(() => {
@@ -82,7 +108,7 @@ export default function ResourceLibraryPage() {
       const allDone = Object.values(updates).every(
         (s) => s.status === 'COMPLETED' || s.status === 'FAILED',
       );
-      if (allDone && Object.keys(updates).length > 0) fetch(keyword);
+      if (allDone && Object.keys(updates).length > 0) fetch(keyword, activeSubjectId);
     };
     poll();
     pollTimer.current = setInterval(poll, 3000);
@@ -95,7 +121,7 @@ export default function ResourceLibraryPage() {
     if (!confirm(`確定要刪除「${name}」？`)) return;
     try {
       await resourceLibraryService.delete(id);
-      fetch(keyword);
+      fetch(keyword, activeSubjectId);
     } catch (e: any) {
       alert(`刪除失敗：${e?.message}`);
     }
@@ -107,7 +133,7 @@ export default function ResourceLibraryPage() {
       if (!confirm('確定撤回此資源對 EDU 的分享？')) return;
       try {
         await resourceShareService.revokeShare(id);
-        fetch(keyword);
+        fetch(keyword, activeSubjectId);
       } catch (e: any) {
         alert(`撤回失敗：${e?.message}`);
       }
@@ -117,7 +143,7 @@ export default function ResourceLibraryPage() {
     if (!instId) return;
     try {
       await resourceShareService.shareToInstitution(id, instId);
-      fetch(keyword);
+      fetch(keyword, activeSubjectId);
     } catch (e: any) {
       alert(`分享失敗：${e?.message}`);
     }
@@ -134,6 +160,23 @@ export default function ResourceLibraryPage() {
         </div>
       )}
 
+      {/* Spec 11: 學科切換器 */}
+      {subjects.length > 0 && (
+        <div className="mb-4">
+          <SubjectSwitcher
+            subjects={subjects}
+            activeSubjectId={activeSubjectId}
+            onSwitch={(id) => {
+              setActiveSubjectId(id);
+              localStorage.setItem('certimate_active_subject_id', id);
+            }}
+            onAddSubject={() => { /* 不允許新增（allowAdd=false） */ }}
+            allowAdd={false}
+            variant="compact"
+          />
+        </div>
+      )}
+
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -141,13 +184,13 @@ export default function ResourceLibraryPage() {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetch(keyword)}
+            onKeyDown={(e) => e.key === 'Enter' && fetch(keyword, activeSubjectId)}
             placeholder="搜尋資源名稱..."
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         <button
-          onClick={() => fetch(keyword)}
+          onClick={() => fetch(keyword, activeSubjectId)}
           className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
         >
           <RefreshCw className="w-4 h-4" />

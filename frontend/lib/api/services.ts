@@ -1590,9 +1590,12 @@ export interface LibraryResource {
  * 學習庫服務：列出 / 刪除 / 重新解析個人與分享資源。
  */
 export const resourceLibraryService = {
-  async list(keyword?: string): Promise<{ resources: LibraryResource[] }> {
-    const q = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
-    return apiClient.get(`/resource-library${q}`);
+  async list(opts?: { keyword?: string; subjectId?: string }): Promise<{ resources: LibraryResource[] }> {
+    const params = new URLSearchParams();
+    if (opts?.keyword) params.set('keyword', opts.keyword);
+    if (opts?.subjectId) params.set('subject_id', opts.subjectId);
+    const qs = params.toString();
+    return apiClient.get(`/resource-library${qs ? `?${qs}` : ''}`);
   },
   async delete(resourceId: string): Promise<{ message: string }> {
     return apiClient.delete(`/resource-library/${resourceId}`);

@@ -19,21 +19,18 @@ def _handle_result(result: dict):
 @router.get("")
 def list_resources(
     keyword: str | None = None,
+    subject_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """list resources。
-
-    此 endpoint 對應 `list_resources` 操作。
+    """列出使用者的資源（支援關鍵字 + 科目過濾）。
 
     Args:
-        keyword: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
+        keyword: 名稱關鍵字（可選）。
+        subject_id: 科目 ID 過濾（可選，對應 Spec 11 學科切換器）。
     """
     service = ResourceLibraryService(db)
-    result = service.list_resources(user_id=user_id, keyword=keyword)
+    result = service.list_resources(user_id=user_id, keyword=keyword, subject_id=subject_id)
     return _handle_result(result)
 
 

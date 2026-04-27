@@ -13,14 +13,29 @@ class ResourceLibraryService:
         """初始化實例。"""
         self.db = db
 
-    def list_resources(self, user_id: str, keyword: str | None = None):
-        """列出使用者的資源。"""
+    def list_resources(self, user_id: str, keyword: str | None = None, subject_id: str | None = None):
+        """列出使用者的資源。
+
+        Args:
+            user_id: 使用者 ID。
+            keyword: 名稱關鍵字過濾（可選）。
+            subject_id: 科目 ID 過濾（可選）— 對應 Spec 11 §「提供學科切換器
+                過濾不同學科的資源列表」。
+        """
         user_uuid = uuid.UUID(user_id)
 
         query = self.db.query(Resource).filter_by(user_id=user_uuid)
 
         if keyword:
             query = query.filter(Resource.name.ilike(f"%{keyword}%"))
+
+        if subject_id:
+            try:
+                sid_uuid = uuid.UUID(subject_id)
+                query = query.filter(Resource.subject_id == sid_uuid)
+            except ValueError:
+                # 無效的 subject_id 視為「無此科目資源」回空列
+                return {"resources": []}
 
         resources = query.order_by(Resource.created_at.desc()).all()
 
