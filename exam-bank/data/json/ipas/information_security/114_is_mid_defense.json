@@ -1,0 +1,74 @@
+{
+  "import_meta": {
+    "source_pdf": "114_is_mid_defense.pdf",
+    "content_type": "exam",
+    "total_questions_parsed": 40,
+    "valid_questions": 0,
+    "excluded_no_answer": 40,
+    "bloom_distribution": {},
+    "quality_flag": "ok",
+    "validations": [
+      {
+        "layer": "L1_structure",
+        "passed": false,
+        "errors": [
+          "引用完整性嚴重不足：23/40 題（57%）引用外部內容但實際缺失"
+        ],
+        "warnings": [
+          "題 5：引用「圖片」但內容缺失",
+          "題 6：引用「圖片」但內容缺失",
+          "題 7：引用「圖片」但內容缺失",
+          "題 8：引用「圖片」但內容缺失",
+          "題 16：引用「圖片」但內容缺失",
+          "...另有 18 題引用缺失"
+        ],
+        "stats": {
+          "question_count": 40,
+          "expected_count": 0,
+          "incomplete_options": 0,
+          "no_answer": 40,
+          "short_stem": 0,
+          "answer_distribution": {},
+          "answer_rate": 0.0,
+          "ref_missing": 23,
+          "number_range": "1-40",
+          "missing_numbers": 0
+        }
+      },
+      {
+        "layer": "L2_answer_cross",
+        "passed": false,
+        "errors": [
+          "答案卷提取失敗：0 題有答案"
+        ],
+        "warnings": [],
+        "stats": {
+          "total_questions": 40,
+          "answer_pdf_extracted": 0,
+          "questions_with_answer": 0,
+          "questions_without_answer": 40
+        }
+      },
+      {
+        "layer": "L3_sampling",
+        "passed": true,
+        "errors": [],
+        "warnings": [
+          "無題目可抽樣"
+        ],
+        "stats": {}
+      },
+      {
+        "layer": "L4_statistics",
+        "passed": true,
+        "errors": [],
+        "warnings": [
+          "無題目"
+        ],
+        "stats": {}
+      }
+    ],
+    "model": "gemini-2.5-flash"
+  },
+  "questions": []
+}
