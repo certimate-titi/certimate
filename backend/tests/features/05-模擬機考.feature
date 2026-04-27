@@ -1,3 +1,4 @@
+@backend
 Feature: 模擬機考
 
   Background:
@@ -106,13 +107,7 @@ Feature: 模擬機考
       Then 操作成功
       And 題目 301 的已選答案應為 "C"
 
-  Rule: 後置（狀態）- 使用者嘗試離開頁面時應觸發 beforeunload 警告
-
-    Example: 測驗中關閉分頁前出現確認提示
-      Given 使用者 "alice@example.com" 已開始測驗 1
-      When 使用者 "alice@example.com" 嘗試關閉測驗頁面
-      Then 系統應觸發 beforeunload 警告訊息
-      And 警告訊息應為 "確定要離開測驗嗎？您的進度已暫存"
+  # beforeunload 警告為純瀏覽器 API，已移至 project/features/05-模擬機考.feature
 
   Rule: 後置（回應）- 含 KaTeX 數學公式的題目應以渲染後的數學符號呈現
 
@@ -145,51 +140,5 @@ Feature: 模擬機考
 
   # ========== UI 元件補充場景 ==========
 
-  @epic-recon @playwright-e2e
-  # 後端無 pause endpoint；timer 邏輯純前端計算，規格應移 Playwright e2e
-  Rule: 後置（狀態）- 暫停考試後恢復作答時計時器應繼續倒數
-
-    Example: 暫停考試後恢復作答計時器繼續倒數
-      Given 使用者 "alice@example.com" 已開始測驗 1，剩餘時間為 20 分鐘
-      When 使用者 "alice@example.com" 暫停測驗 1
-      And 經過 10 秒後使用者 "alice@example.com" 恢復測驗 1
-      Then 測驗 1 的剩餘時間應接近 19 分 50 秒
-      And 計時器應繼續正常倒數
-
-  @epic-recon @playwright-e2e
-  # Modal UI 純前端互動，規格應移 Playwright e2e
-  Rule: 後置（回應）- 總覽格 Modal 應顯示所有題目的作答狀態
-
-    Example: 開啟總覽格 Modal 顯示所有題目狀態
-      Given 使用者 "alice@example.com" 已開始測驗 1
-      And 使用者 "alice@example.com" 在題目 101 選擇答案 "C"
-      When 使用者 "alice@example.com" 開啟題目總覽格 Modal
-      Then 總覽格 Modal 應顯示以下題目狀態：
-        | 題號 | 狀態   |
-        | 1    | 已作答 |
-        | 2    | 未作答 |
-
-  @epic-recon @playwright-e2e
-  # 題目跳轉純前端路由，規格應移 Playwright e2e
-  Rule: 後置（回應）- 題目導航格點擊應跳轉至指定題目
-
-    Example: 點擊題目導航格中的題號跳轉至該題目
-      Given 使用者 "alice@example.com" 已開始測驗 1
-      And 使用者 "alice@example.com" 目前瀏覽題目 101
-      When 使用者 "alice@example.com" 在題目導航格中點擊題號 2
-      Then 畫面應跳轉至題目 102
-      And 題目顯示區應呈現題目 102 的內容
-
-  Rule: 後置（回應）- 上一題與下一題按鈕在邊界題目時應正確停用
-
-    Example: 第一題時上一題按鈕應停用
-      Given 使用者 "alice@example.com" 已開始測驗 1
-      When 使用者 "alice@example.com" 瀏覽題目 101
-      Then 上一題按鈕應為停用狀態
-      And 下一題按鈕應為啟用狀態
-
-    Example: 最後一題時下一題按鈕應停用
-      Given 使用者 "alice@example.com" 已開始測驗 1
-      When 使用者 "alice@example.com" 瀏覽題目 102
-      Then 下一題按鈕應為停用狀態
-      And 上一題按鈕應為啟用狀態
+  # 暫停 timer / 總覽格 Modal / 題目跳轉 / 邊界導航按鈕停用 4 組 Rule
+  # 為純前端互動，已移至 project/features/05-模擬機考.feature 對應 @frontend Rule

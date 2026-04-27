@@ -1,4 +1,5 @@
 @query
+@backend
 Feature: 錯題複習與 AI 教練
 
   Background:
@@ -412,30 +413,8 @@ Feature: 錯題複習與 AI 教練
       Then 操作成功
       And 介面應顯示免責聲明：「AI 生成內容僅供參考，請隨時自行查證重要資訊。」
 
-  # ========== 錯題側邊列表切換 ==========
-
-  @epic-recon @playwright-e2e
-  # 側邊列表切換為純前端 UI，應移 Playwright e2e
-  Rule: 後置（互動）- 點擊錯題側邊列表中的題目可切換右側顯示內容
-
-    Example: 錯題側邊列表點擊切換顯示題目
-      Given 使用者 "free@example.com" 已進入測驗 1 的錯題複習頁面
-      And 側邊列表顯示題目 101 與題目 102
-      When 使用者在側邊列表點擊題目 102
-      Then 右側解析區應切換顯示題目 102 的內容
-      And 側邊列表中題目 102 應呈現選中狀態
-
-  # ========== 答案對比顯示 ==========
-
-  @epic-recon @playwright-e2e
-  # 答案對比顯示為純前端視覺，應移 Playwright e2e
-  Rule: 後置（UI）- 錯題解析應同時顯示使用者錯誤答案與正確答案的對比
-
-    Example: 使用者錯誤答案與正確答案對比顯示
-      When 使用者 "free@example.com" 查看測驗 1 題目 101 的解析
-      Then 操作成功
-      And 解析區應以視覺對比方式顯示使用者選擇「C」與正確答案「B」
-      And 正確答案應以綠色標示，錯誤答案應以紅色標示
+  # 錯題側邊列表切換 / 答案對比視覺顯示為純前端 UI
+  # 已移至 project/features/07-錯題複習與AI教練.feature
 
   # ========== PRO_PLUS 引用來源切換 ==========
 

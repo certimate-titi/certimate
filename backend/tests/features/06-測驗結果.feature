@@ -1,3 +1,4 @@
+@backend
 Feature: 測驗結果
 
   Background:
@@ -142,19 +143,5 @@ Feature: 測驗結果
 
   # ========== 知識圖譜進度變化 ==========
 
-  @epic-recon @playwright-e2e
-  # ForceGraph 為純前端視覺化元件；弱點分析 API 需連動 knowledge node 對應（待 Feature 04a 綠燈）
-  Rule: 後置（視覺）- 測驗結果頁應顯示完整知識圖譜
-
-    Example: 測驗結果頁顯示力導向知識圖譜
-      Given 使用者 "pro@example.com" 已完成一場測驗
-      When 使用者查看測驗結果頁
-      Then 應顯示完整知識圖譜（ForceGraph）
-      And 本次考試涉及的節點應以對應顏色標示（紅=需加強、黃=部分、綠=精通）
-      And 未涉及的節點應保持灰色
-
-    Example: 弱點分析應使用知識節點名稱
-      Given 使用者 "pro@example.com" 已完成考古題模擬考
-      When 使用者查看測驗結果的弱點分析
-      Then 弱點分析應顯示知識節點名稱（如「機器學習基礎」「深度學習架構」）
-      And 不應顯示考試名稱（如「114年第四次AI應用規劃師」）
+  # ForceGraph 視覺化為純前端元件，已移至 project/features/06-測驗結果.feature
+  # （弱點分析 API 仍由 backend 驗，已涵蓋於上方 Rules）
