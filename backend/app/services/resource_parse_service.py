@@ -233,6 +233,26 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
             f"檔名={resource.name}。"
         )
 
+    # 強制 schema 鎖定（防 Gemini 把文件內容的目錄結構當任務 schema 用）
+    # 觀察：「AI規劃師學習指引」內含 chapters/references/job_profile 段落，
+    # 之前 Gemini 會直接套用文件本身的 schema 回應，導致 scaffolds=0
+    schema_hammer = (
+        "\n\n# ⚠️ JSON SCHEMA 強制鎖定（最高優先）\n"
+        "你的 JSON 物件 **頂層 keys 必須且只能是**：\n"
+        '`markdown`, `detected_content_type`, `critical_pages`, `questions`, `scaffolds`\n\n'
+        "**禁止頂層出現** `document_title`, `issuer`, `chapters`, `curriculum`, "
+        "`references`, `job_profile` 或任何文件本身的目錄欄位。\n"
+        "若 PDF 看似一份「學習指引／簡章／目錄」，其章節結構應放入 `scaffolds[].chapter_heading`，\n"
+        "**不**能取代頂層 schema。\n\n"
+        "# scaffolds 內每筆物件必填欄位（缺一即無效會被丟棄）\n"
+        "- `chapter_heading`: string（章節標題）\n"
+        "- `type`: **必須是** `takeaway` | `elaborative` | `strategy` 三選一（小寫，不接受 null / 空字串 / 其他值）\n"
+        "- `content`: string（鷹架內文）\n"
+        "至少為文件中前 10 個有意義的章節各產出 takeaway + elaborative + strategy 三筆，"
+        "預期 scaffolds 陣列長度 30+ 而非個位數。"
+    )
+    user_prompt = user_prompt + schema_hammer
+
     # download PDF locally for upload
     storage = get_storage_service()
     if not resource.gcs_path:
@@ -516,6 +536,10 @@ def _build_scaffold_row(
     try:
         t = ResourceScaffoldType(raw_type)
     except ValueError:
+        logger.warning(
+            "scaffold dropped (invalid type=%r) resource=%s heading=%r",
+            s.get("type"), resource.id, (s.get("chapter_heading") or "")[:30]
+        )
         return None
     page_start, page_end = _coerce_page_range(s)
     return ResourceScaffold(
