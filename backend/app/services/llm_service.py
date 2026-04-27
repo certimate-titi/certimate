@@ -59,6 +59,47 @@ class LLMService:
             )
         return self._clients["anthropic"]
 
+    @staticmethod
+    def _use_claude_cli() -> bool:
+        """本地開發環境是否走 Claude Code CLI subprocess（避免使用 API key）。
+
+        env LLM_LOCAL_BACKEND=claude-code 時啟用；雲端部署不設此 env 即走 API。
+        """
+        import os
+        return os.environ.get("LLM_LOCAL_BACKEND", "").lower() == "claude-code"
+
+    def _generate_claude_cli(
+        self, model: str, system_prompt: str, user_prompt: str, max_tokens: int
+    ) -> str:
+        """本地：透過 Claude Code CLI subprocess 跑 LLM（無 API 費用）。
+
+        參考 exam-bank/parsers/claude_cli_converter.py 的 pattern。
+        模型名稱透過 alias 對應（sonnet/opus/haiku）；不傳 --model 走 CLI 預設。
+        """
+        import os
+        import subprocess
+
+        cli_path = os.environ.get("CLAUDE_CLI_PATH", "claude")
+        full_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+        try:
+            proc = subprocess.run(
+                [cli_path, "-p", full_prompt],
+                capture_output=True,
+                text=True,
+                timeout=180,
+            )
+        except FileNotFoundError as e:
+            raise RuntimeError(
+                f"Claude CLI not found at '{cli_path}'. Install Claude Code or set CLAUDE_CLI_PATH"
+            ) from e
+        except subprocess.TimeoutExpired as e:
+            raise RuntimeError(f"Claude CLI timeout (180s) for model={model}") from e
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Claude CLI failed (exit={proc.returncode}): {proc.stderr[:300]}"
+            )
+        return proc.stdout.strip()
+
     def _get_openai(self):
         """取得 openai。"""
         if "openai" not in self._clients:
@@ -185,6 +226,8 @@ class LLMService:
             )
 
         if provider == "anthropic":
+            if self._use_claude_cli():
+                return self._generate_claude_cli(model, system_prompt, user_prompt, max_tokens)
             return self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
         elif provider == "openai":
             return self._generate_openai(model, system_prompt, user_prompt, max_tokens)
@@ -221,6 +264,8 @@ class LLMService:
         else:
             # openai or unknown — skip tracking (no budget scope)
             if provider == "anthropic":
+                if self._use_claude_cli():
+                    return self._generate_claude_cli(model, system_prompt, user_prompt, max_tokens)
                 return self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
             elif provider == "openai":
                 return self._generate_openai(model, system_prompt, user_prompt, max_tokens)
@@ -232,7 +277,10 @@ class LLMService:
             self.db, provider=tracker_provider, feature=feature
         ) as tracker:
             if provider == "anthropic":
-                result = self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
+                if self._use_claude_cli():
+                    result = self._generate_claude_cli(model, system_prompt, user_prompt, max_tokens)
+                else:
+                    result = self._generate_anthropic(model, system_prompt, user_prompt, max_tokens)
             else:  # google
                 result = self._generate_google(model, system_prompt, user_prompt, max_tokens)
 
