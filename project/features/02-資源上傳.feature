@@ -220,3 +220,26 @@ Feature: 資源上傳與隱性版權約定
       When _process_resource_background 建立新的 _SessionLocal
       Then 背景任務第一步應呼叫 set_rls_tenant(db, tenant_id) 寫入正確 GUC
       And 背景任務查詢 resources 不應因前一個連線的空字串 GUC 失敗
+
+  Rule: 後置（Pipeline 一致性）- 大檔分片與小檔上傳最終都應跑完整 EPIC-035 Pipeline
+
+    # 背景：歷史上 chunked_upload 路徑只跑 chunking + embedding，沒觸發 Gemini 鷹架生成。
+    # 這導致使用者上傳大檔後「解析完成」訊息出現，但點解析內容看不到鷹架。
+
+    @epic-035
+    Example: 大檔分片合併後應自動跑完整 pipeline 含學習鷹架
+      Given 使用者 "alice@example.com" 透過 chunked upload 上傳 PDF "big.pdf"（大於 32MB）
+      When 使用者呼叫 POST /resources/chunked/{upload_id}/merge
+      Then 系統應於背景觸發 _process_resource_background，包含：
+        | 步驟           | 動作                                |
+        | chunking       | 切塊 + embedding + knowledge tree   |
+        | scaffold       | Gemini 多模態生成 takeaway/elaborative/strategy |
+        | candidates     | 抽出 T1/T2/T3 候選題                |
+      And 處理完成後 resource_parse_jobs 應有對應紀錄
+      And resource_scaffolds 應有至少一筆紀錄（若 LLM 成功）
+
+    Example: 小檔上傳行為應與大檔分片完全一致
+      Given 使用者 "alice@example.com" 透過 single POST 上傳 PDF "small.pdf"（小於 32MB）
+      When 使用者呼叫 POST /resources/upload-file
+      Then 系統應於背景觸發完整 pipeline
+      And 與 chunked upload 的後處理流程必須相同

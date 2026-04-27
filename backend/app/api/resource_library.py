@@ -34,6 +34,28 @@ def list_resources(
     return _handle_result(result)
 
 
+@router.get("/hidden")
+def list_hidden_resources(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """列出使用者軟隱藏的資源（Spec 11 §已隱藏資源管理入口）。"""
+    service = ResourceLibraryService(db)
+    return service.list_hidden_resources(user_id=user_id)
+
+
+@router.post("/{resource_id}/restore")
+def restore_hidden_resource(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """還原軟隱藏資源（Spec 11 §還原已隱藏資源）。"""
+    service = ResourceLibraryService(db)
+    result = service.restore_hidden_resource(user_id=user_id, resource_id=resource_id)
+    return _handle_result(result)
+
+
 @router.delete("/{resource_id}")
 def delete_resource(
     resource_id: str,

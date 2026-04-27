@@ -281,8 +281,9 @@ class DocumentProcessingService:
             # Step 9: Save normalized markdown
             md_path = self._save_normalized_markdown(resource, extracted)
 
-            # Step 10: Cleanup original file
-            self._cleanup_original_file(resource)
+            # Step 10: 注意 — 不在此處 cleanup 原始檔，
+            # parse_job (Gemini 多模態) 還需要原始 PDF。
+            # cleanup 移到 _process_resource_background 在 parse_job 成功後執行。
 
             resource.status = ResourceStatus.COMPLETED
             self.db.commit()

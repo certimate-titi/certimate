@@ -500,6 +500,13 @@ def _process_resource_background(resource_id: str, user_id: str, tenant_id: str 
                 run_parse_job(db, job.id)
                 db.commit()
                 logger.info(f"[BG Parse] resource={resource_id} scaffold+candidate parse done")
+
+                # parse_job 成功後再 cleanup 原始檔（先前在 chunking 完成後就刪會導致 parse 失敗）
+                try:
+                    from app.services.document_processing_service import DocumentProcessingService
+                    DocumentProcessingService(db)._cleanup_original_file(resource)
+                except Exception as ce:
+                    logger.warning(f"[BG Cleanup] resource={resource_id} cleanup failed (non-fatal): {ce}")
             else:
                 logger.info(f"[BG Parse] resource={resource_id} skipped (no gcs_path)")
         except Exception as e:
@@ -710,22 +717,20 @@ def get_chunked_upload_status(
 @router.post("/resources/chunked/{upload_id}/merge")
 def merge_chunks(
     upload_id: str,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """merge chunks。
-
-    此 endpoint 對應 `merge_chunks` 操作。
-
-    Args:
-        upload_id: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """合併分片並觸發完整背景 pipeline（Spec 02 §「大檔分片與小檔上傳最終都應跑完整 Pipeline」）。"""
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     result = service.merge_chunks(user_id=user_id, upload_id=upload_id)
+    # 與 small file 上傳路徑一致：合併完成後觸發完整 pipeline（chunking + scaffold + candidates）
+    if isinstance(result, dict) and result.get("resource_id"):
+        from app.models.resource import Resource
+        resource = db.query(Resource).filter_by(id=uuid.UUID(result["resource_id"])).first()
+        tenant_id = str(resource.tenant_id) if resource and resource.tenant_id else None
+        background_tasks.add_task(_process_resource_background, result["resource_id"], user_id, tenant_id)
     return _handle_chunked_result(result)
 
 

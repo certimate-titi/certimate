@@ -124,6 +124,47 @@ class ResourceLibraryService:
 
         return {"resources": items}
 
+    def list_hidden_resources(self, user_id: str):
+        """Spec 11 §「提供已隱藏資源管理入口」— 列出該使用者軟隱藏的資源。"""
+        from app.models.user_hidden_resource import UserHiddenResource
+        user_uuid = uuid.UUID(user_id)
+        hidden = (
+            self.db.query(Resource, UserHiddenResource.hidden_at)
+            .join(UserHiddenResource, UserHiddenResource.resource_id == Resource.id)
+            .filter(UserHiddenResource.user_id == user_uuid)
+            .order_by(UserHiddenResource.hidden_at.desc())
+            .all()
+        )
+        items = []
+        for r, hidden_at in hidden:
+            scope_val = r.scope.value if hasattr(r.scope, 'value') else str(r.scope)
+            items.append({
+                "resource_id": str(r.id),
+                "name": r.name,
+                "type": r.type.value if hasattr(r.type, 'value') else str(r.type),
+                "scope": scope_val,
+                "subject_id": str(r.subject_id) if r.subject_id else None,
+                "hidden_at": hidden_at.isoformat() if hidden_at else None,
+            })
+        return {"resources": items}
+
+    def restore_hidden_resource(self, user_id: str, resource_id: str):
+        """Spec 11 §「還原已隱藏資源」"""
+        from app.models.user_hidden_resource import UserHiddenResource
+        user_uuid = uuid.UUID(user_id)
+        try:
+            res_uuid = uuid.UUID(resource_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "資源 ID 格式錯誤"}
+        record = self.db.query(UserHiddenResource).filter_by(
+            user_id=user_uuid, resource_id=res_uuid
+        ).first()
+        if not record:
+            return {"error": True, "status_code": 404, "message": "未隱藏此資源"}
+        self.db.delete(record)
+        self.db.commit()
+        return {"message": "已還原"}
+
     def delete_resource(self, user_id: str, resource_id: str):
         """刪除資源。"""
         user_uuid = uuid.UUID(user_id)

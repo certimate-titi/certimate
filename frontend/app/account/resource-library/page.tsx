@@ -51,6 +51,32 @@ export default function ResourceLibraryPage() {
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
 
+  // Spec 11 §「提供已隱藏資源管理入口」
+  const [showHidden, setShowHidden] = useState(false);
+  const [hiddenItems, setHiddenItems] = useState<Array<LibraryResource & { hidden_at?: string }>>([]);
+
+  const fetchHidden = useCallback(async () => {
+    try {
+      const res = await resourceLibraryService.listHidden();
+      setHiddenItems(res.resources || []);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (showHidden) fetchHidden();
+  }, [showHidden, fetchHidden]);
+
+  const handleRestore = async (id: string) => {
+    try {
+      await resourceLibraryService.restore(id);
+      await fetchHidden();
+      fetch(keyword, activeSubjectId); // 重 fetch 主列表
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      alert(`還原失敗：${err?.message}`);
+    }
+  };
+
   // 載入科目（與 /knowledge 一致：localStorage > 第一筆）
   useEffect(() => {
     subjectService.getUserSubjects().then((res) => {
@@ -117,13 +143,19 @@ export default function ResourceLibraryPage() {
     };
   }, [items, keyword, fetch]);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`確定要刪除「${name}」？`)) return;
+  // Spec 11 §「刪除 platform 資源時應明確告知為個人隱藏」
+  const handleDelete = async (id: string, name: string, scope?: string) => {
+    const isSoftHide = scope === 'platform' || scope === 'shared';
+    const msg = isSoftHide
+      ? `從你的列表隱藏「${name}」？\n\n此操作只會從你的列表隱藏，不會真刪除原檔。\n可從「已隱藏資源」還原。`
+      : `確定要永久刪除「${name}」？\n\n此操作無法復原。`;
+    if (!confirm(msg)) return;
     try {
       await resourceLibraryService.delete(id);
       fetch(keyword, activeSubjectId);
-    } catch (e: any) {
-      alert(`刪除失敗：${e?.message}`);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      alert(`刪除失敗：${err?.message}`);
     }
   };
 
@@ -196,7 +228,45 @@ export default function ResourceLibraryPage() {
           <RefreshCw className="w-4 h-4" />
           重新整理
         </button>
+        <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer ml-auto">
+          <input
+            type="checkbox"
+            checked={showHidden}
+            onChange={(e) => setShowHidden(e.target.checked)}
+            className="rounded border-gray-300 text-indigo-500 focus:ring-indigo-500"
+          />
+          顯示已隱藏資源
+        </label>
       </div>
+
+      {/* Spec 11: 已隱藏資源區 */}
+      {showHidden && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h3 className="text-sm font-semibold text-amber-900 mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4" /> 已隱藏資源（{hiddenItems.length} 筆）
+          </h3>
+          {hiddenItems.length === 0 ? (
+            <p className="text-xs text-amber-700">尚無已隱藏資源</p>
+          ) : (
+            <ul className="space-y-2">
+              {hiddenItems.map((h) => (
+                <li key={h.resource_id} className="flex items-center justify-between bg-white rounded p-2 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">{h.name}</div>
+                    <div className="text-gray-400">隱藏於 {h.hidden_at?.slice(0, 10) || '—'}</div>
+                  </div>
+                  <button
+                    onClick={() => handleRestore(h.resource_id)}
+                    className="ml-2 px-2 py-1 bg-emerald-500 text-white rounded hover:bg-emerald-600 text-[11px] font-medium"
+                  >
+                    還原
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -324,7 +394,7 @@ export default function ResourceLibraryPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => handleDelete(r.resource_id, r.name)}
+                        onClick={() => handleDelete(r.resource_id, r.name, r.scope)}
                         className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"
                       >
                         <Trash2 className="w-3 h-3" /> 刪除

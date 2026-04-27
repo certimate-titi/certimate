@@ -1607,6 +1607,12 @@ export const resourceLibraryService = {
   async reparse(resourceId: string): Promise<{ message: string }> {
     return apiClient.post(`/resource-library/${resourceId}/reparse`, {});
   },
+  async listHidden(): Promise<{ resources: Array<LibraryResource & { hidden_at?: string }> }> {
+    return apiClient.get('/resource-library/hidden');
+  },
+  async restore(resourceId: string): Promise<{ message: string }> {
+    return apiClient.post(`/resource-library/${resourceId}/restore`, {});
+  },
 };
 
 // ─── Retirement & Result Notification Service (super_admin) ────────────────

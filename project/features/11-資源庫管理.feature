@@ -91,6 +91,38 @@ Feature: 資源庫管理與連鎖清除防呆機制
       And 資源 3 應標記為已刪除
       And 資源 3 的原始 PDF 應從 GCS 永久刪除
 
+  Rule: 後置（軟隱藏 UX）- 刪除 platform 資源時應明確告知為「個人隱藏」非真刪除
+
+    # 背景：scope='platform' 的資源（系統預載考古題題庫等）被多用戶共享，
+    # 點刪除走 user_hidden_resources soft-hide。原本 confirm() 文案沒區分軟硬刪，
+    # 導致使用者誤以為已徹底刪除無法還原。
+
+    Example: 刪除 platform 資源時 confirm 應說明軟隱藏行為
+      Given 資源 X 的 scope 為 "platform"
+      When 使用者 "alice@example.com" 點擊資源 X 的「刪除」按鈕
+      Then 應彈出 confirm 對話框
+      And 對話框文案應包含「此操作只會從你的列表隱藏，不會真刪除原檔，可從『已隱藏資源』還原」
+
+    Example: 刪除個人 / 機構資源時 confirm 維持原文案（真刪除）
+      Given 資源 Y 的 scope 為 "personal"
+      When 使用者 "alice@example.com" 點擊資源 Y 的「刪除」按鈕
+      Then 應彈出 confirm 對話框
+      And 對話框文案應包含「確定要刪除」（永久刪除提示）
+
+  Rule: 後置（隱藏管理）- 提供「已隱藏資源」管理入口
+
+    Example: 學習庫頁面提供「已隱藏資源」切換顯示
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 頁面應提供「顯示已隱藏資源」切換開關（預設關閉）
+      And 開啟切換後資源列表應顯示已隱藏項目，並標示「已隱藏」徽章
+      And 已隱藏項目應提供「還原」按鈕
+
+    Example: 還原已隱藏資源
+      Given 使用者 "alice@example.com" 已隱藏資源 X
+      When 使用者開啟「顯示已隱藏資源」並點擊資源 X 的「還原」按鈕
+      Then 該筆 user_hidden_resources 紀錄應刪除
+      And 資源 X 應重新出現在主要列表
+
   Rule: 後置（自我修復）- 系統應偵測檔案遺失並引導用戶重新上傳
 
     # 背景：dev/雲端環境若儲存體被清理或上傳中斷，DB 中的 gcs_path 會指向不存在的
