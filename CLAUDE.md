@@ -59,7 +59,7 @@ cd backend
 - **Secret Manager**：生產 API key 禁走 `--set-env-vars` 明文，必須經 Secret Manager 注入
 - **RLS**：`resource_chunks`、`answers` 等啟用 RLS，tenant_id 預設 public_b2c
 - **TDD 流程**：Schema Analysis → Step Template → Red（404）→ Green → Refactor
-- **BDD Tag 分類**：每個 Scenario 須屬 `@backend` / `@frontend` / `@fullstack`；`backend/tests/features/` 禁含 `@frontend`，`project/features/` 禁含 `@backend`。規則見 [docs/bdd/tag-conventions.md](docs/bdd/tag-conventions.md)，提交前跑 `python3 scripts/lint_feature_tags.py`
+- **BDD Tag 分類**：每個 Scenario 須屬 `@backend` / `@frontend` / `@fullstack`；`backend/tests/features/` 禁含 `@frontend`，`project/features/` 禁含 `@backend`。**跨資料夾刪除任一側 Rule/Scenario 前，必須先確認對側 sibling 檔已涵蓋等義 spec（防 2026-04-27 ForceGraph 規格毀損事件重演）**。規則見 [docs/bdd/tag-conventions.md](docs/bdd/tag-conventions.md)，提交前跑 `python3 scripts/lint_feature_tags.py`
 
 ## 交付品質閘門（不可跳過）
 

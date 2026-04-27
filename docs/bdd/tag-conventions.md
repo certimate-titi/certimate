@@ -50,6 +50,20 @@
 2. `backend/tests/features/` 內是否誤含 `@frontend`
 3. `project/features/` 內是否誤含 `@backend`
 4. 同 Scenario 是否同時帶 `@backend` + `@frontend`（必須改為 `@fullstack` 或拆檔）
+5. Feature 層是否標 class tag（缺則 warning，建議補在 Feature 上方）
+6. 跨資料夾 sibling 提示（同編號檔在 backend/ 與 project/ 都存在時，列為 CTO 刪除前必查項）
+
+## 跨資料夾刪除規則（防止規格毀損）
+
+當 CTO 在一側刪除 Rule/Scenario 時，**必須先確認對側 sibling 檔已涵蓋等義 spec**：
+
+| 情境 | 必查 |
+|------|------|
+| 從 `backend/tests/features/{N}.feature` 刪純前端 Rule | `project/features/{N}.feature` 是否已有對應 Rule |
+| 從 `project/features/{N}.feature` 刪純後端 Rule | `backend/tests/features/{N}.feature` 是否已有對應 Rule |
+| 對側缺 spec | **先補對側再刪本側**，不可單側刪除 |
+
+違反此規則屬 Spec Authority Clause 違規（CEO 未簽核的 Scenario 刪除視為規格毀損）。歷史案例：2026-04-27 從 `backend/06` 刪除 ForceGraph + 弱點分析 2 條純前端 Rule，但 `project/features/06` 沒有對應 spec，造成規格遺失。
 
 CI 階段必跑；本機提交前可手動跑。
 

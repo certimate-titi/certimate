@@ -1,3 +1,4 @@
+@frontend
 Feature: 模擬機考
 
   Background:

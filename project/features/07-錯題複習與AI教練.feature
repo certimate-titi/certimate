@@ -1,4 +1,4 @@
-@query
+@frontend @query
 Feature: 錯題複習與 AI 教練
 
   Background:

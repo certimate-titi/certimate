@@ -54,10 +54,17 @@ def lint_dir(directory: Path, allowed: set[str], expected_default: str):
     for feature in sorted(directory.glob("*.feature")):
         feature_tags: set[str] = set()
         rule_tags: set[str] = set()
+        feature_has_class_tag = False
         for lineno, kind, tags in parse(feature):
             if kind == "feature":
                 feature_tags = tags
                 rule_tags = set()
+                if class_tag_of(tags):
+                    feature_has_class_tag = True
+                else:
+                    warnings.append(
+                        f"{feature.relative_to(ROOT)}:{lineno}  Feature 層未標 class tag（建議加 {expected_default}）"
+                    )
             elif kind == "rule":
                 rule_tags = tags
             else:
@@ -78,12 +85,43 @@ def lint_dir(directory: Path, allowed: set[str], expected_default: str):
     return issues, warnings
 
 
+FILE_PREFIX = re.compile(r"^(\d{2})-")
+
+
+def check_sibling_coverage():
+    """跨資料夾對照：若兩側都有同編號檔，提醒 CTO 刪除前必查對側。"""
+    info: list[str] = []
+    if not (BACKEND_DIR.exists() and PROJECT_DIR.exists()):
+        return info
+
+    def index(d: Path) -> dict[str, Path]:
+        out: dict[str, Path] = {}
+        for f in d.glob("*.feature"):
+            m = FILE_PREFIX.match(f.name)
+            if m:
+                out[m.group(1)] = f
+        return out
+
+    bk = index(BACKEND_DIR)
+    pj = index(PROJECT_DIR)
+    paired = sorted(set(bk) & set(pj))
+    if paired:
+        info.append(
+            f"ℹ️  {len(paired)} 對 sibling feature 檔（同編號跨資料夾）— "
+            f"CTO 刪除任一側 Rule/Scenario 前必須對照另一側 spec 是否已涵蓋"
+        )
+    return info
+
+
 def main() -> int:
     bk_issues, bk_warn = lint_dir(BACKEND_DIR, allowed={"@backend", "@fullstack"}, expected_default="@backend")
     pj_issues, pj_warn = lint_dir(PROJECT_DIR, allowed={"@frontend", "@fullstack"}, expected_default="@frontend")
 
     issues = bk_issues + pj_issues
     warnings = bk_warn + pj_warn
+
+    for line in check_sibling_coverage():
+        print(line)
 
     if warnings:
         print(f"⚠️  {len(warnings)} warning（未標 tag，將以資料夾推斷）")
