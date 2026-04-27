@@ -51,3 +51,7 @@ backend/uploads/
 .titi/governance/
 .titi/heartbeat-latest.json
 .titi/tasks-archive.json
+
+# 不入庫
+exam-bank/
+.claude/scheduled_tasks.lock
