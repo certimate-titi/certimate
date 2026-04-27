@@ -82,15 +82,14 @@ def render_pdf_to_webp(
             webp_bytes = _pil_to_webp_bytes(img)
 
             # 分 prefix：critical 永久 Standard / 否則 uploads/
-            if (page_no + 1) in critical_pages:
-                key_prefix = f"critical/{user_id}/{resource_id}"
-            else:
-                key_prefix = f"thumbnails/{user_id}/{resource_id}"
+            # 注意：storage.save_file 會自動加 user_id/resource_id 前綴，
+            # 所以這裡 filename 只需 sub-path，不要再帶 user_id/resource_id（避免路徑重複）
+            prefix_kind = "critical" if (page_no + 1) in critical_pages else "thumbnails"
 
             webp_path = storage.save_file(
                 user_id=user_id,
                 resource_id=resource_id,
-                filename=f"{key_prefix}/p{page_no + 1}.webp",
+                filename=f"{prefix_kind}/p{page_no + 1}.webp",
                 data=webp_bytes,
             )
 
@@ -104,10 +103,8 @@ def render_pdf_to_webp(
                     if len(raw) < MIN_FIGURE_BYTES:
                         continue  # 過濾裝飾
                     ext = base_img.get("ext", "png")
-                    fig_filename = (
-                        f"figures/{user_id}/{resource_id}"
-                        f"/p{page_no + 1}_i{img_idx}.{ext}"
-                    )
+                    # save_file 會自動加 user_id/resource_id 前綴，filename 只需 sub-path
+                    fig_filename = f"figures/p{page_no + 1}_i{img_idx}.{ext}"
                     fig_path = storage.save_file(
                         user_id=user_id,
                         resource_id=resource_id,

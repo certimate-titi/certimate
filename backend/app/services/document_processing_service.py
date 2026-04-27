@@ -729,7 +729,14 @@ class DocumentProcessingService:
                 max_tokens=4096,
             )
             parsed = self._parse_json_response(result)
-            chapters = parsed.get("chapters", [])
+            # 防禦：LLM 偶爾直接回傳 list（章節陣列）而非 {"chapters": [...]}
+            if isinstance(parsed, list):
+                chapters = parsed
+            elif isinstance(parsed, dict):
+                chapters = parsed.get("chapters", [])
+            else:
+                logger.warning("Tier 2: unexpected JSON type=%s", type(parsed).__name__)
+                return None
             if not chapters:
                 return None
 
@@ -994,6 +1001,7 @@ class DocumentProcessingService:
             sys_prompt = db_prompt["system_prompt"] if db_prompt else STRUCTURE_ANALYSIS_PROMPT
             user_content = f"文件：{doc_title}\n\n" + "\n".join(summaries)
 
+            # 由 LLMService routing 決定 provider（本地→Claude Code、雲端→API）
             result = self._llm.generate(
                 sys_prompt,
                 user_content,
@@ -1001,7 +1009,14 @@ class DocumentProcessingService:
             )
 
             parsed = self._parse_json_response(result)
-            chapters = parsed.get("chapters", [])
+            # 防禦：LLM 偶爾直接回傳 list 而非 {"chapters": [...]}
+            if isinstance(parsed, list):
+                chapters = parsed
+            elif isinstance(parsed, dict):
+                chapters = parsed.get("chapters", [])
+            else:
+                logger.warning("AI structure analysis: unexpected JSON type=%s", type(parsed).__name__)
+                return None
             if not chapters:
                 logger.warning("AI structure analysis returned no chapters")
                 return None

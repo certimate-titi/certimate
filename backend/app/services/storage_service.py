@@ -61,10 +61,11 @@ class LocalStorageService(BaseStorageService):
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def save_file(self, user_id: str, resource_id: str, filename: str, data: bytes) -> str:
-        """儲存 file。"""
+        """儲存 file（filename 可含 sub-path，如 'thumbnails/p1.webp'）。"""
         file_dir = self.base_dir / user_id / resource_id
-        file_dir.mkdir(parents=True, exist_ok=True)
         file_path = file_dir / filename
+        # 確保所有中間目錄都建好（filename 可能含 thumbnails/、figures/ 等子層）
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_bytes(data)
         logger.info("Local storage: saved %s (%d bytes)", file_path, len(data))
         return str(file_path)
