@@ -88,7 +88,7 @@ class KnowledgeMergeService:
 
         node_a_json = json.dumps({
             "name": existing_node.name,
-            "description": existing_node.description or "",
+            "description": existing_node.source_text or "",
         }, ensure_ascii=False)
         node_b_json = json.dumps({
             "name": incoming.get("name", ""),
