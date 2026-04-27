@@ -34,6 +34,16 @@ def start_adaptive(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """start adaptive。
+
+    此 endpoint 對應 `start_adaptive` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = DifficultyProgressionService(db)
     result = service.start_adaptive(user_id, subject_id)
     return _handle_result(result)
@@ -48,6 +58,17 @@ def next_strategy(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """next strategy。
+
+    此 endpoint 對應 `next_strategy` 操作。
+
+    Args:
+        subject_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = DifficultyProgressionService(db)
     result = service.calculate_next_strategy(
         user_id=user_id,
@@ -68,5 +89,15 @@ def get_trail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get trail。
+
+    此 endpoint 對應 `get_trail` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = DifficultyProgressionService(db)
     return service.get_trail(user_id, subject_id)

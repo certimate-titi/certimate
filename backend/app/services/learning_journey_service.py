@@ -12,7 +12,9 @@ from app.models.subject import Subject
 
 
 class LearningJourneyService:
+    """Learning Journey Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def list_pending(self, user_id: str):

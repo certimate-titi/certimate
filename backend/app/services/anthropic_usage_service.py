@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class AnthropicUsageSnapshot:
+    """Anthropic Usage Snapshot。"""
     total_usd: Decimal
     input_tokens: int
     output_tokens: int
@@ -71,6 +72,7 @@ _cache: dict[tuple[int, int], tuple[float, AnthropicUsageSnapshot]] = {}
 
 
 def _is_real_mode() -> bool:
+    """判斷 real mode。"""
     return os.environ.get("ANTHROPIC_ADMIN_MODE", "fake").lower() == "real"
 
 
@@ -82,6 +84,7 @@ class AnthropicUsageService:
     """
 
     def __init__(self):
+        """初始化實例。"""
         self.admin_key = os.environ.get("ANTHROPIC_ADMIN_API_KEY")
         self.org_id = os.environ.get("ANTHROPIC_ORGANIZATION_ID")
         self._client = None  # lazy
@@ -91,6 +94,7 @@ class AnthropicUsageService:
     # ------------------------------------------------------------------
 
     def is_configured(self) -> bool:
+        """判斷 configured。"""
         return _is_real_mode() and bool(self.admin_key) and bool(self.org_id)
 
     def get_current_month_cost_usd(self) -> Decimal | None:
@@ -131,6 +135,7 @@ class AnthropicUsageService:
         return snapshot
 
     def invalidate_cache(self) -> int:
+        """invalidate cache。"""
         with _cache_lock:
             n = len(_cache)
             _cache.clear()
@@ -141,6 +146,7 @@ class AnthropicUsageService:
     # ------------------------------------------------------------------
 
     def _get_client(self):
+        """取得 client。"""
         if self._client is None:
             import anthropic  # type: ignore[import-not-found]
             self._client = anthropic.Anthropic(api_key=self.admin_key)
@@ -220,6 +226,7 @@ class AnthropicUsageService:
 
 
 def _cache_get(key: tuple[int, int]) -> AnthropicUsageSnapshot | None:
+    """ cache get。"""
     with _cache_lock:
         entry = _cache.get(key)
         if entry is None:
@@ -232,5 +239,6 @@ def _cache_get(key: tuple[int, int]) -> AnthropicUsageSnapshot | None:
 
 
 def _cache_set(key: tuple[int, int], snapshot: AnthropicUsageSnapshot) -> None:
+    """ cache set。"""
     with _cache_lock:
         _cache[key] = (time.monotonic(), snapshot)

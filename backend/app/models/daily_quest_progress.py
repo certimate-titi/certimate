@@ -11,6 +11,21 @@ from app.models import Base
 
 
 class DailyQuestProgress(Base):
+    """使用者每日任務進度。
+
+    對應 DBML 表：daily_quest_progress
+    Unique（user_id, quest_date, quest_key）。
+
+    Attributes:
+        user_id: 使用者
+        quest_date: 任務所屬日期
+        quest_key: 任務鍵（例如 daily_practice_10）
+        progress: 目前進度數值
+        target: 完成所需目標數
+        completed_at: 完成時間（NULL 代表尚未完成）
+        meta: JSONB 額外資訊
+    """
+
     __tablename__ = "daily_quest_progress"
     __table_args__ = (
         UniqueConstraint("user_id", "quest_date", "quest_key", name="uq_daily_quest_user_date_key"),

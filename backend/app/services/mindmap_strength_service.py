@@ -44,6 +44,7 @@ class MindmapStrengthService:
     """Compute and persist `support_strength` for knowledge nodes."""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self._embed_cache: dict[str, list[float]] | None = None
 
@@ -109,6 +110,7 @@ class MindmapStrengthService:
         # Pass 2 — bottom-up aggregation for non-leaf nodes
         # Simple avg of direct children (could be weighted later)
         def resolve(nid) -> float:
+            """resolve。"""
             cached = strength_cache.get(nid)
             if cached is not None:
                 return cached

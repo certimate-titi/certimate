@@ -34,7 +34,9 @@ logger = logging.getLogger(__name__)
 
 class AiGenerationService:
 
+    """Ai Generation Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self._settings = get_settings()
         self._rag_enabled = bool(

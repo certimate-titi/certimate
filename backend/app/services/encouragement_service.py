@@ -26,12 +26,15 @@ _FALLBACK_SYSTEM = """你是 TiTi 學習教練 Certi。根據以下觸發情境�
 
 
 class EncouragementService:
+    """Encouragement Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self._llm = None
         self._prompt_svc = None
 
     def _get_llm(self):
+        """取得 llm。"""
         if self._llm is None:
             from app.core.config import get_settings
             settings = get_settings()
@@ -41,6 +44,7 @@ class EncouragementService:
         return self._llm
 
     def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """載入 prompt。"""
         if not self._prompt_svc:
             try:
                 from app.services.prompt_template_service import PromptTemplateService

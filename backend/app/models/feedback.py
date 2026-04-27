@@ -12,6 +12,8 @@ from app.models import Base
 
 
 class FeedbackType(str, enum.Enum):
+    """使用者回饋類型列舉。"""
+
     BUG = "BUG"
     FEATURE_REQUEST = "FEATURE_REQUEST"
     CONTENT_ERROR = "CONTENT_ERROR"
@@ -19,6 +21,8 @@ class FeedbackType(str, enum.Enum):
 
 
 class FeedbackStatus(str, enum.Enum):
+    """使用者回饋處理狀態列舉。"""
+
     PENDING = "PENDING"
     REVIEWING = "REVIEWING"
     RESOLVED = "RESOLVED"
@@ -26,6 +30,21 @@ class FeedbackStatus(str, enum.Enum):
 
 
 class Feedback(Base):
+    """使用者意見回饋主檔。
+
+    對應 DBML 表：feedbacks
+    一對多 feedback_attachments（透過 feedback_id）。
+
+    Attributes:
+        feedback_id: 對外案件編號（unique）
+        user_id: 回饋者
+        type: BUG / FEATURE_REQUEST / CONTENT_ERROR / OTHER
+        subject / content: 主旨與內文
+        status: PENDING / REVIEWING / RESOLVED / CLOSED
+        admin_reply: 管理員回覆
+        close_reason: 結案理由
+    """
+
     __tablename__ = "feedbacks"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -55,6 +74,18 @@ class Feedback(Base):
 
 
 class FeedbackAttachment(Base):
+    """意見回饋附件（截圖等）。
+
+    對應 DBML 表：feedback_attachments
+    從屬於 Feedback（feedback_id CASCADE）。
+
+    Attributes:
+        feedback_id: 所屬回饋
+        file_path: 儲存路徑（GCS 或本地）
+        file_size: 位元組數
+        mime_type: 檔案 MIME
+    """
+
     __tablename__ = "feedback_attachments"
 
     id: Mapped[uuid.UUID] = mapped_column(

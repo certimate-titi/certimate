@@ -12,7 +12,9 @@ from app.models.weekly_report import WeeklyReport
 
 
 class CommunityService:
+    """Community Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def get_dashboard(self, user_id: str) -> dict:

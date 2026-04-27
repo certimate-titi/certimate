@@ -11,7 +11,9 @@ TRIAL_DAYS = 14
 
 
 class TrialService:
+    """Trial Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def start_trial(self, user_id: str) -> dict:

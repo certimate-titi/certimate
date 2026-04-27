@@ -11,6 +11,29 @@ from app.models import Base
 
 
 class KnowledgeNode(Base):
+    """知識樹節點（資源解析後的學習鷹架）。
+
+    對應 DBML 表：knowledge_nodes
+    自關聯（parent_id）形成樹狀結構；同時掛在 Subject 與 Resource 上。
+
+    Attributes:
+        resource_id: 來源資源（CASCADE 刪除）
+        subject_id: 所屬科目（科目隔離規則：禁止跨科目混入）
+        parent_id: 父節點（NULL 為 root）
+        name: 節點名稱
+        depth: 樹深度
+        sort_order: 同層排序
+        source_page_number / source_timestamp_seconds / source_text:
+            節點對應原資料來源錨點
+        available_questions: 可命中此節點的題數快取
+        exam_frequency: 考頻（高/中/低）
+        support_strength: 使用者資料對節點的支撐強度（0.0-1.0）
+        syllabus_topic_id: 對應考綱 topic
+        node_source: syllabus / user_data / hybrid
+        source_resource_count: 引用計數（cascade 刪除歸零即移除節點）
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "knowledge_nodes"
 
     id: Mapped[uuid.UUID] = mapped_column(

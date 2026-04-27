@@ -8,7 +8,9 @@ from app.models.resource import Resource, ResourceStatus
 
 
 class ResourceLibraryService:
+    """Resource Library Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def list_resources(self, user_id: str, keyword: str | None = None):

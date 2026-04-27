@@ -30,6 +30,16 @@ def subscribe(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """subscribe。
+
+    此 endpoint 對應 `subscribe` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.subscribe(user_id=user_id, plan=body.plan)
     return _handle_result(result)
@@ -40,6 +50,13 @@ def get_subscription_info(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get subscription info。
+
+    此 endpoint 對應 `get_subscription_info` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.get_subscription_info(user_id=user_id)
     return _handle_result(result)
@@ -51,6 +68,16 @@ def upgrade(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """upgrade。
+
+    此 endpoint 對應 `upgrade` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.upgrade(user_id=user_id, plan=body.plan)
     return _handle_result(result)
@@ -62,6 +89,16 @@ def downgrade(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """downgrade。
+
+    此 endpoint 對應 `downgrade` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.downgrade(user_id=user_id, plan=body.plan)
     return _handle_result(result)
@@ -72,6 +109,13 @@ def cancel(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """cancel。
+
+    此 endpoint 對應 `cancel` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.cancel(user_id=user_id)
     return _handle_result(result)
@@ -84,6 +128,13 @@ def start_trial(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """start trial。
+
+    此 endpoint 對應 `start_trial` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = TrialService(db)
     result = service.start_trial(user_id=user_id)
     return _handle_result(result)
@@ -94,6 +145,13 @@ def get_trial_status(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get trial status。
+
+    此 endpoint 對應 `get_trial_status` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = TrialService(db)
     result = service.get_trial_status(user_id=user_id)
     return _handle_result(result)
@@ -104,6 +162,13 @@ def convert_trial_to_paid(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """convert trial to paid。
+
+    此 endpoint 對應 `convert_trial_to_paid` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = TrialService(db)
     result = service.convert_to_paid(user_id=user_id)
     return _handle_result(result)
@@ -116,6 +181,13 @@ def check_fup(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """check fup。
+
+    此 endpoint 對應 `check_fup` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = FUPService(db)
     result = service.check_daily_usage(user_id=user_id)
     return _handle_result(result)
@@ -126,6 +198,13 @@ def get_invoices(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get invoices。
+
+    此 endpoint 對應 `get_invoices` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = SubscriptionService(db)
     result = service.get_invoices(user_id=user_id)
     return _handle_result(result)
@@ -145,6 +224,16 @@ def request_refund(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """request refund。
+
+    此 endpoint 對應 `request_refund` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.request_refund(
         user_id=user_id,
@@ -169,6 +258,16 @@ def validate_coupon(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """validate coupon。
+
+    此 endpoint 對應 `validate_coupon` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.validate_coupon(
         code=body.code,

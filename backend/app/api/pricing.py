@@ -32,6 +32,13 @@ def get_pricing(
     request: Request,
     db: Session = Depends(get_db),
 ):
+    """get pricing。
+
+    此 endpoint 對應 `get_pricing` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     user_id = _get_optional_user_id(request)
     service = PricingService(db)
     return service.get_pricing(user_id=user_id)
@@ -42,6 +49,13 @@ def check_upload_limit(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """check upload limit。
+
+    此 endpoint 對應 `check_upload_limit` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PricingService(db)
     result = service.check_upload_limit(user_id=user_id)
     if result.get("error"):

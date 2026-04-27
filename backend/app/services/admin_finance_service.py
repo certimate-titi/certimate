@@ -13,6 +13,7 @@ from app.models.audit_log import AdminAuditLog
 
 
 def _get_role(user: User) -> str:
+    """取得 role。"""
     return user.role.value if hasattr(user.role, "value") else str(user.role)
 
 
@@ -25,17 +26,22 @@ _PLAN_DISPLAY = {
 
 
 def _get_plan(user: User) -> str:
+    """取得 plan。"""
     return user.subscription_plan.value if hasattr(user.subscription_plan, "value") else str(user.subscription_plan)
 
 
 class AdminFinanceService:
+    """Admin Finance Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_user(self, user_id: str) -> User | None:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     def _require_admin(self, user_id: str) -> dict | None:
+        """ require admin。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -45,6 +51,7 @@ class AdminFinanceService:
         return None
 
     def _require_super_admin(self, user_id: str) -> dict | None:
+        """ require super admin。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -61,6 +68,7 @@ class AdminFinanceService:
         target_id: str | None = None,
         details: dict | None = None,
     ) -> None:
+        """ write audit log。"""
         log = AdminAuditLog(
             admin_id=uuid.UUID(admin_id),
             action=action,
@@ -74,6 +82,7 @@ class AdminFinanceService:
     # ── Subscription Distribution ─────────────────────────────────────────────
 
     def get_subscription_distribution(self, actor_id: str) -> dict:
+        """取得 subscription distribution。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -114,6 +123,7 @@ class AdminFinanceService:
     # ── Transactions ──────────────────────────────────────────────────────────
 
     def list_transactions(self, actor_id: str, status: str | None = None, search: str | None = None) -> dict:
+        """列出 transactions。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -141,6 +151,7 @@ class AdminFinanceService:
         }
 
     def export_finance_report(self, actor_id: str) -> dict:
+        """匯出 finance report。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -169,6 +180,7 @@ class AdminFinanceService:
     # ── Refunds ───────────────────────────────────────────────────────────────
 
     def list_refunds(self, actor_id: str, status: str | None = None) -> dict:
+        """列出 refunds。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -194,6 +206,7 @@ class AdminFinanceService:
         return {"refunds": items}
 
     def approve_refund(self, actor_id: str, refund_id: str) -> dict:
+        """approve refund。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -220,6 +233,7 @@ class AdminFinanceService:
         return {"success": True, "refund_id": refund_id, "status": "approved"}
 
     def reject_refund(self, actor_id: str, refund_id: str, reason: str) -> dict:
+        """reject refund。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -249,6 +263,7 @@ class AdminFinanceService:
     # ── Coupons ───────────────────────────────────────────────────────────────
 
     def create_coupon(self, actor_id: str, data: dict) -> dict:
+        """建立 coupon。"""
         err = self._require_super_admin(actor_id)
         if err:
             return err
@@ -291,6 +306,7 @@ class AdminFinanceService:
         }
 
     def list_coupons(self, actor_id: str) -> dict:
+        """列出 coupons。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -313,6 +329,7 @@ class AdminFinanceService:
         }
 
     def request_refund(self, user_id: str, transaction_id: str, amount: float, reason: str | None) -> dict:
+        """request refund。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -348,6 +365,7 @@ class AdminFinanceService:
         }
 
     def validate_coupon(self, code: str, plan: str, amount: float) -> dict:
+        """驗證 coupon。"""
         coupon = self.db.query(Coupon).filter_by(code=code).first()
         if not coupon or coupon.status != "active":
             return {"error": True, "status_code": 404, "message": "優惠碼無效"}

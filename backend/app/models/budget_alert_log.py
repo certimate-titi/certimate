@@ -16,6 +16,21 @@ from app.models import Base
 
 
 class BudgetAlertLog(Base):
+    """預算告警歷史紀錄（WARNING / DEGRADE / DISABLED 三級）。
+
+    對應 DBML 表：budget_alert_log
+    Feature 33 — 成本監控中心。
+
+    Attributes:
+        scope: 預算範圍（AI_ANTHROPIC / AI_GEMINI / AI_VOYAGE / GCP_TOTAL）
+        alert_type: 告警等級（WARNING / DEGRADE / DISABLED）
+        triggered_at_usd: 觸發時的累計花費
+        limit_usd: 對應預算上限
+        percent: 觸發時百分比
+        notified_channels: 已通知的管道清單（email / slack 等）
+        resolved_at: 告警解除時間
+    """
+
     __tablename__ = "budget_alert_log"
 
     id: Mapped[uuid.UUID] = mapped_column(

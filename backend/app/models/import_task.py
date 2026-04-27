@@ -21,7 +21,25 @@ class ImportTaskStatus(str, enum.Enum):
 
 
 class ImportTask(Base):
-    """Track async exam import tasks."""
+    """考古題非同步匯入任務（Phase 3 async pipeline）。
+
+    對應 DBML 表：import_tasks
+    一條任務涵蓋 PDF 抽取 → 驗證 → 寫入 questions 三階段。
+
+    Attributes:
+        exam_code / category_code / subject_code: 試卷座標
+        status: ImportTaskStatus（pending / processing / validating / importing /
+            completed / failed / cancelled）
+        total_questions / questions_processed / questions_valid /
+            questions_invalid / questions_imported: 進度計數
+        progress_percent: 0-100 百分比
+        historical_exam_id: 匯入成功後對應的 historical_exams.id
+        question_pdf_path / answer_pdf_path: 來源 PDF 路徑
+        user_id / tenant_id: 觸發者與多租戶隔離鍵
+        quality_gates_passed / requires_manual_review: 驗證閘門結果
+        retry_count: 失敗重試次數
+    """
+
     __tablename__ = "import_tasks"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -84,6 +102,11 @@ class ImportTask(Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
     def __repr__(self):
+        """除錯用簡短表示。
+
+        Returns:
+            str: 包含試卷座標、status、progress 的字串
+        """
         return (
             f"<ImportTask {self.exam_code}/{self.category_code}/{self.subject_code} "
             f"status={self.status} progress={self.progress_percent}%>"

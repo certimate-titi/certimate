@@ -17,6 +17,23 @@ from app.models import Base
 
 
 class HistoricalExam(Base):
+    """歷史考古題試卷（爬蟲匯入來源）。
+
+    對應 DBML 表：historical_exams
+    與 questions 表透過 historical_exam_id 一對多。
+    Unique（exam_code, category_code, subject_code）。
+
+    Attributes:
+        exam_code: 考試代碼，例如 "TEST" 或 "114010"
+        category_code: 類組/類科代碼
+        subject_code: 科目代碼
+        exam_name / category_name / subject_name: 對應顯示名稱
+        source: 資料來源描述
+        total_questions: 該試卷預期題數
+        year: 民國年
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "historical_exams"
 
     id: Mapped[uuid.UUID] = mapped_column(

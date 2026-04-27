@@ -54,6 +54,25 @@ def seed(
     dry_run: bool = False,
     replace: bool = False,
 ) -> dict:
+    """將 preseed-mindmaps Phase 2 產出的章節樹寫入 ``syllabus_topics``。
+
+    Args:
+        db: SQLAlchemy Session。
+        payload: Phase 2 JSON dict，須包含 ``subject_id`` 與 ``tree``（章 →
+            節 兩層結構）。
+        dry_run: 是否模擬執行（True 不寫入 DB）。
+        replace: 是否在插入前 ``DELETE FROM syllabus_topics WHERE subject_id
+            = :sid`` 以實現冪等重新 seed。
+
+    Returns:
+        包含 ``subject_id`` / ``subject_name`` / ``chapters`` / ``sections``
+        / ``dry_run`` 統計的 dict；找不到 subject 或 ``tree`` 為空時改回傳
+        ``{"error": ...}``。
+
+    副作用：
+        非 dry-run 時會 INSERT 章 / 節兩層 ``syllabus_topics``，並在 replace
+        模式下先刪除既有列；最後執行 ``db.commit()``。
+    """
     subject_id = payload["subject_id"]
     subject_name = payload.get("subject_name", "?")
     tree = payload.get("tree", [])
@@ -145,6 +164,11 @@ def seed(
 
 
 def main():
+    """CLI 進入點：載入 ``--input`` JSON 並呼叫 :func:`seed`。
+
+    要求環境變數 ``DATABASE_URL`` 已設定；執行結果 JSON 印到 stdout，遇錯
+    以非零狀態碼結束。
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="Phase 2 JSON path")
     parser.add_argument("--dry-run", action="store_true")

@@ -42,6 +42,16 @@ def submit_exam_config(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """submit exam config。
+
+    此 endpoint 對應 `submit_exam_config` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     node_ids = body.node_ids or []
 
     # If document_ids provided but no node_ids, resolve nodes from documents
@@ -87,6 +97,16 @@ def select_resource(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """select resource。
+
+    此 endpoint 對應 `select_resource` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ExamService(db)
     result = service.select_resource(user_id=user_id, resource_id=body.resource_id)
     return _handle_result(result)
@@ -106,6 +126,16 @@ def start_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """start exam。
+
+    此 endpoint 對應 `start_exam` 操作。
+
+    Args:
+        exam_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = MockExamService(db)
     result = service.start_exam(exam_id=exam_id, user_id=user_id)
     return _handle_result(result)
@@ -118,6 +148,17 @@ def save_answer(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """save answer。
+
+    此 endpoint 對應 `save_answer` 操作。
+
+    Args:
+        exam_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = MockExamService(db)
     result = service.save_answer(
         exam_id=exam_id,
@@ -258,6 +299,16 @@ def resume_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),
 ):
+    """resume exam。
+
+    此 endpoint 對應 `resume_exam` 操作。
+
+    Args:
+        exam_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     import logging
     try:
         service = MockExamService(db)
@@ -274,6 +325,16 @@ def get_exam_result(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),
 ):
+    """get exam result。
+
+    此 endpoint 對應 `get_exam_result` 操作。
+
+    Args:
+        exam_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ExamResultService(db)
     result = service.get_result(exam_id=exam_id, user_id=user_id)
     return _handle_result(result)
@@ -285,6 +346,16 @@ def get_exam_node_analysis(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),
 ):
+    """get exam node analysis。
+
+    此 endpoint 對應 `get_exam_node_analysis` 操作。
+
+    Args:
+        exam_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ExamResultService(db)
     result = service.get_node_analysis(exam_id=exam_id, user_id=user_id)
     return _handle_result(result)

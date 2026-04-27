@@ -25,6 +25,24 @@ from app.models import Base
 
 
 class SyllabusTopic(Base):
+    """有機考綱骨架樹（動態知識庫核心）。
+
+    對應 DBML 表：syllabus_topics
+    取代靜態心智圖；支援無版本有機生長 + 前置知識溯源 + 權重加權聚合。
+    自關聯（parent_id / prerequisite_topic_id / merged_into_id）。
+
+    Attributes:
+        parent_id: 父節點（NULL = 根節點）
+        name: 主題名稱
+        depth: 樹深度
+        weight: 聚合權重（影響強度計算）
+        prerequisite_topic_id: 前置知識溯源錨點
+        is_active: 軟刪除標記
+        merged_into_id: 合併後指向新節點
+        subject_id: 所屬科目（CASCADE，NULL = 跨科目元數據）
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "syllabus_topics"
 
     id: Mapped[uuid.UUID] = mapped_column(

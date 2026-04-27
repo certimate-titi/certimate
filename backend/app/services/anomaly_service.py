@@ -14,17 +14,22 @@ from app.models.audit_log import AdminAuditLog
 
 
 def _get_role(user: User) -> str:
+    """取得 role。"""
     return user.role.value if hasattr(user.role, "value") else str(user.role)
 
 
 class AnomalyService:
+    """Anomaly Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_user(self, user_id: str) -> User | None:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     def _require_admin(self, user_id: str) -> dict | None:
+        """ require admin。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -34,6 +39,7 @@ class AnomalyService:
         return None
 
     def _write_audit_log(self, admin_id, action, target_type=None, target_id=None, details=None):
+        """ write audit log。"""
         log = AdminAuditLog(
             admin_id=uuid.UUID(admin_id),
             action=action,
@@ -47,6 +53,7 @@ class AnomalyService:
     # ── Anomaly Tracking ──
 
     def list_anomalies(self, user_id: str) -> dict:
+        """列出 anomalies。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -69,6 +76,7 @@ class AnomalyService:
         return {"items": items}
 
     def update_anomaly(self, user_id: str, error_id: str, status: str, assigned_to: str | None = None) -> dict:
+        """更新 anomaly。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -99,6 +107,7 @@ class AnomalyService:
     # ── Maintenance Tasks ──
 
     def create_maintenance_task(self, user_id: str, data: dict) -> dict:
+        """建立 maintenance task。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -141,6 +150,7 @@ class AnomalyService:
         }
 
     def update_maintenance_task_status(self, user_id: str, task_id: str, status: str) -> dict:
+        """更新 maintenance task status。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -161,6 +171,7 @@ class AnomalyService:
     # ── Maintenance Schedules ──
 
     def create_maintenance_schedule(self, user_id: str, data: dict) -> dict:
+        """建立 maintenance schedule。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -207,6 +218,7 @@ class AnomalyService:
         return {"schedule_id": str(schedule.id), "name": schedule.name}
 
     def activate_maintenance_mode(self, user_id: str, reason: str, estimated_recovery: str) -> dict:
+        """activate maintenance mode。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -228,6 +240,7 @@ class AnomalyService:
         return {"status": "active", "notification_sent": True}
 
     def check_schedule_end(self) -> dict:
+        """檢查 schedule end。"""
         schedules = self.db.query(MaintenanceSchedule).filter_by(status="active").all()
         for schedule in schedules:
             if schedule.health_check_passed:

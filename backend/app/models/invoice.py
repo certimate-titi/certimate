@@ -18,6 +18,19 @@ from app.models import Base
 
 
 class Invoice(Base):
+    """付款發票紀錄（Stripe / 綠界）。
+
+    對應 DBML 表：invoices
+
+    Attributes:
+        user_id: 開立對象使用者（CASCADE）
+        stripe_invoice_id: 第三方金流 invoice id
+        amount: 金額
+        currency: 幣別（預設 TWD）
+        plan: 訂閱方案（FREE / PRO / PRO_PLUS / ULTRA）
+        status: paid / pending / failed / refunded
+    """
+
     __tablename__ = "invoices"
 
     id: Mapped[uuid.UUID] = mapped_column(

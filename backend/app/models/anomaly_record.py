@@ -12,6 +12,8 @@ from app.models import Base
 
 
 class AnomalyStatus(str, enum.Enum):
+    """系統異常事件處理狀態列舉。"""
+
     PENDING = "pending"
     INVESTIGATING = "investigating"
     RESOLVED = "resolved"
@@ -19,6 +21,20 @@ class AnomalyStatus(str, enum.Enum):
 
 
 class AnomalyRecord(Base):
+    """系統異常事件聚合紀錄（Sentry/Cloud Logging 摘要）。
+
+    對應 DBML 表：anomaly_records
+    供 admin 異常監控頁聚合同類型錯誤次數。
+
+    Attributes:
+        error_id: 錯誤分組鍵（unique，例如 hash 後的 stacktrace）
+        error_type: 錯誤型別字串
+        occurrence_count: 累計發生次數
+        status: 狀態（pending / investigating / resolved / dismissed）
+        impact_scope: 影響範圍描述
+        first_seen_at / last_seen_at: 首次與最近觀察時間
+    """
+
     __tablename__ = "anomaly_records"
 
     id: Mapped[uuid.UUID] = mapped_column(

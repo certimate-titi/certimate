@@ -25,7 +25,17 @@ LOCAL_DIR = Path("/tmp/prompt_templates")
 
 
 def sync_prompts_from_gcs() -> dict:
-    """Download prompt template .md files from GCS."""
+    """從 GCS 下載 Prompt 模板 ``.md`` 檔到本地 ``/tmp/prompt_templates/``。
+
+    僅下載大小或路徑與本地不一致的檔案，缺少 ``google-cloud-storage`` 套件
+    或 GCS 列舉失敗時回傳 ``{"downloaded": 0, "error": ...}`` 而不 raise。
+
+    Returns:
+        ``{"downloaded": int}`` 或包含 ``error`` 欄位的失敗結果 dict。
+
+    副作用：
+        在 ``LOCAL_DIR`` 下建立 / 覆寫 ``.md`` 檔。
+    """
     try:
         from google.cloud import storage
     except ImportError:
@@ -56,7 +66,19 @@ def sync_prompts_from_gcs() -> dict:
 
 
 def sync_and_seed_prompts() -> dict:
-    """Download from GCS + seed to DB."""
+    """先從 GCS 下載 Prompt 模板，再呼叫 :func:`seed_prompts.seed_all` 同步到 DB。
+
+    被 ``entrypoint.sh`` 在 Cloud Run cold start 時呼叫，是 non-fatal —
+    若 GCS 沒有模板或本地無 ``.md`` 檔則跳過 seed 並回 ``"skipped"``。
+
+    Returns:
+        ``{"sync": <sync_result>, "seed": <seed_result | message>}``。
+
+    副作用：
+        - 寫檔到 ``/tmp/prompt_templates/``。
+        - 設環境變數 ``PROMPT_TEMPLATES_DIR``。
+        - 觸發 :func:`seed_prompts.seed_all`，間接寫入 DB。
+    """
     sync_result = sync_prompts_from_gcs()
 
     # Check if any .md files exist locally (either from GCS or pre-existing)

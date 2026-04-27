@@ -23,6 +23,8 @@ from app.models import Base
 
 
 class ResourceType(str, enum.Enum):
+    """資源檔案類型列舉（涵蓋文件 / 圖片 / 影音 / YouTube）。"""
+
     PDF = "pdf"
     MARKDOWN = "markdown"
     TXT = "txt"
@@ -57,6 +59,8 @@ FILE_SIZE_LIMITS = {
 
 
 class ResourceStatus(str, enum.Enum):
+    """資源處理狀態列舉（PENDING → PROCESSING → COMPLETED / FAILED）。"""
+
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
@@ -67,6 +71,8 @@ class ResourceStatus(str, enum.Enum):
 
 
 class ResourceScope(str, enum.Enum):
+    """資源可見範圍列舉（personal / institution / platform / shared）。"""
+
     PERSONAL = "personal"
     INSTITUTION = "institution"
     PLATFORM = "platform"
@@ -74,6 +80,29 @@ class ResourceScope(str, enum.Enum):
 
 
 class Resource(Base):
+    """學習資源主檔（PDF / 影音 / YouTube 等）。
+
+    對應 DBML 表：resources
+    一對多 resource_chunks / resource_scaffolds / question_candidates /
+    resource_parse_jobs / knowledge_nodes。
+
+    Attributes:
+        user_id: 上傳者（CASCADE）
+        subject_id: 所屬科目
+        institution_id / target_institution_id: 機構擁有與分享目標
+        name: 顯示名稱
+        type: ResourceType（pdf / docx / image / youtube …）
+        scope: ResourceScope（personal / institution / platform / shared）
+        status: ResourceStatus（PENDING / PROCESSING / COMPLETED / FAILED …）
+        file_size_bytes / gcs_path / youtube_url: 儲存位置
+        processing_engine: 解析引擎標識
+        parsed_markdown / parsed_text: 解析後純文字（EPIC-035）
+        source_type: user_official / user_other
+        detected_content_type: practice_questions / study_material / mixed
+        trust_level: 1-5 信任分
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "resources"
 
     id: Mapped[uuid.UUID] = mapped_column(

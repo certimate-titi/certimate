@@ -11,6 +11,22 @@ from app.models import Base
 
 
 class MergeConflict(Base):
+    """知識樹合併衝突待審紀錄。
+
+    對應 DBML 表：merge_conflicts
+    當新進節點與既有節點高相似度時暫存供管理員裁定。
+
+    Attributes:
+        subject_id: 所屬科目
+        existing_node_id: 既有節點（被疑似重複者）
+        incoming_node_name: 新進節點名稱
+        similarity: 相似度分數（0-1）
+        status: pending_review / resolved
+        suggestion: 系統建議動作（merge / keep_both / replace）
+        resolution: 實際處理動作
+        resolved_by / resolved_at: 處理人與時間
+    """
+
     __tablename__ = "merge_conflicts"
 
     id: Mapped[uuid.UUID] = mapped_column(

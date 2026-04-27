@@ -53,6 +53,17 @@ MIN_DESCRIPTION_CHARS = 100  # description must add at least this many chars bey
 
 
 def _check_subject(db: Session, subject_id: str) -> dict[str, Any]:
+    """對單一科目執行 7 項心智圖品質檢查。
+
+    Args:
+        db: SQLAlchemy Session。
+        subject_id: 待檢查科目的 UUID 字串。
+
+    Returns:
+        :func:`_build_report` 產出的報告 dict（含 ``failures`` /
+        ``failure_count`` / ``passed`` 等欄位）；找不到科目時回傳
+        ``{"subject_id": ..., "error": "subject not found"}``。
+    """
     sid = uuid.UUID(subject_id)
     name_row = db.execute(
         text("SELECT name FROM subjects WHERE id=:sid"), {"sid": sid}
@@ -172,6 +183,17 @@ def _check_subject(db: Session, subject_id: str) -> dict[str, Any]:
 def _build_report(
     subject_id: str, subject_name: str, node_count: int, failures: list
 ) -> dict[str, Any]:
+    """組裝單一科目檢查報告 dict。
+
+    Args:
+        subject_id: 科目 UUID。
+        subject_name: 科目名稱（用於可讀性）。
+        node_count: 該科目的 ``knowledge_nodes`` 列數。
+        failures: 由 :func:`_check_subject` 累積的失敗事件清單。
+
+    Returns:
+        含 ``passed`` / ``failure_count`` 等欄位的標準報告 dict。
+    """
     return {
         "subject_id": subject_id,
         "subject_name": subject_name,
@@ -183,6 +205,14 @@ def _build_report(
 
 
 def main():
+    """CLI 進入點：對 ``--subject-id`` 或 ``--all-subjects`` 執行品質檢查。
+
+    要求 ``DATABASE_URL`` 已設定。彙總後 JSON 報告會印到 stdout 供 CI 攝
+    取，存在任一失敗時以非零狀態碼結束以中斷流水線。
+
+    副作用：
+        僅做 ``SELECT`` 查詢；不寫入 DB。
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--subject-id", help="Single subject UUID")
     parser.add_argument(

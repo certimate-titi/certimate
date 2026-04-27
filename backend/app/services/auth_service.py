@@ -21,18 +21,22 @@ PASSWORD_MIN_LENGTH = 8
 
 
 def _hash_password(password: str) -> str:
+    """ hash password。"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 
 def _verify_password(password: str, password_hash: str) -> bool:
+    """驗證 password。"""
     return _hash_password(password) == password_hash
 
 
 def _validate_email(email: str) -> bool:
+    """驗證 email。"""
     return EMAIL_REGEX.match(email) is not None
 
 
 def _check_password_strength(password: str) -> str:
+    """檢查 password strength。"""
     has_upper = bool(re.search(r"[A-Z]", password))
     has_lower = bool(re.search(r"[a-z]", password))
     has_digit = bool(re.search(r"\d", password))
@@ -49,10 +53,12 @@ def _check_password_strength(password: str) -> str:
 
 
 def _is_password_strong_enough(password: str) -> bool:
+    """判斷 password strong enough。"""
     return _check_password_strength(password) != "弱"
 
 
 def _generate_token(user_id: str, extra_claims: dict = None) -> str:
+    """產生 token。"""
     settings = get_settings()
     payload = {
         "sub": str(user_id),
@@ -67,6 +73,7 @@ def _generate_token(user_id: str, extra_claims: dict = None) -> str:
 # --- Email verification token helpers ---
 
 def _generate_verification_token(user_id: str) -> str:
+    """產生 verification token。"""
     settings = get_settings()
     payload = {
         "sub": str(user_id),
@@ -78,6 +85,7 @@ def _generate_verification_token(user_id: str) -> str:
 
 
 def _decode_verification_token(token: str) -> dict | None:
+    """ decode verification token。"""
     settings = get_settings()
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
@@ -93,6 +101,7 @@ def _decode_verification_token(token: str) -> dict | None:
 # --- Password reset token helpers ---
 
 def _generate_reset_token(user_id: str) -> str:
+    """產生 reset token。"""
     settings = get_settings()
     payload = {
         "sub": str(user_id),
@@ -104,6 +113,7 @@ def _generate_reset_token(user_id: str) -> str:
 
 
 def _decode_reset_token(token: str) -> dict | None:
+    """ decode reset token。"""
     settings = get_settings()
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
@@ -186,6 +196,7 @@ def _verify_google_id_token(id_token_str: str) -> dict | None:
 
 
 def _enum_value(v):
+    """ enum value。"""
     return v.value if hasattr(v, "value") else v
 
 
@@ -198,11 +209,13 @@ ROLE_DISPLAY = {
 
 
 def _role_display(role_val):
+    """ role display。"""
     v = _enum_value(role_val)
     return ROLE_DISPLAY.get(v, v)
 
 
 def _build_nav_items(user: User) -> list:
+    """建立 nav items。"""
     items = []
     plan = _enum_value(user.subscription_plan)
     role = _enum_value(user.role)
@@ -214,6 +227,7 @@ def _build_nav_items(user: User) -> list:
 
 
 def _build_redirect(user: User) -> str:
+    """建立 redirect。"""
     if not user.onboarding_completed:
         return "/onboarding"
     return "/dashboard"
@@ -221,11 +235,14 @@ def _build_redirect(user: User) -> str:
 
 class AuthService:
 
+    """Auth Service 服務類別。"""
     def __init__(self, repo: UserRepository, email_service=None):
+        """初始化實例。"""
         self.repo = repo
         self.email_service = email_service
 
     def register(self, email: str, password: str, agreed_to_terms: bool = True) -> dict:
+        """註冊。"""
         if not _validate_email(email):
             return {"error": True, "status_code": 400, "message": "電子郵件格式無效"}
 
@@ -267,6 +284,7 @@ class AuthService:
         }
 
     def verify_email(self, token: str) -> dict:
+        """驗證 email。"""
         payload = _decode_verification_token(token)
         if payload is None:
             return {"error": True, "status_code": 400, "message": "驗證連結無效或已過期"}
@@ -287,6 +305,7 @@ class AuthService:
 
     def resend_verification(self, email: str) -> dict:
         # Always return success to prevent email enumeration
+        """resend verification。"""
         user = self.repo.find_by_email(email)
         if user and _enum_value(user.status) == "pending" and self.email_service:
             token = _generate_verification_token(str(user.id))
@@ -295,6 +314,7 @@ class AuthService:
         return {"error": False, "message": "若該 Email 已註冊且未驗證，驗證信已重新寄出"}
 
     def login(self, email: str, password: str) -> dict:
+        """login。"""
         user = self.repo.find_by_email(email)
         if user is None:
             return {"error": True, "status_code": 400, "message": "帳號或密碼錯誤"}
@@ -329,6 +349,7 @@ class AuthService:
 
     def google_sso(self, google_id_token: str, email_hint: str | None = None) -> dict:
         # Verify the Google ID token
+        """google sso。"""
         claims = _verify_google_id_token(google_id_token)
         if claims is None and email_hint:
             # Fallback: use email_hint when token verification fails (e.g. test mode)
@@ -383,6 +404,7 @@ class AuthService:
 
     def forgot_password(self, email: str) -> dict:
         # Always return success to prevent account enumeration
+        """forgot password。"""
         user = self.repo.find_by_email(email)
         if user and self.email_service:
             token = _generate_reset_token(str(user.id))
@@ -396,6 +418,7 @@ class AuthService:
         }
 
     def reset_password(self, token: str, new_password: str) -> dict:
+        """reset password。"""
         payload = _decode_reset_token(token)
         if payload is None:
             return {"error": True, "status_code": 400, "message": "重設連結無效或已過期"}
@@ -414,11 +437,13 @@ class AuthService:
         return {"error": False, "message": "密碼已成功重設，請使用新密碼登入"}
 
     def check_password_strength(self, password: str) -> dict:
+        """檢查 password strength。"""
         return {
             "strength": _check_password_strength(password),
         }
 
     def delete_account(self, user_id: str) -> dict:
+        """刪除 account。"""
         self.repo.delete_by_id(user_id)
         return {
             "error": False,

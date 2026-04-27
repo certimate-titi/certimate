@@ -22,6 +22,13 @@ def get_available_subjects(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get available subjects。
+
+    此 endpoint 對應 `get_available_subjects` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.get_available_subjects(user_id=user_id)
     return _handle_result(result)
@@ -69,6 +76,16 @@ def add_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """add subject。
+
+    此 endpoint 對應 `add_subject` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.add_subject(user_id=user_id, data=body.model_dump())
     return _handle_result(result)
@@ -99,6 +116,16 @@ def remove_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """remove subject。
+
+    此 endpoint 對應 `remove_subject` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.remove_subject(user_id=user_id, subject_id=subject_id)
     return _handle_result(result)
@@ -115,6 +142,17 @@ def confirm_remove_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """confirm remove subject。
+
+    此 endpoint 對應 `confirm_remove_subject` 操作。
+
+    Args:
+        subject_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     if not body.confirmed:
         return {"message": "取消移除"}
     service = OnboardingService(db)

@@ -15,12 +15,15 @@ from app.models.user import User, UserRole
 
 class ReverseEngineeringService:
 
+    """Reverse Engineering Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ========== Helpers ==========
 
     def _get_user(self, user_id: str) -> User:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     @staticmethod
@@ -29,12 +32,15 @@ class ReverseEngineeringService:
         return field.value if hasattr(field, "value") else str(field)
 
     def _is_admin(self, user: User) -> bool:
+        """判斷 admin。"""
         return self._enum_value(user.role).upper() in ("SUPER_ADMIN", "ADMIN")
 
     def _get_plan(self, user: User) -> str:
+        """取得 plan。"""
         return self._enum_value(user.subscription_plan)
 
     def _count_questions_for_subject(self, subject_id: uuid.UUID) -> int:
+        """ count questions for subject。"""
         return (
             self.db.query(Question)
             .join(Exam, Question.exam_id == Exam.id)
@@ -72,11 +78,13 @@ class ReverseEngineeringService:
         return roots
 
     def _count_mapped_questions(self, node_id: uuid.UUID) -> int:
+        """ count mapped questions。"""
         return self.db.query(Question).filter_by(node_id=node_id).count()
 
     # ========== Trigger Reverse Engineering ==========
 
     def trigger(self, user_id: str, subject_id: str) -> dict:
+        """trigger。"""
         user = self._get_user(user_id)
         if not self._is_admin(user):
             return {"error": True, "status_code": 403, "message": "僅管理員可執行此操作"}
@@ -102,6 +110,7 @@ class ReverseEngineeringService:
     # ========== Incremental Reverse Engineering ==========
 
     def trigger_incremental(self, user_id: str, subject_id: str) -> dict:
+        """trigger incremental。"""
         user = self._get_user(user_id)
         if not self._is_admin(user):
             return {"error": True, "status_code": 403, "message": "僅管理員可執行此操作"}
@@ -153,6 +162,7 @@ class ReverseEngineeringService:
     # ========== Knowledge Tree Query ==========
 
     def get_knowledge_tree(self, user_id: str, subject_id: str) -> dict:
+        """取得 knowledge tree。"""
         user = self._get_user(user_id)
         sid = uuid.UUID(subject_id)
 
@@ -173,6 +183,7 @@ class ReverseEngineeringService:
     # ========== Export Markdown ==========
 
     def export_markdown(self, user_id: str, subject_id: str) -> str:
+        """匯出 markdown。"""
         sid = uuid.UUID(subject_id)
         nodes = (
             self.db.query(KnowledgeNode)
@@ -196,6 +207,7 @@ class ReverseEngineeringService:
     # ========== Import Markdown ==========
 
     def import_markdown(self, user_id: str, subject_id: str, markdown: str) -> dict:
+        """匯入 markdown。"""
         user = self._get_user(user_id)
         if not self._is_admin(user):
             return {"error": True, "status_code": 403, "message": "僅管理員可執行此操作"}
@@ -258,6 +270,7 @@ class ReverseEngineeringService:
     # ========== Node Stats ==========
 
     def get_node_stats(self, user_id: str, node_id: str) -> dict:
+        """取得 node stats。"""
         nid = uuid.UUID(node_id)
         node = self.db.query(KnowledgeNode).filter_by(id=nid).first()
         if not node:
@@ -284,6 +297,7 @@ class ReverseEngineeringService:
     # ========== Unmapped Questions ==========
 
     def get_unmapped_questions(self, user_id: str, subject_id: str) -> dict:
+        """取得 unmapped questions。"""
         sid = uuid.UUID(subject_id)
 
         unmapped = (
@@ -314,6 +328,7 @@ class ReverseEngineeringService:
     # ========== Quality Report ==========
 
     def get_quality_report(self, user_id: str, subject_id: str) -> dict:
+        """取得 quality report。"""
         sid = uuid.UUID(subject_id)
 
         task = (

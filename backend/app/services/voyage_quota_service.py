@@ -31,6 +31,7 @@ class VoyageQuotaDegraded(Exception):
 
 @dataclass(frozen=True)
 class QuotaCheckResult:
+    """Quota Check Result。"""
     allowed: bool
     current_usd: Decimal
     limit_usd: Decimal
@@ -39,9 +40,11 @@ class QuotaCheckResult:
 
 
 class VoyageQuotaService:
+    """Voyage Quota Service 服務類別。"""
     SCOPE = "AI_VOYAGE"
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self.ledger_repo = AiUsageRepository(db)
         self.budget_repo = BudgetConfigRepository(db)

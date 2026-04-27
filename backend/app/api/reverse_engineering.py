@@ -50,6 +50,16 @@ def trigger_reverse_engineering(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """trigger reverse engineering。
+
+    此 endpoint 對應 `trigger_reverse_engineering` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.trigger(user_id, subject_id)
     return _handle_result(result)
@@ -63,6 +73,16 @@ def trigger_incremental(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """trigger incremental。
+
+    此 endpoint 對應 `trigger_incremental` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.trigger_incremental(user_id, subject_id)
     return _handle_result(result)
@@ -76,6 +96,16 @@ def get_knowledge_tree(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get knowledge tree。
+
+    此 endpoint 對應 `get_knowledge_tree` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.get_knowledge_tree(user_id, subject_id)
     return _handle_result(result)
@@ -89,6 +119,16 @@ def export_markdown(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """export markdown。
+
+    此 endpoint 對應 `export_markdown` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     content = service.export_markdown(user_id, subject_id)
     return PlainTextResponse(content=content, media_type="text/markdown")
@@ -103,6 +143,17 @@ def import_markdown(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """import markdown。
+
+    此 endpoint 對應 `import_markdown` 操作。
+
+    Args:
+        subject_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.import_markdown(user_id, subject_id, body.markdown)
     return _handle_result(result)
@@ -116,6 +167,16 @@ def get_node_stats(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get node stats。
+
+    此 endpoint 對應 `get_node_stats` 操作。
+
+    Args:
+        node_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.get_node_stats(user_id, node_id)
     return _handle_result(result)
@@ -129,6 +190,16 @@ def get_unmapped_questions(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get unmapped questions。
+
+    此 endpoint 對應 `get_unmapped_questions` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.get_unmapped_questions(user_id, subject_id)
     return _handle_result(result)
@@ -142,6 +213,16 @@ def get_quality_report(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get quality report。
+
+    此 endpoint 對應 `get_quality_report` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ReverseEngineeringService(db)
     result = service.get_quality_report(user_id, subject_id)
     return _handle_result(result)

@@ -16,12 +16,15 @@ from app.models.user import User
 
 class ExamResultService:
 
+    """Exam Result Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self._llm = None
         self._prompt_svc = None
 
     def get_result(self, exam_id: str, user_id: str) -> dict:
+        """取得 result。"""
         uid = uuid.UUID(user_id)
         exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
 
@@ -211,6 +214,7 @@ class ExamResultService:
         return summary
 
     def _get_llm(self):
+        """取得 llm。"""
         if self._llm is None:
             from app.core.config import get_settings
             settings = get_settings()
@@ -220,6 +224,7 @@ class ExamResultService:
         return self._llm
 
     def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """載入 prompt。"""
         if not self._prompt_svc:
             try:
                 from app.services.prompt_template_service import PromptTemplateService
@@ -465,6 +470,7 @@ class ExamResultService:
 
     def _get_comparison(self, current_exam: Exam, user_id: uuid.UUID) -> str | None:
         # Find previous submitted exam (before current one)
+        """取得 comparison。"""
         previous = self.db.query(Exam).filter(
             Exam.user_id == user_id,
             Exam.status == ExamStatus.SUBMITTED,
@@ -484,6 +490,7 @@ class ExamResultService:
             return "持平"
 
     def get_node_analysis(self, exam_id: str, user_id: str) -> dict:
+        """取得 node analysis。"""
         uid = uuid.UUID(user_id)
         exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
 

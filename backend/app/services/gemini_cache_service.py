@@ -40,6 +40,7 @@ _DEFAULT_MIN_CACHE_TOKENS = 4096
 
 @dataclass
 class _CacheEntry:
+    """_ Cache Entry。"""
     name: str          # e.g. "cachedContents/abc123"
     created_at: float  # monotonic seconds
     ttl_seconds: int
@@ -52,6 +53,7 @@ class GeminiCacheService:
     _lock = threading.RLock()
 
     def __new__(cls) -> "GeminiCacheService":
+        """特殊方法 __new__。"""
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -71,6 +73,7 @@ class GeminiCacheService:
     # ------------------------------------------------------------------
 
     def is_enabled(self) -> bool:
+        """判斷 enabled。"""
         return os.environ.get("GEMINI_EXPLICIT_CACHE_ENABLED", "true").lower() == "true"
 
     def get_or_create_cache(
@@ -145,6 +148,7 @@ class GeminiCacheService:
             self._stats["cached_tokens_seen"] += cached_tokens  # type: ignore[attr-defined]
 
     def get_stats(self) -> dict[str, Any]:
+        """取得 stats。"""
         with self._lock:
             total_lookups = self._stats["hits"] + self._stats["misses"]  # type: ignore[attr-defined]
             hit_rate = (
@@ -168,6 +172,7 @@ class GeminiCacheService:
     # ------------------------------------------------------------------
 
     def _hash_prompt(self, model: str, content: str) -> str:
+        """ hash prompt。"""
         h = hashlib.sha256()
         h.update(model.encode())
         h.update(b"|")
@@ -182,6 +187,7 @@ class GeminiCacheService:
         display_name: str,
         ttl_seconds: int,
     ) -> str:
+        """建立 cache via sdk。"""
         from google import genai
         from google.genai import types as genai_types
 

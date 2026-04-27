@@ -35,6 +35,7 @@ class ExamPDFExtractionService(BaseService):
     """
 
     def __init__(self, db=None):
+        """初始化實例。"""
         super().__init__(db)
         self.client = Anthropic()
         self.model = "claude-3-5-sonnet-20241022"

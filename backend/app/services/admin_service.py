@@ -18,6 +18,7 @@ from app.models.resource import Resource, ResourceStatus
 
 
 def _get_role(user: User) -> str:
+    """取得 role。"""
     return user.role.value if hasattr(user.role, "value") else str(user.role)
 
 
@@ -46,6 +47,7 @@ _PLAN_INPUT_MAP = {
 
 
 def _get_plan(user: User) -> str:
+    """取得 plan。"""
     plan_enum = user.subscription_plan
     return _PLAN_DISPLAY_NAMES.get(plan_enum, str(plan_enum))
 
@@ -56,11 +58,14 @@ def _parse_plan(plan_str: str) -> SubscriptionPlan | None:
 
 
 def _get_status(user: User) -> str:
+    """取得 status。"""
     return user.status.value if hasattr(user.status, "value") else str(user.status)
 
 
 class AdminService:
+    """Admin Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         try:
             from app.services.email_service import EmailService
@@ -78,6 +83,7 @@ class AdminService:
             logger.warning("Email 發送失敗 (%s): %s", method, args[0] if args else "", exc_info=True)
 
     def _get_user(self, user_id: str) -> User | None:
+        """取得 user。"""
         try:
             uid = uuid.UUID(user_id)
         except (ValueError, AttributeError):
@@ -95,6 +101,7 @@ class AdminService:
         return None
 
     def _require_super_admin(self, user_id: str) -> dict | None:
+        """ require super admin。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -111,6 +118,7 @@ class AdminService:
         target_id: str | None = None,
         details: dict | None = None,
     ) -> None:
+        """ write audit log。"""
         log = AdminAuditLog(
             admin_id=uuid.UUID(admin_id),
             action=action,
@@ -124,6 +132,7 @@ class AdminService:
     # ── Dashboard ────────────────────────────────────────────────────────────
 
     def get_dashboard(self, user_id: str) -> dict:
+        """取得 dashboard。"""
         err = self._require_admin(user_id)
         if err:
             return err
@@ -217,6 +226,7 @@ class AdminService:
         return result
 
     def get_system_settings(self, user_id: str) -> dict:
+        """取得 system settings。"""
         err = self._require_super_admin(user_id)
         if err:
             return err
@@ -266,6 +276,7 @@ class AdminService:
     # ── User Search ──────────────────────────────────────────────────────────
 
     def search_users(self, actor_id: str, keyword: str | None = None, plan: str | None = None, role: str | None = None) -> dict:
+        """搜尋 users。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -306,6 +317,7 @@ class AdminService:
     # ── User Detail ──────────────────────────────────────────────────────────
 
     def get_user_detail(self, actor_id: str, target_user_key: str) -> dict:
+        """取得 user detail。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -358,6 +370,7 @@ class AdminService:
         self, actor_id: str, target_user_id: str, new_plan: str,
         start_date: str | None = None, end_date: str | None = None,
     ) -> dict:
+        """adjust subscription。"""
         actor = self._get_user(actor_id)
         if not actor:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -403,6 +416,7 @@ class AdminService:
     # ── Suspend User ─────────────────────────────────────────────────────────
 
     def suspend_user(self, actor_id: str, target_user_id: str | None, reason: str | None) -> dict:
+        """suspend user。"""
         if not target_user_id:
             return {"error": True, "status_code": 422, "message": "必要參數未提供"}
         if not reason:
@@ -440,6 +454,7 @@ class AdminService:
     # ── Activate User ─────────────────────────────────────────────────────────
 
     def activate_user(self, actor_id: str, target_user_id: str | None) -> dict:
+        """activate user。"""
         if not target_user_id:
             return {"error": True, "status_code": 422, "message": "必要參數未提供"}
 
@@ -472,6 +487,7 @@ class AdminService:
     # ── Adjust Role ────────────────────────────────────────────────────────────
 
     def adjust_role(self, actor_id: str, target_user_id: str | None = None, target_email: str | None = None, new_role: str = "user") -> dict:
+        """adjust role。"""
         err = self._require_super_admin(actor_id)
         if err:
             return err
@@ -508,6 +524,7 @@ class AdminService:
     # ── Delete User ───────────────────────────────────────────────────────────
 
     def delete_user(self, actor_id: str, target_user_id: str, confirm_name: str) -> dict:
+        """刪除 user。"""
         err = self._require_super_admin(actor_id)
         if err:
             return err
@@ -538,6 +555,7 @@ class AdminService:
     # ── Notify User ──────────────────────────────────────────────────────────
 
     def notify_user(self, actor_id: str, target_user_id: str, message: str) -> dict:
+        """通知 user。"""
         err = self._require_admin(actor_id)
         if err:
             return err
@@ -570,6 +588,7 @@ class AdminService:
     # ── Export CSV ───────────────────────────────────────────────────────────
 
     def export_users_csv(self, actor_id: str, plan: str | None = None) -> dict:
+        """匯出 users csv。"""
         err = self._require_admin(actor_id)
         if err:
             return err

@@ -9,7 +9,9 @@ from app.models.subject import Subject
 
 
 class HistoricalMarkdownService:
+    """Historical Markdown Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def list_for_subject(self, subject_id: str) -> list[dict]:

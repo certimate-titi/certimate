@@ -11,6 +11,20 @@ from app.models import Base
 
 
 class AiChatSession(Base):
+    """AI 對話 Session（一個使用者在某個情境下開啟的對話串）。
+
+    對應 DBML 表：ai_chat_sessions
+    一對多關聯 ai_chat_messages（透過 session_id）。
+
+    Attributes:
+        user_id: 對應 users.id（CASCADE 刪除）
+        context_type: 情境類型（例如 question / resource / mock_exam）
+        context_id: 情境主鍵 UUID（依 context_type 解讀）
+        model_used: 採用的 AI 模型名稱（例如 gemini-2.5-pro）
+        message_count: 目前累積訊息數
+        tenant_id: 多租戶隔離鍵（NULL 視為 public_b2c）
+    """
+
     __tablename__ = "ai_chat_sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -37,6 +51,18 @@ class AiChatSession(Base):
 
 
 class AiChatMessage(Base):
+    """AI 對話單則訊息。
+
+    對應 DBML 表：ai_chat_messages
+    從屬於 AiChatSession（session_id CASCADE 刪除）。
+
+    Attributes:
+        session_id: 所屬 session
+        role: 訊息角色（user / assistant / system）
+        content: 訊息文字內容
+        token_count: 該訊息所耗 token 數（供成本帳明細）
+    """
+
     __tablename__ = "ai_chat_messages"
 
     id: Mapped[uuid.UUID] = mapped_column(

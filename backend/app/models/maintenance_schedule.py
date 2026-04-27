@@ -12,12 +12,31 @@ from app.models import Base
 
 
 class MaintenanceScheduleStatus(str, enum.Enum):
+    """系統維護排程狀態列舉。"""
+
     SCHEDULED = "scheduled"
     ACTIVE = "active"
     COMPLETED = "completed"
 
 
 class MaintenanceSchedule(Base):
+    """系統維護時段排程。
+
+    對應 DBML 表：maintenance_schedules
+    一對多 maintenance_notifications。
+
+    Attributes:
+        name: 維護名稱（顯示給使用者）
+        status: scheduled / active / completed
+        starts_at / ends_at: 維護起訖時間
+        notify_channels: 通知管道清單（email/push/banner）
+        notify_targets: 通知目標範圍（all / pro / b2b…）
+        notify_before: 提前通知時點（例如 ["1d", "1h"]）
+        reason: 維護原因說明
+        is_full_site: 是否全站停機
+        health_check_passed: 維護後健康檢查是否通過
+    """
+
     __tablename__ = "maintenance_schedules"
 
     id: Mapped[uuid.UUID] = mapped_column(

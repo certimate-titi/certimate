@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class GcpServiceCost:
+    """Gcp Service Cost。"""
     service_name: str
     cost_usd: Decimal
     currency: str = "USD"
@@ -38,12 +39,14 @@ class GcpServiceCost:
 
 @dataclass(frozen=True)
 class GcpDailyCost:
+    """Gcp Daily Cost。"""
     billing_date: date
     cost_usd: Decimal
 
 
 @dataclass(frozen=True)
 class GcpBillingSummary:
+    """Gcp Billing Summary。"""
     total_usd: Decimal
     services: list[GcpServiceCost]
     cached_at: datetime
@@ -107,11 +110,14 @@ def set_test_daily_series(daily_series: list[dict] | None) -> None:
 
 
 class _TTLCache:
+    """_TTL Cache。"""
     def __init__(self, ttl_seconds: int = 3600) -> None:
+        """初始化實例。"""
         self._ttl = ttl_seconds
         self._store: dict[str, tuple[float, object]] = {}
 
     def get_or_set(self, key: str, loader: Callable[[], object]) -> object:
+        """取得 or set。"""
         now = time.monotonic()
         entry = self._store.get(key)
         if entry and (now - entry[0]) < self._ttl:
@@ -121,6 +127,7 @@ class _TTLCache:
         return value
 
     def invalidate(self, key: str | None = None) -> None:
+        """invalidate。"""
         if key is None:
             self._store.clear()
         else:
@@ -154,6 +161,7 @@ class GcpBillingService:
         table_prefix: str | None = None,
         credentials_path: str | None = None,
     ) -> None:
+        """初始化實例。"""
         from app.core.config import get_settings
         settings = get_settings()
 

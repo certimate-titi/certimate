@@ -12,6 +12,25 @@ from app.models import Base
 
 
 class ResourceChunk(Base):
+    """資源切片 + 1024 維 embedding（pgvector）。
+
+    對應 DBML 表：resource_chunks
+    從屬於 Resource（CASCADE）；可選對應 KnowledgeNode；RLS 啟用。
+
+    Attributes:
+        resource_id: 來源資源
+        node_id: 對應知識節點（SET NULL）
+        chunk_index: 切片序號
+        content: 切片文字
+        token_count: token 數
+        source_page_start / source_page_end: 對應頁碼範圍
+        anchor_id: 物理錨點（PDF page、HTML heading、YouTube timestamp）
+        highlight_line_start/end / highlight_char_start/end: 原文高亮範圍
+        embedding: 1024 維向量（pgvector）
+        is_deleted: 軟刪除（從檢索與強度計算排除）
+        tenant_id: 多租戶隔離鍵（RLS 強制）
+    """
+
     __tablename__ = "resource_chunks"
 
     id: Mapped[uuid.UUID] = mapped_column(

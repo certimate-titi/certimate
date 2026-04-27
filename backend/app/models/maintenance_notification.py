@@ -11,6 +11,16 @@ from app.models import Base
 
 
 class MaintenanceNotification(Base):
+    """系統維護預告通知排程紀錄。
+
+    對應 DBML 表：maintenance_notifications
+
+    Attributes:
+        schedule_id: 對應 maintenance_schedules.id
+        scheduled_send_at: 預定發送時間
+        sent_at: 實際發送時間（NULL = 尚未送出）
+    """
+
     __tablename__ = "maintenance_notifications"
 
     id: Mapped[uuid.UUID] = mapped_column(

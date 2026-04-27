@@ -17,7 +17,9 @@ from app.models.user import User
 
 class KnowledgeNavService:
 
+    """Knowledge Nav Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _ensure_exam_bank_resource(self, subject_id: uuid.UUID) -> None:
@@ -216,6 +218,7 @@ class KnowledgeNavService:
 
         # Sort children by sort_order
         def sort_tree(node_list):
+            """sort tree。"""
             node_list.sort(key=lambda n: n["sort_order"])
             for n in node_list:
                 sort_tree(n["children"])

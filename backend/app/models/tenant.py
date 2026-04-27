@@ -51,4 +51,9 @@ class Tenant(Base):
     )
 
     def __repr__(self) -> str:
+        """除錯用簡短表示。
+
+        Returns:
+            str: 包含 slug、plan_tier、is_active 的字串
+        """
         return f"<Tenant(slug='{self.slug}', plan_tier='{self.plan_tier}', is_active={self.is_active})>"

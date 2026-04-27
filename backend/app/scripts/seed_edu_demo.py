@@ -41,10 +41,30 @@ STUDENT_NAMES = ["王小明", "李美玲", "張大偉", "陳雅婷", "林志豪"
 
 
 def _hash(pw: str) -> str:
+    """以 SHA-256 對明文密碼計算雜湊（僅用於 seed 假帳號）。
+
+    Args:
+        pw: 明文密碼。
+
+    Returns:
+        十六進位 SHA-256 摘要字串。
+    """
     return hashlib.sha256(pw.encode()).hexdigest()
 
 
 def main():
+    """CLI 進入點：建立 B2B 教育平台 demo 資料集。
+
+    若 ``teacher@edu-demo.com`` 已存在則跳過；否則依序建立老師帳號、機構、
+    學生群組、5 名學生帳號、示範資源、5 個知識節點，以及每位學生 1 場考試
+    （含 10 題與隨機作答）。
+
+    副作用：
+        ``INSERT`` 多張表（``users`` / ``institutions`` / ``student_groups``
+        / ``student_group_members`` / ``subjects`` / ``subject_categories``
+        / ``resources`` / ``knowledge_nodes`` / ``exams`` / ``questions`` /
+        ``answers``）並 ``commit``。
+    """
     engine = create_engine(settings.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     db = Session()

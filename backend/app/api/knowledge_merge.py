@@ -55,6 +55,17 @@ def trigger_merge(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """trigger merge。
+
+    此 endpoint 對應 `trigger_merge` 操作。
+
+    Args:
+        subject_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeMergeService(db)
     result = service.merge(
         user_id,
@@ -76,6 +87,17 @@ def compare_nodes(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """compare nodes。
+
+    此 endpoint 對應 `compare_nodes` 操作。
+
+    Args:
+        subject_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     score = KnowledgeMergeService.compare_nodes(body.existing_name, body.incoming_name)
     return {"existing_name": body.existing_name, "incoming_name": body.incoming_name, "similarity": round(score, 4)}
 
@@ -89,6 +111,16 @@ def get_conflicts(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get conflicts。
+
+    此 endpoint 對應 `get_conflicts` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeMergeService(db)
     result = service.get_conflicts(user_id, subject_id)
     return _handle_result(result)
@@ -101,6 +133,17 @@ def resolve_conflict(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """resolve conflict。
+
+    此 endpoint 對應 `resolve_conflict` 操作。
+
+    Args:
+        conflict_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeMergeService(db)
     result = service.resolve_conflict(user_id, conflict_id, body.action)
     return _handle_result(result)
@@ -115,6 +158,16 @@ def get_history(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get history。
+
+    此 endpoint 對應 `get_history` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeMergeService(db)
     result = service.get_history(user_id, subject_id)
     return _handle_result(result)
@@ -129,6 +182,16 @@ def get_node_detail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get node detail。
+
+    此 endpoint 對應 `get_node_detail` 操作。
+
+    Args:
+        node_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeMergeService(db)
     result = service.get_node_detail(user_id, node_id)
     return _handle_result(result)

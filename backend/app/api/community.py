@@ -25,6 +25,13 @@ def get_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get dashboard。
+
+    此 endpoint 對應 `get_dashboard` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = CommunityService(db)
     return service.get_dashboard(user_id)
 
@@ -34,6 +41,16 @@ def generate_weekly_reports(
     body: GenerateReportRequest,
     db: Session = Depends(get_db),
 ):
+    """generate weekly reports。
+
+    此 endpoint 對應 `generate_weekly_reports` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = CommunityService(db)
     return service.generate_weekly_reports(body.activities)
 
@@ -43,6 +60,16 @@ def run_valley_detection(
     body: ValleyDetectionRequest,
     db: Session = Depends(get_db),
 ):
+    """run valley detection。
+
+    此 endpoint 對應 `run_valley_detection` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = CommunityService(db)
     return service.run_valley_detection(body.current_date)
 
@@ -52,6 +79,13 @@ def get_weekly_reports(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get weekly reports。
+
+    此 endpoint 對應 `get_weekly_reports` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = CommunityService(db)
     return service.get_weekly_reports(user_id)
 
@@ -61,5 +95,12 @@ def get_exam_coaching(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get exam coaching。
+
+    此 endpoint 對應 `get_exam_coaching` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = CommunityService(db)
     return service.get_exam_coaching(user_id)

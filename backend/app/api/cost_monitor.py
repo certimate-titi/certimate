@@ -54,6 +54,16 @@ def get_cost_summary(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """get cost summary。
+
+    此 endpoint 對應 `get_cost_summary` 操作。
+
+    Args:
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _record_view(db, super_admin.id, "/admin/cost/summary")
     service = CostMonitorService(db)
     return _handle_result(service.get_summary())
@@ -65,6 +75,17 @@ def get_provider_detail(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """get provider detail。
+
+    此 endpoint 對應 `get_provider_detail` 操作。
+
+    Args:
+        provider: 參數。
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _record_view(db, super_admin.id, f"/admin/cost/providers/{provider}")
     service = CostMonitorService(db)
     return _handle_result(service.get_provider_detail(provider))
@@ -75,6 +96,16 @@ def get_gcp_services(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """get gcp services。
+
+    此 endpoint 對應 `get_gcp_services` 操作。
+
+    Args:
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _record_view(db, super_admin.id, "/admin/cost/gcp/services")
     service = CostMonitorService(db)
     return _handle_result(service.get_gcp_services())
@@ -86,6 +117,17 @@ def get_trends(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """get trends。
+
+    此 endpoint 對應 `get_trends` 操作。
+
+    Args:
+        days: 參數。
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     if days < 1 or days > 90:
         raise HTTPException(status_code=400, detail={"message": "days 須介於 1-90"})
     _record_view(db, super_admin.id, "/admin/cost/trends")
@@ -110,6 +152,17 @@ def update_budget(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """update budget。
+
+    此 endpoint 對應 `update_budget` 操作。
+
+    Args:
+        payload: 參數。
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = BudgetService(db)
     result = service.update_budget(
         super_admin=super_admin,
@@ -132,6 +185,17 @@ def global_scale_budgets(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """global scale budgets。
+
+    此 endpoint 對應 `global_scale_budgets` 操作。
+
+    Args:
+        payload: 參數。
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     if payload.scale_factor is None and payload.target_total_usd is None:
         raise HTTPException(
             status_code=400,
@@ -158,6 +222,17 @@ def override_disable(
     super_admin: User = Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
+    """override disable。
+
+    此 endpoint 對應 `override_disable` 操作。
+
+    Args:
+        payload: 參數。
+        super_admin: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = BudgetService(db)
     result = service.override_disable(
         super_admin=super_admin,

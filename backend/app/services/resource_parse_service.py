@@ -66,6 +66,7 @@ BASE_BACKOFF = 1.0  # seconds
 
 @dataclass
 class ParseOutcome:
+    """Parse Outcome。"""
     job_id: UUID
     status: ParseJobStatus
     questions_created: int
@@ -135,6 +136,7 @@ def run_parse_job(db: Session, job_id: UUID) -> ParseOutcome:
 # ---------------------------------------------------------------------------
 
 def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
+    """ call gemini with retry。"""
     last_exc: Exception | None = None
     for attempt in range(MAX_RETRIES):
         try:
@@ -161,6 +163,7 @@ def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
 
 
 class _RetryableError(Exception):
+    """_ Retryable Error 例外類別。"""
     pass
 
 
@@ -204,6 +207,7 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
         logger.warning("prompt template lookup failed: %s", _e)
         template = None
     def _tget(obj, key):
+        """ tget。"""
         if obj is None:
             return None
         if isinstance(obj, dict):
@@ -297,6 +301,7 @@ def _persist_parsed(
     parsed: dict[str, Any],
 ) -> ParseOutcome:
     # 1) resources.* fields
+    """儲存 parsed。"""
     resource.parsed_markdown = parsed.get("markdown")
     resource.parsed_text = _extract_plain_text(parsed.get("markdown") or "")
     resource.detected_content_type = parsed.get("detected_content_type")
@@ -408,6 +413,7 @@ def _map_questions_to_nodes(db: Session, resource: Resource) -> int:
     node_ids = [r[0] for r in nodes]
 
     def _cos(a: list, b: list) -> float:
+        """ cos。"""
         dot = sum(x * y for x, y in zip(a, b))
         na = math.sqrt(sum(x * x for x in a)) or 1.0
         nb = math.sqrt(sum(x * x for x in b)) or 1.0
@@ -431,8 +437,10 @@ def _map_questions_to_nodes(db: Session, resource: Resource) -> int:
 
 
 def _build_question_row(resource: Resource, q: dict[str, Any]) -> Question:
+    """建立 question row。"""
     opts = q.get("options") or []
     def _opt(i: int) -> str | None:
+        """ opt。"""
         return opts[i] if i < len(opts) else None
 
     needs_answer = bool(q.get("needs_answer"))
@@ -463,6 +471,7 @@ def _build_question_row(resource: Resource, q: dict[str, Any]) -> Question:
 def _build_candidate_row(
     resource: Resource, q: dict[str, Any], tier: str
 ) -> QuestionCandidate:
+    """建立 candidate row。"""
     return QuestionCandidate(
         resource_id=resource.id,
         tenant_id=resource.tenant_id,
@@ -479,6 +488,7 @@ def _build_candidate_row(
 def _build_scaffold_row(
     resource: Resource, s: dict[str, Any]
 ) -> ResourceScaffold | None:
+    """建立 scaffold row。"""
     raw_type = (s.get("type") or "").lower()
     try:
         t = ResourceScaffoldType(raw_type)
@@ -599,6 +609,7 @@ def _coerce_page_range(s: dict[str, Any]) -> tuple[int | None, int | None]:
 # ---------------------------------------------------------------------------
 
 def _fail(db: Session, job: ResourceParseJob, reason: str) -> None:
+    """ fail。"""
     job.status = ParseJobStatus.FAILED.value
     job.failure_reason = reason[:2000]
     job.finished_at = datetime.now(timezone.utc)

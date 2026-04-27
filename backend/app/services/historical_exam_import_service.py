@@ -34,6 +34,7 @@ class HistoricalExamImportService(BaseService):
     """
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         super().__init__(db)
 
     def import_exam_paper(

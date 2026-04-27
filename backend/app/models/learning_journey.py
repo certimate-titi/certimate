@@ -21,18 +21,38 @@ from app.models import Base
 
 
 class LearningMode(str, enum.Enum):
+    """學習節奏列舉（衝刺 / 標準 / 精熟）。"""
+
     SPRINT = "sprint"
     STANDARD = "standard"
     MASTERY = "mastery"
 
 
 class SelfAssessedLevel(str, enum.Enum):
+    """使用者自評程度列舉。"""
+
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
 
 
 class LearningJourney(Base):
+    """使用者在某科目的學習旅程設定。
+
+    對應 DBML 表：learning_journeys
+    Unique（user_id, subject_id）；驅動 schedule、推薦等模組。
+
+    Attributes:
+        user_id: 學習者（CASCADE）
+        subject_id: 所屬科目
+        exam_date: 預定考試日
+        result_date / exam_result_status: 結果日期與通過狀態
+        data_expiry_date: 學習資料保留至何時
+        self_assessed_level: 自評程度（beginner / intermediate / advanced）
+        learning_mode: 節奏（sprint / standard / mastery）
+        is_archived: 是否封存
+    """
+
     __tablename__ = "learning_journeys"
     __table_args__ = (
         UniqueConstraint("user_id", "subject_id", name="uq_learning_journeys_user_subject"),

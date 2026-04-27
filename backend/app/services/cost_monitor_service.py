@@ -28,7 +28,9 @@ _PROVIDER_TO_SCOPE = {
 
 
 class CostMonitorService(BaseService):
+    """Cost Monitor Service 服務類別。"""
     def __init__(self, db: Session, gcp_billing: GcpBillingService | None = None):
+        """初始化實例。"""
         super().__init__(db)
         self.ledger_repo = AiUsageRepository(db)
         self.budget_repo = BudgetConfigRepository(db)
@@ -39,6 +41,7 @@ class CostMonitorService(BaseService):
     # ------------------------------------------------------------------
 
     def get_summary(self) -> dict:
+        """取得 summary。"""
         now = datetime.now(timezone.utc)
         configs = {c.scope: c for c in self.budget_repo.list_all()}
         provider_costs = self.ledger_repo.month_total_all_providers(now.year, now.month)
@@ -84,6 +87,7 @@ class CostMonitorService(BaseService):
             return None
 
     def _safe_gcp_total(self, now: datetime) -> Decimal:
+        """ safe gcp total。"""
         try:
             summary = self.gcp.get_monthly_summary(now.year, now.month)
             return summary.total_usd
@@ -98,6 +102,7 @@ class CostMonitorService(BaseService):
     # ------------------------------------------------------------------
 
     def get_provider_detail(self, provider: str) -> dict:
+        """取得 provider detail。"""
         provider = provider.lower()
         if provider not in _PROVIDER_TO_SCOPE:
             return self.error(f"unknown provider: {provider}", 400)
@@ -182,6 +187,7 @@ class CostMonitorService(BaseService):
     # ------------------------------------------------------------------
 
     def get_trends(self, days: int = 30) -> dict:
+        """取得 trends。"""
         now = datetime.now(timezone.utc)
         result: dict[str, dict[str, float]] = {}
 

@@ -20,6 +20,19 @@ from app.models import Base
 
 
 class QuestionStat(Base):
+    """以「使用者 × 知識節點」為粒度的答題統計（SR 排程依據）。
+
+    對應 DBML 表：question_stats
+    Unique（user_id, node_id）。
+
+    Attributes:
+        user_id: 使用者（CASCADE）
+        node_id: 知識節點（CASCADE）
+        success_count / fail_count: 累計成功/失敗次數
+        ease_factor: SM-2 ease factor（預設 2.5）
+        next_review_date: 下次複習日期
+    """
+
     __tablename__ = "question_stats"
     __table_args__ = (
         UniqueConstraint("user_id", "node_id", name="uq_question_stats_user_node"),

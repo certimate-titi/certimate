@@ -12,6 +12,19 @@ from app.models import Base
 
 
 class Refund(Base):
+    """退款申請紀錄。
+
+    對應 DBML 表：refunds
+
+    Attributes:
+        refund_id: 對外退款編號（unique）
+        user_id: 申請者（CASCADE）
+        transaction_id: 對應原始交易編號
+        amount: 退款金額
+        status: pending / approved / rejected / completed
+        reason: 退款原因
+    """
+
     __tablename__ = "refunds"
 
     id: Mapped[uuid.UUID] = mapped_column(

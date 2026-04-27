@@ -15,12 +15,31 @@ from app.models import Base
 
 
 class ResourceScaffoldType(str, enum.Enum):
+    """學習鷹架類型列舉（takeaway / elaborative / strategy）。"""
+
     TAKEAWAY = "takeaway"
     ELABORATIVE = "elaborative"
     STRATEGY = "strategy"
 
 
 class ResourceScaffold(Base):
+    """章節級學習鷹架（重點提煉 / 延遲思考題 / 策略提示）。
+
+    對應 DBML 表：resource_scaffolds
+    EPIC-035 M7 Layer A；從屬於 Resource（CASCADE）。
+
+    Attributes:
+        resource_id: 來源資源
+        tenant_id: 多租戶隔離鍵
+        chapter_heading: 章節標題
+        type: takeaway / elaborative / strategy
+        content: 鷹架內容（題目或重點）
+        user_response: 使用者作答（elaborative 用）
+        responded_at: 作答時間
+        page_start / page_end: 對應頁碼
+        reference_answer: 參考答案
+    """
+
     __tablename__ = "resource_scaffolds"
 
     id: Mapped[uuid.UUID] = mapped_column(

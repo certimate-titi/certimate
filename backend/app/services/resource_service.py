@@ -61,24 +61,29 @@ VISION_OCR_MIN_PLAN = ["PRO_PLUS", "ULTRA"]
 
 
 def _get_extension(filename: str) -> str:
+    """取得 extension。"""
     if not filename or "." not in filename:
         return ""
     return filename.rsplit(".", 1)[-1].lower()
 
 
 def _get_plan_value(plan) -> str:
+    """取得 plan value。"""
     return plan.value if hasattr(plan, "value") else plan
 
 
 class ResourceService:
 
+    """Resource Service 服務類別。"""
     def __init__(self, resource_repo: ResourceRepository, user_repo: UserRepository):
+        """初始化實例。"""
         self.resource_repo = resource_repo
         self.user_repo = user_repo
 
     def upload(self, user_id: str, filename: str, subject_id: str,
                file_size_mb: int = None, resource_type: str = None,
                tenant_id: str = None) -> dict:
+        """upload。"""
         if not filename or not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 
@@ -162,6 +167,7 @@ class ResourceService:
 
     def submit_youtube(self, user_id: str, youtube_url: str, subject_id: str,
                        tenant_id: str = None) -> dict:
+        """submit youtube。"""
         if not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 

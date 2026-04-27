@@ -24,6 +24,23 @@ from app.models import Base
 
 
 class Answer(Base):
+    """學生作答紀錄（含欄位級加密保護 selected_answer）。
+
+    對應 DBML 表：answers
+    Unique（exam_id, question_id, user_id）；RLS 啟用 tenant 隔離。
+
+    Attributes:
+        exam_id: 所屬考試（CASCADE）
+        question_id: 對應題目（CASCADE）
+        user_id: 作答者（CASCADE）
+        selected_answer: 作答選項；is_answer_encrypted=True 時為 Fernet token
+        is_correct: 是否答對
+        confidence: 信心度（high / medium / low）
+        marked_for_review: 是否標記待複習
+        is_answer_encrypted: 是否啟用欄位級加密
+        tenant_id: 多租戶隔離鍵（含個資，RLS 強制）
+    """
+
     __tablename__ = "answers"
     __table_args__ = (
         UniqueConstraint("exam_id", "question_id", "user_id", name="uq_answers_exam_question_user"),

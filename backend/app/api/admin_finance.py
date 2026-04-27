@@ -25,6 +25,13 @@ def get_subscription_distribution(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get subscription distribution。
+
+    此 endpoint 對應 `get_subscription_distribution` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.get_subscription_distribution(actor_id=user_id)
     return _handle_result(result)
@@ -39,6 +46,17 @@ def list_transactions(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list transactions。
+
+    此 endpoint 對應 `list_transactions` 操作。
+
+    Args:
+        status: 參數。
+        search: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.list_transactions(actor_id=user_id, status=status, search=search)
     return _handle_result(result)
@@ -63,6 +81,16 @@ def list_refunds(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list refunds。
+
+    此 endpoint 對應 `list_refunds` 操作。
+
+    Args:
+        status: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.list_refunds(actor_id=user_id, status=status)
     return _handle_result(result)
@@ -74,6 +102,16 @@ def approve_refund(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """approve refund。
+
+    此 endpoint 對應 `approve_refund` 操作。
+
+    Args:
+        refund_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.approve_refund(actor_id=user_id, refund_id=refund_id)
     return _handle_result(result)
@@ -90,6 +128,17 @@ def reject_refund(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """reject refund。
+
+    此 endpoint 對應 `reject_refund` 操作。
+
+    Args:
+        refund_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.reject_refund(actor_id=user_id, refund_id=refund_id, reason=body.reason)
     return _handle_result(result)
@@ -111,6 +160,13 @@ def list_coupons(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list coupons。
+
+    此 endpoint 對應 `list_coupons` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.list_coupons(actor_id=user_id)
     return _handle_result(result)
@@ -122,6 +178,16 @@ def create_coupon(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create coupon。
+
+    此 endpoint 對應 `create_coupon` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminFinanceService(db)
     result = service.create_coupon(actor_id=user_id, data=body.model_dump())
     return _handle_result(result)

@@ -28,6 +28,7 @@ class QuotaExceededError(Exception):
     """配額用盡；API 層捕獲後回 402."""
 
     def __init__(self, limit: int, used: int, plan: str):
+        """初始化實例。"""
         self.limit = limit
         self.used = used
         self.plan = plan
@@ -37,6 +38,7 @@ class QuotaExceededError(Exception):
 
 
 def _month_start_utc(now: datetime | None = None) -> datetime:
+    """ month start utc。"""
     now = now or datetime.now(timezone.utc)
     return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -49,6 +51,7 @@ def get_quota_limit(db: Session, plan: str) -> int | None:
 
 
 def get_usage_this_month(db: Session, user_id: UUID) -> int:
+    """取得 usage this month。"""
     since = _month_start_utc()
     return db.execute(
         select(func.count(ResourceParseJob.id))

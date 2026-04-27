@@ -31,6 +31,17 @@ def get_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),
 ):
+    """get dashboard。
+
+    此 endpoint 對應 `get_dashboard` 操作。
+
+    Args:
+        subject: 參數。
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     import logging
     try:
         # Guard against empty string from frontend query params
@@ -51,6 +62,13 @@ def get_profile(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get profile。
+
+    此 endpoint 對應 `get_profile` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = DashboardService(db)
     result = service.get_profile(user_id=user_id)
     return _handle_result(result)
@@ -74,6 +92,16 @@ def update_profile(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update profile。
+
+    此 endpoint 對應 `update_profile` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = DashboardService(db)
     result = service.update_profile(user_id=user_id, data=body.model_dump(exclude_none=True))
     return _handle_result(result)

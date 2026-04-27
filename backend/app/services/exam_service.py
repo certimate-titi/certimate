@@ -24,7 +24,9 @@ DEFAULT_BLOOM = {
 
 class ExamService:
 
+    """Exam Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def submit_config(self, node_ids: list[str], question_count: int,
@@ -32,6 +34,7 @@ class ExamService:
                       custom_bloom_ratio: dict | None = None,
                       question_types: list[str] | None = None,
                       exam_mode: str | None = None) -> dict:
+        """submit config。"""
         uid = uuid.UUID(user_id)
 
         # 驗證：至少選擇一個節點

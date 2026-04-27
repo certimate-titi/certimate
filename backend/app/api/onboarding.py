@@ -23,6 +23,16 @@ def get_step(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get step。
+
+    此 endpoint 對應 `get_step` 操作。
+
+    Args:
+        step: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.get_step(user_id=user_id, step=step)
     return _handle_result(result)
@@ -33,6 +43,13 @@ def get_status(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get status。
+
+    此 endpoint 對應 `get_status` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.get_status(user_id=user_id)
     return _handle_result(result)
@@ -49,6 +66,16 @@ def next_step(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """next step。
+
+    此 endpoint 對應 `next_step` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.next_step(user_id=user_id, data=body.model_dump())
     return _handle_result(result)
@@ -60,6 +87,16 @@ def browse_subjects(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """browse subjects。
+
+    此 endpoint 對應 `browse_subjects` 操作。
+
+    Args:
+        category: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.browse_subjects(user_id=user_id, category=category)
     return _handle_result(result)
@@ -71,6 +108,16 @@ def search_subjects(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """search subjects。
+
+    此 endpoint 對應 `search_subjects` 操作。
+
+    Args:
+        q: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.search_subjects(user_id=user_id, query=q)
     return _handle_result(result)
@@ -93,6 +140,16 @@ def select_subjects(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """select subjects。
+
+    此 endpoint 對應 `select_subjects` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.select_subjects(
         user_id=user_id,
@@ -107,6 +164,16 @@ def remove_selected_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """remove selected subject。
+
+    此 endpoint 對應 `remove_selected_subject` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.remove_selected_subject(user_id=user_id, subject_id=subject_id)
     return _handle_result(result)
@@ -123,6 +190,16 @@ def set_preferences(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """set preferences。
+
+    此 endpoint 對應 `set_preferences` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.set_preferences(user_id=user_id, data=body.model_dump())
     return _handle_result(result)
@@ -133,6 +210,13 @@ def get_summary(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get summary。
+
+    此 endpoint 對應 `get_summary` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.get_summary(user_id=user_id)
     return _handle_result(result)
@@ -151,6 +235,16 @@ def complete_onboarding(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """complete onboarding。
+
+    此 endpoint 對應 `complete_onboarding` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.complete(
         user_id=user_id,
@@ -165,6 +259,16 @@ def archive_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """archive subject。
+
+    此 endpoint 對應 `archive_subject` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = OnboardingService(db)
     result = service.archive_subject(user_id=user_id, subject_id=subject_id)
     return _handle_result(result)

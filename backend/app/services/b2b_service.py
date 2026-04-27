@@ -32,7 +32,9 @@ COMPETENCY_PROFILES = [
 
 
 class B2BService:
+    """B2 B Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ========== Shared Helpers ==========
@@ -571,6 +573,7 @@ class B2BService:
         variant = int(hashlib.md5(student.email.encode()).hexdigest()[:8], 16) % 3
 
         def _color(score):
+            """ color。"""
             if score >= 70:
                 return "green"
             elif score >= 50:

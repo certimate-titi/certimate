@@ -53,6 +53,7 @@ class LocalStorageService(BaseStorageService):
     """本地檔案系統儲存（開發環境）。"""
 
     def __init__(self, base_dir: str = None):
+        """初始化實例。"""
         if base_dir:
             self.base_dir = Path(base_dir)
         else:
@@ -60,6 +61,7 @@ class LocalStorageService(BaseStorageService):
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def save_file(self, user_id: str, resource_id: str, filename: str, data: bytes) -> str:
+        """儲存 file。"""
         file_dir = self.base_dir / user_id / resource_id
         file_dir.mkdir(parents=True, exist_ok=True)
         file_path = file_dir / filename
@@ -68,6 +70,7 @@ class LocalStorageService(BaseStorageService):
         return str(file_path)
 
     def get_file(self, storage_path: str) -> bytes:
+        """取得 file。"""
         return Path(storage_path).read_bytes()
 
     def download_to_temp(self, storage_path: str) -> str:
@@ -77,6 +80,7 @@ class LocalStorageService(BaseStorageService):
         raise FileNotFoundError(f"檔案不存在: {storage_path}")
 
     def delete_file(self, storage_path: str) -> None:
+        """刪除 file。"""
         path = Path(storage_path)
         if path.exists():
             path.unlink()
@@ -87,11 +91,13 @@ class LocalStorageService(BaseStorageService):
                 parent.rmdir()
 
     def exists(self, storage_path: str) -> bool:
+        """exists。"""
         return Path(storage_path).exists()
 
     def copy_file(
         self, src_path: str, dst_user_id: str, dst_resource_id: str, dst_filename: str
     ) -> str:
+        """copy file。"""
         src = Path(src_path)
         if not src.exists():
             raise FileNotFoundError(f"來源檔案不存在: {src_path}")
@@ -110,11 +116,13 @@ class GCSStorageService(BaseStorageService):
     """
 
     def __init__(self, bucket_name: str = None):
+        """初始化實例。"""
         self.bucket_name = bucket_name or os.environ.get("GCS_BUCKET", "certimate-uploads")
         self._client = None
         self._bucket = None
 
     def _get_bucket(self):
+        """取得 bucket。"""
         if self._bucket is None:
             from google.cloud import storage
             self._client = storage.Client()
@@ -123,9 +131,11 @@ class GCSStorageService(BaseStorageService):
 
     def _build_gcs_key(self, user_id: str, resource_id: str, filename: str) -> str:
         # PRD-033 §3.1：storage key 加 uploads/ 前綴，對應四態 scope 目錄規劃
+        """建立 gcs key。"""
         return f"uploads/{user_id}/{resource_id}/{filename}"
 
     def save_file(self, user_id: str, resource_id: str, filename: str, data: bytes) -> str:
+        """儲存 file。"""
         bucket = self._get_bucket()
         key = self._build_gcs_key(user_id, resource_id, filename)
         blob = bucket.blob(key)
@@ -135,6 +145,7 @@ class GCSStorageService(BaseStorageService):
         return gcs_path
 
     def get_file(self, storage_path: str) -> bytes:
+        """取得 file。"""
         bucket = self._get_bucket()
         key = self._parse_gcs_path(storage_path)
         blob = bucket.blob(key)
@@ -154,6 +165,7 @@ class GCSStorageService(BaseStorageService):
         return tmp_path
 
     def delete_file(self, storage_path: str) -> None:
+        """刪除 file。"""
         bucket = self._get_bucket()
         key = self._parse_gcs_path(storage_path)
         blob = bucket.blob(key)
@@ -162,6 +174,7 @@ class GCSStorageService(BaseStorageService):
             logger.info("GCS storage: deleted %s", storage_path)
 
     def exists(self, storage_path: str) -> bool:
+        """exists。"""
         bucket = self._get_bucket()
         key = self._parse_gcs_path(storage_path)
         return bucket.blob(key).exists()
@@ -169,6 +182,7 @@ class GCSStorageService(BaseStorageService):
     def copy_file(
         self, src_path: str, dst_user_id: str, dst_resource_id: str, dst_filename: str
     ) -> str:
+        """copy file。"""
         bucket = self._get_bucket()
         src_key = self._parse_gcs_path(src_path)
         src_blob = bucket.blob(src_key)

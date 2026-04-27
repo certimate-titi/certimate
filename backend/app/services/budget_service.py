@@ -29,7 +29,9 @@ _GLOBAL_SCALE_MAX = Decimal("3.00")
 
 
 class BudgetService(BaseService):
+    """Budget Service 服務類別。"""
     def __init__(self, db: Session, gcp_sync: GcpBudgetSyncService | None = None):
+        """初始化實例。"""
         super().__init__(db)
         self.config_repo = BudgetConfigRepository(db)
         self.alert_repo = BudgetAlertLogRepository(db)
@@ -48,6 +50,7 @@ class BudgetService(BaseService):
         new_limit_usd: Decimal,
         reason: str,
     ) -> dict:
+        """更新 budget。"""
         config = self.config_repo.get_by_scope(scope)
         if config is None:
             return self.error(f"budget_config not found for scope={scope}", 404)
@@ -112,6 +115,7 @@ class BudgetService(BaseService):
         target_total_usd: Decimal | None = None,
         reason: str,
     ) -> dict:
+        """global scale。"""
         if scale_factor is None and target_total_usd is None:
             return self.error("必須提供 scale_factor 或 target_total_usd", 400)
 
@@ -206,6 +210,7 @@ class BudgetService(BaseService):
     def override_disable(
         self, *, super_admin: User, scope: str, reason: str
     ) -> dict:
+        """override disable。"""
         config = self.config_repo.get_by_scope(scope)
         if config is None:
             return self.error(f"budget_config not found for scope={scope}", 404)
@@ -367,6 +372,7 @@ class BudgetService(BaseService):
         target_id: uuid.UUID | None,
         details: dict,
     ) -> None:
+        """ write audit。"""
         log = AdminAuditLog(
             admin_id=admin_id,
             action=action,

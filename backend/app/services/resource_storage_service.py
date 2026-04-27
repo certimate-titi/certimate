@@ -32,12 +32,14 @@ MIN_FIGURE_BYTES = 2048  # 過濾裝飾（< 2KB 視為 icon/logo）
 
 @dataclass
 class PageRenderResult:
+    """Page Render Result。"""
     page_no: int
     webp_path: str           # storage path (gs:// or local)
     figures: list[str]       # embedded figure storage paths
 
 
 def _pil_to_webp_bytes(pil_img) -> bytes:
+    """ pil to webp bytes。"""
     buf = io.BytesIO()
     pil_img.thumbnail((WEBP_MAX_W, WEBP_MAX_H))
     pil_img.save(buf, format="WEBP", quality=WEBP_QUALITY, method=6)

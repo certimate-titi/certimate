@@ -45,7 +45,18 @@ _TEMPLATES_DIR = Path(_os.environ.get("PROMPT_TEMPLATES_DIR", str(_DEFAULT_TEMPL
 
 
 def _parse_md_file(filepath: Path) -> Optional[dict]:
-    """解析 Markdown 檔案的 YAML frontmatter + prompt 內容。"""
+    """解析 Prompt 模板 ``.md`` 檔的 YAML frontmatter 與 system / user prompt 區塊。
+
+    Args:
+        filepath: ``.md`` 檔案路徑。
+
+    Returns:
+        欄位包含 ``template_id`` / ``name`` / ``display_name`` / ``category``
+        / ``model`` / ``max_tokens`` / ``temperature`` / ``variables`` /
+        ``feature_refs`` / ``file_version`` / ``system_prompt`` /
+        ``user_prompt`` 的 dict；無 frontmatter 或 YAML 解析失敗時回傳
+        ``None``。
+    """
     content = filepath.read_text(encoding="utf-8")
 
     # 解析 YAML frontmatter（--- ... ---）
@@ -93,7 +104,12 @@ def _parse_md_file(filepath: Path) -> Optional[dict]:
 
 
 def _scan_templates() -> list[dict]:
-    """掃描所有模板 .md 檔案。"""
+    """遞迴掃描 ``_TEMPLATES_DIR`` 下所有 ``.md`` 模板檔。
+
+    Returns:
+        經 :func:`_parse_md_file` 解析後且具備 ``template_id`` 的模板 dict
+        串列；``README.md`` 與解析失敗者皆會被排除。
+    """
     templates = []
     for md_file in sorted(_TEMPLATES_DIR.rglob("*.md")):
         if md_file.name == "README.md":
@@ -105,7 +121,27 @@ def _scan_templates() -> list[dict]:
 
 
 def run_seed(db_url: Optional[str] = None):
-    """執行 seed 同步。"""
+    """以版本號為基準將檔案系統 Prompt 模板同步到 DB。
+
+    對每個模板：
+        - DB 不存在 → ``INSERT`` ``prompt_templates_v2`` + ``prompt_template_versions``。
+        - DB 存在但檔案 ``version > current_version`` → ``UPDATE`` 並建立新
+          版本紀錄。
+        - DB 存在且版本相同 → 跳過。
+    最後將檔案系統已刪除但 DB 仍存在的模板 ``is_active`` 設為 ``False``（孤
+    兒停用）。
+
+    Args:
+        db_url: 自訂 DB 連線字串；預設取自 ``settings.DATABASE_URL``。
+
+    Returns:
+        ``{"created": int, "updated": int, "skipped": int, "errors": int,
+        "deactivated": int}`` 統計 dict。
+
+    副作用：
+        多次 ``commit`` 寫入 ``prompt_templates_v2`` 與
+        ``prompt_template_versions``，並停用孤兒模板。
+    """
     settings = get_settings()
     url = db_url or settings.DATABASE_URL
 

@@ -25,18 +25,23 @@ DEPTH_DIFFICULTY = {1: "easy", 2: "medium", 3: "hard"}
 
 class DifficultyProgressionService:
 
+    """Difficulty Progression Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_user(self, user_id: str) -> User:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     def _get_plan(self, user: User) -> str:
+        """取得 plan。"""
         return user.subscription_plan.value if hasattr(user.subscription_plan, "value") else str(user.subscription_plan)
 
     # ========== Start Adaptive Practice ==========
 
     def start_adaptive(self, user_id: str, subject_id: str) -> dict:
+        """start adaptive。"""
         user = self._get_user(user_id)
         plan = self._get_plan(user)
 
@@ -61,6 +66,7 @@ class DifficultyProgressionService:
         consecutive_wrong: int = 0,
         consecutive_correct: int = 0,
     ) -> dict:
+        """計算 next strategy。"""
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
         current_nid = uuid.UUID(current_node_id)
@@ -222,6 +228,7 @@ class DifficultyProgressionService:
     # ========== Learning Trail ==========
 
     def get_trail(self, user_id: str, subject_id: str) -> dict:
+        """取得 trail。"""
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
 

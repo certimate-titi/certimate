@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""
-將爬蟲產生的 JSON 匯入 CertiMate 資料庫（使用 historical_exams 表）
+"""考古題 JSON 匯入 CLI。
 
-使用方式：
+掃描 ``data/historical_questions/`` 目錄下的 JSON 檔，建立或復用
+``historical_exams`` 紀錄，並把題目寫入 ``questions``（``source_type
+='historical'``、``historical_source='moex'``）。對 ``(historical_exam_id,
+question_number)`` 已存在的題目以 ``IntegrityError`` 為 fallback 跳過。
+
+Usage:
     # Dry-run（不寫入）
-    .venv/bin/python -m app.scripts.import_exam_questions \
-      --json-dir data/historical_questions --dry-run
+    .venv/bin/python -m app.scripts.import_exam_questions \\
+        --json-dir data/historical_questions --dry-run
 
     # 實際匯入
-    .venv/bin/python -m app.scripts.import_exam_questions \
-      --json-dir data/historical_questions
+    .venv/bin/python -m app.scripts.import_exam_questions \\
+        --json-dir data/historical_questions
 
     # 僅匯入指定考試
-    .venv/bin/python -m app.scripts.import_exam_questions \
-      --json-dir data/historical_questions --exam-code 114010
+    .venv/bin/python -m app.scripts.import_exam_questions \\
+        --json-dir data/historical_questions --exam-code 114010
 """
 
 import argparse
@@ -42,7 +46,26 @@ DEFAULT_TENANT_ID = PUBLIC_B2C_TENANT_ID
 
 
 class QuestionImporter:
+    """考古題 JSON 批次匯入器。
+
+    封裝 ``historical_exams`` upsert 與 ``questions`` 防重複插入邏輯，並維護
+    匯入計數（成功 / 跳過 / 失敗）供 CLI 摘要使用。
+
+    Attributes:
+        db: SQLAlchemy Session（呼叫端負責生命週期）。
+        dry_run: 若為 True，不執行 ``commit``，僅記錄 log。
+        imported_count: 累計成功匯入題數。
+        skipped_count: 累計因已存在而跳過的題數。
+        error_count: 累計處理失敗的 JSON 檔數。
+    """
+
     def __init__(self, db: Session, dry_run: bool = False):
+        """初始化匯入器。
+
+        Args:
+            db: SQLAlchemy Session。
+            dry_run: 是否為模擬執行（True 不寫入 DB）。
+        """
         self.db = db
         self.dry_run = dry_run
         self.imported_count = 0
@@ -57,7 +80,22 @@ class QuestionImporter:
         meta: dict,
         tenant_id: str,
     ) -> HistoricalExam:
-        """取得或建立 historical_exams 記錄。"""
+        """以 ``(exam_code, category_code, subject_code)`` 為鍵 upsert ``historical_exams``。
+
+        Args:
+            exam_code: 考試代碼（例：``114010``）。前 3 碼會被推算為民國年。
+            category_code: 類科代碼。
+            subject_code: 科目代碼。
+            meta: JSON 檔的 ``import_meta`` 區段，提供考試 / 類科 / 科目名
+                稱、題數、來源等補充欄位。
+            tenant_id: 租戶 UUID（預設 ``public_b2c``）。
+
+        Returns:
+            既存或新建立的 ``HistoricalExam`` 實例。
+
+        副作用：
+            找不到對應紀錄時會 ``db.add`` + ``db.flush()`` 寫入新列。
+        """
         he = (
             self.db.query(HistoricalExam)
             .filter(
@@ -96,7 +134,22 @@ class QuestionImporter:
         return he
 
     def import_from_json_file(self, json_file: Path, tenant_id: str = DEFAULT_TENANT_ID) -> bool:
-        """從單個 JSON 檔案匯入。"""
+        """從單個爬蟲產出的 JSON 檔匯入題目。
+
+        Args:
+            json_file: JSON 檔路徑，須包含 ``import_meta`` 與 ``questions``
+                兩個頂層 key。
+            tenant_id: 租戶 UUID（預設 ``public_b2c``）。
+
+        Returns:
+            是否成功處理該檔案（``False`` 表示無題目或發生例外）。
+
+        副作用：
+            - upsert ``historical_exams``。
+            - 對 ``questions`` 表寫入新題；衝突 ``(historical_exam_id,
+              question_number)`` 時走 ``IntegrityError`` 跳過。
+            - 非 dry-run 模式於檔案結束時 ``commit``。
+        """
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -194,7 +247,23 @@ class QuestionImporter:
     def import_directory(
         self, json_dir: Path, exam_code_filter: Optional[str] = None, tenant_id: str = DEFAULT_TENANT_ID
     ):
-        """從目錄匯入所有高普考 JSON 檔案。"""
+        """遞迴掃描目錄並匯入所有 JSON 檔。
+
+        目錄結構為 ``{exam_code}/{category_code}/*.json``；會略過 ``_pdf``、
+        ``_catalog``、``_backup_before_cleanup``、``__pycache__`` 等系統目錄
+        與 dotfile。
+
+        Args:
+            json_dir: 考古題 JSON 根目錄。
+            exam_code_filter: 若提供，只處理 ``{exam_code}`` 等於此值的子目
+                錄；其餘略過。
+            tenant_id: 租戶 UUID（預設 ``public_b2c``）。
+
+        副作用：
+            走訪每個 JSON 檔呼叫 :meth:`import_from_json_file`，並在結束時
+            把 ``imported_count`` / ``skipped_count`` / ``error_count`` 摘要
+            輸出到 log。
+        """
         json_dir = Path(json_dir)
         if not json_dir.exists():
             log.error(f"目錄不存在：{json_dir}")
@@ -237,6 +306,12 @@ class QuestionImporter:
 
 
 def main():
+    """CLI 進入點：解析參數、建立 DB Session、執行 :class:`QuestionImporter`。
+
+    副作用：
+        建立 SQLAlchemy engine 並開啟 Session；非 dry-run 模式下會把考古題
+        寫入 ``historical_exams`` 與 ``questions`` 兩張表。
+    """
     parser = argparse.ArgumentParser(description="將爬蟲 JSON 匯入 CertiMate historical_exams + questions")
     parser.add_argument(
         "--json-dir",

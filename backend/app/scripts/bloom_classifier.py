@@ -57,7 +57,22 @@ Bloom 認知層次定義：
 
 
 def classify_batch_gemini(questions: list[dict], api_key: str) -> list[str]:
-    """使用 Gemini API 批次分類。"""
+    """使用 Gemini API 對一批考題進行 Bloom 認知層次分類。
+
+    Args:
+        questions: 題目 dict 串列，每筆需包含 ``content`` / ``option_a`` ~
+            ``option_d`` 欄位。
+        api_key: Google Gemini API 金鑰。
+
+    Returns:
+        對應每題的 Bloom 層次串列（``remember`` / ``understand`` / ``apply``
+        / ``analyze`` / ``evaluate`` / ``create``）；API 失敗或回傳值不在合
+        法集合時 fallback 為 ``remember``。
+
+    Notes:
+        每呼叫 1 次 ``generate_content`` 後 ``time.sleep(0.1)`` 以避免觸發
+        Gemini Rate Limit。
+    """
     try:
         from google import genai
     except ImportError:
@@ -98,7 +113,14 @@ def classify_batch_gemini(questions: list[dict], api_key: str) -> list[str]:
 
 
 def classify_batch_heuristic(questions: list[dict]) -> list[str]:
-    """簡單啟發式分類（無需 API key）。"""
+    """以中文關鍵字啟發式判斷 Bloom 認知層次（無需 API key）。
+
+    Args:
+        questions: 題目 dict 串列，僅讀取 ``content`` 欄位。
+
+    Returns:
+        對應每題的 Bloom 層次串列；無關鍵字命中時 fallback 為 ``remember``。
+    """
     results = []
     for q in questions:
         content = (q.get("content", "") or "").lower()
@@ -121,6 +143,19 @@ def classify_batch_heuristic(questions: list[dict]) -> list[str]:
 
 
 def main():
+    """CLI 進入點：批次為考古題填入 ``bloom_category``。
+
+    流程：
+        1. 連線資料庫並查詢尚未分類（``bloom_category IS NULL``）的考古題。
+        2. 依 ``--batch-size`` 分批，依 ``--use-ai`` 決定走 Gemini 或啟發式
+           分類器。
+        3. 將分類結果寫回 ``questions.bloom_category``，``--dry-run`` 模式
+           則 rollback。
+
+    副作用：
+        於非 dry-run 模式下會 ``UPDATE questions`` 寫入 Bloom 分類，並輸出
+        各層次分佈統計到 log。
+    """
     parser = argparse.ArgumentParser(description="考古題 Bloom 認知層次 AI 批次分類")
     parser.add_argument("--dry-run", action="store_true", help="不寫入 DB")
     parser.add_argument("--limit", type=int, default=0, help="處理題數上限（0=全部）")

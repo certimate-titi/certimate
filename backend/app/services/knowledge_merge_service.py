@@ -48,7 +48,9 @@ _FALLBACK_MERGE_SYSTEM_PROMPT = """你是知識圖譜對齊專家。比對以下
 
 class KnowledgeMergeService:
 
+    """Knowledge Merge Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self._prompt_svc = None
 
@@ -145,9 +147,11 @@ class KnowledgeMergeService:
     # ========== Helpers ==========
 
     def _get_user(self, user_id: str) -> Optional[User]:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     def _validate_user(self, user_id: str) -> dict | None:
+        """驗證 user。"""
         user = self._get_user(user_id)
         if not user:
             return {"error": True, "status_code": 404, "message": "使用者不存在"}
@@ -396,6 +400,7 @@ class KnowledgeMergeService:
     # ========== Conflicts ==========
 
     def get_conflicts(self, user_id: str, subject_id: str) -> dict:
+        """取得 conflicts。"""
         err = self._validate_user(user_id)
         if err:
             return err
@@ -512,6 +517,7 @@ class KnowledgeMergeService:
     # ========== History ==========
 
     def get_history(self, user_id: str, subject_id: str) -> dict:
+        """取得 history。"""
         err = self._validate_user(user_id)
         if err:
             return err

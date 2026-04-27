@@ -11,6 +11,16 @@ from app.models import Base
 
 
 class AiCooldown(Base):
+    """AI 功能冷卻紀錄（避免使用者短時間重複觸發高成本任務）。
+
+    對應 DBML 表：ai_cooldowns
+
+    Attributes:
+        user_id: 受冷卻限制的使用者
+        reason: 冷卻原因（例如 mock_exam_generation）
+        cooldown_until: 冷卻解除時間戳記
+    """
+
     __tablename__ = "ai_cooldowns"
 
     id: Mapped[uuid.UUID] = mapped_column(

@@ -31,7 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 class SubjectForkService:
+    """Subject Fork Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self.storage = get_storage_service()
 
@@ -196,4 +198,5 @@ class SubjectForkService:
 
 
 def _err(status_code: int, message: str) -> dict[str, Any]:
+    """ err。"""
     return {"error": True, "status_code": status_code, "message": message}

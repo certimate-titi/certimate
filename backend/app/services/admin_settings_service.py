@@ -14,10 +14,12 @@ from app.models.user import User, UserRole, UserStatus, SubscriptionPlan
 
 
 def _get_user(db: Session, user_id: str) -> Optional[User]:
+    """取得 user。"""
     return db.query(User).filter(User.id == user_id).first()
 
 
 def _require_super_admin(db: Session, user_id: str) -> Optional[dict]:
+    """ require super admin。"""
     user = _get_user(db, user_id)
     if not user:
         return {"error": True, "status_code": 401, "message": "未授權"}
@@ -35,6 +37,7 @@ def _log_audit(
     details: Optional[dict] = None,
     ip_address: Optional[str] = None,
 ):
+    """ log audit。"""
     log = AdminAuditLog(
         admin_id=admin_id,
         action=action,
@@ -48,12 +51,15 @@ def _log_audit(
 
 
 class AdminSettingsService:
+    """Admin Settings Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ── AI Model Routing ─────────────────────────────────────────────────────
 
     def get_model_routing(self, actor_id: str) -> dict:
+        """取得 model routing。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -77,6 +83,7 @@ class AdminSettingsService:
         primary_model: str,
         fallback_model: Optional[str] = None,
     ) -> dict:
+        """更新 model routing。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -115,6 +122,7 @@ class AdminSettingsService:
     # ── Plan Quota ───────────────────────────────────────────────────────────
 
     def get_plan_quotas(self, actor_id: str) -> dict:
+        """取得 plan quotas。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -133,6 +141,7 @@ class AdminSettingsService:
         return {"ok": True, "quotas": items}
 
     def update_plan_quota(self, actor_id: str, plan: str, updates: dict) -> dict:
+        """更新 plan quota。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -164,6 +173,7 @@ class AdminSettingsService:
     # ── System Announcements ─────────────────────────────────────────────────
 
     def get_announcements(self, actor_id: str) -> dict:
+        """取得 announcements。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -188,6 +198,7 @@ class AdminSettingsService:
         return {"ok": True, "announcements": items}
 
     def create_announcement(self, actor_id: str, data: dict) -> dict:
+        """建立 announcement。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -255,6 +266,7 @@ class AdminSettingsService:
         return {"ok": True, "announcements": items}
 
     def deactivate_announcement(self, actor_id: str, announcement_id: str) -> dict:
+        """deactivate announcement。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -268,6 +280,7 @@ class AdminSettingsService:
         return {"ok": True, "message": "公告已停用"}
 
     def delete_announcement(self, actor_id: str, announcement_id: str) -> dict:
+        """刪除 announcement。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -283,6 +296,7 @@ class AdminSettingsService:
     # ── Feature Flags ────────────────────────────────────────────────────────
 
     def get_feature_flags(self, actor_id: str) -> dict:
+        """取得 feature flags。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -301,6 +315,7 @@ class AdminSettingsService:
         return {"ok": True, "flags": items}
 
     def update_feature_flag(self, actor_id: str, flag_id: str, updates: dict) -> dict:
+        """更新 feature flag。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -340,6 +355,7 @@ class AdminSettingsService:
     # ── Audit Logs ───────────────────────────────────────────────────────────
 
     def get_audit_logs(self, actor_id: str) -> dict:
+        """取得 audit logs。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -378,6 +394,7 @@ class AdminSettingsService:
         return {"ok": True, "logs": items}
 
     def export_audit_logs(self, actor_id: str) -> dict:
+        """匯出 audit logs。"""
         result = self.get_audit_logs(actor_id)
         if result.get("error"):
             return result
@@ -389,6 +406,7 @@ class AdminSettingsService:
         }
 
     def list_admins(self, actor_id: str) -> dict:
+        """列出 admins。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -410,6 +428,7 @@ class AdminSettingsService:
     # ── System Maintenance ────────────────────────────────────────────────────
 
     def reset_ai_limits(self, actor_id: str) -> dict:
+        """reset ai limits。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -434,6 +453,7 @@ class AdminSettingsService:
         return {"ok": True, "message": "AI 流量限制已重置"}
 
     def clear_cache(self, actor_id: str) -> dict:
+        """clear cache。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err

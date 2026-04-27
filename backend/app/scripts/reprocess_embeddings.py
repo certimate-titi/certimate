@@ -41,7 +41,21 @@ log = logging.getLogger(__name__)
 
 
 def update_anchors(db: Session, dry_run: bool = False) -> int:
-    """為所有缺少 anchor_id 的 chunk 生成錨點 ID。"""
+    """為缺少 ``anchor_id`` 的 ``resource_chunks`` 補上錨點。
+
+    若 chunk 有 ``source_page_start`` 則設為 ``page_{N}``，否則 fallback 為
+    ``chunk_{chunk_index}``。
+
+    Args:
+        db: SQLAlchemy Session。
+        dry_run: 若為 True 只計數不寫入。
+
+    Returns:
+        受影響（或在 dry-run 下將會受影響）的 chunk 數量。
+
+    副作用：
+        非 dry-run 會 ``UPDATE resource_chunks.anchor_id`` 並 ``commit``。
+    """
     from app.models.resource_chunk import ResourceChunk
 
     chunks = (
@@ -70,7 +84,20 @@ def update_anchors(db: Session, dry_run: bool = False) -> int:
 
 
 def reembed_chunks(db: Session, batch_size: int = 64, dry_run: bool = False) -> int:
-    """重新生成所有 chunk 的 embedding 向量。"""
+    """以最新 Voyage 模型重新計算 ``resource_chunks.embedding``。
+
+    Args:
+        db: SQLAlchemy Session。
+        batch_size: 每批送 Voyage 的 chunk 數，預設 64。
+        dry_run: 若為 True 只回報總數不實際呼叫 embedding API。
+
+    Returns:
+        實際處理（或在 dry-run 下將會處理）的 chunk 數量。
+
+    副作用：
+        非 dry-run 會呼叫外部 Voyage API 並 ``UPDATE resource_chunks.embedding``，
+        每批結束 ``commit``；連續 batch 失敗超過 5 次會中止。
+    """
     from app.models.resource_chunk import ResourceChunk
 
     total = (
@@ -148,7 +175,15 @@ def reembed_chunks(db: Session, batch_size: int = 64, dry_run: bool = False) -> 
 
 
 def clear_embedding_cache():
-    """清除 embedding 快取（確保使用新向量）。"""
+    """清空 ``EmbeddingService`` 的 in-memory LRU 快取。
+
+    避免重新 embed 後因 process 內快取仍指向舊向量而拿到過期結果。失敗時
+    僅輸出警告 log，不 raise。
+
+    副作用：
+        重置 ``_embedding_cache`` 的 ``_store`` / ``_hit_count`` /
+        ``_miss_count``。
+    """
     try:
         from app.services.embedding_service import _embedding_cache
         stats = _embedding_cache.stats
@@ -162,6 +197,15 @@ def clear_embedding_cache():
 
 
 def main():
+    """CLI 進入點：依參數選擇執行 anchor 補值、embedding 重算與快取清除。
+
+    可組合 ``--anchor-only`` / ``--embed-only`` / ``--clear-cache`` /
+    ``--dry-run`` / ``--batch-size`` 等旗標決定執行步驟。
+
+    副作用：
+        非 dry-run 會大量 ``UPDATE resource_chunks``、呼叫 Voyage API 並清
+        除 in-process embedding 快取。
+    """
     parser = argparse.ArgumentParser(
         description="重新處理考古題的向量嵌入和跳轉錨點"
     )

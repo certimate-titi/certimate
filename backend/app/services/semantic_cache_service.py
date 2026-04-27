@@ -47,6 +47,7 @@ class SemanticCacheConfig:
     """語意快取配置。"""
 
     def __init__(self):
+        """初始化實例。"""
         self.enabled: bool = os.environ.get(
             "SEMANTIC_CACHE_ENABLED", "true"
         ).lower() in ("true", "1", "yes")
@@ -66,6 +67,7 @@ class _InMemoryCache:
     """TTL-aware 記憶體快取（執行緒安全）。"""
 
     def __init__(self):
+        """初始化實例。"""
         import threading
         self._lock = threading.Lock()
         # {key: (value, expire_at)}
@@ -74,6 +76,7 @@ class _InMemoryCache:
         self._cleanup_interval = 300.0  # 每 5 分鐘清理過期項目
 
     def _maybe_cleanup(self):
+        """ maybe cleanup。"""
         now = time.monotonic()
         if now - self._last_cleanup < self._cleanup_interval:
             return
@@ -84,6 +87,7 @@ class _InMemoryCache:
         self._last_cleanup = now
 
     def get(self, key: str) -> Optional[Any]:
+        """取得。"""
         with self._lock:
             self._maybe_cleanup()
             item = self._store.get(key)
@@ -96,14 +100,17 @@ class _InMemoryCache:
             return value
 
     def set(self, key: str, value: Any, ttl: int) -> None:
+        """set。"""
         with self._lock:
             self._store[key] = (value, time.time() + ttl)
 
     def delete(self, key: str) -> None:
+        """刪除。"""
         with self._lock:
             self._store.pop(key, None)
 
     def size(self) -> int:
+        """size。"""
         with self._lock:
             self._maybe_cleanup()
             return len(self._store)
@@ -118,12 +125,14 @@ class _RedisCache:
     """Redis 快取後端。"""
 
     def __init__(self, redis_url: str):
+        """初始化實例。"""
         self._url = redis_url
         self._client = None
         self._available = False
         self._connect()
 
     def _connect(self):
+        """ connect。"""
         try:
             import redis as redis_lib
             self._client = redis_lib.from_url(
@@ -141,6 +150,7 @@ class _RedisCache:
             logger.warning(f"Semantic Cache Redis 連線失敗（降級至記憶體）：{e}")
 
     def get(self, key: str) -> Optional[str]:
+        """取得。"""
         if not self._available:
             return None
         try:
@@ -151,6 +161,7 @@ class _RedisCache:
             return None
 
     def set(self, key: str, value: str, ttl: int) -> None:
+        """set。"""
         if not self._available:
             return
         try:
@@ -160,6 +171,7 @@ class _RedisCache:
             self._available = False
 
     def delete(self, key: str) -> None:
+        """刪除。"""
         if not self._available:
             return
         try:
@@ -193,6 +205,7 @@ _redis_init_lock = _threading.Lock()
 
 
 def _get_redis() -> Optional[_RedisCache]:
+    """取得 redis。"""
     global _redis_cache
     if _redis_cache is None:
         with _redis_init_lock:
@@ -214,6 +227,7 @@ def _semantic_hash(prompt: str) -> str:
 
 
 def _make_key(tenant_id: str, prompt_hash: str) -> str:
+    """建立 key。"""
     return f"semantic:{tenant_id}:{prompt_hash}"
 
 
@@ -227,6 +241,7 @@ class SemanticCacheService:
     """
 
     def __init__(self, ttl: Optional[int] = None):
+        """初始化實例。"""
         self._ttl = ttl or _config.ttl
 
     async def get(

@@ -41,10 +41,30 @@ TEACHER_EMAIL = "teacher@edu-demo.com"
 
 
 def _hash(pw: str) -> str:
+    """以 SHA-256 對明文密碼計算雜湊（僅用於 seed 假帳號）。
+
+    Args:
+        pw: 明文密碼。
+
+    Returns:
+        十六進位 SHA-256 摘要字串。
+    """
     return hashlib.sha256(pw.encode()).hexdigest()
 
 
 def main():
+    """CLI 進入點：在 ``seed_edu_demo`` 基礎上補上更豐富的 mock 資料。
+
+    需先成功跑過 :mod:`app.scripts.seed_edu_demo`，本腳本會：
+        1. 新增第二個學生群組與 3 名學生（若尚未存在）。
+        2. 補齊 8 個知識節點。
+        3. 為每位學生建立 4 週模擬考試（分數遞增），含每場 10 題、答案、信
+           心度。
+        4. 建立 ``node_mastery`` 紀錄。
+
+    副作用：
+        多張表 ``INSERT`` 並 ``commit``；對已存在資料會跳過以維持冪等。
+    """
     engine = create_engine(settings.DATABASE_URL)
     Session = sessionmaker(bind=engine)
     db = Session()

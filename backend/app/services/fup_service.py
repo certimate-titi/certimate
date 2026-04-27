@@ -18,7 +18,9 @@ CONSECUTIVE_DAYS_THRESHOLD = 3  # 連續 N 天超過軟上限觸發管理員通�
 
 
 class FUPService:
+    """FUP Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def check_daily_usage(self, user_id: str) -> dict:

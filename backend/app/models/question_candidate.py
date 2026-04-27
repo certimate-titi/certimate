@@ -15,17 +15,40 @@ from app.models import Base
 
 
 class QuestionCandidateTier(str, enum.Enum):
+    """三層題目抽取分層（T2 / T3，T1 直接進 questions）。"""
+
     T2 = "T2"
     T3 = "T3"
 
 
 class QuestionCandidateDecision(str, enum.Enum):
+    """候選題審核決定列舉。"""
+
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
 
 class QuestionCandidate(Base):
+    """EPIC-035 三層抽題 T2/T3 候選題暫存。
+
+    對應 DBML 表：question_candidates
+    Approve 後可晉升為正式 Question；Reject 為廢棄。
+
+    Attributes:
+        resource_id: 來源資源（CASCADE）
+        tenant_id: 多租戶隔離鍵
+        question_text: 題幹
+        options: JSONB 選項陣列
+        ai_inferred_answer: AI 推論答案
+        confidence: AI 信心度（0-1）
+        source_page: 來源頁碼
+        figure_refs: 引用圖檔清單
+        tier: T2 / T3
+        decision: pending / approved / rejected
+        decided_at: 審核時間
+    """
+
     __tablename__ = "question_candidates"
 
     id: Mapped[uuid.UUID] = mapped_column(

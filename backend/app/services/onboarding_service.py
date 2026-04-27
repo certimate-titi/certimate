@@ -44,10 +44,13 @@ EDUCATION_OPTIONS = [
 
 
 class OnboardingService:
+    """Onboarding Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_or_create_default_category(self) -> SubjectCategory:
+        """取得 or create default category。"""
         cat = self.db.query(SubjectCategory).first()
         if not cat:
             cat = SubjectCategory(name="default")
@@ -397,6 +400,7 @@ class OnboardingService:
         return "".join(labels)
 
     def _create_journey(self, user_uuid: uuid.UUID, subj_data: dict) -> LearningJourney:
+        """建立 journey。"""
         subj_name = subj_data["subject_name"]
         # PRD-033: 先找平台官方考科（scope=platform）或自己建的
         subject = self.db.query(Subject).filter(
@@ -810,6 +814,7 @@ class OnboardingService:
         }
 
     def _archive_journey(self, user_id: str, subject_id: str, *, active_only: bool = True):
+        """ archive journey。"""
         user_uuid = uuid.UUID(user_id)
         subj_uuid = uuid.UUID(subject_id)
 

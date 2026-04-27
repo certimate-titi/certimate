@@ -24,6 +24,7 @@ class RetrievalService:
     """
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self.chunk_repo = ResourceChunkRepository(db)
         self.embedding_service = EmbeddingService()

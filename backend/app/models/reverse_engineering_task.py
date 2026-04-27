@@ -13,12 +13,31 @@ from app.models import Base
 
 
 class ReverseEngineeringStatus(str, enum.Enum):
+    """逆向工程任務狀態列舉。"""
+
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 
 class ReverseEngineeringTask(Base):
+    """從題目反向重建知識節點樹的任務紀錄。
+
+    對應 DBML 表：reverse_engineering_tasks
+
+    Attributes:
+        subject_id: 對應科目
+        triggered_by: 發起使用者
+        status: PROCESSING / COMPLETED / FAILED
+        total_questions: 用於重建的題數
+        node_count: 重建出的節點數
+        coverage_rate: 題目覆蓋率（百分比）
+        max_depth: 樹深度
+        orphan_node_count: 孤兒節點數
+        reliability: 可靠度（high / medium / low）
+        completed_at: 完成時間
+    """
+
     __tablename__ = "reverse_engineering_tasks"
 
     id: Mapped[uuid.UUID] = mapped_column(

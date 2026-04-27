@@ -159,6 +159,16 @@ SENIOR_SUBJECTS = {
 
 
 def main():
+    """CLI 進入點：填入 ``subjects.exam_subject_codes`` 並補建高普考類科。
+
+    處理兩塊資料：
+        1. ``EXISTING_SUBJECT_CODES``：對既有 subject 更新 ``exam_subject_codes``。
+        2. ``ELEMENTARY_SUBJECTS`` / ``REGULAR_SUBJECTS`` / ``SENIOR_SUBJECTS``：
+           不存在則 ``INSERT`` 新 ``subjects``，已存在則更新 codes。
+
+    副作用：
+        非 dry-run 模式會 ``INSERT`` / ``UPDATE`` ``subjects`` 表並 ``commit``。
+    """
     parser = argparse.ArgumentParser(description="Seed exam_subject_codes")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

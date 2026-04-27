@@ -11,6 +11,20 @@ from app.models import Base
 
 
 class WeeklyReport(Base):
+    """每週學習報告。
+
+    對應 DBML 表：weekly_reports
+    Unique（user_id, report_week）。
+
+    Attributes:
+        user_id: 使用者（CASCADE）
+        report_week: 報告所屬週起始日
+        study_hours: 累計學習時數
+        exams_completed: 完成考試數
+        questions_answered: 作答題數
+        progress_summary: AI 產生的進度摘要
+    """
+
     __tablename__ = "weekly_reports"
     __table_args__ = (
         UniqueConstraint("user_id", "report_week", name="uq_weekly_reports_user_week"),

@@ -30,6 +30,7 @@ class BaseService:
     """Service 基底類別，提供統一的 DB 存取模式。"""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ── 查詢 helpers ───────────────────────────────────────────────

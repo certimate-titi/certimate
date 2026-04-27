@@ -27,6 +27,7 @@ class OrganicProgressEngine:
     """V3 有機生長進度引擎。"""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ── 單題答案更新 ────────────────────────────────────────────
@@ -215,6 +216,7 @@ class OrganicProgressEngine:
 
     @staticmethod
     def _progress_to_color(progress: float) -> str:
+        """ progress to color。"""
         if progress >= 0.7:
             return "green"
         elif progress >= 0.4:
@@ -225,6 +227,7 @@ class OrganicProgressEngine:
 
     @staticmethod
     def _progress_to_status(progress: float) -> str:
+        """ progress to status。"""
         if progress >= 0.7:
             return "MASTERED"
         elif progress >= 0.4:

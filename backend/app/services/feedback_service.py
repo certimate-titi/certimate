@@ -14,7 +14,9 @@ from app.models.audit_log import AdminAuditLog
 
 
 class FeedbackService:
+    """Feedback Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def submit_feedback(

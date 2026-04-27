@@ -97,6 +97,7 @@ class DocumentProcessingService:
     """Full document processing pipeline: upload → parse → chunk → embed → store."""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self.settings = get_settings()
         self.chunk_repo = ResourceChunkRepository(db)

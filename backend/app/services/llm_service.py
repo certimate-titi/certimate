@@ -41,6 +41,7 @@ class LLMService:
     """Unified LLM interface that routes to the correct provider."""
 
     def __init__(self, db: Session | None = None):
+        """初始化實例。"""
         self.db = db
         self.settings = get_settings()
         self._clients: dict = {}
@@ -50,6 +51,7 @@ class LLMService:
     # ----------------------------------------------------------
 
     def _get_anthropic(self):
+        """取得 anthropic。"""
         if "anthropic" not in self._clients:
             import anthropic
             self._clients["anthropic"] = anthropic.Anthropic(
@@ -58,6 +60,7 @@ class LLMService:
         return self._clients["anthropic"]
 
     def _get_openai(self):
+        """取得 openai。"""
         if "openai" not in self._clients:
             import openai
             self._clients["openai"] = openai.OpenAI(
@@ -66,6 +69,7 @@ class LLMService:
         return self._clients["openai"]
 
     def _get_google(self):
+        """取得 google。"""
         if "google" not in self._clients:
             from google import genai
             self._clients["google"] = genai.Client(
@@ -122,6 +126,7 @@ class LLMService:
         return self.settings.CLAUDE_MODEL, "anthropic"  # will fail at call time
 
     def _has_key(self, provider: str) -> bool:
+        """判斷 key。"""
         return bool({
             "anthropic": self.settings.ANTHROPIC_API_KEY,
             "openai": self.settings.OPENAI_API_KEY,
@@ -329,6 +334,7 @@ class LLMService:
     # ----------------------------------------------------------
 
     def _generate_anthropic(self, model: str, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+        """產生 anthropic。"""
         client = self._get_anthropic()
         message = client.messages.create(
             model=model,
@@ -339,6 +345,7 @@ class LLMService:
         return message.content[0].text
 
     def _generate_openai(self, model: str, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
+        """產生 openai。"""
         client = self._get_openai()
         response = client.chat.completions.create(
             model=model,

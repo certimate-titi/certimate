@@ -16,6 +16,22 @@ from app.models import Base
 
 
 class AiUsageLedger(Base):
+    """AI 呼叫 token 級用量明細帳。
+
+    對應 DBML 表：ai_usage_ledger
+    Feature 33 — 成本監控中心；供月成本彙總與 Voyage 配額鎖查詢。
+
+    Attributes:
+        provider: 服務商（anthropic / gemini / openai / voyage）
+        endpoint: 呼叫端點識別字串
+        request_id: 上游 request id（供查 log）
+        input_tokens: 輸入 token 數
+        output_tokens: 輸出 token 數
+        cost_usd: 該次呼叫成本（美金）
+        billing_source: app（應用層計費）/ gcp（雲端帳單來源）
+        feature: 觸發功能標籤（mock_exam / chat 等）
+    """
+
     __tablename__ = "ai_usage_ledger"
 
     id: Mapped[uuid.UUID] = mapped_column(

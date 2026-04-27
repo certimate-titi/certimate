@@ -37,10 +37,13 @@ _uploads: dict[str, dict] = {}
 
 
 class ChunkedUploadService:
+    """Chunked Upload Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _validate_ultra(self, user_id: str, file_size: int = 0) -> dict | User:
+        """驗證 ultra。"""
         user_uuid = uuid.UUID(user_id)
         user = self.db.query(User).filter_by(id=user_uuid).first()
         if not user:

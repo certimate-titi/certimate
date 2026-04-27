@@ -22,6 +22,16 @@ def list_resources(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list resources。
+
+    此 endpoint 對應 `list_resources` 操作。
+
+    Args:
+        keyword: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ResourceLibraryService(db)
     result = service.list_resources(user_id=user_id, keyword=keyword)
     return _handle_result(result)
@@ -33,6 +43,16 @@ def delete_resource(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """delete resource。
+
+    此 endpoint 對應 `delete_resource` 操作。
+
+    Args:
+        resource_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ResourceLibraryService(db)
     result = service.delete_resource(user_id=user_id, resource_id=resource_id)
     return _handle_result(result)
@@ -44,6 +64,16 @@ def reparse_resource(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """reparse resource。
+
+    此 endpoint 對應 `reparse_resource` 操作。
+
+    Args:
+        resource_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ResourceLibraryService(db)
     result = service.reparse_resource(user_id=user_id, resource_id=resource_id)
     return _handle_result(result)

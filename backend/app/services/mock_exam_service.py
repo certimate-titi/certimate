@@ -12,10 +12,13 @@ from app.models.question import Question
 
 class MockExamService:
 
+    """Mock Exam Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def start_exam(self, exam_id: str, user_id: str) -> dict:
+        """start exam。"""
         uid = uuid.UUID(user_id)
         exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
 
@@ -49,6 +52,7 @@ class MockExamService:
                     selected_answer: str | None = None,
                     marked_for_review: bool | None = None,
                     confidence: str | None = None) -> dict:
+        """儲存 answer。"""
         uid = uuid.UUID(user_id)
         eid = uuid.UUID(exam_id)
         qid = uuid.UUID(question_id)
@@ -104,6 +108,7 @@ class MockExamService:
         }
 
     def submit_exam(self, exam_id: str, user_id: str) -> dict:
+        """submit exam。"""
         uid = uuid.UUID(user_id)
         exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
 
@@ -162,6 +167,7 @@ class MockExamService:
         }
 
     def resume_exam(self, exam_id: str, user_id: str) -> dict:
+        """resume exam。"""
         uid = uuid.UUID(user_id)
         exam = self.db.query(Exam).filter_by(id=uuid.UUID(exam_id)).first()
 

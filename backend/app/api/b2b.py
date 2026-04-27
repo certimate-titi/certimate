@@ -27,6 +27,13 @@ def get_admin_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get admin dashboard。
+
+    此 endpoint 對應 `get_admin_dashboard` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     user = db.query(User).filter_by(id=uuid.UUID(user_id)).first()
     plan = user.subscription_plan.value if hasattr(user.subscription_plan, 'value') else str(user.subscription_plan)
 
@@ -55,6 +62,13 @@ def get_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get dashboard。
+
+    此 endpoint 對應 `get_dashboard` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_dashboard(user_id=user_id)
     return _handle_result(result)
@@ -72,6 +86,16 @@ def sign_dpa(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """sign dpa。
+
+    此 endpoint 對應 `sign_dpa` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.sign_dpa(user_id=user_id, signer_name=body.signer_name)
     return _handle_result(result)
@@ -82,6 +106,13 @@ def get_dpa(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get dpa。
+
+    此 endpoint 對應 `get_dpa` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_dpa(user_id=user_id)
     return _handle_result(result)
@@ -93,6 +124,16 @@ def get_institution_dpa(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get institution dpa。
+
+    此 endpoint 對應 `get_institution_dpa` 操作。
+
+    Args:
+        inst_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_institution_dpa(user_id=user_id, institution_id=inst_id)
     return _handle_result(result)
@@ -108,6 +149,18 @@ async def import_students(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """import students。
+
+    此 endpoint 對應 `import_students` 操作。
+
+    Args:
+        file: 參數。
+        consent_checked: 參數。
+        confirm_surcharge: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     if not file.filename or not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail={"message": "請上傳 .csv 格式的檔案"})
 
@@ -135,6 +188,16 @@ def remove_student(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """remove student。
+
+    此 endpoint 對應 `remove_student` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.remove_student(user_id=user_id, student_id=student_id)
     return _handle_result(result)
@@ -150,6 +213,16 @@ def batch_remove_students(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """batch remove students。
+
+    此 endpoint 對應 `batch_remove_students` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.batch_remove_students(user_id=user_id, emails=body.emails)
     return _handle_result(result)
@@ -161,6 +234,16 @@ def get_student_report(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get student report。
+
+    此 endpoint 對應 `get_student_report` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_student_report(user_id=user_id, student_id=student_id)
     return _handle_result(result)
@@ -172,6 +255,16 @@ def get_student_competency(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get student competency。
+
+    此 endpoint 對應 `get_student_competency` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_student_competency(user_id=user_id, student_id=student_id)
     return _handle_result(result)
@@ -183,6 +276,16 @@ def request_ai_suggestions(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """request ai suggestions。
+
+    此 endpoint 對應 `request_ai_suggestions` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_ai_suggestions(user_id=user_id, student_id=student_id)
     return _handle_result(result)
@@ -197,6 +300,17 @@ def get_institution_students(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get institution students。
+
+    此 endpoint 對應 `get_institution_students` 操作。
+
+    Args:
+        inst_id: 參數。
+        search: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_institution_students(user_id=user_id, institution_id=inst_id, search=search)
     return _handle_result(result)
@@ -208,6 +322,16 @@ def get_student_review_schedule(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get student review schedule。
+
+    此 endpoint 對應 `get_student_review_schedule` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_student_review_schedule(user_id=user_id, student_id=student_id)
     return _handle_result(result)
@@ -219,6 +343,16 @@ def get_group_weakness_analysis(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get group weakness analysis。
+
+    此 endpoint 對應 `get_group_weakness_analysis` 操作。
+
+    Args:
+        group_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_class_weakness_analysis(user_id=user_id, group_id=group_id)
     return _handle_result(result)
@@ -231,6 +365,17 @@ def remove_student_by_email(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """remove student by email。
+
+    此 endpoint 對應 `remove_student_by_email` 操作。
+
+    Args:
+        inst_id: 參數。
+        email: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.remove_student_by_email(user_id=user_id, institution_id=inst_id, email=email)
     return _handle_result(result)
@@ -247,6 +392,17 @@ def cancel_institution_subscription(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """cancel institution subscription。
+
+    此 endpoint 對應 `cancel_institution_subscription` 操作。
+
+    Args:
+        inst_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.cancel_institution_subscription(
         user_id=user_id, institution_id=inst_id, expired=body.expired,
@@ -262,6 +418,16 @@ def get_error_ranking(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get error ranking。
+
+    此 endpoint 對應 `get_error_ranking` 操作。
+
+    Args:
+        inst_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_error_ranking(user_id=user_id, institution_id=inst_id)
     return _handle_result(result)
@@ -273,6 +439,16 @@ def get_health_kpi(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get health kpi。
+
+    此 endpoint 對應 `get_health_kpi` 操作。
+
+    Args:
+        inst_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_health_kpi(user_id=user_id, institution_id=inst_id)
     return _handle_result(result)
@@ -285,6 +461,17 @@ def get_early_warnings(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get early warnings。
+
+    此 endpoint 對應 `get_early_warnings` 操作。
+
+    Args:
+        inst_id: 參數。
+        score_overrides: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     import json as _json
     overrides = _json.loads(score_overrides) if score_overrides else None
     service = B2BService(db)
@@ -299,6 +486,17 @@ def update_warning_rules(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update warning rules。
+
+    此 endpoint 對應 `update_warning_rules` 操作。
+
+    Args:
+        inst_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.update_warning_rules(
         user_id=user_id,
@@ -318,6 +516,16 @@ def delete_group(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """delete group。
+
+    此 endpoint 對應 `delete_group` 操作。
+
+    Args:
+        group_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.delete_group(user_id=user_id, group_id=group_id)
     return _handle_result(result)
@@ -329,6 +537,16 @@ def get_group_students(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get group students。
+
+    此 endpoint 對應 `get_group_students` 操作。
+
+    Args:
+        group_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_group_students(user_id=user_id, group_id=group_id)
     return _handle_result(result)
@@ -341,6 +559,17 @@ def assign_exam_to_group(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """assign exam to group。
+
+    此 endpoint 對應 `assign_exam_to_group` 操作。
+
+    Args:
+        group_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.assign_exam(
         user_id=user_id,
@@ -358,6 +587,16 @@ def get_group_heatmap(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get group heatmap。
+
+    此 endpoint 對應 `get_group_heatmap` 操作。
+
+    Args:
+        group_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_group_heatmap(user_id=user_id, group_id=group_id)
     return _handle_result(result)
@@ -371,6 +610,16 @@ def get_class_weakness(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get class weakness。
+
+    此 endpoint 對應 `get_class_weakness` 操作。
+
+    Args:
+        group_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_class_weakness(user_id=user_id, group_id=group_id)
     return _handle_result(result)
@@ -389,6 +638,17 @@ def generate_remediation_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """generate remediation exam。
+
+    此 endpoint 對應 `generate_remediation_exam` 操作。
+
+    Args:
+        group_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.generate_remediation_exam(
         user_id=user_id,
@@ -417,6 +677,17 @@ def create_student_remediation_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create student remediation exam。
+
+    此 endpoint 對應 `create_student_remediation_exam` 操作。
+
+    Args:
+        student_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.create_student_remediation_exam(
         user_id=user_id,
@@ -433,6 +704,16 @@ def get_student_remediation_defaults(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get student remediation defaults。
+
+    此 endpoint 對應 `get_student_remediation_defaults` 操作。
+
+    Args:
+        student_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = B2BService(db)
     result = service.get_student_remediation_defaults(
         user_id=user_id,

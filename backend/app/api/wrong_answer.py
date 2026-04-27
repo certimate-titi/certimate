@@ -54,6 +54,16 @@ def list_wrong_answers(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """list wrong answers。
+
+    此 endpoint 對應 `list_wrong_answers` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = WrongAnswerService(db)
     result = service.list_by_subject(user_id=user_id, subject_id=subject_id)
     return _handle_result(result)
@@ -95,6 +105,16 @@ def get_wrong_answers_by_exam(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """get wrong answers by exam。
+
+    此 endpoint 對應 `get_wrong_answers_by_exam` 操作。
+
+    Args:
+        exam_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = WrongAnswerService(db)
     result = service.get_wrong_answers_by_exam(exam_id=exam_id, user_id=user_id)
     return _handle_result(result)
@@ -107,6 +127,17 @@ def get_question_analysis(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """get question analysis。
+
+    此 endpoint 對應 `get_question_analysis` 操作。
+
+    Args:
+        exam_id: 參數。
+        question_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = WrongAnswerService(db)
     result = service.get_analysis(
         exam_id=exam_id, user_id=user_id, question_id=question_id
@@ -121,6 +152,17 @@ def get_coach_info(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """get coach info。
+
+    此 endpoint 對應 `get_coach_info` 操作。
+
+    Args:
+        exam_id: 參數。
+        question_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = WrongAnswerService(db)
     result = service.get_coach_info(
         exam_id=exam_id, user_id=user_id, question_id=question_id
@@ -136,6 +178,18 @@ def ai_coach_chat(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: answers table
 ):
+    """ai coach chat。
+
+    此 endpoint 對應 `ai_coach_chat` 操作。
+
+    Args:
+        exam_id: 參數。
+        question_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = WrongAnswerService(db)
     result = service.ai_coach_chat(
         exam_id=exam_id, user_id=user_id,

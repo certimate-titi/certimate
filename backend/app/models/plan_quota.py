@@ -11,6 +11,21 @@ from app.models import Base
 
 
 class PlanQuota(Base):
+    """訂閱方案配額設定。
+
+    對應 DBML 表：plan_quotas
+
+    Attributes:
+        plan: 訂閱方案（unique，FREE / PRO / PRO_PLUS / ULTRA）
+        monthly_uploads: 每月上傳檔數上限
+        monthly_exams: 每月模擬考次數上限
+        daily_ai_chats: 每日 AI 對話次數上限
+        monthly_vision_pages: 每月 vision 頁數上限
+        max_file_size_mb: 單檔大小上限
+        monthly_resource_parse_limit: EPIC-035 每月 LLM 解析份數（-1 = 無限）
+        updated_by: 最後修改的管理員
+    """
+
     __tablename__ = "plan_quotas"
 
     id: Mapped[uuid.UUID] = mapped_column(

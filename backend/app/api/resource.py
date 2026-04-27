@@ -519,6 +519,16 @@ def submit_youtube(
     tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
+    """submit youtube。
+
+    此 endpoint 對應 `submit_youtube` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.submit_youtube(
         user_id=user_id,
         youtube_url=request.youtube_url,
@@ -567,6 +577,17 @@ def complete_parsing(
     user_id: str = Depends(get_current_user_id),
     service: KnowledgeMapService = Depends(_get_knowledge_map_service),
 ):
+    """complete parsing。
+
+    此 endpoint 對應 `complete_parsing` 操作。
+
+    Args:
+        resource_id: 參數。
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.complete_parsing(resource_id=resource_id, user_id=user_id)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -579,6 +600,17 @@ def generate_map(
     user_id: str = Depends(get_current_user_id),
     service: KnowledgeMapService = Depends(_get_knowledge_map_service),
 ):
+    """generate map。
+
+    此 endpoint 對應 `generate_map` 操作。
+
+    Args:
+        resource_id: 參數。
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.generate_map(resource_id=resource_id, user_id=user_id)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -607,6 +639,16 @@ def init_chunked_upload(
     tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db),
 ):
+    """init chunked upload。
+
+    此 endpoint 對應 `init_chunked_upload` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     file_size = body.file_size
@@ -624,6 +666,18 @@ async def upload_chunk(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """upload chunk。
+
+    此 endpoint 對應 `upload_chunk` 操作。
+
+    Args:
+        upload_id: 參數。
+        chunk_index: 參數。
+        file: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.services.chunked_upload_service import ChunkedUploadService
     chunk_data = await file.read()
     service = ChunkedUploadService(db)
@@ -637,6 +691,16 @@ def get_chunked_upload_status(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get chunked upload status。
+
+    此 endpoint 對應 `get_chunked_upload_status` 操作。
+
+    Args:
+        upload_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     result = service.get_upload_status(user_id=user_id, upload_id=upload_id)
@@ -649,6 +713,16 @@ def merge_chunks(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """merge chunks。
+
+    此 endpoint 對應 `merge_chunks` 操作。
+
+    Args:
+        upload_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     result = service.merge_chunks(user_id=user_id, upload_id=upload_id)

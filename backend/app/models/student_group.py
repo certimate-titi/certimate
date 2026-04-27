@@ -11,6 +11,16 @@ from app.models import Base
 
 
 class StudentGroup(Base):
+    """B2B 學生群組（一個機構底下的班級）。
+
+    對應 DBML 表：student_groups
+    一對多 student_group_members；institution CASCADE 刪除。
+
+    Attributes:
+        institution_id: 所屬機構（CASCADE）
+        name: 群組名稱（例如 "資工三甲"）
+    """
+
     __tablename__ = "student_groups"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -28,6 +38,17 @@ class StudentGroup(Base):
 
 
 class StudentGroupMember(Base):
+    """學生群組成員關聯。
+
+    對應 DBML 表：student_group_members
+    Unique（group_id, user_id）。
+
+    Attributes:
+        group_id: 群組（CASCADE）
+        user_id: 使用者（CASCADE）
+        joined_at: 加入時間
+    """
+
     __tablename__ = "student_group_members"
 
     id: Mapped[uuid.UUID] = mapped_column(

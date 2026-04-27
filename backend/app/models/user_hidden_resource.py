@@ -11,6 +11,17 @@ from app.models import Base
 
 
 class UserHiddenResource(Base):
+    """使用者軟隱藏「非自有資源」記錄（Per-user 隱藏狀態）。
+
+    對應 DBML 表：user_hidden_resources
+    複合主鍵（user_id, resource_id）；用於分享/平台資源的個人隱藏不影響他人。
+
+    Attributes:
+        user_id: 隱藏該資源的使用者（CASCADE）
+        resource_id: 被隱藏的資源（CASCADE）
+        hidden_at: 隱藏時間
+    """
+
     __tablename__ = "user_hidden_resources"
 
     user_id: Mapped[uuid.UUID] = mapped_column(

@@ -19,14 +19,18 @@ ALERT_THRESHOLD = 1000
 
 
 class RetirementService:
+    """Retirement Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_user_id_for_question(self, q: Question):
+        """取得 user id for question。"""
         exam = self.db.query(Exam).filter_by(id=q.exam_id).first()
         return exam.user_id if exam else None
 
     def _get_last_answer(self, question_id):
+        """取得 last answer。"""
         return (
             self.db.query(Answer)
             .filter(Answer.question_id == question_id)
@@ -35,6 +39,7 @@ class RetirementService:
         )
 
     def _get_stat(self, q: Question):
+        """取得 stat。"""
         if not q.node_id:
             return None
         user_id = self._get_user_id_for_question(q)
@@ -50,11 +55,13 @@ class RetirementService:
         )
 
     def _get_mastery(self, q: Question):
+        """取得 mastery。"""
         if not q.node_id:
             return None
         return self.db.query(NodeMastery).filter(NodeMastery.node_id == q.node_id).first()
 
     def _is_node_green_mature(self, mastery, now: datetime) -> bool:
+        """判斷 node green mature。"""
         return (mastery and mastery.color == "green"
                 and mastery.updated_at and (now - mastery.updated_at).days >= 14)
 

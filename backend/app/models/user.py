@@ -22,6 +22,8 @@ from app.models import Base
 
 
 class SubscriptionPlan(str, enum.Enum):
+    """訂閱方案列舉（DB 值；API 顯示名另行映射）。"""
+
     FREE = "FREE"
     PRO = "PRO"
     PRO_PLUS = "PRO_PLUS"
@@ -30,6 +32,8 @@ class SubscriptionPlan(str, enum.Enum):
 
 
 class SubscriptionStatus(str, enum.Enum):
+    """訂閱狀態列舉。"""
+
     ACTIVE = "active"
     CANCELLED = "cancelled"
     EXPIRED = "expired"
@@ -37,6 +41,8 @@ class SubscriptionStatus(str, enum.Enum):
 
 
 class UserStatus(str, enum.Enum):
+    """使用者帳號狀態列舉。"""
+
     PENDING = "pending"
     ACTIVE = "active"
     SUSPENDED = "suspended"
@@ -45,6 +51,8 @@ class UserStatus(str, enum.Enum):
 
 
 class UserRole(str, enum.Enum):
+    """使用者角色列舉（user / student / org_admin / admin / super_admin）。"""
+
     USER = "user"
     STUDENT = "student"
     ORG_ADMIN = "org_admin"
@@ -53,12 +61,36 @@ class UserRole(str, enum.Enum):
 
 
 class LearningPreference(str, enum.Enum):
+    """學習偏好列舉（題海 / 概念 / 混合）。"""
+
     DRILL = "drill"
     CONCEPT = "concept"
     MIXED = "mixed"
 
 
 class User(Base):
+    """使用者主檔（B2C 散客 / B2B 學生 / 教師 / 管理員）。
+
+    對應 DBML 表：users
+
+    Attributes:
+        email: 信箱（unique）
+        display_name / avatar_url: 顯示名稱與頭像
+        auth_provider: email / google / firebase
+        password_hash: bcrypt 密碼雜湊（auth_provider=email 時）
+        subscription_plan: FREE / PRO / PRO_PLUS / ULTRA / EDU
+        subscription_status: active / cancelled / expired / trial
+        plan_source: payment / admin（升級來源）
+        trial_start_date / trial_end_date / has_used_trial / pre_trial_plan: 試用相關
+        org_id: 所屬機構（B2B）
+        role: USER / STUDENT / ORG_ADMIN / ADMIN / SUPER_ADMIN
+        status: pending / active / suspended / cooling / deleted
+        onboarding_completed: 是否完成新手導引
+        daily_study_minutes / learning_preference: 學習偏好
+        current_streak / longest_streak / freezes_remaining: 連續學習日相關
+        last_active_date: 最後活躍日（streak 計算）
+    """
+
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(

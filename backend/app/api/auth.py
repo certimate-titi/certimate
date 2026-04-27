@@ -27,6 +27,16 @@ def _get_auth_service(db: Session = Depends(get_db)) -> AuthService:
 
 @router.post("/auth/register")
 def register(request: RegisterRequest, service: AuthService = Depends(_get_auth_service)):
+    """register。
+
+    此 endpoint 對應 `register` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.register(request.email, request.password, request.agreed_to_terms)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -35,6 +45,16 @@ def register(request: RegisterRequest, service: AuthService = Depends(_get_auth_
 
 @router.post("/auth/verify-email")
 def verify_email(request: VerifyEmailRequest, service: AuthService = Depends(_get_auth_service)):
+    """verify email。
+
+    此 endpoint 對應 `verify_email` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.verify_email(request.token)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -43,12 +63,32 @@ def verify_email(request: VerifyEmailRequest, service: AuthService = Depends(_ge
 
 @router.post("/auth/resend-verification")
 def resend_verification(request: ResendVerificationRequest, service: AuthService = Depends(_get_auth_service)):
+    """resend verification。
+
+    此 endpoint 對應 `resend_verification` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.resend_verification(request.email)
     return result
 
 
 @router.post("/auth/login")
 def login(request: LoginRequest, service: AuthService = Depends(_get_auth_service)):
+    """login。
+
+    此 endpoint 對應 `login` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.login(request.email, request.password)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -57,6 +97,16 @@ def login(request: LoginRequest, service: AuthService = Depends(_get_auth_servic
 
 @router.post("/auth/google-sso")
 def google_sso(request: GoogleSSORequest, service: AuthService = Depends(_get_auth_service)):
+    """google sso。
+
+    此 endpoint 對應 `google_sso` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.google_sso(request.google_id_token, email_hint=request.email)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -65,12 +115,32 @@ def google_sso(request: GoogleSSORequest, service: AuthService = Depends(_get_au
 
 @router.post("/auth/forgot-password")
 def forgot_password(request: ForgotPasswordRequest, service: AuthService = Depends(_get_auth_service)):
+    """forgot password。
+
+    此 endpoint 對應 `forgot_password` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.forgot_password(request.email)
     return result
 
 
 @router.post("/auth/reset-password")
 def reset_password(request: ResetPasswordRequest, service: AuthService = Depends(_get_auth_service)):
+    """reset password。
+
+    此 endpoint 對應 `reset_password` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.reset_password(request.token, request.password)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -79,6 +149,16 @@ def reset_password(request: ResetPasswordRequest, service: AuthService = Depends
 
 @router.post("/auth/password-strength")
 def password_strength(request: PasswordStrengthRequest, service: AuthService = Depends(_get_auth_service)):
+    """password strength。
+
+    此 endpoint 對應 `password_strength` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     return service.check_password_strength(request.password)
 
 
@@ -154,6 +234,16 @@ def delete_account(
     user_id: str = Depends(get_current_user_id),
     service: AuthService = Depends(_get_auth_service),
 ):
+    """delete account。
+
+    此 endpoint 對應 `delete_account` 操作。
+
+    Args:
+        service: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     result = service.delete_account(user_id)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])

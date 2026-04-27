@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 class PlatformSubjectAdminService:
+    """Platform Subject Admin Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def update_draft(
@@ -137,6 +139,7 @@ class PlatformSubjectAdminService:
         }
 
     def _load_platform(self, platform_subject_id: str):
+        """載入 platform。"""
         try:
             pid = uuid.UUID(platform_subject_id)
         except ValueError:
@@ -151,4 +154,5 @@ class PlatformSubjectAdminService:
 
 
 def _err(status_code: int, message: str) -> dict[str, Any]:
+    """ err。"""
     return {"error": True, "status_code": status_code, "message": message}

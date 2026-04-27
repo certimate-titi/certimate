@@ -30,6 +30,19 @@ log = logging.getLogger(__name__)
 
 
 def main():
+    """CLI 進入點：依時間順序重播所有 SUBMITTED 考試重建 SM-2 狀態。
+
+    流程：
+        1. 抓取 ``Exam.status == SUBMITTED`` 的考試，依 ``submitted_at`` 排
+           序，可用 ``--user-id`` 過濾單一使用者。
+        2. 按使用者分組，每場考試把答案依 ``Question.node_id`` 聚合，丟給
+           :class:`SM2Engine` 計算新的 ``base_mastery`` / ``ease_factor`` /
+           ``last_tested_at`` / ``next_review_at`` / ``status``。
+        3. 將計算結果寫回 ``node_mastery`` 表。
+
+    副作用：
+        非 dry-run 模式會 ``UPDATE node_mastery``；dry-run 則 rollback。
+    """
     parser = argparse.ArgumentParser(description="歷史考試 SM-2 重播")
     parser.add_argument("--dry-run", action="store_true", help="不寫入 DB")
     parser.add_argument("--user-id", help="僅處理指定使用者")

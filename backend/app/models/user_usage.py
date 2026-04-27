@@ -11,6 +11,21 @@ from app.models import Base
 
 
 class UserUsage(Base):
+    """使用者每月用量配額追蹤。
+
+    對應 DBML 表：user_usage
+    Unique（user_id, period）；對照 plan_quotas 判斷是否超額。
+
+    Attributes:
+        user_id: 使用者（CASCADE）
+        period: YYYY-MM 月份
+        daily_ai_chats_used: 當日 AI 對話次數（每日重置）
+        monthly_uploads_used: 當月上傳檔數
+        monthly_exams_used: 當月模擬考次數
+        monthly_vision_pages_used: 當月 vision 頁數
+        last_reset_at: 最後重置時間
+    """
+
     __tablename__ = "user_usage"
 
     id: Mapped[uuid.UUID] = mapped_column(

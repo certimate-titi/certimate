@@ -11,6 +11,17 @@ from app.models import Base
 
 
 class FeatureFlag(Base):
+    """功能旗標（灰度/分階段釋出）。
+
+    對應 DBML 表：feature_flags
+
+    Attributes:
+        flag_key: 旗標鍵（unique）
+        enabled: 全域開關
+        rollout_percentage: 隨機釋出百分比（0-100）
+        target_plans: 鎖定特定方案（逗號分隔，例如 PRO,ULTRA）
+    """
+
     __tablename__ = "feature_flags"
 
     id: Mapped[uuid.UUID] = mapped_column(

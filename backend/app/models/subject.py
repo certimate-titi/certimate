@@ -12,6 +12,15 @@ from app.models import Base
 
 
 class SubjectCategory(Base):
+    """科目分類（例如 國家考試 / 證照 / 升學）。
+
+    對應 DBML 表：subject_categories
+
+    Attributes:
+        name: 分類名稱
+        sort_order: 顯示順序
+    """
+
     __tablename__ = "subject_categories"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -22,6 +31,26 @@ class SubjectCategory(Base):
 
 
 class Subject(Base):
+    """科目實體（含平台 seed / 用戶自建 / 機構自建）。
+
+    對應 DBML 表：subjects
+    自關聯（parent_subject_id）形成階層；fork 來源由 source_platform_subject_id 追蹤。
+    與 resources / questions / knowledge_nodes 一對多。
+
+    Attributes:
+        category_id: 所屬 SubjectCategory
+        name / name_en / description: 顯示資訊
+        parent_subject_id: 父科目（階層）
+        is_popular: 是否熱門
+        available_questions: 可用題數快取
+        exam_subject_codes: JSONB 對應考試科目代碼清單
+        owner_user_id: NULL = 平台 seed；UUID = 用戶自建擁有者（CASCADE）
+        scope: platform / personal / institution
+        source_platform_subject_id: Fork 來源平台科目（PRD-034）
+        version: 平台版本（admin publish +1）
+        published_at: 平台最近發布時間
+    """
+
     __tablename__ = "subjects"
 
     id: Mapped[uuid.UUID] = mapped_column(

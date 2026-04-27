@@ -33,6 +33,16 @@ def list_templates(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list templates。
+
+    此 endpoint 對應 `list_templates` 操作。
+
+    Args:
+        category: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(service.list_templates(actor_id=user_id, category=category))
 
@@ -42,6 +52,13 @@ def list_ab_tests(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list ab tests。
+
+    此 endpoint 對應 `list_ab_tests` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.repositories.prompt_template_repository import PromptTemplateRepository
     from app.models.user import User, UserRole
 
@@ -60,6 +77,16 @@ def get_template(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get template。
+
+    此 endpoint 對應 `get_template` 操作。
+
+    Args:
+        template_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(service.get_template(actor_id=user_id, template_id=template_id))
 
@@ -88,6 +115,16 @@ def create_template(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create template。
+
+    此 endpoint 對應 `create_template` 操作。
+
+    Args:
+        req: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(service.create_template(actor_id=user_id, data=req.model_dump()))
 
@@ -114,6 +151,17 @@ def update_template(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update template。
+
+    此 endpoint 對應 `update_template` 操作。
+
+    Args:
+        template_id: 參數。
+        req: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     data = {k: v for k, v in req.model_dump().items() if v is not None}
     return _handle(
@@ -129,6 +177,16 @@ def deactivate_template(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """deactivate template。
+
+    此 endpoint 對應 `deactivate_template` 操作。
+
+    Args:
+        template_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(
         service.deactivate_template(actor_id=user_id, template_id=template_id)
@@ -143,6 +201,16 @@ def list_versions(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list versions。
+
+    此 endpoint 對應 `list_versions` 操作。
+
+    Args:
+        template_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(service.list_versions(actor_id=user_id, template_id=template_id))
 
@@ -158,6 +226,17 @@ def rollback_template(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """rollback template。
+
+    此 endpoint 對應 `rollback_template` 操作。
+
+    Args:
+        template_id: 參數。
+        req: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(
         service.rollback_template(
@@ -186,6 +265,17 @@ def create_ab_test(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create ab test。
+
+    此 endpoint 對應 `create_ab_test` 操作。
+
+    Args:
+        template_id: 參數。
+        req: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(
         service.create_ab_test(
@@ -208,6 +298,17 @@ def update_ab_test(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update ab test。
+
+    此 endpoint 對應 `update_ab_test` 操作。
+
+    Args:
+        test_id: 參數。
+        req: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     if req.action == "cancel":
         return _handle(service.cancel_ab_test(actor_id=user_id, test_id=test_id))
@@ -233,6 +334,17 @@ def get_prompt_for_ai(
     user_id_hash: Optional[int] = Query(None),
     db: Session = Depends(get_db),
 ):
+    """get prompt for ai。
+
+    此 endpoint 對應 `get_prompt_for_ai` 操作。
+
+    Args:
+        name: 參數。
+        user_id_hash: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = PromptTemplateService(db)
     return _handle(
         service.get_prompt_for_ai(name=name, user_id_hash=user_id_hash)

@@ -10,7 +10,9 @@ from app.models.exam import Exam, ExamStatus
 
 
 class AiQuestionService:
+    """Ai Question Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def generate(self, user_id: str | None, subject_id: str | None, count: int = 5):

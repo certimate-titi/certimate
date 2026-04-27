@@ -12,6 +12,8 @@ from app.models import Base
 
 
 class AssignmentStatus(str, enum.Enum):
+    """機構派題作業狀態列舉。"""
+
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED = "completed"
@@ -19,6 +21,19 @@ class AssignmentStatus(str, enum.Enum):
 
 
 class InstitutionAssignment(Base):
+    """B2B 機構派題作業（指定 group 完成考試）。
+
+    對應 DBML 表：institution_assignments
+
+    Attributes:
+        institution_id: 所屬機構
+        group_id: 接受指派的學生群組
+        created_by: 派題者（教師/管理員）
+        exam_config: JSONB，包含科目、題數、難度等出題參數
+        deadline: 截止時間（NULL = 無期限）
+        status: pending / active / completed / cancelled
+    """
+
     __tablename__ = "institution_assignments"
 
     id: Mapped[uuid.UUID] = mapped_column(

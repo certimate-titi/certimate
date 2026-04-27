@@ -35,6 +35,8 @@ from app.models import Base
 # ──────────────────────────────────────────────
 
 class PromptStageStatus(str, enum.Enum):
+    """舊版 Prompt 階段啟用狀態列舉。"""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
 
@@ -88,6 +90,8 @@ class PromptTemplateHistory(Base):
 # ──────────────────────────────────────────────
 
 class PromptCategory(str, enum.Enum):
+    """Prompt 模板分類列舉（safety / knowledge / exam / teaching / emotion）。"""
+
     SAFETY = "safety"
     KNOWLEDGE = "knowledge"
     EXAM = "exam"
@@ -96,6 +100,8 @@ class PromptCategory(str, enum.Enum):
 
 
 class AbTestStatus(str, enum.Enum):
+    """Prompt A/B 測試狀態列舉。"""
+
     RUNNING = "running"
     COMPLETED = "completed"
     CANCELLED = "cancelled"

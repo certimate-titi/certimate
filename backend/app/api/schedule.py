@@ -22,6 +22,13 @@ def get_recommendations(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get recommendations。
+
+    此 endpoint 對應 `get_recommendations` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ScheduleService(db)
     result = service.get_recommendations(user_id=user_id)
     return _handle_result(result)
@@ -37,6 +44,16 @@ def init_schedule(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """init schedule。
+
+    此 endpoint 對應 `init_schedule` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ScheduleService(db)
     result = service.init_schedule(user_id=user_id, subject_id=body.subject_id)
     return _handle_result(result)
@@ -53,6 +70,16 @@ def calculate_mode(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """calculate mode。
+
+    此 endpoint 對應 `calculate_mode` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ScheduleService(db)
     result = service.calculate_mode(
         user_id=user_id, subject_id=body.subject_id, today_str=body.today

@@ -11,6 +11,20 @@ from app.models import Base
 
 
 class AdminAuditLog(Base):
+    """平台管理員操作稽核紀錄。
+
+    對應 DBML 表：admin_audit_logs
+    記錄管理員對任意 target 的操作以供事後追溯。
+
+    Attributes:
+        admin_id: 操作管理員 user_id
+        action: 動作字串（例如 user.suspend）
+        target_type: 目標實體型別（user / resource / refund …）
+        target_id: 目標主鍵
+        details: JSON 額外明細
+        ip_address / user_agent: 來源資訊
+    """
+
     __tablename__ = "admin_audit_logs"
 
     id: Mapped[uuid.UUID] = mapped_column(

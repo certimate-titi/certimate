@@ -26,6 +26,7 @@ def set_now_func(func):
 
 
 def _get_now():
+    """取得 now。"""
     if _now_func is not None:
         return _now_func()
     return datetime.now(timezone.utc)
@@ -56,7 +57,9 @@ ECPAY_CONFIG = {
 
 
 class ECPayService:
+    """EC Pay Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def create_order(self, user_id: str, target_plan: str) -> dict:

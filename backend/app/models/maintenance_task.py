@@ -13,6 +13,8 @@ from app.models import Base
 
 
 class MaintenancePriority(str, enum.Enum):
+    """維運任務優先級列舉。"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -20,6 +22,8 @@ class MaintenancePriority(str, enum.Enum):
 
 
 class MaintenanceTaskStatus(str, enum.Enum):
+    """維運任務處理狀態列舉。"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -27,6 +31,20 @@ class MaintenanceTaskStatus(str, enum.Enum):
 
 
 class MaintenanceTask(Base):
+    """維運工單（追蹤 incident 修復、技術債等）。
+
+    對應 DBML 表：maintenance_tasks
+
+    Attributes:
+        task_id: 對外案件編號（unique）
+        name: 任務名稱
+        priority: low / medium / high / critical
+        related_error_id: 關聯的 anomaly_records.id（可空）
+        status: pending / in_progress / completed / cancelled
+        estimated_hours: 預估工時
+        created_by / assigned_to: 建立者與承辦人
+    """
+
     __tablename__ = "maintenance_tasks"
 
     id: Mapped[uuid.UUID] = mapped_column(

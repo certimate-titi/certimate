@@ -12,10 +12,13 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
 
+    """Email Service 服務類別。"""
     def __init__(self):
+        """初始化實例。"""
         self.settings = get_settings()
 
     def _send(self, to_email: str, subject: str, html_body: str) -> bool:
+        """送出。"""
         host = self.settings.SMTP_HOST
         if not host:
             logger.warning("SMTP not configured — skipping email to %s", to_email)
@@ -101,6 +104,7 @@ class EmailService:
         return self._send(to_email, subject, html)
 
     def send_password_reset_email(self, to_email: str, token: str) -> bool:
+        """送出 password reset email。"""
         url = f"{self.settings.FRONTEND_URL}/reset-password?token={token}"
         html = f"""
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
@@ -126,6 +130,7 @@ class EmailService:
         return self._send(to_email, "[CertiMate] 重設您的密碼", html)
 
     def send_verification_email(self, to_email: str, token: str) -> bool:
+        """送出 verification email。"""
         url = f"{self.settings.FRONTEND_URL}/verify-email?token={token}"
         html = f"""
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">

@@ -12,6 +12,18 @@ from app.models import Base
 
 
 class EarlyWarningRule(Base):
+    """B2B 機構早期預警規則設定。
+
+    對應 DBML 表：early_warning_rules
+    每個 institution 一筆（institution_id unique）。
+
+    Attributes:
+        institution_id: 機構 id（unique，CASCADE 刪除）
+        min_avg_score: 平均分低於此值觸發預警（預設 60）
+        max_decline_trend: 連續下降次數上限（預設 3）
+        max_inactive_days: 最長未活躍天數（預設 5）
+    """
+
     __tablename__ = "early_warning_rules"
 
     id: Mapped[uuid.UUID] = mapped_column(

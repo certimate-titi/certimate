@@ -21,6 +21,16 @@ def create_order(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create order。
+
+    此 endpoint 對應 `create_order` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = ECPayService(db)
     result = service.create_order(user_id=user_id, target_plan=body.target_plan)
     if result.get("error"):
@@ -36,6 +46,13 @@ async def ecpay_callback(
     request: Request,
     db: Session = Depends(get_db),
 ):
+    """ecpay callback。
+
+    此 endpoint 對應 `ecpay_callback` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     form_data = await request.form()
     form_dict = dict(form_data)
 

@@ -19,6 +19,13 @@ def reset_ai_limits(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """reset ai limits。
+
+    此 endpoint 對應 `reset_ai_limits` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.reset_ai_limits(actor_id=user_id)
     return _handle_result(result)
@@ -29,6 +36,13 @@ def clear_cache(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """clear cache。
+
+    此 endpoint 對應 `clear_cache` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.clear_cache(actor_id=user_id)
     return _handle_result(result)
@@ -49,6 +63,13 @@ def get_model_routing(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get model routing。
+
+    此 endpoint 對應 `get_model_routing` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.get_model_routing(actor_id=user_id)
     return _handle_result(result)
@@ -67,6 +88,18 @@ def update_model_routing(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update model routing。
+
+    此 endpoint 對應 `update_model_routing` 操作。
+
+    Args:
+        plan: 參數。
+        task_type: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.update_model_routing(
         actor_id=user_id,
@@ -86,6 +119,13 @@ def get_plan_quotas(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get plan quotas。
+
+    此 endpoint 對應 `get_plan_quotas` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.get_plan_quotas(actor_id=user_id)
     return _handle_result(result)
@@ -105,6 +145,17 @@ def update_plan_quota(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update plan quota。
+
+    此 endpoint 對應 `update_plan_quota` 操作。
+
+    Args:
+        plan: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     result = service.update_plan_quota(actor_id=user_id, plan=plan, updates=updates)
@@ -119,6 +170,13 @@ def get_announcements(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get announcements。
+
+    此 endpoint 對應 `get_announcements` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.get_announcements(actor_id=user_id)
     return _handle_result(result)
@@ -139,6 +197,16 @@ def create_announcement(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create announcement。
+
+    此 endpoint 對應 `create_announcement` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.create_announcement(actor_id=user_id, data=body.model_dump())
     return _handle_result(result)
@@ -150,6 +218,16 @@ def deactivate_announcement(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """deactivate announcement。
+
+    此 endpoint 對應 `deactivate_announcement` 操作。
+
+    Args:
+        announcement_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.deactivate_announcement(actor_id=user_id, announcement_id=announcement_id)
     return _handle_result(result)
@@ -161,6 +239,16 @@ def delete_announcement(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """delete announcement。
+
+    此 endpoint 對應 `delete_announcement` 操作。
+
+    Args:
+        announcement_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.delete_announcement(actor_id=user_id, announcement_id=announcement_id)
     return _handle_result(result)
@@ -174,6 +262,13 @@ def get_feature_flags(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get feature flags。
+
+    此 endpoint 對應 `get_feature_flags` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.get_feature_flags(actor_id=user_id)
     return _handle_result(result)
@@ -192,6 +287,17 @@ def update_feature_flag(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update feature flag。
+
+    此 endpoint 對應 `update_feature_flag` 操作。
+
+    Args:
+        flag_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     result = service.update_feature_flag(actor_id=user_id, flag_id=flag_id, updates=updates)
@@ -205,6 +311,13 @@ def get_audit_logs(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get audit logs。
+
+    此 endpoint 對應 `get_audit_logs` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.get_audit_logs(actor_id=user_id)
     return _handle_result(result)
@@ -228,6 +341,13 @@ def list_admins(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list admins。
+
+    此 endpoint 對應 `list_admins` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.list_admins(actor_id=user_id)
     return _handle_result(result)
@@ -239,6 +359,16 @@ def create_admin(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create admin。
+
+    此 endpoint 對應 `create_admin` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminSettingsService(db)
     result = service.create_admin(
         actor_id=user_id,

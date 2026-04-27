@@ -39,7 +39,9 @@ UPGRADE_PATH = {
 
 
 class PricingService:
+    """Pricing Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def get_pricing(self, user_id: str | None = None) -> dict:

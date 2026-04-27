@@ -17,7 +17,9 @@ from app.models.ai_cooldown import AiCooldown
 
 
 class WrongAnswerService:
+    """Wrong Answer Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         # Prompt template service for DB-based prompts
         from app.services.prompt_template_service import PromptTemplateService
@@ -187,6 +189,7 @@ class WrongAnswerService:
         return result
 
     def _get_llm(self):
+        """取得 llm。"""
         if self._llm is None:
             from app.core.config import get_settings
             settings = get_settings()

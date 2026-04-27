@@ -227,6 +227,7 @@ class UnifiedKnowledgeExtractionService:
     """統一知識樹萃取 Service。"""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         # Prompt template service for DB-managed prompts
         self._prompt_svc = None
@@ -1027,6 +1028,7 @@ class UnifiedKnowledgeExtractionService:
         ]
 
         def _cosine(a, b):
+            """ cosine。"""
             dot = sum(x * y for x, y in zip(a, b))
             na = math.sqrt(sum(x * x for x in a)) or 1.0
             nb = math.sqrt(sum(x * x for x in b)) or 1.0

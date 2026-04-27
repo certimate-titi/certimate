@@ -42,6 +42,16 @@ def admin_list_feedbacks(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """admin list feedbacks。
+
+    此 endpoint 對應 `admin_list_feedbacks` 操作。
+
+    Args:
+        status: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _check_admin(user_id, db)
     service = FeedbackService(db)
     return service.admin_list_feedbacks(status_filter=status)
@@ -52,6 +62,13 @@ def admin_get_stats(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """admin get stats。
+
+    此 endpoint 對應 `admin_get_stats` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _check_admin(user_id, db)
     service = FeedbackService(db)
     return service.admin_get_stats()
@@ -64,6 +81,17 @@ def admin_update_feedback(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """admin update feedback。
+
+    此 endpoint 對應 `admin_update_feedback` 操作。
+
+    Args:
+        feedback_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _check_admin(user_id, db)
     service = FeedbackService(db)
     result = service.admin_update_feedback(
@@ -93,6 +121,19 @@ def submit_feedback(
     content: Optional[str] = Form(None),
     attachments: Optional[list[UploadFile]] = File(None),
 ):
+    """submit feedback。
+
+    此 endpoint 對應 `submit_feedback` 操作。
+
+    Args:
+        type: 參數。
+        subject: 參數。
+        content: 參數。
+        attachments: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.models.feedback import FeedbackAttachment
     service = FeedbackService(db)
 
@@ -138,6 +179,13 @@ def list_my_feedbacks(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list my feedbacks。
+
+    此 endpoint 對應 `list_my_feedbacks` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = FeedbackService(db)
     return service.list_user_feedbacks(user_id)
 
@@ -148,6 +196,16 @@ def get_feedback_detail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get feedback detail。
+
+    此 endpoint 對應 `get_feedback_detail` 操作。
+
+    Args:
+        feedback_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = FeedbackService(db)
     result = service.get_feedback_detail(user_id, feedback_id)
     if result.get("error"):

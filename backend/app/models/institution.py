@@ -11,6 +11,19 @@ from app.models import Base
 
 
 class Institution(Base):
+    """B2B 教育機構主檔。
+
+    對應 DBML 表：institutions
+    每個 Institution 對應一位 admin user 與多個 student_groups。
+
+    Attributes:
+        name: 機構名稱
+        admin_user_id: 機構管理員 user_id
+        dpa_signed_at / dpa_signer_name: 資料處理協議簽署資訊
+        edu_student_limit: 學生數上限（預設 30）
+        surcharge_confirmed: 超量加價是否確認
+    """
+
     __tablename__ = "institutions"
 
     id: Mapped[uuid.UUID] = mapped_column(

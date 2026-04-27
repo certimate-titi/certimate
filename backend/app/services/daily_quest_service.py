@@ -43,16 +43,20 @@ _ID_TO_KEY = {d["id"]: k for k, d in QUEST_DEFS.items()}
 
 
 def _today() -> date_type:
+    """ today。"""
     return datetime.now(timezone.utc).date()
 
 
 class DailyQuestService:
+    """Daily Quest Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ── Internal ──────────────────────────────────────────────────────
 
     def _get_or_create(self, user_id: uuid.UUID, quest_key: str) -> DailyQuestProgress:
+        """取得 or create。"""
         d = QUEST_DEFS[quest_key]
         today = _today()
         row = (
@@ -96,6 +100,7 @@ class DailyQuestService:
         return row
 
     def record_exam_completed(self, user_id: str, exam_id: str) -> DailyQuestProgress | None:
+        """record exam completed。"""
         try:
             uid = uuid.UUID(user_id)
         except (ValueError, TypeError):
@@ -116,6 +121,7 @@ class DailyQuestService:
     # ── Public — query ────────────────────────────────────────────────
 
     def list_today(self, user_id: str) -> list[dict]:
+        """列出 today。"""
         try:
             uid = uuid.UUID(user_id)
         except (ValueError, TypeError):

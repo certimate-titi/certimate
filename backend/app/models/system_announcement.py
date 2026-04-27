@@ -11,6 +11,19 @@ from app.models import Base
 
 
 class SystemAnnouncement(Base):
+    """系統公告（顯示於 banner / dialog 等）。
+
+    對應 DBML 表：system_announcements
+
+    Attributes:
+        title / content: 公告標題與內文
+        type: info / warning / critical
+        display_mode: banner / dialog / toast
+        status: active / inactive / archived
+        starts_at / ends_at: 生效起訖時間
+        created_by: 發布管理員 user_id
+    """
+
     __tablename__ = "system_announcements"
 
     id: Mapped[uuid.UUID] = mapped_column(

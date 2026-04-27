@@ -37,7 +37,20 @@ _SAFE_IDENT = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.=:\s]*$")
 
 
 def _safe_ident(name: str) -> str:
-    """驗證 SQL identifier 是否安全（防止 SQL injection）。"""
+    """驗證 SQL identifier 是否在白名單字元範圍內。
+
+    僅允許英數字、底線、點、等號、空格、冒號（bind param）等中性字元；遇
+    其他字元視為潛在 SQL injection 並 raise ``ValueError``。
+
+    Args:
+        name: 待驗證的 SQL 片段（識別字、JOIN 條件或 WHERE 子句）。
+
+    Returns:
+        通過驗證後原樣回傳的字串。
+
+    Raises:
+        ValueError: ``name`` 含不在白名單內的字元。
+    """
     if not _SAFE_IDENT.match(name):
         raise ValueError(f"Unsafe SQL identifier: {name!r}")
     return name
@@ -77,7 +90,15 @@ INDIRECT_PURGE_PLAN = [
 
 
 def count_tenant_data(db: Session, tenant_id: str) -> dict[str, int]:
-    """計算各表中屬於該租戶的資料筆數。"""
+    """統計 ``PURGE_PLAN`` 與 ``INDIRECT_PURGE_PLAN`` 中屬於該租戶的列數。
+
+    Args:
+        db: SQLAlchemy Session。
+        tenant_id: 租戶 UUID 字串。
+
+    Returns:
+        ``{table_name: row_count}`` 對照表，含直接和間接關聯的所有表。
+    """
     counts = {}
     for table_name, col_name, _ in PURGE_PLAN:
         tbl = sa.table(_safe_ident(table_name), sa.column(_safe_ident(col_name)))
@@ -109,7 +130,15 @@ def count_tenant_data(db: Session, tenant_id: str) -> dict[str, int]:
 
 
 def get_gcs_paths_for_tenant(db: Session, tenant_id: str) -> list[str]:
-    """取得屬於該租戶的所有 GCS 檔案路徑。"""
+    """查詢該租戶名下所有 ``resources.gcs_path`` 非空的列。
+
+    Args:
+        db: SQLAlchemy Session。
+        tenant_id: 租戶 UUID 字串。
+
+    Returns:
+        GCS 物件路徑串列，後續供 :func:`purge_gcs_files` 刪除。
+    """
     rows = db.execute(
         text(
             "SELECT gcs_path FROM resources "
@@ -121,7 +150,20 @@ def get_gcs_paths_for_tenant(db: Session, tenant_id: str) -> list[str]:
 
 
 def purge_gcs_files(gcs_paths: list[str], bucket_name: str, dry_run: bool) -> int:
-    """刪除 GCS 中的檔案（需要 google-cloud-storage 套件）。"""
+    """批次刪除 GCS bucket 中的物件。
+
+    Args:
+        gcs_paths: GCS 物件路徑串列（接受 ``gs://bucket/...`` 或裸 blob
+            name 兩種格式）。
+        bucket_name: 目標 bucket 名稱，用於去除 ``gs://`` 前綴。
+        dry_run: 若為 True 僅 log 不實際刪除。
+
+    Returns:
+        實際成功刪除的物件數；缺少 ``google-cloud-storage`` 套件時回傳 0。
+
+    副作用：
+        非 dry-run 模式會對 GCS bucket 發出 ``Blob.delete()``。
+    """
     try:
         from google.cloud import storage  # type: ignore
     except ImportError:
@@ -274,6 +316,15 @@ def purge_tenant(
 
 
 def main():
+    """CLI 進入點：解析 ``--tenant-id`` / ``--confirm`` / ``--purge-files`` 等參數。
+
+    預設為 ``--dry-run``；指定 ``--confirm`` 時會在執行前要求使用者輸入租戶
+    ID 二次確認，最後呼叫 :func:`purge_tenant` 執行抹除。
+
+    副作用：
+        非 dry-run 模式會刪除該租戶的所有業務資料、停用 ``tenants`` 列，並
+        視 ``--purge-files`` 同步清除 GCS 物件。錯誤以非零狀態碼結束程式。
+    """
     parser = argparse.ArgumentParser(
         description="CertiMate 租戶資料抹除工具（Phase 4 退場機制）",
         formatter_class=argparse.RawDescriptionHelpFormatter,

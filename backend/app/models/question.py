@@ -22,6 +22,8 @@ from app.models import Base
 
 
 class QuestionType(str, enum.Enum):
+    """題型列舉（單選 / 複選 / 填充 / 計算）。"""
+
     SINGLE_CHOICE = "single_choice"
     MULTIPLE_CHOICE = "multiple_choice"
     FILL_IN = "fill_in"
@@ -29,12 +31,16 @@ class QuestionType(str, enum.Enum):
 
 
 class DifficultyLevel(str, enum.Enum):
+    """難度列舉（easy / medium / hard）。"""
+
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
 
 
 class BloomCategory(str, enum.Enum):
+    """Bloom 認知層級列舉（remember / understand / apply / analyze / evaluate / create）。"""
+
     REMEMBER = "remember"
     UNDERSTAND = "understand"
     APPLY = "apply"
@@ -44,6 +50,33 @@ class BloomCategory(str, enum.Enum):
 
 
 class Question(Base):
+    """題目主檔（含考古題 / AI 生成 / 個人題庫多種來源）。
+
+    對應 DBML 表：questions
+    Constraint：exam_id 與 historical_exam_id 必有其一不為 NULL。
+
+    Attributes:
+        exam_id: 使用者考試 FK（AI 生成 / 模擬考）
+        historical_exam_id: 歷史考試 FK（爬蟲匯入考古題）
+        node_id: 對應知識節點
+        question_number: 題號
+        type: 題型（single_choice / multiple_choice / fill_in / calculation）
+        difficulty: 難度
+        content: 題幹
+        option_a/b/c/d: 選項
+        correct_answer: 正解（多選用逗號）
+        bloom_category: Bloom 認知層級
+        figure_urls / figure_description: 題目附圖
+        source_type: historical / ai / personal
+        quality_flag / flag_reason: 品管標記
+        retired_at / retention_reason: 退役時間與原因
+        source_resource_id / owner_user_id: EPIC-035 個人題庫來源
+        answer_source: authoritative / ai_inferred / user_confirmed
+        confidence: AI 推論信心度
+        needs_answer / never_for_scoring: 計分行為旗標
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "questions"
 
     id: Mapped[uuid.UUID] = mapped_column(

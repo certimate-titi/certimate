@@ -173,6 +173,18 @@ def trigger_parse(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> ParseJobResponse:
+    """trigger parse。
+
+    此 endpoint 對應 `trigger_parse` 操作。
+
+    Args:
+        resource_id: 參數。
+        background: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     user = _get_user_or_404(db, current_user_id)
     resource = _get_resource_owned(db, resource_id, current_user_id)
 
@@ -225,6 +237,17 @@ def get_parse_status(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> ParseStatusResponse:
+    """get parse status。
+
+    此 endpoint 對應 `get_parse_status` 操作。
+
+    Args:
+        resource_id: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _get_resource_owned(db, resource_id, current_user_id)
     job = db.execute(
         select(ResourceParseJob)
@@ -251,6 +274,17 @@ def get_parsed(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> ParsedResourceResponse:
+    """get parsed。
+
+    此 endpoint 對應 `get_parsed` 操作。
+
+    Args:
+        resource_id: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _require_paid_plan(db, current_user_id)
     res = _get_resource_owned(db, resource_id, current_user_id)
     scaffolds_rows = db.execute(
@@ -285,6 +319,17 @@ def list_candidates(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> CandidateListResponse:
+    """list candidates。
+
+    此 endpoint 對應 `list_candidates` 操作。
+
+    Args:
+        resource_id: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     _get_resource_owned(db, resource_id, current_user_id)
 
     t1_count = db.execute(
@@ -322,6 +367,18 @@ def approve_candidates(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> dict[str, int]:
+    """approve candidates。
+
+    此 endpoint 對應 `approve_candidates` 操作。
+
+    Args:
+        resource_id: 參數。
+        body: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     resource = _get_resource_owned(db, resource_id, current_user_id)
 
     approved = 0
@@ -370,6 +427,18 @@ def set_concept_note(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> dict[str, str]:
+    """set concept note。
+
+    此 endpoint 對應 `set_concept_note` 操作。
+
+    Args:
+        question_id: 參數。
+        body: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     q = _get_question_owned(db, question_id, current_user_id)
     q.user_concept_note = body.note.strip()
     q.user_concept_note_at = datetime.now(timezone.utc)
@@ -384,6 +453,18 @@ def submit_blind_answer(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> dict[str, Any]:
+    """submit blind answer。
+
+    此 endpoint 對應 `submit_blind_answer` 操作。
+
+    Args:
+        question_id: 參數。
+        body: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     q = _get_question_owned(db, question_id, current_user_id)
     if not q.needs_answer:
         raise HTTPException(
@@ -408,6 +489,18 @@ def set_inference_judgment(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> dict[str, str]:
+    """set inference judgment。
+
+    此 endpoint 對應 `set_inference_judgment` 操作。
+
+    Args:
+        question_id: 參數。
+        body: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     q = _get_question_owned(db, question_id, current_user_id)
     # 僅更新 explanation 尾巴記錄判定（avoid new table for MVP）
     existing = q.explanation or ""
@@ -424,6 +517,18 @@ def set_scaffold_response(
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> dict[str, str]:
+    """set scaffold response。
+
+    此 endpoint 對應 `set_scaffold_response` 操作。
+
+    Args:
+        scaffold_id: 參數。
+        body: 參數。
+        current_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     s = db.get(ResourceScaffold, scaffold_id)
     if not s:
         raise HTTPException(status_code=404, detail={"message": "scaffold not found"})

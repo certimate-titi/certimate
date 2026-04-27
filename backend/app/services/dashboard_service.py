@@ -18,7 +18,9 @@ from app.models.resource import Resource
 
 
 class DashboardService:
+    """Dashboard Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def get_dashboard(self, user_id: str, subject_name: str | None = None, subject_id: str | None = None) -> dict:

@@ -99,6 +99,13 @@ def get_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get dashboard。
+
+    此 endpoint 對應 `get_dashboard` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.get_dashboard(user_id=user_id)
     return _handle_result(result)
@@ -339,6 +346,13 @@ def get_system_settings(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get system settings。
+
+    此 endpoint 對應 `get_system_settings` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.get_system_settings(user_id=user_id)
     return _handle_result(result)
@@ -358,6 +372,16 @@ def create_user(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create user。
+
+    此 endpoint 對應 `create_user` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.create_user(
         actor_id=user_id,
@@ -375,6 +399,18 @@ def search_users(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """search users。
+
+    此 endpoint 對應 `search_users` 操作。
+
+    Args:
+        keyword: 參數。
+        plan: 參數。
+        role: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.search_users(actor_id=user_id, keyword=keyword, plan=plan, role=role)
     return _handle_result(result)
@@ -386,6 +422,16 @@ def export_users_csv(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """export users csv。
+
+    此 endpoint 對應 `export_users_csv` 操作。
+
+    Args:
+        plan: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.export_users_csv(actor_id=user_id, plan=plan)
     if result.get("error"):
@@ -405,6 +451,16 @@ def get_user_detail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get user detail。
+
+    此 endpoint 對應 `get_user_detail` 操作。
+
+    Args:
+        target_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.get_user_detail(actor_id=user_id, target_user_key=target_user_id)
     return _handle_result(result)
@@ -425,6 +481,17 @@ def adjust_subscription(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """adjust subscription。
+
+    此 endpoint 對應 `adjust_subscription` 操作。
+
+    Args:
+        target_user_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.adjust_subscription(
         actor_id=user_id,
@@ -449,6 +516,16 @@ def suspend_user(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """suspend user。
+
+    此 endpoint 對應 `suspend_user` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.suspend_user(
         actor_id=user_id,
@@ -470,6 +547,16 @@ def activate_user(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """activate user。
+
+    此 endpoint 對應 `activate_user` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.activate_user(
         actor_id=user_id,
@@ -493,6 +580,16 @@ def adjust_role(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """adjust role。
+
+    此 endpoint 對應 `adjust_role` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     # Support both target_email and email fields
     target_email = body.target_email or body.email
@@ -518,6 +615,16 @@ def delete_user(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """delete user。
+
+    此 endpoint 對應 `delete_user` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.delete_user(
         actor_id=user_id,
@@ -540,6 +647,17 @@ def notify_user(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """notify user。
+
+    此 endpoint 對應 `notify_user` 操作。
+
+    Args:
+        target_user_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminService(db)
     result = service.notify_user(
         actor_id=user_id,
@@ -579,6 +697,16 @@ def seed_subjects(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """seed subjects。
+
+    此 endpoint 對應 `seed_subjects` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     from app.models.subject import SubjectCategory, Subject
 
     categories_data = body.categories if body else DEFAULT_EXAM_SUBJECTS

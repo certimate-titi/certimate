@@ -52,6 +52,16 @@ def ai_chat(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """ai chat。
+
+    此 endpoint 對應 `ai_chat` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     user_uuid = uuid.UUID(user_id)
     user = db.query(User).filter_by(id=user_uuid).first()
 

@@ -16,6 +16,22 @@ from app.models import Base
 
 
 class BudgetConfig(Base):
+    """預算設定與當前狀態。
+
+    對應 DBML 表：budget_config
+    Feature 33 — 成本監控中心；支援 4 種 scope（AI_ANTHROPIC / AI_GEMINI /
+    AI_VOYAGE / GCP_TOTAL），單向同步 GCP Native Budget。
+
+    Attributes:
+        scope: 預算範圍（unique）
+        monthly_limit_usd: 月預算上限
+        warning_percent / degrade_percent / disable_percent: 三級觸發門檻
+        current_state: 目前狀態（active / warning / degraded / disabled）
+        overridden_until: 人工覆寫保留至何時
+        gcp_budget_resource_name: GCP Native Budget resource 全名
+        gcp_sync_enabled: 是否啟用單向同步至 GCP
+    """
+
     __tablename__ = "budget_config"
 
     id: Mapped[uuid.UUID] = mapped_column(

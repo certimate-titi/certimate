@@ -17,18 +17,23 @@ from app.models.user import User
 
 class WrongAnswerMapService:
 
+    """Wrong Answer Map Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     # ========== Helpers ==========
 
     def _get_user(self, user_id: str) -> User:
+        """取得 user。"""
         return self.db.query(User).filter_by(id=uuid.UUID(user_id)).first()
 
     def _get_plan(self, user: User) -> str:
+        """取得 plan。"""
         return user.subscription_plan.value if hasattr(user.subscription_plan, "value") else str(user.subscription_plan)
 
     def _compute_color(self, rate: Optional[Decimal], total_count: int = 0) -> str:
+        """計算 color。"""
         if total_count == 0 or rate is None:
             return "gray"
         r = float(rate)
@@ -42,6 +47,7 @@ class WrongAnswerMapService:
     # ========== Update Mastery ==========
 
     def update_mastery(self, user_id: str, subject_id: str) -> dict:
+        """更新 mastery。"""
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
 
@@ -92,6 +98,7 @@ class WrongAnswerMapService:
     # ========== Get Map ==========
 
     def get_map(self, user_id: str, subject_id: str, time_range: Optional[str] = None) -> dict:
+        """取得 map。"""
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
         user = self._get_user(user_id)
@@ -160,6 +167,7 @@ class WrongAnswerMapService:
         return {"nodes": tree}
 
     def _build_mastery_tree(self, nodes, mastery_map, locked_depth=None):
+        """建立 mastery tree。"""
         node_map = {}
         for n in nodes:
             m = mastery_map.get(n.id, {"mastery_rate": None, "color": "gray", "wrong_count": 0})
@@ -190,6 +198,7 @@ class WrongAnswerMapService:
         return roots
 
     def _calculate_parent_mastery(self, nodes, locked_depth=None):
+        """計算 parent mastery。"""
         for node in nodes:
             if node.get("locked"):
                 continue
@@ -212,6 +221,7 @@ class WrongAnswerMapService:
     # ========== Node Wrong Answers ==========
 
     def get_node_wrong_answers(self, user_id: str, node_id: str) -> dict:
+        """取得 node wrong answers。"""
         uid = uuid.UUID(user_id)
         nid = uuid.UUID(node_id)
 
@@ -244,6 +254,7 @@ class WrongAnswerMapService:
     # ========== Export Markdown ==========
 
     def export_markdown(self, user_id: str, subject_id: str) -> str:
+        """匯出 markdown。"""
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
 

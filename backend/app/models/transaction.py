@@ -12,6 +12,22 @@ from app.models import Base
 
 
 class Transaction(Base):
+    """金流交易紀錄（綠界 ECPay）。
+
+    對應 DBML 表：transactions
+
+    Attributes:
+        user_id: 付款人（CASCADE）
+        merchant_trade_no: 商家交易編號（unique，送綠界 key）
+        target_plan: 升級目標方案（PRO / PRO_PLUS / ULTRA）
+        amount: 交易金額
+        status: pending / paid / failed / refunded
+        payment_provider: 金流服務商（預設 ecpay）
+        trade_no: 綠界回傳交易編號
+        payment_type: 信用卡 / ATM / 超商等
+        rtn_code: 綠界回傳碼
+    """
+
     __tablename__ = "transactions"
 
     id: Mapped[uuid.UUID] = mapped_column(

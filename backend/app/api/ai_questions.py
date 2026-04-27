@@ -34,6 +34,17 @@ def generate(
     db: Session = Depends(get_db),
     _gate: None = Depends(require_ai_budget_available),
 ):
+    """generate。
+
+    此 endpoint 對應 `generate` 操作。
+
+    Args:
+        body: 參數。
+        _gate: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AiQuestionService(db)
     result = service.generate(
         user_id=user_id,
@@ -53,6 +64,16 @@ def consent(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """consent。
+
+    此 endpoint 對應 `consent` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AiQuestionService(db)
     result = service.consent(user_id=user_id, agreed=body.agreed)
     return _handle_result(result)
@@ -67,6 +88,16 @@ def quality_check(
     body: QualityCheckRequest,
     db: Session = Depends(get_db),
 ):
+    """quality check。
+
+    此 endpoint 對應 `quality_check` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AiQuestionService(db)
     result = service.quality_check(body.questions)
     return _handle_result(result)
@@ -81,6 +112,16 @@ def restore(
     body: RestoreRequest,
     db: Session = Depends(get_db),
 ):
+    """restore。
+
+    此 endpoint 對應 `restore` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = RetirementService(db)
     result = service.restore(body.subject_id)
     return _handle_result(result)
@@ -95,6 +136,16 @@ def check_reports(
     body: CheckReportsRequest,
     db: Session = Depends(get_db),
 ):
+    """check reports。
+
+    此 endpoint 對應 `check_reports` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = RetirementService(db)
     result = service.check_reports(body.question_id)
     return _handle_result(result)
@@ -110,6 +161,16 @@ def import_questions(
     body: ImportRequest,
     db: Session = Depends(get_db),
 ):
+    """import questions。
+
+    此 endpoint 對應 `import_questions` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AiQuestionService(db)
     result = service.import_questions(
         subject_id=body.subject_id,

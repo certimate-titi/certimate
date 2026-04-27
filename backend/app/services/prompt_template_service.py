@@ -19,10 +19,12 @@ from app.repositories.prompt_template_repository import PromptTemplateRepository
 
 
 def _get_user(db: Session, user_id: str) -> Optional[User]:
+    """取得 user。"""
     return db.query(User).filter(User.id == user_id).first()
 
 
 def _require_super_admin(db: Session, user_id: str) -> Optional[dict]:
+    """ require super admin。"""
     user = _get_user(db, user_id)
     if not user:
         return {"error": True, "status_code": 401, "message": "未授權"}
@@ -37,6 +39,7 @@ def _log_audit(
     action: str,
     details: Optional[dict] = None,
 ):
+    """ log audit。"""
     log = AdminAuditLog(
         admin_id=admin_id,
         action=action,
@@ -51,12 +54,14 @@ class PromptTemplateService:
     """Prompt 模板管理服務。"""
 
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
         self.repo = PromptTemplateRepository(db)
 
     # ── List / Get ────────────────────────────────────────────────────────
 
     def list_templates(self, actor_id: str, category: Optional[str] = None) -> dict:
+        """列出 templates。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -68,6 +73,7 @@ class PromptTemplateService:
         }
 
     def get_template(self, actor_id: str, template_id: str) -> dict:
+        """取得 template。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -81,6 +87,7 @@ class PromptTemplateService:
     # ── Create ────────────────────────────────────────────────────────────
 
     def create_template(self, actor_id: str, data: dict) -> dict:
+        """建立 template。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -150,6 +157,7 @@ class PromptTemplateService:
     # ── Update ────────────────────────────────────────────────────────────
 
     def update_template(self, actor_id: str, template_id: str, data: dict) -> dict:
+        """更新 template。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -202,6 +210,7 @@ class PromptTemplateService:
     # ── Deactivate ────────────────────────────────────────────────────────
 
     def deactivate_template(self, actor_id: str, template_id: str) -> dict:
+        """deactivate template。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -227,6 +236,7 @@ class PromptTemplateService:
     # ── Version History ───────────────────────────────────────────────────
 
     def list_versions(self, actor_id: str, template_id: str) -> dict:
+        """列出 versions。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -245,6 +255,7 @@ class PromptTemplateService:
     def rollback_template(
         self, actor_id: str, template_id: str, target_version: int
     ) -> dict:
+        """回滾 template。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -304,6 +315,7 @@ class PromptTemplateService:
     def create_ab_test(
         self, actor_id: str, template_id: str, data: dict
     ) -> dict:
+        """建立 ab test。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -359,6 +371,7 @@ class PromptTemplateService:
     def complete_ab_test(
         self, actor_id: str, test_id: str, winner: str
     ) -> dict:
+        """complete ab test。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -428,6 +441,7 @@ class PromptTemplateService:
         }
 
     def cancel_ab_test(self, actor_id: str, test_id: str) -> dict:
+        """cancel ab test。"""
         err = _require_super_admin(self.db, actor_id)
         if err:
             return err
@@ -514,6 +528,7 @@ class PromptTemplateService:
         change_note: Optional[str],
         actor_id: uuid.UUID,
     ) -> PromptTemplateVersion:
+        """建立 version。"""
         v = PromptTemplateVersion(
             template_id=template.id,
             version=template.current_version,
@@ -532,6 +547,7 @@ class PromptTemplateService:
 
     @staticmethod
     def _to_summary(t: PromptTemplateV2) -> dict:
+        """轉換為 summary。"""
         return {
             "template_id": t.template_id,
             "name": t.name,
@@ -545,6 +561,7 @@ class PromptTemplateService:
 
     @staticmethod
     def _to_detail(t: PromptTemplateV2) -> dict:
+        """轉換為 detail。"""
         return {
             "template_id": t.template_id,
             "name": t.name,
@@ -565,6 +582,7 @@ class PromptTemplateService:
 
     @staticmethod
     def _version_to_dict(v: PromptTemplateVersion) -> dict:
+        """ version to dict。"""
         return {
             "version": v.version,
             "model": v.model,

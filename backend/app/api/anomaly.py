@@ -25,6 +25,13 @@ def list_anomalies(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """list anomalies。
+
+    此 endpoint 對應 `list_anomalies` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.list_anomalies(user_id=user_id)
     return _handle_result(result)
@@ -42,6 +49,16 @@ def update_anomaly(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update anomaly。
+
+    此 endpoint 對應 `update_anomaly` 操作。
+
+    Args:
+        error_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.update_anomaly(
         user_id=user_id,
@@ -67,6 +84,13 @@ def create_maintenance_task(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create maintenance task。
+
+    此 endpoint 對應 `create_maintenance_task` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.create_maintenance_task(user_id=user_id, data=request.model_dump())
     return _handle_result(result)
@@ -83,6 +107,16 @@ def update_maintenance_task_status(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """update maintenance task status。
+
+    此 endpoint 對應 `update_maintenance_task_status` 操作。
+
+    Args:
+        task_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.update_maintenance_task_status(user_id=user_id, task_id=task_id, status=request.status)
     return _handle_result(result)
@@ -105,6 +139,13 @@ def create_maintenance_schedule(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """create maintenance schedule。
+
+    此 endpoint 對應 `create_maintenance_schedule` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.create_maintenance_schedule(user_id=user_id, data=request.model_dump())
     return _handle_result(result)
@@ -121,6 +162,13 @@ def activate_maintenance_mode(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """activate maintenance mode。
+
+    此 endpoint 對應 `activate_maintenance_mode` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.activate_maintenance_mode(
         user_id=user_id,
@@ -134,6 +182,13 @@ def activate_maintenance_mode(
 def check_schedule_end(
     db: Session = Depends(get_db),
 ):
+    """check schedule end。
+
+    此 endpoint 對應 `check_schedule_end` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AnomalyService(db)
     result = service.check_schedule_end()
     return _handle_result(result)

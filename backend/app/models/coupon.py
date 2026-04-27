@@ -12,6 +12,21 @@ from app.models import Base
 
 
 class Coupon(Base):
+    """優惠券（折扣碼）。
+
+    對應 DBML 表：coupons
+
+    Attributes:
+        code: 折扣碼（unique，使用者輸入比對）
+        discount_type: 折扣類型（percentage / fixed_amount）
+        discount_value: 折扣值（百分比或固定金額）
+        applicable_plans: 適用方案（逗號分隔字串）
+        max_uses: 全域可用次數上限
+        max_uses_per_user: 單一使用者可用次數上限
+        used_count: 已使用次數
+        status: active / paused / expired
+    """
+
     __tablename__ = "coupons"
 
     id: Mapped[uuid.UUID] = mapped_column(

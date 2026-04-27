@@ -27,6 +27,7 @@ class _EmbeddingCache:
     """
 
     def __init__(self, max_size: int = 1000, ttl: int = 86400):
+        """初始化實例。"""
         self._max_size = max_size
         self._ttl = ttl
         self._lock = threading.Lock()
@@ -39,6 +40,7 @@ class _EmbeddingCache:
         self._init_redis()
 
     def _init_redis(self) -> None:
+        """初始化 redis。"""
         redis_url = os.environ.get("REDIS_URL", "")
         if not redis_url:
             return
@@ -53,11 +55,13 @@ class _EmbeddingCache:
 
     @staticmethod
     def _make_key(text: str, model: str) -> str:
+        """建立 key。"""
         normalized = " ".join(text.lower().split())
         h = hashlib.sha256(f"{model}:{normalized}".encode("utf-8")).hexdigest()[:32]
         return f"emb:{h}"
 
     def get(self, text: str, model: str) -> Optional[list[float]]:
+        """取得。"""
         key = self._make_key(text, model)
 
         # 記憶體層
@@ -87,6 +91,7 @@ class _EmbeddingCache:
         return None
 
     def set(self, text: str, model: str, embedding: list[float]) -> None:
+        """set。"""
         key = self._make_key(text, model)
 
         with self._lock:
@@ -105,6 +110,7 @@ class _EmbeddingCache:
 
     @property
     def stats(self) -> dict:
+        """stats。"""
         total = self._hit_count + self._miss_count
         return {
             "hits": self._hit_count,
@@ -136,6 +142,7 @@ class EmbeddingService:
     """
 
     def __init__(self):
+        """初始化實例。"""
         import voyageai
         settings = get_settings()
         self.client = voyageai.Client(api_key=settings.VOYAGE_API_KEY)

@@ -16,6 +16,23 @@ from app.models import Base
 
 
 class NodeMastery(Base):
+    """個人知識節點掌握度（含 SM-2 + 衰退參數）。
+
+    對應 DBML 表：node_mastery
+    Unique（user_id, node_id）；驅動 spaced repetition 推薦複習。
+
+    Attributes:
+        user_id: 學習者（CASCADE）
+        node_id: 對應知識節點（CASCADE）
+        correct_count / total_count / mastery_rate: 累積答題統計（v1 相容）
+        color: UI 顏色標籤
+        base_mastery: 基礎掌握度 0.0-1.0（僅由正式考試更新）
+        ease_factor: SM-2 ease factor（最小 1.3）
+        last_tested_at: 最後一次正式測驗時間
+        next_review_at: 建議下次複習時間
+        status: UNSEEN / CRITICAL / PENDING / MASTERED
+    """
+
     __tablename__ = "node_mastery"
     __table_args__ = (
         UniqueConstraint("user_id", "node_id"),

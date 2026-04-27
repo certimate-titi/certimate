@@ -19,7 +19,9 @@ logger = logging.getLogger("certimate.schedule")
 
 
 class ScheduleService:
+    """Schedule Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def get_recommendations(self, user_id: str):

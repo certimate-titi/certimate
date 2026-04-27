@@ -11,6 +11,18 @@ from app.models import Base
 
 
 class AiModelRouting(Base):
+    """訂閱方案 × 任務類型對應的 AI 模型路由設定。
+
+    對應 DBML 表：ai_model_routings
+    供 ai_dispatcher 依 (plan, task_type) 查得 primary/fallback 模型。
+
+    Attributes:
+        plan: 訂閱方案（FREE / PRO / PRO_PLUS / ULTRA）
+        task_type: 任務類型（chat / explain / generate_question 等）
+        primary_model: 首選模型 ID
+        fallback_model: 故障時備援模型 ID
+    """
+
     __tablename__ = "ai_model_routings"
 
     id: Mapped[uuid.UUID] = mapped_column(

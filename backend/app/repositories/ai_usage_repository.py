@@ -14,7 +14,18 @@ from app.models.ai_usage_ledger import AiUsageLedger
 
 
 class AiUsageRepository:
+    """AI 使用量帳本資料存取 Repository（Feature 33 成本監控中心）。
+
+    封裝 AiUsageLedger ORM 的寫入、彙總、時序查詢，供成本監控與
+    Budget Alert service 使用。所有查詢均接受 SQLAlchemy Session 注入。
+    """
+
     def __init__(self, db: Session):
+        """初始化 Repository。
+
+        Args:
+            db: SQLAlchemy Session。
+        """
         self.db = db
 
     def record(
@@ -30,6 +41,22 @@ class AiUsageRepository:
         request_id: str | None = None,
         billing_source: str = "app",
     ) -> AiUsageLedger:
+        """寫入一筆 AI 使用量紀錄到 ledger。
+
+        Args:
+            provider: AI 服務提供者（gemini、anthropic、openai、voyage）。
+            endpoint: API 端點識別字串；可為 None。
+            input_tokens: 輸入 token 數。
+            output_tokens: 輸出 token 數。
+            cost_usd: 該次呼叫的美元成本。
+            feature: 觸發此次用量的 feature 識別字串；可為 None。
+            user_id: 觸發此次用量的使用者 UUID；可為 None（系統呼叫）。
+            request_id: 對應 trace 用的 request id；可為 None。
+            billing_source: 帳務來源標記，預設 ``"app"``。
+
+        Returns:
+            已 flush 的 AiUsageLedger 實例。
+        """
         entry = AiUsageLedger(
             provider=provider,
             endpoint=endpoint,
@@ -48,7 +75,16 @@ class AiUsageRepository:
     def sum_month(
         self, provider: str, year: int, month: int
     ) -> tuple[Decimal, int, int]:
-        """Return (total_cost_usd, input_tokens, output_tokens) for the given month."""
+        """彙總指定月份單一 provider 的使用量。
+
+        Args:
+            provider: AI 服務提供者。
+            year: 西元年。
+            month: 月份（1-12）。
+
+        Returns:
+            tuple ``(total_cost_usd, input_tokens, output_tokens)``。
+        """
         start = datetime(year, month, 1, tzinfo=timezone.utc)
         end = (
             datetime(year + 1, 1, 1, tzinfo=timezone.utc)
@@ -71,7 +107,15 @@ class AiUsageRepository:
     def daily_series(
         self, provider: str | None, days: int
     ) -> list[tuple[datetime, Decimal]]:
-        """Return [(date, cost_usd), ...] for the last N days."""
+        """取得每日成本時序資料。
+
+        Args:
+            provider: AI 服務提供者；若為 None 則彙總所有 provider。
+            days: 回傳的日數上限。
+
+        Returns:
+            list of tuple ``(day_datetime, cost_usd)``，依日期遞增排序。
+        """
         q = self.db.query(
             func.date_trunc("day", AiUsageLedger.created_at).label("day"),
             func.coalesce(func.sum(AiUsageLedger.cost_usd), 0).label("cost"),
@@ -84,6 +128,15 @@ class AiUsageRepository:
     def month_total_all_providers(
         self, year: int, month: int
     ) -> dict[str, Decimal]:
+        """彙總指定月份所有 provider 的成本。
+
+        Args:
+            year: 西元年。
+            month: 月份（1-12）。
+
+        Returns:
+            dict ``{provider: cost_usd}``，僅包含當月有用量的 provider。
+        """
         start = datetime(year, month, 1, tzinfo=timezone.utc)
         end = (
             datetime(year + 1, 1, 1, tzinfo=timezone.utc)

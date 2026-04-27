@@ -15,6 +15,8 @@ from app.models import Base
 
 
 class ParseJobStatus(str, enum.Enum):
+    """解析任務狀態列舉（queued / parsing / success / failed）。"""
+
     QUEUED = "queued"
     PARSING = "parsing"
     SUCCESS = "success"
@@ -22,6 +24,23 @@ class ParseJobStatus(str, enum.Enum):
 
 
 class ResourceParseJob(Base):
+    """非同步資源解析任務（Gemini 多模態）。
+
+    對應 DBML 表：resource_parse_jobs
+    EPIC-035 M6；追蹤 Gemini 解析狀態、token 消耗與成本。
+
+    Attributes:
+        resource_id: 來源資源（CASCADE）
+        tenant_id: 多租戶隔離鍵
+        status: queued / parsing / success / failed
+        gemini_model: 使用的 Gemini 模型 ID
+        input_tokens / output_tokens / cost_usd: 用量與成本
+        started_at / finished_at: 起訖時間
+        failure_reason: 失敗原因（QA 空態判斷必查）
+        critical_pages: 關鍵頁清單
+        detected_content_type: 偵測內容型別
+    """
+
     __tablename__ = "resource_parse_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(

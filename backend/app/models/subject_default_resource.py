@@ -12,6 +12,18 @@ from app.models import Base
 
 
 class SubjectDefaultResource(Base):
+    """科目預設資源關聯（PRD-033 §6.2）。
+
+    對應 DBML 表：subject_default_resources
+    複合主鍵（subject_id, resource_id），用於指派各科目開卷預設可見資源。
+
+    Attributes:
+        subject_id: 所屬科目（CASCADE）
+        resource_id: 預設資源（CASCADE）
+        added_by_user_id: 加入者（SET NULL）
+        added_at: 加入時間
+    """
+
     __tablename__ = "subject_default_resources"
 
     subject_id: Mapped[uuid.UUID] = mapped_column(

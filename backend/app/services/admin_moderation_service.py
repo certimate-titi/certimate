@@ -13,10 +13,13 @@ from app.models.user import User, UserRole, UserStatus
 
 
 class AdminModerationService:
+    """Admin Moderation Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _is_admin(self, user_id: str) -> bool:
+        """判斷 admin。"""
         user = self.db.query(User).filter(User.id == uuid.UUID(user_id)).first()
         if not user:
             return False
@@ -26,6 +29,7 @@ class AdminModerationService:
     # ── AI Abuse Monitoring ─────────────────────────────────────────────────
 
     def get_ai_abuse_dashboard(self, actor_id: str) -> dict:
+        """取得 ai abuse dashboard。"""
         if not self._is_admin(actor_id):
             return {"error": True, "status_code": 403, "message": "權限不足"}
 
@@ -49,6 +53,7 @@ class AdminModerationService:
         return {"cooling_users": cooling_users}
 
     def unlock_cooldown(self, actor_id: str, target_user_id: str) -> dict:
+        """unlock cooldown。"""
         if not self._is_admin(actor_id):
             return {"error": True, "status_code": 403, "message": "權限不足"}
 
@@ -82,6 +87,7 @@ class AdminModerationService:
     # ── Content Report Queue ────────────────────────────────────────────────
 
     def get_report_queue(self, actor_id: str, status: str | None = None) -> dict:
+        """取得 report queue。"""
         if not self._is_admin(actor_id):
             return {"error": True, "status_code": 403, "message": "權限不足"}
 
@@ -92,6 +98,7 @@ class AdminModerationService:
         reports = query.all()
         import uuid as _uuid
         def _is_uuid(s):
+            """判斷 uuid。"""
             try:
                 _uuid.UUID(str(s))
                 return True
@@ -130,6 +137,7 @@ class AdminModerationService:
         action: str,
         note: str,
     ) -> dict:
+        """resolve report。"""
         if not self._is_admin(actor_id):
             return {"error": True, "status_code": 403, "message": "權限不足"}
 

@@ -9,7 +9,9 @@ from app.models.subject import Subject
 
 
 class ResultNotificationService:
+    """Result Notification Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def send_result_day_notifications(self):

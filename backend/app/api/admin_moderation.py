@@ -26,6 +26,13 @@ def get_ai_abuse_dashboard(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get ai abuse dashboard。
+
+    此 endpoint 對應 `get_ai_abuse_dashboard` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminModerationService(db)
     result = service.get_ai_abuse_dashboard(actor_id=user_id)
     return _handle_result(result)
@@ -37,6 +44,16 @@ def unlock_user_cooldown(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """unlock user cooldown。
+
+    此 endpoint 對應 `unlock_user_cooldown` 操作。
+
+    Args:
+        target_user_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminModerationService(db)
     result = service.unlock_cooldown(actor_id=user_id, target_user_id=target_user_id)
     return _handle_result(result)
@@ -50,6 +67,16 @@ def get_report_queue(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """get report queue。
+
+    此 endpoint 對應 `get_report_queue` 操作。
+
+    Args:
+        status: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminModerationService(db)
     result = service.get_report_queue(actor_id=user_id, status=status)
     return _handle_result(result)
@@ -67,6 +94,17 @@ def resolve_report(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    """resolve report。
+
+    此 endpoint 對應 `resolve_report` 操作。
+
+    Args:
+        report_ref: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = AdminModerationService(db)
     result = service.resolve_report(
         actor_id=user_id,

@@ -11,6 +11,21 @@ from app.models import Base
 
 
 class MergeHistory(Base):
+    """知識樹合併執行歷史。
+
+    對應 DBML 表：merge_histories
+    每次合併操作摘要：來源、新增/合併/衝突節點數。
+
+    Attributes:
+        subject_id: 所屬科目
+        trigger_source: 觸發來源（resource / manual / batch）
+        trigger_name: 來源描述（檔名或操作名）
+        nodes_added: 新增節點數
+        nodes_merged: 合併節點數
+        conflicts_count: 待審衝突數
+        merged_at: 合併執行時間
+    """
+
     __tablename__ = "merge_histories"
 
     id: Mapped[uuid.UUID] = mapped_column(

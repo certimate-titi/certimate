@@ -23,7 +23,9 @@ logger = logging.getLogger("certimate.ai_coach")
 
 
 class AICoachService:
+    """AI Coach Service 服務類別。"""
     def __init__(self, db: Session):
+        """初始化實例。"""
         self.db = db
 
     def _get_weak_topics(self, user_id: uuid.UUID, top_n: int = 3) -> list[dict]:

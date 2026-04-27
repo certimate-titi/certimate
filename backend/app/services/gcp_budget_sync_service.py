@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class SyncResult:
+    """Sync Result。"""
     status: str  # created / updated / skipped_non_gcp / failed
     gcp_budget_resource_name: str | None
     error: str | None = None
@@ -38,6 +39,7 @@ class SyncResult:
 
 
 class BudgetApiAdapter(Protocol):
+    """Budget Api Adapter。"""
     def create_budget(
         self, *, scope: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
@@ -55,6 +57,7 @@ class InMemoryFakeAdapter:
     """BDD 測試用的 in-memory adapter。記錄所有呼叫供斷言。"""
 
     def __init__(self):
+        """初始化實例。"""
         self.budgets: dict[str, dict] = {}
         self.calls: list[tuple] = []
         self.simulate_failure: bool = False
@@ -63,6 +66,7 @@ class InMemoryFakeAdapter:
         self, *, scope: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
     ) -> str:
+        """建立 budget。"""
         self.calls.append(("create", scope, monthly_limit_usd))
         if self.simulate_failure:
             raise RuntimeError("Simulated GCP API failure")
@@ -80,6 +84,7 @@ class InMemoryFakeAdapter:
         self, *, resource_name: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
     ) -> None:
+        """更新 budget。"""
         self.calls.append(("update", resource_name, monthly_limit_usd))
         if self.simulate_failure:
             raise RuntimeError("Simulated GCP API failure")
@@ -90,6 +95,7 @@ class InMemoryFakeAdapter:
             ]
 
     def delete_budget(self, resource_name: str) -> None:
+        """刪除 budget。"""
         self.calls.append(("delete", resource_name))
         self.budgets.pop(resource_name, None)
 
@@ -106,6 +112,7 @@ class GcpBudgetSyncService:
     """Single-direction sync from app budget_config to GCP Native Budgets."""
 
     def __init__(self, adapter: BudgetApiAdapter | None = None):
+        """初始化實例。"""
         self.adapter = adapter or _make_default_adapter()
 
     def upsert_budget(
@@ -119,6 +126,7 @@ class GcpBudgetSyncService:
         existing_resource_name: str | None,
         gcp_sync_enabled: bool,
     ) -> SyncResult:
+        """upsert budget。"""
         if not gcp_sync_enabled or scope not in _SYNCABLE_SCOPES:
             return SyncResult(
                 status="skipped_non_gcp", gcp_budget_resource_name=existing_resource_name
@@ -163,6 +171,7 @@ class RealGcpBudgetsAdapter:
     """
 
     def __init__(self):
+        """初始化實例。"""
         try:
             from google.cloud.billing import budgets_v1 as billing_budgets_v1  # type: ignore[import-not-found]
         except ImportError as exc:
@@ -180,6 +189,7 @@ class RealGcpBudgetsAdapter:
         self, *, scope: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
     ):
+        """建立 budget。"""
         bb = self._billing_budgets_v1
         # Filter limited to project (and optional service)
         budget_filter_kwargs = {"projects": [f"projects/{self.project_id}"]}
@@ -209,6 +219,7 @@ class RealGcpBudgetsAdapter:
         self, *, scope: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
     ) -> str:
+        """建立 budget。"""
         bb = self._billing_budgets_v1
         budget = self._build_budget(
             scope=scope, monthly_limit_usd=monthly_limit_usd,
@@ -225,6 +236,7 @@ class RealGcpBudgetsAdapter:
         self, *, resource_name: str, monthly_limit_usd: Decimal,
         warning_pct: int, degrade_pct: int, disable_pct: int,
     ) -> None:
+        """更新 budget。"""
         bb = self._billing_budgets_v1
         # Need scope to rebuild filter — derive from display_name when updating
         # For simplicity use GCP_TOTAL filter (no service filter)
@@ -237,6 +249,7 @@ class RealGcpBudgetsAdapter:
         self.client.update_budget(request=request)
 
     def delete_budget(self, resource_name: str) -> None:
+        """刪除 budget。"""
         bb = self._billing_budgets_v1
         request = bb.DeleteBudgetRequest(name=resource_name)
         self.client.delete_budget(request=request)

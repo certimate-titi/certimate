@@ -22,6 +22,8 @@ from app.models import Base
 
 
 class ExamStatus(str, enum.Enum):
+    """考試狀態列舉。"""
+
     PENDING = "PENDING"
     READY = "READY"
     IN_PROGRESS = "IN_PROGRESS"
@@ -30,6 +32,24 @@ class ExamStatus(str, enum.Enum):
 
 
 class Exam(Base):
+    """使用者考試（含 AI 生成模考、隨堂練習等）。
+
+    對應 DBML 表：exams
+    與 questions 一對多（透過 exam_id），與 answers 一對多。
+
+    Attributes:
+        user_id: 應試者（CASCADE）
+        subject_id: 所屬科目
+        institution_assignment_id: B2B 派題作業（可空）
+        status: 狀態（PENDING / READY / IN_PROGRESS / SUBMITTED / FAILED）
+        total_questions: 試卷題數
+        difficulty_distribution / question_types: 出題參數
+        score / correct_count: 結果
+        custom_point_ratio / custom_bloom_ratio: 自訂出題權重
+        historical_priority: 是否優先採用歷年題
+        tenant_id: 多租戶隔離鍵
+    """
+
     __tablename__ = "exams"
 
     id: Mapped[uuid.UUID] = mapped_column(

@@ -38,6 +38,16 @@ def get_nodes_by_subject(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """get nodes by subject。
+
+    此 endpoint 對應 `get_nodes_by_subject` 操作。
+
+    Args:
+        subject_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.get_nodes_by_subject(subject_id, user_id)
     return _handle_result(result)
@@ -49,6 +59,16 @@ def get_node_detail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """get node detail。
+
+    此 endpoint 對應 `get_node_detail` 操作。
+
+    Args:
+        node_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.get_node_detail(node_id, user_id)
     return _handle_result(result)
@@ -72,6 +92,16 @@ def get_node_source(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """get node source。
+
+    此 endpoint 對應 `get_node_source` 操作。
+
+    Args:
+        node_id: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.get_node_source(node_id, user_id)
     return _handle_result(result)
@@ -126,6 +156,13 @@ def get_layout(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """get layout。
+
+    此 endpoint 對應 `get_layout` 操作。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.get_layout(user_id)
     return _handle_result(result)
@@ -137,6 +174,16 @@ def send_coach_message(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """send coach message。
+
+    此 endpoint 對應 `send_coach_message` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.send_coach_message(body.node_id, body.message, user_id)
     return _handle_result(result)
@@ -148,6 +195,16 @@ def ai_coach_chat(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """ai coach chat。
+
+    此 endpoint 對應 `ai_coach_chat` 操作。
+
+    Args:
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.send_coach_message(body.node_id, body.message, user_id)
     return _handle_result(result)
@@ -177,6 +234,17 @@ def submit_answers(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db_with_tenant),  # RLS: resource_chunks + answers
 ):
+    """submit answers。
+
+    此 endpoint 對應 `submit_answers` 操作。
+
+    Args:
+        node_id: 參數。
+        body: 參數。
+
+    Returns:
+        回應內容（依 response_model 定義）。
+    """
     service = KnowledgeNavService(db)
     result = service.submit_answers(node_id, user_id, body.correct_count, body.total_count)
     return _handle_result(result)

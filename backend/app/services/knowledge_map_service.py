@@ -8,11 +8,13 @@ from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
 
 class KnowledgeMapService:
 
+    """Knowledge Map Service 服務類別。"""
     def __init__(
         self,
         resource_repo: ResourceRepository,
         node_repo: KnowledgeNodeRepository,
     ):
+        """初始化實例。"""
         self.resource_repo = resource_repo
         self.node_repo = node_repo
 

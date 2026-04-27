@@ -30,7 +30,22 @@ class ImportAuditAction(str, enum.Enum):
 
 
 class ImportAuditLog(Base):
-    """Audit trail for all import operations."""
+    """考古題匯入流程稽核紀錄。
+
+    對應 DBML 表：import_audit_logs
+    每個 ImportTask 在生命週期各階段都會寫入一筆事件。
+
+    Attributes:
+        import_task_id: 對應 import_tasks.id
+        action: 事件型別（ImportAuditAction）
+        user_id / tenant_id: 觸發使用者與多租戶隔離鍵
+        exam_code / category_code / subject_code: 試卷座標
+        status: 事件結果摘要（success / failed）
+        questions_processed / questions_valid / questions_imported: 計數快照
+        duration_ms: 該動作耗時
+        error_code / error_message: 失敗時的錯誤資訊
+    """
+
     __tablename__ = "import_audit_logs"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -83,6 +98,11 @@ class ImportAuditLog(Base):
     )
 
     def __repr__(self):
+        """除錯用簡短表示。
+
+        Returns:
+            str: 包含試卷座標、action、status 的字串
+        """
         return (
             f"<ImportAuditLog {self.exam_code}/{self.category_code}/{self.subject_code} "
             f"action={self.action} status={self.status}>"
