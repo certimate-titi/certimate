@@ -1,4 +1,4 @@
-@ignore @command
+@command
 Feature: Prompt 模板管理（僅 super_admin）
 
   # ============================================================

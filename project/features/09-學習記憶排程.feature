@@ -1,4 +1,4 @@
-@ignore @command
+@command
 Feature: 動態大腦精力調度排程
 
   Background:
