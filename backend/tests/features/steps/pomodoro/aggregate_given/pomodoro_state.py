@@ -9,6 +9,13 @@ def step_impl_pomodoro_enabled(context, email, minutes):
     context.memo[f"pomodoro_enabled_{email}"] = True
     context.memo[f"pomodoro_focus_minutes_{email}"] = minutes
     context.memo["current_user_email"] = email
+    context.memo["pomodoro_settings"] = {
+        "enabled": True,
+        "focus_minutes": minutes,
+        "short_break_minutes": 5,
+        "long_break_minutes": 15,
+        "long_break_interval": 4,
+    }
 
 
 @given('使用者 "{email}" 正在進行測驗 {exam_id:d}，番茄計時器剩餘 0 秒')
@@ -69,3 +76,10 @@ def step_impl_exam_started_with_pomodoro(context, email, exam_id):
     context.memo["current_user_email"] = email
     context.memo["current_exam_id"] = exam_id
     context.memo[f"pomodoro_enabled_{email}"] = True
+    context.memo.setdefault("pomodoro_settings", {
+        "enabled": True,
+        "focus_minutes": 25,
+        "short_break_minutes": 5,
+        "long_break_minutes": 15,
+        "long_break_interval": 4,
+    })

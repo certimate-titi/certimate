@@ -16,3 +16,5 @@ def step_impl(context, email, exam_id):
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
+    context.memo["current_user_email"] = email
+    context.memo["current_exam_id"] = exam_id

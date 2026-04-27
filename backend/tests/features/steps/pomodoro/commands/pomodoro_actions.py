@@ -102,6 +102,12 @@ def step_impl_focus_ended(context):
         "actions": [{"label": "開始休息"}, {"label": "繼續作答"}],
         "is_long_break": is_long,
     }
+    if is_long:
+        context.memo["pomodoro_timer"] = {
+            "mode": "long_break",
+            "status": "休息中",
+            "remaining_seconds": long_b * 60,
+        }
 
 
 @when('第 {n:d} 個專注時段結束')
