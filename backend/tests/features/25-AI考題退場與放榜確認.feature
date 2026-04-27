@@ -1,3 +1,4 @@
+@backend
 Feature: AI 考題退場與放榜確認 (AI Question Retirement & Exam Result Confirmation)
 
   Background:

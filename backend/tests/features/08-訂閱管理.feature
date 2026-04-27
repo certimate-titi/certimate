@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 訂閱管理與多階層控制
 
   Background:

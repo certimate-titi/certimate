@@ -1,3 +1,4 @@
+@backend
 Feature: 考古題非同步匯入 (Phase 3: Async Background Processing)
   # 背景工作、任務追蹤、品質閘門、審計日誌、監控儀表板、匯入復原
 

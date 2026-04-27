@@ -1,4 +1,4 @@
-@analytics
+@frontend @analytics
 Feature: 前端事件接收端點（PRD-046 US-07）
 
   前端 localStorage queue 定時 flush 到 /analytics/events，

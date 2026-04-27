@@ -1,3 +1,4 @@
+@backend
 Feature: 測驗設定
 
   Background:

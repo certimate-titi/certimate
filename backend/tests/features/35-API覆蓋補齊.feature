@@ -1,4 +1,4 @@
-@added-by:cto @coverage
+@backend @added-by:cto @coverage
 Feature: API 覆蓋補齊 — 既有 endpoint 補上最小 BDD 覆蓋
 
   本 Feature 為 ISS-015 覆蓋補齊：為 14 個既有但未被任何 BDD step 呼叫的 endpoint

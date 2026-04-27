@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 平台管理後台 — 內容與安全審核
 
   Background:

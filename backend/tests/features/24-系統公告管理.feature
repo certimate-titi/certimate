@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 系統公告管理
 
   Background:

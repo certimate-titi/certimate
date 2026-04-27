@@ -8,6 +8,7 @@
 # - get_user_learning_style: User's learning preferences
 # - fetch_recent_errors: Recent wrong answers with context
 
+@backend
 Feature: MCP Context Server builds structured user learning profiles
 
   @context_server

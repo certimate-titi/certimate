@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 帳號設定與個人偏好
 
   Background:

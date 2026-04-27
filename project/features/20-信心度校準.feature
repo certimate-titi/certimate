@@ -1,3 +1,4 @@
+@frontend
 Feature: 信心度校準
 
   Background:

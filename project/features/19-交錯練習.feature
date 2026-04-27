@@ -1,3 +1,4 @@
+@frontend
 Feature: 交錯練習
 
   Background:

@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 平台管理後台 — 系統設定（僅 super_admin）
 
   Background:

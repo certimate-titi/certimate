@@ -1,3 +1,4 @@
+@frontend
 Feature: 考古題現代化匯入 (Modern PDF Extraction Pipeline)
   # 使用 Claude Vision + Structured Outputs 取代傳統正則表達式爬蟲
   # 支援組合式題 (combination questions) 與完整驗證閘

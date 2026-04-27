@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: B2B 機構管理後台
 
   Background:

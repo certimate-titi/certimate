@@ -1,4 +1,4 @@
-@mindmap_upgrade
+@backend @mindmap_upgrade
 Feature: 心智圖架構升級（Tier 1 + §3 + Tier 2）
 
   對應 `project/docs/ai/mindmap-architecture-upgrade-plan.md` 的實作驗證。

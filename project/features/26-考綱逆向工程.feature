@@ -1,3 +1,4 @@
+@frontend
 Feature: 考綱逆向工程
 
   AI 分析考古題與教材，透過語意階層萃取（Semantic Hierarchy Extraction）

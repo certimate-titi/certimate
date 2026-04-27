@@ -1,4 +1,4 @@
-@command
+@frontend @command
 Feature: 考古題題庫管理
 
   Background:

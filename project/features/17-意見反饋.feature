@@ -1,3 +1,4 @@
+@frontend
 Feature: 意見反饋
 
   # 反饋類型 API enum 值：BUG | FEATURE_REQUEST | CONTENT_ERROR | OTHER

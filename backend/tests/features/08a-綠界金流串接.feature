@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 綠界金流串接 (ECPay Integration)
 
   Background:

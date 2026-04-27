@@ -1,4 +1,4 @@
-@canvas @query
+@frontend @canvas @query
 Feature: 知識地圖 Canvas 三層 Zoom（PRD-046）
 
   三層 zoom 視覺化取代一次展開整棵樹的設計：

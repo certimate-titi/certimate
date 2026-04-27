@@ -1,3 +1,4 @@
+@backend
 Feature: 考古題資料庫集成 (Phase 2: Database Integration)
 
   Background:

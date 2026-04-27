@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 社群歸屬與主動關懷
 
   Background:

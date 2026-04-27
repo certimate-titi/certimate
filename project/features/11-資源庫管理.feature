@@ -1,3 +1,4 @@
+@frontend
 Feature: 資源庫管理與連鎖清除防呆機制
 
   Background:

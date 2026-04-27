@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 可調整考題後端 AI 生成服務 — 多階段 Prompt 流程
 
   Background:

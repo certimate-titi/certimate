@@ -1,4 +1,4 @@
-@command
+@frontend @command
 Feature: 資源上傳與隱性版權約定
 
   Background:

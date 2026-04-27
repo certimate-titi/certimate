@@ -1,3 +1,4 @@
+@frontend
 Feature: 知識心智圖導航與 AI 教練面板聯動
 
   Background:

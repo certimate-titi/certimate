@@ -3,7 +3,7 @@
 # 🧭 目標對齊：O3 - KR1（LLM API 成本佔營收 ≤ 15%）+ O2 - KR1（付費用戶擴增）
 # 涵蓋：RLS 隔離、HNSW 向量索引、SSRF 防護、JWT tenant_id、退場抹除
 
-@tenant_security
+@backend @tenant_security
 Feature: 多租戶安全與資料隔離
   作為平台管理員
   我希望系統能強制執行多租戶資料隔離

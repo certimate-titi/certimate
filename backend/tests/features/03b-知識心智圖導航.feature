@@ -1,4 +1,4 @@
-@query
+@backend @query
 Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費牆）
 
   Background:

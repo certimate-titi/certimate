@@ -1,4 +1,4 @@
-@query
+@backend @query
 Feature: 個人儀表板與成就系統
 
   Background:

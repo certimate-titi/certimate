@@ -8,6 +8,7 @@
 # - suggest_learning_path: Dependency-aware learning sequences
 # - validate_knowledge_node_quality: Quality validation for nodes
 
+@backend
 Feature: MCP Recommendation Server provides intelligent recommendations
 
   @recommendation_server

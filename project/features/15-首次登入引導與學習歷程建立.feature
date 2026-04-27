@@ -1,3 +1,4 @@
+@frontend
 Feature: 首次登入引導與學習歷程建立 (Onboarding)
 
   Background:

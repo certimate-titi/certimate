@@ -1,4 +1,4 @@
-@command
+@backend @command
 Feature: 付款後自動更新使用者角色與權限
 
   Background:

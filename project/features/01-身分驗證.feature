@@ -1,3 +1,4 @@
+@frontend
 Feature: 身分驗證
 
   # 訂閱方案 API enum 值：FREE | PRO_199 | ULTRA_399

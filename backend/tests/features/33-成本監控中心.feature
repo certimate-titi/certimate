@@ -1,4 +1,4 @@
-@cost_monitor
+@backend @cost_monitor
 Feature: 雲端與 AI 成本監控中心
 
   說明：Super Admin 專屬的成本可視化與預算告警中心。

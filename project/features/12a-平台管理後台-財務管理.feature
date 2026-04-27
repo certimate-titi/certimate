@@ -1,4 +1,4 @@
-@query
+@frontend @query
 Feature: 平台管理後台 — 財務與訂閱管理
 
   Background:

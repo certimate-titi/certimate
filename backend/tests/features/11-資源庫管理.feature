@@ -1,3 +1,4 @@
+@backend
 Feature: 資源庫管理
 
   Background:

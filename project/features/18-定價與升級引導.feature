@@ -1,4 +1,4 @@
-@query
+@frontend @query
 Feature: 定價比較頁與升級引導
 
   Background:

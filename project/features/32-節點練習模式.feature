@@ -1,4 +1,4 @@
-@command
+@frontend @command
 Feature: 節點練習模式
 
   Background:
