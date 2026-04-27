@@ -1,4 +1,4 @@
-@query
+@frontend @query
 Feature: 個人儀表板與成就系統
 
   Background:
@@ -365,3 +365,13 @@ Feature: 個人儀表板與成就系統
       When 使用者 "alice@example.com" 在帳戶頁面移除科目 "TOEIC"
       Then 操作成功
       And 使用者 "alice@example.com" 的備考科目應不包含 "TOEIC"
+
+  # ========== 雷達圖視覺化（純前端，2026-04-27 從 backend/29 拆出）==========
+
+  Rule: 後置（視覺）- 雷達圖六軸與統一知識樹 depth=1 節點一一對應
+
+    Example: 雷達圖渲染 N 軸對應 depth-1 節點
+      Given 考科 "信託業業務人員" 已完成統一知識樹萃取，有 N 個核心主題（N <= 6）
+      When 使用者 "pro@example.com" 查詢儀表板
+      Then 雷達圖應顯示 N 個軸
+      And 每個軸的標籤應與 depth=1 節點的名稱一致

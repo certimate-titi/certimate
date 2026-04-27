@@ -11,6 +11,14 @@
 | `@frontend` | 純客戶端行為：localStorage、UI 互動、CSS、純前端計算 | Playwright BDD | 密碼強度指示條依輸入即時變色 |
 | `@fullstack` | 須同時驗證前端 UI + 後端 API | 兩邊都跑（兩個 runner 各驗對應斷言）| 上傳資源 → 顯示處理進度 → 完成後出現知識圖譜 |
 
+## 輔助執行控制 Tag
+
+| Tag | 用途 | 預設執行 |
+|-----|------|----------|
+| `@llm-integration` | 需實際呼叫 LLM（Gemini/Claude/GPT），結果非 deterministic、會花錢 | ❌ 排除於 default_tags；本地手動跑 `--tags=@llm-integration` |
+| `@playwright-e2e` | 走 Playwright 瀏覽器層 | ❌ 排除於 behave |
+| `@skip` / `@ignore` | CEO 已排程修復的臨時跳過 | ❌ |
+
 ## 標註粒度
 
 優先順序：**Feature > Rule > Scenario**

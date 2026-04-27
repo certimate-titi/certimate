@@ -286,14 +286,22 @@ Feature: 個人儀表板與成就系統
 
   Rule: 前置（參數）- 刪除帳號需輸入 DELETE 確認文字
 
+    # 接受的確認文字（三選一）：「DELETE」、「確認刪除」、「刪除我的帳號」
+    # 設計變更：原規格僅接受大寫 DELETE，2026-04-27 後改為多語寬容（CEO 簽核）
+
     Example: 刪除帳號需輸入 DELETE 確認
       When 使用者 "alice@example.com" 提交刪除帳號請求，確認文字為 "DELETE"
       Then 操作成功
       And 使用者 "alice@example.com" 的帳號狀態應為 "deleted"
 
+    Example: 刪除帳號接受「確認刪除」
+      When 使用者 "alice@example.com" 提交刪除帳號請求，確認文字為 "確認刪除"
+      Then 操作成功
+      And 使用者 "alice@example.com" 的帳號狀態應為 "deleted"
+
     Example: 刪除帳號確認文字錯誤被拒絕
       When 使用者 "alice@example.com" 提交刪除帳號請求，確認文字為 "delete"
-      Then 操作失敗，錯誤為「請輸入大寫 DELETE 以確認刪除帳號」
+      Then 操作失敗，錯誤為「確認文字不符」
 
   # ========== 帳戶頁面 - 科目管理 ==========
 

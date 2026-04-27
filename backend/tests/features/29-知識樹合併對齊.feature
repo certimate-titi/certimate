@@ -302,8 +302,12 @@ Feature: 知識樹合併對齊
 
   # ========== 六大主題上限（雷達圖對齊） ==========
 
+  @llm-integration
   Rule: 不變量（結構）- 統一知識樹的 depth-1 節點數量不得超過 6 個
 
+    # 此 Rule 內 Scenarios 需實際呼叫 Gemini Pro 多模態萃取，預設於 default_tags 排除。
+    # 本地手動跑：.venv/bin/python -m behave tests/features/29-知識樹合併對齊.feature --tags=@llm-integration
+    # 需 GEMINI_API_KEY 與真實考古題 / 教材 seed
     設計原則：
       統一知識樹的第一層（核心主題）對應儀表板雷達圖的六軸。
       無論上傳多少資源或考古題，AI 萃取的核心主題數量必須 ≤ 6。
@@ -325,8 +329,11 @@ Feature: 知識樹合併對齊
       Then 合併後 depth=1 節點數量應 <= 6
       And 新面向應被合併到既有核心主題下，或作為 depth=2 子節點新增
 
-    Example: 雷達圖六軸與 depth-1 節點一一對應
+    # 雷達圖渲染（Frontend UI）已拆至 project/features/13-個人儀表板與成就系統.feature
+    # 後端契約：dashboard query API 應回傳該科目所有 depth=1 節點清單與名稱（≤ 6 個）
+    Example: 儀表板查詢回傳 depth=1 節點清單供雷達圖渲染
       Given 考科 "信託業業務人員" 已完成統一知識樹萃取，有 N 個核心主題（N <= 6）
       When 使用者 "pro@example.com" 查詢儀表板
-      Then 雷達圖應顯示 N 個軸
-      And 每個軸的標籤應與 depth=1 節點的名稱一致
+      Then 操作成功
+      And 回應應包含 depth=1 節點清單，數量等於 N
+      And 每個節點應包含 id 與 name 欄位
