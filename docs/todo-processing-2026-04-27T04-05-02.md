@@ -71,4 +71,5 @@
 
 1. ✅ 更新 `docs/ToDoList.md` — 標記 14 項已解決
 2. ✅ 產出本紀錄檔 `docs/todo-processing-2026-04-27T04-05-02.md`
-3. ✅ Git commit & push
+3. ✅ Git commit: `d718fc0` — `chore(docs): 自動巡檢更新 ToDoList — 14 項 Feature 缺失確認已解決`
+4. ⚠️ Git push 失敗（sandbox 無 GitHub 認證），需手動執行 `git push origin main`

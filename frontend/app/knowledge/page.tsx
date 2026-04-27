@@ -810,12 +810,38 @@ function KnowledgeBasePageInner() {
                   masteryLevel={selectedNodeDetail.node?.masteryLevel}
                   isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 />
-                <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-blue-500" />
-                  <h3 className="text-xs font-bold text-slate-700 truncate">{nodeLabel || '節點說明'}</h3>
-                  <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="ml-auto text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
-                  <button onClick={() => { router.push(`/exam/setup?nodeId=${nodeId}`); }} className="text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">測驗</button>
-                </div>
+                {(() => {
+                  // Spec 03b §「練習/測驗按鈕應依節點題目可用性決定啟用狀態」
+                  // 從 mindMapNodes 找出當前節點的 available_questions
+                  const findAvail = (list: MindMapNode[]): number | null => {
+                    for (const n of list) {
+                      if (n.id === nodeId) return n.available_questions ?? 0;
+                      if (n.children?.length) {
+                        const r = findAvail(n.children);
+                        if (r !== null) return r;
+                      }
+                    }
+                    return null;
+                  };
+                  const avail = nodeId ? (findAvail(mindMapNodes) ?? 0) : 0;
+                  const noQ = avail === 0;
+                  return (
+                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-blue-500" />
+                      <h3 className="text-xs font-bold text-slate-700 truncate">{nodeLabel || '節點說明'}</h3>
+                      {noQ ? (
+                        <span className="ml-auto text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">練習</span>
+                      ) : (
+                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="ml-auto text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
+                      )}
+                      {noQ ? (
+                        <span className="text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">測驗</span>
+                      ) : (
+                        <button onClick={() => { router.push(`/exam/setup?nodeId=${nodeId}`); }} className="text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">測驗</button>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="px-3 py-2">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : selectedNodeDetail.node?.masteryLevel === 'weak' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>

@@ -91,6 +91,22 @@ Feature: 資源庫管理與連鎖清除防呆機制
       And 資源 3 應標記為已刪除
       And 資源 3 的原始 PDF 應從 GCS 永久刪除
 
+  Rule: 後置（API 契約）- 資源列表應反映「鷹架生成」子任務的真實狀態
+
+    # 背景：resources.status 反映「整體可用性」（chunks/embeddings 是否就緒），
+    # 但學習鷹架（scaffold）是 LLM 生成的子任務，可能獨立失敗。前端「解析內容」
+    # 連結需要根據鷹架可用性決定啟用 / 隱藏，因此 API 必須回傳 scaffold_status。
+
+    Example: 列表 API 回傳 scaffold_status 欄位
+      When 使用者 "alice@example.com" 查詢自己的資源列表
+      Then 操作成功
+      And 每筆資源應包含 scaffold_status 欄位，值為下列之一：
+        | 值       | 含意                                              |
+        | ready    | 鷹架已生成（scaffold count > 0）                  |
+        | pending  | 鷹架尚在處理（parse job pending / processing）    |
+        | failed   | 鷹架生成失敗（parse job failed）                  |
+        | none     | 此資源不適用鷹架（系統生成虛擬資源、YouTube 等）  |
+
   Rule: 後置（導航）- 「解析內容」入口應導向知識地圖並對焦該資源（連結語義承諾）
 
     # 連結文字「解析內容」承諾使用者按下後可看見：
@@ -116,6 +132,38 @@ Feature: 資源庫管理與連鎖清除防呆機制
       Given 資源 3 的狀態為 FAILED
       When 使用者 "alice@example.com" 開啟資源庫頁面
       Then 資源 3 那一列不應出現「解析內容」連結（避免引導至空鷹架頁）
+
+    @epic-035
+    Example: 鷹架生成失敗的資源「解析內容」連結應呈灰階且禁用
+      Given 資源 X 的 scaffold_status 為 "failed"
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 X 那一列的「解析內容」連結應呈灰階且不可點擊
+      And tooltip 應提示「鷹架生成失敗」
+
+    @epic-035
+    Example: 鷹架尚未生成的資源「解析內容」連結應呈灰階且禁用
+      Given 資源 Y 的 scaffold_status 為 "pending"
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 Y 那一列的「解析內容」連結應呈灰階且不可點擊
+      And tooltip 應提示「鷹架尚在處理中」
+
+    @epic-035
+    Example: 系統虛擬資源（考古題題庫）不顯示「解析內容」連結
+      Given 資源 Z 的 scaffold_status 為 "none"
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 Z 那一列不應出現「解析內容」連結
+
+  Rule: 後置（導航）- 「題目確認」入口應檢查資源是否有候選題
+
+    Example: FAILED 或 PROCESSING 資源不顯示「題目確認」連結
+      Given 資源 3 的狀態為 FAILED
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 3 那一列不應出現「題目確認」連結
+
+    Example: 系統虛擬資源（考古題題庫）不顯示「題目確認」連結
+      Given 資源 Z 的 type 為 "historical_exam" 或名稱結尾為 "題庫"
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 Z 那一列不應出現「題目確認」連結
 
   Rule: 後置（回應）- 搜尋資源時應依檔名與自動萃取的標籤進行篩選
 

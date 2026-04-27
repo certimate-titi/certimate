@@ -171,3 +171,22 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
         | 102     | EC2 運算邏輯 | 30     | red    |
         | 103     | IAM 管理     | 0      | gray   |
       And 顏色規則為：green >= 80、orange 60-79、red < 60、gray 未作答
+
+  Rule: 後置（按鈕）- 練習與測驗按鈕應依節點題目可用性決定啟用狀態
+
+    Example: 節點無可用題目時練習按鈕應禁用
+      Given 節點 999 的 available_questions 為 0
+      When 使用者 "pro@example.com" 點選節點 999
+      Then 右側欄「練習」按鈕應呈灰階且不可點擊
+      And tooltip 應提示「此節點目前無可用題目」
+
+    Example: 節點無可用題目時測驗按鈕應禁用
+      Given 節點 999 的 available_questions 為 0
+      When 使用者 "pro@example.com" 點選節點 999
+      Then 右側欄「測驗」按鈕應呈灰階且不可點擊
+      And tooltip 應提示「此節點目前無可用題目」
+
+    Example: 節點有可用題目時兩按鈕應正常啟用
+      Given 節點 101 的 available_questions 為 12
+      When 使用者 "pro@example.com" 點選節點 101
+      Then 右側欄「練習」與「測驗」按鈕應皆為啟用狀態

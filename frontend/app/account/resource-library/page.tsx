@@ -259,20 +259,51 @@ export default function ResourceLibraryPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={r.subject_id ? `/knowledge?subjectId=${r.subject_id}&resourceId=${r.resource_id}&tab=material` : `/knowledge?resourceId=${r.resource_id}&tab=material`}
-                        className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
-                        title="於知識地圖檢視解析內容與學習鷹架"
-                      >
-                        <BookOpenCheck className="w-3 h-3" /> 解析內容
-                      </Link>
-                      <Link
-                        href={`/resources/${r.resource_id}/candidates`}
-                        className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded hover:bg-amber-50"
-                        title="確認抽取的題目"
-                      >
-                        <CheckCircle2 className="w-3 h-3" /> 題目確認
-                      </Link>
+                      {/* Spec 11 §「解析內容」連結 gating */}
+                      {(() => {
+                        const ss = r.scaffold_status;
+                        const isFailed = r.status === 'FAILED' || r.status === 'failed';
+                        if (isFailed || ss === 'none') {
+                          return null; // 完全不顯示
+                        }
+                        if (ss === 'pending' || ss === 'failed') {
+                          const tip = ss === 'pending' ? '鷹架尚在處理中' : '鷹架生成失敗';
+                          return (
+                            <span
+                              className="flex items-center gap-1 text-xs text-slate-300 px-2 py-1 rounded cursor-not-allowed"
+                              title={tip}
+                            >
+                              <BookOpenCheck className="w-3 h-3" /> 解析內容
+                            </span>
+                          );
+                        }
+                        // ready
+                        return (
+                          <Link
+                            href={r.subject_id ? `/knowledge?subjectId=${r.subject_id}&resourceId=${r.resource_id}&tab=material` : `/knowledge?resourceId=${r.resource_id}&tab=material`}
+                            className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
+                            title="於知識地圖檢視解析內容與學習鷹架"
+                          >
+                            <BookOpenCheck className="w-3 h-3" /> 解析內容
+                          </Link>
+                        );
+                      })()}
+                      {/* Spec 11 §「題目確認」連結 gating */}
+                      {(() => {
+                        const isFailed = r.status === 'FAILED' || r.status === 'failed';
+                        const isProcessing = r.status === 'PROCESSING' || r.status === 'processing' || r.status === 'pending' || r.status === 'PENDING';
+                        const isVirtual = r.type === 'historical_exam' || (r.name || '').endsWith('題庫');
+                        if (isFailed || isProcessing || isVirtual) return null;
+                        return (
+                          <Link
+                            href={`/resources/${r.resource_id}/candidates`}
+                            className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 px-2 py-1 rounded hover:bg-amber-50"
+                            title="確認抽取的題目"
+                          >
+                            <CheckCircle2 className="w-3 h-3" /> 題目確認
+                          </Link>
+                        );
+                      })()}
                       {isUltra && (r.scope === 'personal' || r.scope === 'shared') && (
                         <button
                           onClick={() => handleShare(r.resource_id, r.scope)}

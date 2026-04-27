@@ -91,3 +91,18 @@
 2. **P1** — Feature 13（Dashboard）34 個 @ignore 解封（需逐一確認後端 step definitions 是否齊全）
 3. **P2** — `/exam/results` 逐題解析入口 + 下載功能實作
 4. **P2** — Feature 10（EDU CSV 匯入）解封
+
+---
+
+## 五、Git 狀態
+
+**Commit 已在沙箱內建立**（`0105be6`），但因 `.git/HEAD.lock` 權限問題及沙箱 `.git/objects` 唯讀限制，無法自動 push。
+
+**需手動執行**：
+```bash
+cd ~/certimate/project
+rm -f .git/HEAD.lock
+git add docs/ToDoList.md "project/features/07-錯題複習與AI教練.feature" docs/todo-processing-2026-04-25T04-07-45.md
+git commit -m "chore: 自動巡檢 — Feature 07 @ignore 解封 + ToDoList 狀態更新"
+git push origin main
+```

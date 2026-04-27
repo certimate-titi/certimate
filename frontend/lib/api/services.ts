@@ -1584,6 +1584,8 @@ export interface LibraryResource {
   scope?: 'personal' | 'institution' | 'platform' | 'shared';
   badge?: 'personal' | 'institution' | 'official_default' | 'edu_shared';
   subject_id?: string | null;
+  /** Spec 11 §鷹架生成子任務狀態 */
+  scaffold_status?: 'ready' | 'pending' | 'failed' | 'none';
 }
 
 /**

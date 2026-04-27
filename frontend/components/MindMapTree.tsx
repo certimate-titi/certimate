@@ -28,6 +28,8 @@ export interface MindMapNode {
   strength_label?: string;
   needs_supplement?: boolean;
   node_source?: 'syllabus' | 'user_data' | 'hybrid';
+  /** Spec 03b §「練習/測驗按鈕應依節點題目可用性決定啟用狀態」 */
+  available_questions?: number;
 }
 
 /**

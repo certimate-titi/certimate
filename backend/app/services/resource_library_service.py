@@ -2,9 +2,12 @@
 
 import uuid
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.resource import Resource, ResourceStatus
+from app.models.resource_scaffold import ResourceScaffold
+from app.models.resource_parse_job import ResourceParseJob
 
 
 class ResourceLibraryService:
@@ -39,6 +42,30 @@ class ResourceLibraryService:
 
         resources = query.order_by(Resource.created_at.desc()).all()
 
+        # 一次性取得所有 resource 的 scaffold count（避免 N+1）
+        resource_ids = [r.id for r in resources]
+        scaffold_counts: dict = {}
+        last_job_status: dict = {}
+        if resource_ids:
+            rows = (
+                self.db.query(ResourceScaffold.resource_id, func.count(ResourceScaffold.id))
+                .filter(ResourceScaffold.resource_id.in_(resource_ids))
+                .group_by(ResourceScaffold.resource_id)
+                .all()
+            )
+            scaffold_counts = {rid: cnt for rid, cnt in rows}
+
+            # 每個 resource 取最新一筆 parse_job 狀態
+            jobs = (
+                self.db.query(ResourceParseJob.resource_id, ResourceParseJob.status)
+                .filter(ResourceParseJob.resource_id.in_(resource_ids))
+                .order_by(ResourceParseJob.resource_id, ResourceParseJob.created_at.desc())
+                .all()
+            )
+            for rid, status in jobs:
+                if rid not in last_job_status:  # 取最新一筆
+                    last_job_status[rid] = status
+
         items = []
         for r in resources:
             scope_val = r.scope.value if hasattr(r.scope, 'value') else str(r.scope)
@@ -49,14 +76,36 @@ class ResourceLibraryService:
                 "institution": "institution",
                 "personal": "personal",
             }.get(scope_val, "personal")
+            # Spec 11 §「資源列表應反映鷹架生成子任務的真實狀態」
+            type_val = r.type.value if hasattr(r.type, 'value') else str(r.type)
+            scaffold_count = scaffold_counts.get(r.id, 0)
+            job_status = last_job_status.get(r.id)
+
+            # 系統生成虛擬資源（考古題題庫）/ 影音類不適用鷹架
+            is_virtual = type_val in ('historical_exam',) or (r.name or '').endswith('題庫')
+            is_video = type_val in ('youtube_url', 'video')
+
+            if is_virtual or is_video:
+                scaffold_status = 'none'
+            elif scaffold_count > 0:
+                scaffold_status = 'ready'
+            elif job_status == 'failed':
+                scaffold_status = 'failed'
+            elif job_status in ('pending', 'queued', 'processing'):
+                scaffold_status = 'pending'
+            else:
+                # 沒 job 紀錄、沒 scaffold — 視為失敗（chunking 完但 parse 沒跑或無紀錄）
+                scaffold_status = 'failed' if r.status.value == 'completed' else 'pending'
+
             items.append({
                 "resource_id": str(r.id),
                 "name": r.name,
-                "type": r.type.value if hasattr(r.type, 'value') else str(r.type),
+                "type": type_val,
                 "status": r.status.value if hasattr(r.status, 'value') else str(r.status),
                 "scope": scope_val,
                 "badge": badge,
                 "subject_id": str(r.subject_id) if r.subject_id else None,
+                "scaffold_status": scaffold_status,
             })
 
         return {"resources": items}

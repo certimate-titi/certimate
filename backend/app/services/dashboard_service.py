@@ -288,12 +288,18 @@ class DashboardService:
                 "linkLabel": "繼續作答",
             })
         for r in recent_resources[:2]:
+            # Spec 11/03b §連結契約 — 帶 subjectId+resourceId 確保落地頁對焦正確
+            params = []
+            if r.subject_id:
+                params.append(f"subjectId={r.subject_id}")
+            params.append(f"resourceId={r.id}")
+            params.append("tab=material")
             items.append({
                 "id": f"act_res_{r.id}",
                 "type": "new_resource",
                 "title": f"新資源：{r.name}",
                 "description": "查看知識心智圖與題目",
-                "link": "/knowledge",
+                "link": f"/knowledge?{'&'.join(params)}",
                 "linkLabel": "查看",
             })
         return items
