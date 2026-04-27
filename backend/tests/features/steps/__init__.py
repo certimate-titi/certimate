@@ -1257,14 +1257,8 @@ from .confidence_calibration.aggregate_then import answer_state  # noqa: F401
 # Confidence Calibration (Feature 20) — readmodel_then
 from .confidence_calibration.readmodel_then import confidence_analysis  # noqa: F401
 
-# Pomodoro (Feature 21) — aggregate_given
-from .pomodoro.aggregate_given import pomodoro_state  # noqa: F401
-
-# Pomodoro (Feature 21) — commands
-from .pomodoro.commands import pomodoro_actions  # noqa: F401
-
-# Pomodoro (Feature 21) — aggregate_then
-from .pomodoro.aggregate_then import pomodoro_state as pomodoro_then_state  # noqa: F401
+# Pomodoro (Feature 21) — 純前端功能，spec 移至 project/features/21-番茄鐘學習節奏.feature
+# step 檔於 2026-04-27 整批刪除（@frontend 規範，見 docs/bdd/tag-conventions.md）
 
 # Practice (Feature 32) — aggregate_given
 from .practice.aggregate_given import knowledge_nodes  # noqa: F401
@@ -1287,8 +1281,7 @@ from .practice.aggregate_then import node_mastery_assertions  # noqa: F401
 from .practice.aggregate_then import root_mastery_diluted  # noqa: F401
 from .practice.aggregate_then import practice_v3_assertions  # noqa: F401
 
-# Pomodoro (Feature 21) — readmodel_then
-from .pomodoro.readmodel_then import pomodoro_response  # noqa: F401
+# Pomodoro readmodel_then 同樣已隨 step 子領域刪除
 
 # Account Settings (Feature 22) — aggregate_given
 from .account_settings.aggregate_given import user_setup  # noqa: F401

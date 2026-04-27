@@ -281,17 +281,8 @@ Feature: 身分驗證
       When 使用者點擊密碼欄位的顯示/隱藏切換按鈕
       Then 密碼欄位應從遮蔽模式切換為明文顯示模式
 
-  Rule: 前置（UI）- 註冊頁密碼強度指示條依密碼強度顯示對應等級（純前端計算，不呼叫 API）
-
-    Scenario Outline: 密碼強度指示條依輸入的密碼顯示對應等級
-      When 使用者在註冊頁面輸入密碼 "<密碼>"
-      Then 密碼強度指示條應顯示 "<等級>"
-
-      Examples:
-        | 密碼           | 等級 |
-        | abc            | 弱   |
-        | password1      | 中   |
-        | CertiMate#2024 | 強   |
+  # 密碼強度指示條為純前端計算，已移至 Playwright e2e
+  # （project/features/01-身分驗證.feature 對應 Rule）
 
   Rule: 前置（UI）- 註冊頁服務條款彈窗可開啟與關閉
 
