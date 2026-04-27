@@ -19,6 +19,7 @@ def step_impl_account_status_changed(context, expected_status):
             User.id == uuid.UUID(user_id)
         ).first()
         if user:
-            actual_status = str(user.status).upper() if user.status else "UNKNOWN"
+            status_val = user.status.value if hasattr(user.status, "value") else user.status
+            actual_status = str(status_val).upper() if status_val else "UNKNOWN"
             assert actual_status == expected_status.upper(), \
                 f"帳號狀態期望 '{expected_status}'，實際 '{actual_status}'"

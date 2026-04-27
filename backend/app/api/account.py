@@ -79,6 +79,8 @@ def get_usage(
         "exams_limit": 10,
         "uploads_used": usage.monthly_uploads if usage else 0,
         "uploads_limit": 5,
+        "documents_used": usage.monthly_uploads if usage else 0,
+        "documents_limit": 5,
         "ai_chats_used": usage.daily_ai_chats if usage else 0,
         "ai_chats_limit": 3,
     }
@@ -95,8 +97,8 @@ def delete_account(
     if not user:
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
 
-    if body.confirm_text not in ("確認刪除", "DELETE"):
-        raise HTTPException(status_code=400, detail={"message": "請輸入大寫 DELETE 以確認刪除帳號"})
+    if body.confirm_text not in ("確認刪除", "DELETE", "刪除我的帳號"):
+        raise HTTPException(status_code=400, detail={"message": "確認文字不符"})
 
     from app.models.user import UserStatus
     user.status = UserStatus.DELETED

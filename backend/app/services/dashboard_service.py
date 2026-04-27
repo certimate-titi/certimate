@@ -472,13 +472,35 @@ class DashboardService:
             "大量刷題": "drill",
             "觀念優先": "concept",
             "混合模式": "mixed",
+            "visual": "mixed",
+            "auditory": "mixed",
+            "kinesthetic": "drill",
         }
+        if "display_name" in data and not (data.get("display_name") or "").strip():
+            return {"error": True, "status_code": 400, "message": "顯示名稱不可為空"}
+
         allowed_fields = {"display_name", "age", "education", "career", "daily_study_minutes"}
         for field, value in data.items():
             if field in allowed_fields and value is not None:
                 setattr(user, field, value)
+            elif field == "occupation" and value is not None:
+                user.career = value
             elif field == "learning_style" and value is not None:
-                user.learning_preference = learning_style_map.get(value, value)
+                user.learning_preference = learning_style_map.get(value, "mixed")
 
         self.db.commit()
-        return {"message": "已儲存"}
+        self.db.refresh(user)
+        learning_pref_val = (
+            user.learning_preference.value
+            if hasattr(user.learning_preference, "value")
+            else user.learning_preference
+        )
+        return {
+            "message": "已儲存",
+            "display_name": user.display_name,
+            "age": user.age,
+            "education": user.education,
+            "career": user.career,
+            "daily_study_minutes": user.daily_study_minutes,
+            "learning_preference": learning_pref_val,
+        }

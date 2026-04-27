@@ -11,12 +11,16 @@ def step_impl_operation_failed_with_message(context, expected_message):
         f"操作應失敗（4xx），實際 {response.status_code}"
     if response.status_code != 404:
         data = response.json()
-        error_msg = (
-            data.get("detail")
-            or data.get("message")
-            or data.get("error")
-            or str(data)
-        )
+        detail = data.get("detail")
+        if isinstance(detail, dict):
+            error_msg = detail.get("message") or detail.get("error") or str(detail)
+        else:
+            error_msg = (
+                detail
+                or data.get("message")
+                or data.get("error")
+                or str(data)
+            )
         assert expected_message in error_msg, \
             f"錯誤訊息期望包含 '{expected_message}'，實際 '{error_msg}'"
 

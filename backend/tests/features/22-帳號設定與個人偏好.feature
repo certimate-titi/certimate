@@ -6,6 +6,7 @@ Feature: 帳號設定與個人偏好
       | 使用者 ID | Email              | 訂閱方案   | 角色  |
       | 1        | user@example.com   | PRO_199    | USER  |
     And 使用者 "user@example.com" 已完成引導流程
+    And 使用者 "user@example.com" 的密碼為 "old_pass123"
 
   # ========== 個人資料管理 ==========
 
