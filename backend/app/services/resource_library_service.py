@@ -41,6 +41,7 @@ class ResourceLibraryService:
                 "status": r.status.value if hasattr(r.status, 'value') else str(r.status),
                 "scope": scope_val,
                 "badge": badge,
+                "subject_id": str(r.subject_id) if r.subject_id else None,
             })
 
         return {"resources": items}

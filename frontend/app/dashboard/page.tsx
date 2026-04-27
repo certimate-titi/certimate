@@ -276,6 +276,16 @@ export default function DashboardPage() {
     );
   }
 
+  // 3d Layer: 載入態誤判防護 — 必須等 subjectsLoaded 為 true 才能判定「真空態」，
+  // 否則 API 還沒回來就誤判為無科目，會閃現歡迎頁。
+  if (!subjectsLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   // User logged in but hasn't picked a subject yet — show an explicit CTA
   // instead of an infinite skeleton. Uses the in-app SubjectPickerModal
   // (NOT /onboarding) because onboardingCompleted may already be true

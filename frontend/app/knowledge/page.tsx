@@ -37,6 +37,7 @@ function KnowledgeBasePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusResourceId = searchParams.get('resourceId');
+  const focusSubjectId = searchParams.get('subjectId');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<GetNodeDetailResponse | null>(null);
@@ -120,6 +121,16 @@ function KnowledgeBasePageInner() {
     subjectService.getUserSubjects().then(res => {
       setSubjects(res.subjects);
       if (res.subjects.length > 0) {
+        // Priority: query param subjectId > localStorage > first subject
+        // Match either UserSubject.id or underlying subjectId (resource.subject_id 為後者)
+        const queryMatch = focusSubjectId && res.subjects.find(
+          (s: UserSubject) => s.id === focusSubjectId || s.subjectId === focusSubjectId
+        );
+        if (queryMatch) {
+          setActiveSubjectId(queryMatch.id);
+          localStorage.setItem('certimate_active_subject_id', queryMatch.id);
+          return;
+        }
         const saved = localStorage.getItem('certimate_active_subject_id');
         const match = saved && res.subjects.find((s: UserSubject) => s.id === saved);
         setActiveSubjectId(match ? saved : res.subjects[0].id);

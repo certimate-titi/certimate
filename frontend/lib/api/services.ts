@@ -1579,6 +1579,7 @@ export interface LibraryResource {
   status: string;
   scope?: 'personal' | 'institution' | 'platform' | 'shared';
   badge?: 'personal' | 'institution' | 'official_default' | 'edu_shared';
+  subject_id?: string | null;
 }
 
 /**
