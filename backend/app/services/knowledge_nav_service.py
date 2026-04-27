@@ -427,6 +427,70 @@ class KnowledgeNavService:
             ],
         }
 
+    def get_resource_scaffolds(self, resource_id: str, user_id: str) -> dict:
+        """取得資源層級的學習鷹架（Spec 11 §「解析內容」入口）。
+
+        用法：從學習庫「解析內容」連結進入知識地圖時，顯示該資源所有 scaffolds，
+        不限定到單一 KnowledgeNode（避開「統一樹節點 resource_id IS NULL」架構限制）。
+
+        FREE 用戶 403（與 get_node_scaffolds 一致）。
+        """
+        try:
+            uid = uuid.UUID(user_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "使用者 ID 格式錯誤"}
+        user = self.db.query(User).filter_by(id=uid).first()
+        if not user:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+        plan = user.subscription_plan
+        plan_val = plan.value if hasattr(plan, "value") else plan
+        if plan_val in (None, "FREE"):
+            return {
+                "error": True,
+                "status_code": 403,
+                "paywall": True,
+                "message": "學習教材為 PRO 以上方案功能",
+                "upgrade": {
+                    "target_plan": "PRO_199",
+                    "message": "升級 PRO 解鎖 AI 學習教材與延伸思考",
+                },
+            }
+
+        try:
+            rid = uuid.UUID(resource_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "資源 ID 格式錯誤"}
+
+        resource = self.db.query(Resource).filter_by(id=rid).first()
+        if not resource:
+            return {"error": True, "status_code": 404, "message": "資源不存在"}
+        if resource.user_id != uid:
+            return {"error": True, "status_code": 403, "message": "無存取此資源的權限"}
+
+        scaffolds = (
+            self.db.query(ResourceScaffold)
+            .filter(ResourceScaffold.resource_id == rid)
+            .order_by(ResourceScaffold.page_start.nulls_last(), ResourceScaffold.created_at)
+            .all()
+        )
+        return {
+            "error": False,
+            "resource_id": resource_id,
+            "scaffolds": [
+                {
+                    "id": str(s.id),
+                    "type": s.type.value if hasattr(s.type, "value") else s.type,
+                    "chapter_heading": s.chapter_heading,
+                    "content": s.content,
+                    "page_start": s.page_start,
+                    "page_end": s.page_end,
+                    "user_response": s.user_response,
+                    "responded_at": s.responded_at.isoformat() if s.responded_at else None,
+                }
+                for s in scaffolds
+            ],
+        }
+
     def get_layout(self, user_id: str) -> dict:
         """取得知識心智圖頁面佈局。"""
         return {

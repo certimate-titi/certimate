@@ -91,15 +91,31 @@ Feature: 資源庫管理與連鎖清除防呆機制
       And 資源 3 應標記為已刪除
       And 資源 3 的原始 PDF 應從 GCS 永久刪除
 
-  Rule: 後置（導航）- 「解析內容」入口應導向知識地圖並對焦該資源
+  Rule: 後置（導航）- 「解析內容」入口應導向知識地圖並對焦該資源（連結語義承諾）
+
+    # 連結文字「解析內容」承諾使用者按下後可看見：
+    #   1. 該資源對應節點被選中
+    #   2. 右側欄預設開啟「教材」分頁（學習鷹架）
+    #   3. 教材內容非空（至少一項 takeaway / elaborative / strategy）
+    # subjectId 必須隨連結傳遞，避免 active subject 與資源所屬科目不符時退回首筆
 
     @epic-035
-    Example: 點擊「解析內容」按鈕跳轉至知識地圖並選中該資源
-      Given 資源 1 已完成 LLM 解析，包含學習鷹架
+    Example: 點擊「解析內容」按鈕跳轉至知識地圖並顯示學習鷹架
+      Given 資源 1 屬於 subjectId "subj_aws"
+      And 資源 1 已完成 LLM 解析，包含學習鷹架
       When 使用者 "alice@example.com" 在資源庫點擊資源 1 的「解析內容」按鈕
-      Then 應導向 "/knowledge?resourceId=1"
-      And 知識地圖應自動展開並選中資源 1 的節點
-      And 右側欄應顯示資源 1 對應節點的學習鷹架
+      Then 應導向 "/knowledge?subjectId=subj_aws&resourceId=1&tab=material"
+      And 知識地圖頁應將 active subject 切換為 "subj_aws"
+      And 知識地圖應自動展開並選中資源 1 對應的節點
+      And 右側欄應預設顯示「教材」分頁
+      And 教材分頁應顯示資源 1 對應節點的學習鷹架，且至少包含一項 takeaway / elaborative / strategy
+      And 不應顯示「此節點尚未對應到教材鷹架」的空態文字
+
+    @epic-035
+    Example: 解析失敗的資源不顯示「解析內容」連結
+      Given 資源 3 的狀態為 FAILED
+      When 使用者 "alice@example.com" 開啟資源庫頁面
+      Then 資源 3 那一列不應出現「解析內容」連結（避免引導至空鷹架頁）
 
   Rule: 後置（回應）- 搜尋資源時應依檔名與自動萃取的標籤進行篩選
 

@@ -86,6 +86,22 @@ def get_node_scaffolds(
     return _handle_result(result)
 
 
+@router.get("/resources/{resource_id}/scaffolds")
+def get_resource_scaffolds(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """取得資源層級的學習鷹架清單（Spec 11 §「解析內容」入口）。
+
+    用於從 /account/resource-library 點擊「解析內容」進入知識地圖時，
+    顯示該資源所有 scaffolds（不限定到單一節點）。
+    """
+    service = KnowledgeNavService(db)
+    result = service.get_resource_scaffolds(resource_id, user_id)
+    return _handle_result(result)
+
+
 @router.get("/nodes/{node_id}/source")
 def get_node_source(
     node_id: str,

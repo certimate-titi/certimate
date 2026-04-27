@@ -14,8 +14,14 @@ export type ReadMode = 'speed' | 'deep';
  * ScaffoldMaterial 的 props。
  */
 export interface ScaffoldMaterialProps {
-  /** 當前節點 ID；null 時顯示提示 */
+  /** 當前節點 ID；null 時依 fallbackResourceId 決定行為 */
   nodeId: string | null;
+  /**
+   * 來源資源 ID — 從 /resource-library 點「解析內容」進入時用以查資源層級鷹架，
+   * 避開「統一樹節點 resource_id IS NULL」架構限制。
+   * 當 node 查不到鷹架時自動 fallback 到資源層級。
+   */
+  fallbackResourceId?: string | null;
   /** 使用者是否為 PRO 訂戶（決定是否顯示付費牆） */
   isPro: boolean;
   /** 點擊「升級 PRO」按鈕的回呼 */
@@ -32,7 +38,7 @@ export interface ScaffoldMaterialProps {
  * @param props.isPro - 是否 PRO
  * @param props.onUpgradeClick - 升級回呼
  */
-export default function ScaffoldMaterial({ nodeId, isPro, onUpgradeClick }: ScaffoldMaterialProps) {
+export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, onUpgradeClick }: ScaffoldMaterialProps) {
   const [mode, setMode] = useState<ReadMode>('speed');
   const [scaffolds, setScaffolds] = useState<NodeScaffoldItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -40,7 +46,7 @@ export default function ScaffoldMaterial({ nodeId, isPro, onUpgradeClick }: Scaf
   const [paywall, setPaywall] = useState(false);
 
   useEffect(() => {
-    if (!nodeId) {
+    if (!nodeId && !fallbackResourceId) {
       setScaffolds([]);
       return;
     }
@@ -52,18 +58,30 @@ export default function ScaffoldMaterial({ nodeId, isPro, onUpgradeClick }: Scaf
     setPaywall(false);
     setLoading(true);
     setError(null);
-    knowledgeService
-      .getNodeScaffolds(nodeId)
-      .then((res) => setScaffolds(res.scaffolds || []))
-      .catch((err: unknown) => {
-        const e = err as { status?: number; message?: string };
-        if (e.status === 403) setPaywall(true);
-        else setError(e.message || '載入教材失敗');
-      })
-      .finally(() => setLoading(false));
-  }, [nodeId, isPro]);
 
-  if (!nodeId) {
+    const handleErr = (err: unknown) => {
+      const e = err as { status?: number; message?: string };
+      if (e.status === 403) setPaywall(true);
+      else setError(e.message || '載入教材失敗');
+    };
+
+    // 先試 node 層級；空結果且有 fallbackResourceId 時退回資源層級（Spec 11）
+    const fetchPromise = nodeId
+      ? knowledgeService.getNodeScaffolds(nodeId).then((res) => {
+          if ((res.scaffolds?.length || 0) === 0 && fallbackResourceId) {
+            return knowledgeService.getResourceScaffolds(fallbackResourceId);
+          }
+          return res;
+        })
+      : knowledgeService.getResourceScaffolds(fallbackResourceId!);
+
+    fetchPromise
+      .then((res) => setScaffolds(res.scaffolds || []))
+      .catch(handleErr)
+      .finally(() => setLoading(false));
+  }, [nodeId, fallbackResourceId ?? null, isPro]);
+
+  if (!nodeId && !fallbackResourceId) {
     return (
       <div className="p-4 text-xs text-slate-400 text-center">
         <BookOpen className="h-6 w-6 mx-auto mb-2 text-slate-300" />

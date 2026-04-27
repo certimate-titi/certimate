@@ -38,6 +38,7 @@ function KnowledgeBasePageInner() {
   const searchParams = useSearchParams();
   const focusResourceId = searchParams.get('resourceId');
   const focusSubjectId = searchParams.get('subjectId');
+  const initialTab = searchParams.get('tab');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<GetNodeDetailResponse | null>(null);
@@ -75,7 +76,11 @@ function KnowledgeBasePageInner() {
   const [showRightPanel, setShowRightPanel] = useState(true);
   const isMobile = useIsMobile();
   const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
-  const [activeNodeTab, setActiveNodeTab] = useState<NodeDetailTab>('info');
+  const [activeNodeTab, setActiveNodeTab] = useState<NodeDetailTab>(() => {
+    // Spec 11: 「解析內容」連結帶 tab=material 時應預設開教材分頁
+    const valid: NodeDetailTab[] = ['info', 'material', 'notebook', 'coach'];
+    return (valid.includes(initialTab as NodeDetailTab) ? initialTab : 'info') as NodeDetailTab;
+  });
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // On mobile, collapse both panels by default
@@ -282,10 +287,30 @@ function KnowledgeBasePageInner() {
     setLoadingDetail(false);
   };
 
-  // Auto-select first node
+  // Auto-select node — prefer the focused resource's node so the right panel
+  // (含教材/學習鷹架) reflects the resource the user clicked from /resource-library.
+  // Spec 11 §「解析內容」入口應導向知識地圖並對焦該資源
   useEffect(() => {
     if (nodes.length > 0 && !selectedNodeDetail) {
-      handleNodeClick(nodes[0].children?.[0]?.id || nodes[0].id);
+      // Find a node belonging to the focused resource (recursive)
+      const findResourceNode = (list: KnowledgeNode[]): KnowledgeNode | null => {
+        for (const n of list) {
+          const nAny = n as unknown as Record<string, unknown>;
+          if (focusResourceId && (nAny.documentId === focusResourceId || nAny.resource_id === focusResourceId)) {
+            return n;
+          }
+          if (n.children?.length) {
+            const found = findResourceNode(n.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const focused = focusResourceId ? findResourceNode(nodes) : null;
+      const target = focused
+        ? (focused.children?.[0]?.id || focused.id)
+        : (nodes[0].children?.[0]?.id || nodes[0].id);
+      handleNodeClick(target);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes]);
@@ -837,6 +862,7 @@ function KnowledgeBasePageInner() {
             const materialSlot = (
               <ScaffoldMaterial
                 nodeId={nodeId}
+                fallbackResourceId={focusResourceId}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
               />

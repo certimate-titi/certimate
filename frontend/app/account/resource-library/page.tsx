@@ -217,7 +217,7 @@ export default function ResourceLibraryPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Link
-                        href={r.subject_id ? `/knowledge?subjectId=${r.subject_id}&resourceId=${r.resource_id}` : `/knowledge?resourceId=${r.resource_id}`}
+                        href={r.subject_id ? `/knowledge?subjectId=${r.subject_id}&resourceId=${r.resource_id}&tab=material` : `/knowledge?resourceId=${r.resource_id}&tab=material`}
                         className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 px-2 py-1 rounded hover:bg-teal-50"
                         title="於知識地圖檢視解析內容與學習鷹架"
                       >

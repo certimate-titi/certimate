@@ -453,6 +453,10 @@ export const knowledgeService = {
     return apiClient.get<NodeScaffoldsResponse>(`/knowledge-map/nodes/${nodeId}/scaffolds`);
   },
 
+  async getResourceScaffolds(resourceId: string): Promise<NodeScaffoldsResponse> {
+    return apiClient.get<NodeScaffoldsResponse>(`/knowledge-map/resources/${resourceId}/scaffolds`);
+  },
+
   async getResourceSummary(resourceId: string): Promise<{ title: string; content: string; node_count: number }> {
     return apiClient.get(`/knowledge-map/resources/${resourceId}/summary`);
   },
