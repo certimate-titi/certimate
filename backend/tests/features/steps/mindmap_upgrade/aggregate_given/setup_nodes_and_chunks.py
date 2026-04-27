@@ -222,6 +222,129 @@ def step_impl_resource_with_chunks(context, name, n):
     context.memo["soft_del_resource_id"] = str(resource_id)
 
 
+@given('系統有一個知識節點 "{node_name}" 映射 {n:d} 題考古題且無 resource_chunks')
+def step_impl_node_with_historical_questions(context, node_name, n):
+    """Create node + N historical questions mapped to it (no resource_chunks)."""
+    from app.models.historical_exam import HistoricalExam
+    from app.models.question import Question
+
+    db = context.db_session
+    sid = _ensure_subject(db, "BDD Strength Question Test")
+    node = KnowledgeNode(subject_id=sid, name=node_name, depth=1, sort_order=0)
+    db.add(node)
+    db.flush()
+
+    exam = HistoricalExam(
+        exam_code="BDD",
+        category_code="00",
+        subject_code="STR",
+        exam_name=f"BDD strength {node_name}",
+        total_questions=n,
+    )
+    db.add(exam)
+    db.flush()
+
+    for i in range(1, n + 1):
+        q = Question(
+            historical_exam_id=exam.id,
+            node_id=node.id,
+            question_number=i,
+            content=f"Q{i} for {node_name}",
+            option_a="A", option_b="B", option_c="C", option_d="D",
+            correct_answer="A",
+        )
+        db.add(q)
+    db.commit()
+    context.memo["strength_node_id"] = str(node.id)
+    context.memo["strength_node_name"] = node_name
+    context.memo["strength_subject_id"] = str(sid)
+
+
+def _create_questions_for_strength(db, subject_id, node_id, target_strength):
+    """Create mapped historical questions s.t. recompute yields target_strength.
+
+    weighted_total = question_count (no chunks); strength = min(qc / 10, 1.0).
+    qc >= 10 saturates to 1.0. So qc = round(target * 10), capped at 10.
+    """
+    from app.models.historical_exam import HistoricalExam
+    from app.models.question import Question
+    qc = min(int(round(target_strength * 10)), 10)
+    if qc == 0:
+        return
+    exam = HistoricalExam(
+        exam_code="BDD",
+        category_code="CH",
+        subject_code=str(node_id)[:8],
+        exam_name=f"BDD chapter {node_id}",
+        total_questions=qc,
+    )
+    db.add(exam)
+    db.flush()
+    for i in range(1, qc + 1):
+        q = Question(
+            historical_exam_id=exam.id,
+            node_id=node_id,
+            question_number=i,
+            content=f"Q{i}",
+            option_a="A", option_b="B", option_c="C", option_d="D",
+            correct_answer="A",
+        )
+        db.add(q)
+
+
+@given('系統有一個章節點 "{chapter_name}" 包含 {n:d} 個子節點各 strength {strength:f}')
+def step_impl_chapter_with_uniform_children(context, chapter_name, n, strength):
+    db = context.db_session
+    sid = _ensure_subject(db, f"BDD Chapter {chapter_name}")
+    parent = KnowledgeNode(
+        subject_id=sid, name=chapter_name, depth=1, sort_order=0
+    )
+    db.add(parent)
+    db.flush()
+    for i in range(n):
+        child = KnowledgeNode(
+            subject_id=sid,
+            parent_id=parent.id,
+            name=f"{chapter_name}-子{i+1}",
+            depth=2,
+            sort_order=i,
+        )
+        db.add(child)
+        db.flush()
+        _create_questions_for_strength(db, sid, child.id, strength)
+    db.commit()
+    context.memo["chapter_node_id"] = str(parent.id)
+    context.memo["chapter_subject_id"] = str(sid)
+    context.memo["chapter_name"] = chapter_name
+
+
+@given('系統有一個章節點 "{chapter_name}" 包含子節點 strength 分別為 {strengths}')
+def step_impl_chapter_with_mixed_children(context, chapter_name, strengths):
+    db = context.db_session
+    values = [float(s.strip()) for s in strengths.split(",")]
+    sid = _ensure_subject(db, f"BDD Chapter Mixed {chapter_name}")
+    parent = KnowledgeNode(
+        subject_id=sid, name=chapter_name, depth=1, sort_order=0
+    )
+    db.add(parent)
+    db.flush()
+    for i, s in enumerate(values):
+        child = KnowledgeNode(
+            subject_id=sid,
+            parent_id=parent.id,
+            name=f"{chapter_name}-子{i+1}",
+            depth=2,
+            sort_order=i,
+        )
+        db.add(child)
+        db.flush()
+        _create_questions_for_strength(db, sid, child.id, s)
+    db.commit()
+    context.memo["chapter_node_id"] = str(parent.id)
+    context.memo["chapter_subject_id"] = str(sid)
+    context.memo["chapter_name"] = chapter_name
+
+
 @given('GeminiCacheService 已初始化且無任何 entries')
 def step_impl_init_cache(context):
     from app.services.gemini_cache_service import GeminiCacheService

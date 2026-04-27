@@ -182,6 +182,7 @@ Feature: 心智圖架構升級（Tier 1 + §3 + Tier 2）
 
   # ========== §3 Strategy E Root Solution: Syllabus Anchors ==========
 
+  @llm-integration
   Rule: 前置 - 有 syllabus_topics 時 extract() 的 6 章必須對齊錨點
 
     Example: extract 產出的章名應與 syllabus_topics 一致
@@ -215,6 +216,7 @@ Feature: 心智圖架構升級（Tier 1 + §3 + Tier 2）
       When 系統呼叫 MindmapStrengthService.recompute_for_subject
       Then "網路與系統安全" 的 support_strength 應約為 0.5
 
+  @llm-integration
   Rule: 前置 - Voyage 語意映射應用於 keyword 匹配弱的考古題
 
     Example: keyword 弱匹配的題目走 Voyage 語意 fallback
@@ -224,6 +226,7 @@ Feature: 心智圖架構升級（Tier 1 + §3 + Tier 2）
       Then 全部 20 題應被映射到某個知識節點
       And Voyage 語意 fallback 應至少處理 5 題
 
+  @llm-integration
   Rule: 後置（品質 gate）- QA gate 應在每次 extract 自動檢查
 
     Example: extract 完成後 QA gate 應回報結果

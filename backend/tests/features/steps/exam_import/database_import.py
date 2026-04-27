@@ -291,7 +291,8 @@ def step_verify_skip_duplicate(context):
 def step_verify_query_endpoint(context):
     """Verify imported exam can be queried via API."""
     response = context.api_client.get(
-        "/api/v1/exam-import/exams/TEST/00/0000"
+        "/api/v1/exam-import/exams/TEST/00/0000",
+        headers=_admin_auth_headers(context),
     )
 
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
@@ -305,7 +306,8 @@ def step_verify_query_endpoint(context):
 def step_verify_questions_endpoint(context):
     """Verify questions can be retrieved via API."""
     response = context.api_client.get(
-        "/api/v1/exam-import/exams/TEST/00/0000/questions?limit=5&offset=0"
+        "/api/v1/exam-import/exams/TEST/00/0000/questions?limit=5&offset=0",
+        headers=_admin_auth_headers(context),
     )
 
     assert response.status_code == 200
@@ -319,7 +321,8 @@ def step_verify_questions_endpoint(context):
 def step_verify_validation_endpoint(context):
     """Verify post-import validation passes."""
     response = context.api_client.post(
-        "/api/v1/exam-import/exams/TEST/00/0000/validate"
+        "/api/v1/exam-import/exams/TEST/00/0000/validate",
+        headers=_admin_auth_headers(context),
     )
 
     assert response.status_code == 200
@@ -360,6 +363,43 @@ def step_verify_validation_model(context):
 # ──────────────────────────────────────────────────────────────
 # Complex scenarios
 # ──────────────────────────────────────────────────────────────
+
+def _admin_auth_headers(context):
+    token = context.jwt_helper.generate_token("admin@test.local")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@then("呼叫 GET /api/v1/exam-import/exams 應返回匯入記錄列表")
+def step_verify_list_endpoint(context):
+    """Verify list endpoint returns imported exams."""
+    response = context.api_client.get(
+        "/api/v1/exam-import/exams", headers=_admin_auth_headers(context)
+    )
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    data = response.json()
+    assert "exams" in data, f"Expected 'exams' key in response, got: {list(data.keys())}"
+    assert len(data["exams"]) >= 1, "Expected at least 1 exam in list"
+
+
+@then("可透過 GET /api/v1/exam-import/exams/TEST/00/0000 查詢詳情")
+def step_verify_detail_endpoint(context):
+    """Verify detail endpoint returns exam metadata."""
+    response = context.api_client.get(
+        "/api/v1/exam-import/exams/TEST/00/0000",
+        headers=_admin_auth_headers(context),
+    )
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    context.memo["detail_response"] = response.json()
+
+
+@then("回應應包含 total_questions, actual_questions, created_at 等欄位")
+def step_verify_detail_fields(context):
+    """Verify detail response contains required fields."""
+    data = context.memo.get("detail_response")
+    assert data is not None, "No detail response captured"
+    for field in ("total_questions", "actual_questions", "created_at"):
+        assert field in data, f"Missing field '{field}' in response: {list(data.keys())}"
+
 
 @then("批量插入效能應 < 500ms（{count:d} 題）")
 def step_verify_bulk_performance(context, count):

@@ -59,6 +59,30 @@ def step_impl_strength_eq(context, expected):
     )
 
 
+@then('該節點的 support_strength 應大於 {lower:f} 且小於 {upper:f}')
+def step_impl_strength_between(context, lower, upper):
+    context.db_session.flush()
+    node_id = uuid.UUID(context.memo["strength_node_id"])
+    node = context.db_session.query(KnowledgeNode).filter_by(id=node_id).first()
+    assert node is not None, f"node {node_id} not found"
+    actual = float(node.support_strength or 0)
+    assert lower < actual < upper, (
+        f"support_strength 預期 ({lower}, {upper})，實際 {actual}"
+    )
+
+
+@then('"{chapter_name}" 的 support_strength 應約為 {expected:f}')
+def step_impl_chapter_strength_approx(context, chapter_name, expected):
+    context.db_session.flush()
+    node_id = uuid.UUID(context.memo["chapter_node_id"])
+    node = context.db_session.query(KnowledgeNode).filter_by(id=node_id).first()
+    assert node is not None, f"chapter {chapter_name} not found"
+    actual = float(node.support_strength or 0)
+    assert abs(actual - expected) < 0.05, (
+        f'"{chapter_name}" support_strength 預期約 {expected}, 實際 {actual}'
+    )
+
+
 @then('回應的 tier 應為 "{tier}"')
 def step_impl_tier_eq(context, tier):
     result = context.memo["display_result"]

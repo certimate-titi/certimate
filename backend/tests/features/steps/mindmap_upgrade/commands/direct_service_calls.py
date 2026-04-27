@@ -39,6 +39,14 @@ def step_impl_recompute_node(context, node_name):
         context.last_error = {"message": str(exc)}
 
 
+@when('系統呼叫 MindmapStrengthService.recompute_for_subject')
+def step_impl_recompute_subject(context):
+    from app.services.mindmap_strength_service import MindmapStrengthService
+    subject_id = uuid.UUID(context.memo["chapter_subject_id"])
+    svc = MindmapStrengthService(context.db_session)
+    svc.recompute_for_subject(subject_id)
+
+
 @when('系統計算 strength_to_display({value:f})')
 def step_impl_strength_display(context, value):
     from app.services.mindmap_strength_service import MindmapStrengthService
