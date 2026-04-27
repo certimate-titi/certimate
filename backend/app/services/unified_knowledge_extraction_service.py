@@ -609,15 +609,18 @@ class UnifiedKnowledgeExtractionService:
             "required": ["knowledge_tree"],
         }
 
+        # Gemini 2.5 Pro 預設 max_output_tokens 偏低，大型 PDF 會被截斷在 ~85KB
+        # 顯式設為 65536（~200KB JSON）以容納大量章節 + node_mapping
+        common_cfg_kwargs = {
+            "temperature": 0.2,
+            "response_mime_type": "application/json",
+            "max_output_tokens": 65536,
+        }
         try:
             response = _gemini_client.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt,
-                config={
-                    "temperature": 0.2,
-                    "response_mime_type": "application/json",
-                    "response_schema": response_schema,
-                },
+                config={**common_cfg_kwargs, "response_schema": response_schema},
             )
         except Exception as exc:  # noqa: BLE001
             # Some Gemini versions may reject complex response_schema — fallback
@@ -628,17 +631,22 @@ class UnifiedKnowledgeExtractionService:
             response = _gemini_client.models.generate_content(
                 model=GEMINI_MODEL,
                 contents=prompt,
-                config={
-                    "temperature": 0.2,
-                    "response_mime_type": "application/json",
-                },
+                config=common_cfg_kwargs,
             )
 
         raw = response.text.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
 
-        return json.loads(raw)
+        # 加 graceful JSON parse — 若仍被截斷則 log truncated 區段大小再 raise
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError as e:
+            log.error(
+                "[統一萃取] JSON truncated at char %d / total %d; head=%r tail=%r",
+                e.pos, len(raw), raw[:120], raw[-120:],
+            )
+            raise
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 舊節點 & Mastery 遷移

@@ -13,6 +13,12 @@ import { knowledgeService, type NodeScaffoldItem } from '@/lib/api/services';
 export interface ScaffoldNotebookProps {
   /** 當前節點 ID */
   nodeId: string | null;
+  /**
+   * 來源資源 ID — 從 /resource-library 點「解析內容」進入時用以查資源層級鷹架，
+   * 與 ScaffoldMaterial 對稱（避開「統一樹節點 resource_id IS NULL」架構限制）。
+   * node 層級無筆記時自動 fallback 到資源層級，確保深讀-筆記連動。
+   */
+  fallbackResourceId?: string | null;
   /** 節點顯示名稱（用於匯出檔名與 Markdown 標題） */
   nodeLabel: string | null;
   /** 使用者是否為 PRO 訂戶 */
@@ -31,14 +37,14 @@ export interface ScaffoldNotebookProps {
  * @param props.isPro - 是否 PRO
  * @param props.onUpgradeClick - 升級回呼
  */
-export default function ScaffoldNotebook({ nodeId, nodeLabel, isPro, onUpgradeClick }: ScaffoldNotebookProps) {
+export default function ScaffoldNotebook({ nodeId, fallbackResourceId, nodeLabel, isPro, onUpgradeClick }: ScaffoldNotebookProps) {
   const [entries, setEntries] = useState<NodeScaffoldItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [paywall, setPaywall] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!nodeId) {
+    if (!nodeId && !fallbackResourceId) {
       setEntries([]);
       return;
     }
@@ -48,19 +54,33 @@ export default function ScaffoldNotebook({ nodeId, nodeLabel, isPro, onUpgradeCl
     }
     setPaywall(false);
     setLoading(true);
-    knowledgeService
-      .getNodeScaffolds(nodeId)
+
+    const handleErr = (err: unknown) => {
+      const e = err as { status?: number; message?: string };
+      if (e.status === 403) setPaywall(true);
+      else setError(e.message || '載入筆記失敗');
+    };
+
+    // Spec 11 §連動：先試 node 層級；若 0 筆有 user_response 且有 fallbackResourceId，
+    // 退回資源層級（確保深讀寫入後可在筆記分頁讀到）
+    const fetchPromise = nodeId
+      ? knowledgeService.getNodeScaffolds(nodeId).then((res) => {
+          const withResp = (res.scaffolds || []).filter((s) => s.user_response);
+          if (withResp.length === 0 && fallbackResourceId) {
+            return knowledgeService.getResourceScaffolds(fallbackResourceId);
+          }
+          return res;
+        })
+      : knowledgeService.getResourceScaffolds(fallbackResourceId!);
+
+    fetchPromise
       .then((res) => {
         const withResponses = (res.scaffolds || []).filter((s) => s.user_response);
         setEntries(withResponses);
       })
-      .catch((err: unknown) => {
-        const e = err as { status?: number; message?: string };
-        if (e.status === 403) setPaywall(true);
-        else setError(e.message || '載入筆記失敗');
-      })
+      .catch(handleErr)
       .finally(() => setLoading(false));
-  }, [nodeId, isPro]);
+  }, [nodeId, fallbackResourceId ?? null, isPro]);
 
   function handleExport() {
     if (entries.length === 0) return;
@@ -82,7 +102,7 @@ export default function ScaffoldNotebook({ nodeId, nodeLabel, isPro, onUpgradeCl
     URL.revokeObjectURL(url);
   }
 
-  if (!nodeId) {
+  if (!nodeId && !fallbackResourceId) {
     return (
       <div className="p-4 text-xs text-slate-400 text-center">
         <NotebookPen className="h-6 w-6 mx-auto mb-2 text-slate-300" />

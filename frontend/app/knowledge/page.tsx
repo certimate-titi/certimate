@@ -897,6 +897,7 @@ function KnowledgeBasePageInner() {
             const notebookSlot = (
               <ScaffoldNotebook
                 nodeId={nodeId}
+                fallbackResourceId={focusResourceId}
                 nodeLabel={nodeLabel}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
