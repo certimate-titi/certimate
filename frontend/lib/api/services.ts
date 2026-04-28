@@ -727,6 +727,9 @@ export const communityService = {
   async getExamCoaching(): Promise<ExamCoaching> {
     return apiClient.get('/community/exam-results/coaching');
   },
+  async generateWeeklyReport(): Promise<{ message: string }> {
+    return apiClient.post('/community/weekly-report/generate', {});
+  },
 };
 
 // ===========================
