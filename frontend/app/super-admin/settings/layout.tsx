@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Server,
   ChevronRight,
+  Key,
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,6 +28,7 @@ function cn(...inputs: ClassValue[]) {
 
 const SETTINGS_TABS = [
   { id: 'ai', href: '/super-admin/settings', name: 'AI 模型路由', icon: Cpu },
+  { id: 'api-keys', href: '/super-admin/settings/api-keys', name: 'API Keys', icon: Key },
   { id: 'plans', href: '/super-admin/settings/plans', name: '方案限額', icon: Zap },
   { id: 'announcements', href: '/super-admin/settings/announcements', name: '公告管理', icon: Bell },
   { id: 'flags', href: '/super-admin/settings/flags', name: 'Feature Flags', icon: Flag },

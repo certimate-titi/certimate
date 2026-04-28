@@ -216,3 +216,43 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       When 點擊「下一頁」按鈕
       Then 列表應顯示第二頁資料
       And 頁面應顯示「上一頁」按鈕
+
+  # ========== API Key 健康監控與管理（Bug 8 — son731202 雲端 401 事件觸發）==========
+
+  Rule: 後置（回應）- 平台管理應顯示 API key 健康狀態
+
+    Example: API Key 區塊列出 4 把 key 狀態
+      When 使用者 "super@certimate.com" 進入「平台管理 / 系統設定 / API Keys」
+      Then 操作成功
+      And 頁面應顯示 4 把 key 卡片：Anthropic、Gemini、Voyage、OpenAI
+      And 每張卡片應包含：provider 名稱、健康狀態（healthy/unhealthy）、上次檢查時間、key 後 4 碼、「測試」按鈕、「重設」輸入框
+
+  Rule: 後置（即時通知）- 偵測到 API key 失效時應寄信通知 super-admin
+
+    Example: Anthropic 401 失效觸發 email 通知
+      Given Anthropic API key 在 Secret Manager 已過期
+      When 系統 chunking pipeline 呼叫 Anthropic 取得 401 響應
+      Then 系統應記錄該 key 為 unhealthy 狀態
+      And 應寄信通知所有 SUPER_ADMIN 用戶：主旨包含「API Key 異常」、內文包含 provider 名稱與失敗時間
+      And 平台管理 API Keys 區塊該卡片應呈紅色 + 顯示失敗原因
+
+  Rule: 後置（測試）- super-admin 可一鍵測試 API key 連線
+
+    Example: 點擊「測試」按鈕對該 provider 發送 1-token ping
+      When 使用者 "super@certimate.com" 在 Anthropic 卡片點擊「測試」按鈕
+      Then 系統應對該 provider 發送 1-token 最小 generate 請求（cost ~$0.000001）
+      And 成功時卡片應顯示綠色 ✓ 並更新 last_check_at
+      And 失敗時卡片應顯示紅色 ✗ 並顯示錯誤訊息（401/403/429 等）
+
+  Rule: 後置（寫入）- super-admin 可重設 API key（寫入 Secret Manager）
+
+    Example: 在 UI 輸入新 key 並儲存
+      Given 使用者 "super@certimate.com" 在 Anthropic 卡片輸入新 API key
+      When 點擊「儲存」按鈕
+      Then 系統應將新 key 寫入 GCP Secret Manager（新 version）
+      And 應建立 audit_logs 紀錄：actor=super、action=update_api_key、target=anthropic、不記錄 key 內容
+      And UI 應顯示「儲存成功，last_4=XXXX」
+
+    Example: 非 SUPER_ADMIN 寫入應 403
+      When 使用者 "alice@example.com" (USER role) 嘗試 PUT /api/v1/admin/api-keys/anthropic
+      Then 操作失敗，HTTP 403 回應「需要 SUPER_ADMIN 權限」

@@ -92,6 +92,71 @@ def _handle_result(result: dict):
     return result
 
 
+# ── API Key Health & Management（Spec 12c §API Keys）──────────────────────────
+
+@router.get("/api-keys/status")
+def api_keys_status(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """列出 4 把 LLM API key 的健康狀態（last_4 / healthy / last_check_at）。"""
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+        raise HTTPException(status_code=403, detail={"message": "需要管理員權限"})
+    from app.services.api_key_health_service import ApiKeyHealthService
+    return ApiKeyHealthService(db).get_all_statuses()
+
+
+@router.post("/api-keys/{provider}/test")
+def api_key_test(
+    provider: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """對 provider 發送 1-token ping 驗證 key 有效（cost ~$0.000001）。"""
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    from app.services.api_key_health_service import ApiKeyHealthService, PROVIDERS
+    if provider not in PROVIDERS:
+        raise HTTPException(status_code=400, detail={"message": f"不支援的 provider: {provider}"})
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+        raise HTTPException(status_code=403, detail={"message": "需要管理員權限"})
+    return ApiKeyHealthService(db).test_key(provider)  # type: ignore[arg-type]
+
+
+class _UpdateApiKeyRequest(BaseModel):
+    """重設 API key 的 request body。"""
+    api_key: str
+
+
+@router.put("/api-keys/{provider}")
+def api_key_update(
+    provider: str,
+    body: _UpdateApiKeyRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """重設 API key（寫入 Secret Manager；本地僅提示）。
+
+    Spec Q5: 僅 SUPER_ADMIN 可呼叫。
+    """
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    from app.services.api_key_health_service import ApiKeyHealthService, PROVIDERS
+    if provider not in PROVIDERS:
+        raise HTTPException(status_code=400, detail={"message": f"不支援的 provider: {provider}"})
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    result = ApiKeyHealthService(db).update_key(user_id, provider, body.api_key)  # type: ignore[arg-type]
+    if result.get("error"):
+        raise HTTPException(status_code=result.get("status_code", 400), detail={"message": result["message"]})
+    return result
+
+
 # ── Resource Healing ─────────────────────────────────────────────────────────
 
 @router.post("/resources/heal-orphans")

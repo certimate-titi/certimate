@@ -898,7 +898,28 @@ export const feedbackService = {
  *
  * 僅 `ADMIN` / `SUPER_ADMIN` role 能呼叫；後端會驗證權限。
  */
+/** Spec 12c §API Keys — 健康狀態 / 測試 / 重設 */
+export interface ApiKeyStatus {
+  provider: 'anthropic' | 'gemini' | 'voyage' | 'openai';
+  last_4: string;
+  configured: boolean;
+  healthy: boolean | null;
+  last_check_at: string | null;
+  last_failure_reason: string | null;
+}
+
 export const superAdminService = {
+  // ─── API Keys ────────────────────────────────────────────────────
+  async getApiKeyStatus(): Promise<{ keys: ApiKeyStatus[] }> {
+    return apiClient.get('/admin/api-keys/status');
+  },
+  async testApiKey(provider: string): Promise<{ provider: string; healthy: boolean; last_check_at: string; last_failure_reason: string | null }> {
+    return apiClient.post(`/admin/api-keys/${provider}/test`, {});
+  },
+  async updateApiKey(provider: string, apiKey: string): Promise<{ ok: boolean; provider: string; last_4: string; backend: string; message: string }> {
+    return apiClient.put(`/admin/api-keys/${provider}`, { api_key: apiKey });
+  },
+
   async getUsers(params?: { search?: string; tier?: string; page?: number }): Promise<{ users: unknown[]; total: number }> {
     const qs = new URLSearchParams();
     if (params?.search) qs.set('keyword', params.search);
