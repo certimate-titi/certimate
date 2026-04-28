@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [fetchMe]);
 
-  // PRD-046 Canvas analytics flusher 於 2026-04-28 隨 Canvas 功能移除而移除
+  // 註：先前的前端事件 flusher 於 2026-04-28 已移除（spec drift cleanup）
 
   const loginWithCredentials = useCallback(async (email: string, password: string) => {
     const res = await apiClient.post<BackendLoginResponse>('/auth/login', { email, password });

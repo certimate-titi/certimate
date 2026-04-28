@@ -1,0 +1,20 @@
+[
+  {
+    "key": "PRD-046",
+    "prd": "PRD-046",
+    "name": "知識地圖 Canvas 三層 Zoom",
+    "removed_at": "2026-04-24",
+    "removed_in_commit": "91ca055",
+    "reason": "合併至既有 ForceGraph mindmap，避免兩個入口困惑用戶",
+    "ceo_signoff": "Simon"
+  },
+  {
+    "key": "StudyBuddyBanner",
+    "prd": "Feature 14",
+    "name": "活躍考生橫幅",
+    "removed_at": "2026-04-27",
+    "removed_in_commit": "75a2782",
+    "reason": "用戶決議移除（dashboard 上方乾淨）",
+    "ceo_signoff": "Simon"
+  }
+]
