@@ -452,3 +452,27 @@ Feature: 錯題複習與 AI 教練
       And 頁面應顯示「回到儀表板」連結按鈕
       When 使用者點擊「回到儀表板」連結
       Then 頁面應導航至儀表板頁面
+
+  # ========== 數學公式渲染 ==========
+
+  Rule: 後置（UI）- 題目內容與 AI 教練回覆應支援 KaTeX 數學公式渲染
+
+    # 落地紀錄（2026-04-28）：使用 react-markdown + remark-math + rehype-katex 套件，
+    # 行內公式 `$x^2$` 與區塊公式 `$$\frac{a}{b}$$` 都會渲染為 KaTeX HTML。
+    # 元件：components/MathContent.tsx
+
+    Example: 題目含 $E=mc^2$ 應渲染為 KaTeX 而非顯示原始文字
+      Given 使用者 "pro@example.com" 有錯題，題目內容包含 "求解 $E=mc^2$ 中的能量"
+      When 使用者進入錯題複習頁面
+      Then 題目區塊應渲染 KaTeX 公式（顯示 E=mc² 而非 `$E=mc^2$` 字串）
+      And HTML 應包含 class 為 "katex" 的 span 元素
+
+    Example: AI 教練回覆含 LaTeX 應渲染
+      Given 使用者 "pro@example.com" 在錯題複習頁面詢問 AI 教練數學概念
+      When AI 教練回覆包含 "答案是 $\\sqrt{16} = 4$"
+      Then 對話區塊應渲染 KaTeX 公式
+      And 渲染結果不應出現原始 LaTeX 字串如 `\sqrt`
+
+    Example: 輸入框下方應顯示「支援 KaTeX 數學公式渲染」提示
+      When 使用者 "pro@example.com" 進入錯題複習頁面 AI 教練聊天區
+      Then 輸入框下方應顯示提示文字「支援 KaTeX 數學公式渲染（行內 $x^2$、區塊 $$...$$）」

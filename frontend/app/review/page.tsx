@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw, BookOpen } from 'lucide-react';
 import TiTiLogo from '@/components/TiTiLogo';
+import MathContent from '@/components/MathContent';
 import Link from 'next/link';
 import { reviewService, subjectService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
@@ -224,9 +225,9 @@ function ReviewBookPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider border border-rose-100 mb-4">
                 答錯
               </div>
-              <p className="text-lg text-slate-900 leading-relaxed font-medium whitespace-pre-line">
+              <MathContent className="text-lg text-slate-900 leading-relaxed font-medium">
                 {question.contentText}
-              </p>
+              </MathContent>
             </div>
 
             {/* User's Wrong Answer */}
@@ -354,8 +355,8 @@ function ReviewBookPage() {
                   <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                     <Sparkles className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                    {msg.content}
+                  <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200 text-sm text-slate-700 leading-relaxed">
+                    <MathContent>{msg.content}</MathContent>
                     {msg.citationSource && (
                       <p className="mt-2 text-slate-500 italic text-xs">
                         來源：{msg.citationSource.label}
@@ -455,7 +456,8 @@ function ReviewBookPage() {
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="mt-2 flex justify-end items-center px-1">
+                <div className="mt-2 flex justify-between items-center px-1">
+                  <span className="text-[10px] text-slate-400">支援 KaTeX 數學公式渲染（行內 $x^2$、區塊 $$...$$）</span>
                   {sending && (
                     <span className="text-[10px] text-emerald-600 flex items-center gap-1">
                       <RefreshCw className="h-3 w-3 animate-spin" /> 思考中...
