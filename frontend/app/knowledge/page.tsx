@@ -803,11 +803,7 @@ function KnowledgeBasePageInner() {
                           >
                             <RefreshCw className="w-4 h-4" /> 全部重新解析
                           </button>
-                          <div className="mt-3 text-xs">
-                            <Link href="/account/resource-library" className="text-rose-500 hover:text-rose-700 underline">
-                              逐一檢視失敗原因 →
-                            </Link>
-                          </div>
+                          {/* 失敗詳情已顯示於左側資料列表（同頁），不再連結至已廢除的 /account/resource-library */}
                         </>
                       ) : documents.some(d => d.status === 'PROCESSING') ? (
                         // 情境 3：處理中

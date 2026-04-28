@@ -315,16 +315,17 @@ Feature: 資源庫管理與連鎖清除防呆機制
       Then 應彈出 confirm 對話框
       And 文案應包含「撤回此資源對機構的分享」（不應出現「EDU」字樣，避免與 EDU 學生用戶混淆）
 
-  Rule: 後置（UI）- 學習庫頁應提供「我的素材」與「知識地圖」兩個 Tab 切換
+  Rule: 後置（UI）- 學習庫入口統一導向 /knowledge（單一真實來源）
 
-    # 落地紀錄（自動巡檢 2026-04-28）：/account/resource-library 頁有 Tab
-    # 「📁 我的素材」「🗂️ 知識地圖」可切換，預設「我的素材」。
+    # 設計變更紀錄（2026-04-28，CEO 簽核 B 路徑）：
+    # 原雙 tab 設計（「我的素材」+「知識地圖」）造成兩個入口資料不一致 bug
+    # （點同一節點顯示不同教材內容），且兩 tab 內容大量重複，UX 多餘。
+    # 統一收斂到 /knowledge 單一頁，廢除以下路由：
+    #   - /library（雙 tab wrapper）
+    #   - /account/resource-library（我的素材 tab 內嵌頁）
+    # Navbar「學習庫」直接指向 /knowledge。
 
-    Example: 預設顯示我的素材 Tab
-      When 使用者 "alice@example.com" 進入 /account/resource-library
-      Then 中央區應顯示資源列表（我的素材 Tab）
-      And 「我的素材」Tab 應呈 active 狀態（綠色底線）
-
-    Example: 切換至知識地圖 Tab 應導航至 /knowledge
-      When 使用者點擊「知識地圖」Tab
+    Example: 點擊 Navbar「學習庫」應直接抵達 /knowledge
+      When 使用者 "alice@example.com" 點擊 Navbar 的「學習庫」連結
       Then 應導航至 /knowledge 頁
+      And 不應出現「我的素材」/「知識地圖」 Tab 切換 UI

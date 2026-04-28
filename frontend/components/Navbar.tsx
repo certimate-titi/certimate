@@ -23,7 +23,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
-    { href: '/library', label: '學習庫', icon: BookOpen },
+    { href: '/knowledge', label: '學習庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/practice', label: '練習', icon: Dumbbell },
     { href: '/schedule', label: '排程', icon: Calendar },

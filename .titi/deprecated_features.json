@@ -16,5 +16,35 @@
     "removed_in_commit": "75a2782",
     "reason": "用戶決議移除（dashboard 上方乾淨）",
     "ceo_signoff": "Simon"
+  },
+  {
+    "key": "library-dual-tab",
+    "prd": "Feature 11",
+    "name": "學習庫雙 Tab（我的素材 / 知識地圖）",
+    "removed_at": "2026-04-28",
+    "removed_in_commit": "TBD",
+    "reason": "兩入口資料不一致 bug + 雙 tab 內容大量重複；統一收斂到 /knowledge 單一頁。Navbar「學習庫」改指 /knowledge",
+    "removed_routes": ["/library", "/account/resource-library"],
+    "ceo_signoff": "Simon"
+  },
+  {
+    "key": "super-admin-reverse-engineering-page",
+    "prd": "Feature 26",
+    "name": "考綱逆向工程 super-admin 操作頁",
+    "removed_at": "2026-04-28",
+    "removed_in_commit": "6fd15ac",
+    "reason": "改為後台自動觸發（ImportTask 完成時呼叫 ReverseEngineeringService）；admin endpoints 仍保留作 monitoring/override",
+    "removed_routes": ["/super-admin/reverse-engineering"],
+    "ceo_signoff": "Simon"
+  },
+  {
+    "key": "super-admin-knowledge-merge-page",
+    "prd": "Feature 29",
+    "name": "知識樹合併 super-admin 操作頁",
+    "removed_at": "2026-04-28",
+    "removed_in_commit": "6fd15ac",
+    "reason": "改為後台自動觸發（document_processing_service Step 11 在 extract 後自動 merge）；admin endpoints 仍保留作 monitoring/override",
+    "removed_routes": ["/super-admin/knowledge-merge"],
+    "ceo_signoff": "Simon"
   }
 ]

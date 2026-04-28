@@ -143,7 +143,7 @@ export default function CandidateApprovalPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/account/resource-library" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+        <Link href="/knowledge" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-xl font-bold text-gray-900">題目抽取確認</h1>
