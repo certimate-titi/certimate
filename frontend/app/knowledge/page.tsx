@@ -357,6 +357,19 @@ function KnowledgeBasePageInner() {
     }
     setExpandedDocId(docId);
     const doc = documents.find(d => d.id === docId);
+    // 虛擬考古題資源（hist: 前綴）走另一條 markdown 取得路徑，不打 chunks API
+    if (docId.startsWith('hist:') || doc?.sourceType === 'historical_exam') {
+      const hid = docId.startsWith('hist:') ? docId.slice(5) : docId;
+      try {
+        const md = await documentService.getHistoricalMarkdown(hid);
+        setDocFullText(md.content || '（無題目內容）');
+      } catch {
+        setDocFullText('❌ 載入考古題內容失敗');
+      }
+      setDocFullTitle(doc?.title || '');
+      setCenterView('document');
+      return;
+    }
     if (docChunks[docId]) {
       // Already cached — build full text and show
       const sorted = [...docChunks[docId]].sort((a, b) => a.chunk_index - b.chunk_index);

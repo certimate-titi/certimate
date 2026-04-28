@@ -170,7 +170,14 @@ def get_resource_chunks(
 
     SEED_USER_ID = "00000000-0000-0000-0000-000000000001"
 
-    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    # 虛擬資源（如考古題題庫 hist:UUID）不在 resources 表，直接回 404
+    # 防禦前端不慎傳入此類 id 觸發 SQLAlchemy invalid UUID 拋 500
+    try:
+        rid_uuid = uuid.UUID(resource_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail="資源不存在")
+
+    resource = db.query(Resource).filter(Resource.id == rid_uuid).first()
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
 

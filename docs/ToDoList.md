@@ -1,7 +1,7 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
-**最後更新**：2026-04-27
+**最後更新**：2026-04-28
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -33,6 +33,7 @@
 - [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
 - [ ] `/super-admin/platform-subjects` — 平台科目管理無任何 Feature 覆蓋（首見：2026-04-27）
 - [ ] `/resources/[id]/candidates` — 候選考題管理頁面無任何 Feature 覆蓋（Feature 23/25 未對應此路徑）（首見：2026-04-27）
+- [ ] `/exam/setup` — Feature 19（交錯練習）規定測驗設定頁可切換題目**排列模式**（interleaved / grouped / sequential），但頁面目前無此 UI 選項；頁面有難易度滑桿與 exam_mode toggle，唯獨缺排列模式選擇器（首見：2026-04-28）
 
 ---
 
@@ -44,6 +45,8 @@
 - [ ] `/knowledge` — Feature 46（知識地圖 Canvas 三層 Zoom）存在，頁面使用 ForceGraph 但三層 Zoom 邏輯未明確實作，需對照 PRD-046（首見：2026-04-24）
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
+- [ ] `/review` — 頁面 disclaimer 聲稱「支援 KaTeX 數學公式渲染」但 page.tsx 無任何 KaTeX 套件 import（`katex` / `react-katex` / `remark-math` 均未引入）；屬虛假宣稱，需補實作或移除 disclaimer；Feature 07 亦無對應 Scenario（首見：2026-04-28）
+- [ ] `/knowledge` — 「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal，屬跨頁面導航行為；Feature 03 無 Scenario 覆蓋此互動路徑，導航目標變更時無回歸保護（首見：2026-04-28）
 - [x] `/practice` — ~~Feature 32 要求空節點空態有「選擇其他節點」與「回知識圖譜」兩個操作按鈕~~ 兩個按鈕皆已實作於 `page.tsx` line 384（選擇其他節點）和 line 388-393（回知識圖譜，連結至 `/knowledge`）（確認：2026-04-26 自動巡檢）
 - [x] `/account/resource-library` — FAILED 資源 failure_reason 已透過 title tooltip 向用戶呈現（hover「解析失敗」可見詳細原因），並透過 resourceParseService.getStatus() 主動輪詢（確認：2026-04-25 自動巡檢）
 
@@ -57,6 +60,7 @@
 - [x] `/exam/setup` — documents.length === 0 空態已新增提示：若已上傳資源但為空，引導至知識庫查看解析狀態（修復：2026-04-24 自動巡檢）
 - [ ] `/library` — 頁面空態情況不明，建議確認 Tab 切換後空態是否查詢相關 job 狀態（首見：2026-04-24）
 - [ ] `/practice` — no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**，僅文字引導，需補強至主動查 job 表（首見：2026-04-24）
+- [ ] `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但**未查詢後端 job 表**（`exam_generation_jobs` / `resource_parse_jobs`），無法區分「真正全答對」vs「job FAILED 導致無錯題記錄」；違反 Layer 3 規則（首見：2026-04-28）
 - [x] `/account/resource-library` — FAILED 資源 badge 已顯示，failure_reason 透過 tooltip 呈現（確認：2026-04-25 自動巡檢）
 - [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
 
