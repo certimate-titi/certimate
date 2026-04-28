@@ -326,6 +326,19 @@ class DocumentProcessingService:
                         for n in nodes
                         if getattr(n, "name", None)
                     ]
+                    logger.info(
+                        "Entering auto knowledge merge for resource %s "
+                        "(incoming_nodes=%s, has_user_id=%s)",
+                        resource_id,
+                        len(incoming_nodes_payload),
+                        bool(resource.user_id),
+                    )
+                    if not incoming_nodes_payload:
+                        logger.warning(
+                            "Auto knowledge merge skipped: no incoming_nodes "
+                            "(ai_structure_analysis 可能失敗或回傳空樹) for resource %s",
+                            resource_id,
+                        )
                     if incoming_nodes_payload and resource.user_id:
                         merge_service = KnowledgeMergeService(self.db)
                         merge_result = merge_service.merge(

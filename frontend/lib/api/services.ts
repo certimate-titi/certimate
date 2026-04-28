@@ -1541,7 +1541,36 @@ export const importService = {
 
   async getDashboardStats(): Promise<ImportDashboardStats | null> {
     try {
-      return await apiClient.get<ImportDashboardStats>('/exam-import/dashboard/stats');
+      // 後端回 snake_case（job_queue / success_metrics / import_volume），
+      // 前端型別為 camelCase；做轉換以符合既有 components 期望（與 getRecentJobs 一致）
+      const raw = await apiClient.get<Record<string, unknown>>('/exam-import/dashboard/stats');
+      const jq = (raw.job_queue ?? {}) as Record<string, number>;
+      const sm = (raw.success_metrics ?? {}) as Record<string, number>;
+      const iv = (raw.import_volume ?? {}) as Record<string, number>;
+      return {
+        timestamp: (raw.timestamp as string) || new Date().toISOString(),
+        jobQueue: {
+          totalJobs: jq.total_jobs ?? 0,
+          inProgress: jq.in_progress ?? 0,
+          pending: jq.pending ?? 0,
+          processing: jq.processing ?? 0,
+          validating: jq.validating ?? 0,
+          importing: jq.importing ?? 0,
+          completed: jq.completed ?? 0,
+          failed: jq.failed ?? 0,
+          cancelled: jq.cancelled ?? 0,
+        },
+        successMetrics: {
+          successRate: sm.success_rate ?? 0,
+          successfulJobs: sm.successful_jobs ?? 0,
+          failedJobs: sm.failed_jobs ?? 0,
+          averageDurationSeconds: sm.average_duration_seconds ?? 0,
+        },
+        importVolume: {
+          totalQuestionsImported: iv.total_questions_imported ?? 0,
+          averageQuestionsPerJob: iv.average_questions_per_job ?? 0,
+        },
+      };
     } catch {
       return null;
     }

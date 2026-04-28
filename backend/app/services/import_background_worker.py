@@ -74,19 +74,33 @@ class ImportBackgroundWorker:
                 return {"success": False, "task_id": task_id, "message": error_msg}
 
             # Step 2: Extract questions from PDFs (Phase 1)
+            # 修正（2026-04-28）：extract_questions_from_pdf 簽名為
+            #   (pdf_content: bytes, exam_code, category_code, subject_code, exam_name=...)
+            # 並回 Tuple[ExamPaperData|None, errors:list]，先前傳 (path, path) 全錯。
             logger.info(f"Extracting questions from {task.question_pdf_path}")
-            extraction_result = self.extraction_service.extract_questions_from_pdf(
-                task.question_pdf_path, task.answer_pdf_path
-            )
-
-            if extraction_result.get("error"):
-                error_msg = f"Extraction failed: {extraction_result.get('message')}"
+            try:
+                with open(task.question_pdf_path, "rb") as f:
+                    pdf_bytes = f.read()
+            except OSError as e:
+                error_msg = f"Read PDF failed: {e}"
                 self.task_service.mark_failed(task_uuid, error_msg)
                 return {"success": False, "task_id": task_id, "message": error_msg}
 
-            exam_paper = extraction_result.get("exam_paper")
+            exam_paper, extraction_errors = self.extraction_service.extract_questions_from_pdf(
+                pdf_bytes,
+                exam_code=task.exam_code,
+                category_code=task.category_code,
+                subject_code=task.subject_code,
+                exam_name=task.exam_name,
+            )
+
+            if extraction_errors:
+                logger.warning(f"Extraction errors (non-fatal): {extraction_errors}")
             if not exam_paper:
-                error_msg = "No exam paper data extracted"
+                error_msg = (
+                    f"No exam paper data extracted: "
+                    f"{'; '.join(extraction_errors) if extraction_errors else 'unknown'}"
+                )
                 self.task_service.mark_failed(task_uuid, error_msg)
                 return {"success": False, "task_id": task_id, "message": error_msg}
 
