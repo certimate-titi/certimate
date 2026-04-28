@@ -277,3 +277,40 @@ Feature: 資源庫管理與連鎖清除防呆機制
       Then 操作成功
       And 資源 R1 的 scope 應還原為 "personal"
       And 資源 R1 的 target_institution_id 應為 NULL
+
+  Rule: 後置（UI）- 「分享」按鈕應開啟 Modal 列出可選機構（取代 prompt UUID）
+
+    # Spec 11 §ShareModal — 落地紀錄（2026-04-28）：
+    # components/ShareToInstitutionModal.tsx 取代舊版 prompt() 直接輸入 UUID 的不安全流程。
+    # 文案明確「分享給機構 → 該機構學生可看到」，因 EDU 用戶定位是學生不是機構 admin。
+
+    Example: 點擊「分享」按鈕開啟機構選擇 Modal
+      Given 使用者 "ultra@example.com" 為 ULTRA 訂戶且擁有資源 R1（scope=personal）
+      When 使用者在資源庫點擊資源 R1 的「分享」按鈕
+      Then 應開啟 ShareToInstitutionModal
+      And Modal 應顯示資源名稱 R1
+      And Modal 應載入並顯示已 DPA 簽署的機構列表
+      And 每筆機構卡片應顯示：機構名稱、N 名學生
+      And Modal 不應出現任何要求「輸入 UUID」的輸入框
+
+    Example: 選擇機構並確認分享
+      Given Modal 中列有機構 "XX 補習班" 含 42 名學生
+      When 使用者點擊 "XX 補習班" 卡片
+      Then 該卡片應呈藍色高亮並顯示確認文案：
+        "將「<R1 名稱>」分享給「XX 補習班」，該機構 42 名學生將能看到此資源。"
+      When 使用者點擊「確定分享」按鈕
+      Then 系統應呼叫 POST /api/v1/resources/{R1}/share-to-institution
+      And Modal 應顯示「✅ 分享成功！」並 1.2 秒後自動關閉
+      And 主列表應 refresh
+
+    Example: 機構列表載入失敗時 Modal 內呈現錯誤
+      Given GET /resources/institutions/shareable 回傳 500
+      When 使用者點擊「分享」按鈕
+      Then Modal 應顯示錯誤訊息卡片含 AlertTriangle icon
+      And 不應使用 alert() 跳出視窗
+
+    Example: 撤回分享 confirm 文案應為「撤回對機構的分享」
+      Given 使用者 "ultra@example.com" 的資源 R1 已分享（scope=shared）
+      When 使用者在資源庫點擊資源 R1 的「分享」按鈕
+      Then 應彈出 confirm 對話框
+      And 文案應包含「撤回此資源對機構的分享」（不應出現「EDU」字樣，避免與 EDU 學生用戶混淆）

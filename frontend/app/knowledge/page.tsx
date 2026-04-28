@@ -757,37 +757,107 @@ function KnowledgeBasePageInner() {
                     </div>
                   </div>
                 ) : !loadingDocs && mindMapNodes.length === 0 ? (
-                  /* Layer 3 空態區分：節點為空時根據文件狀態顯示不同訊息 */
+                  /* Layer 3 空態區分 + Spec 03b §空地圖 polish：4 種情境各自精準 CTA */
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-center py-12 px-4 max-w-sm">
+                    <div className="text-center py-12 px-6 max-w-md">
                       {documents.length === 0 ? (
+                        // 情境 1：從未上傳資源
                         <>
-                          <Network className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                          <p className="text-sm text-slate-500 font-medium">尚無知識圖譜</p>
-                          <p className="text-xs text-slate-400 mt-1">上傳學習資源後，AI 將自動萃取知識節點</p>
+                          <div className="text-6xl mb-3">📚</div>
+                          <p className="text-lg text-slate-700 font-bold mb-2">開始你的學習旅程</p>
+                          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                            上傳第一份學習資源，AI 自動建構知識心智圖、生成題目、追蹤掌握度。
+                          </p>
+                          <Link
+                            href="/dashboard?openUpload=1"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200"
+                          >
+                            📤 上傳第一份資源
+                          </Link>
+                          <div className="mt-4 text-xs text-slate-400">或直接從考古題題庫開始 →</div>
                         </>
                       ) : documents.every(d => d.status === 'FAILED') ? (
+                        // 情境 2：全部解析失敗
                         <>
-                          <AlertTriangle className="h-10 w-10 text-rose-400 mx-auto mb-3" />
-                          <p className="text-sm text-rose-600 font-medium">所有資源解析失敗</p>
-                          <p className="text-xs text-slate-500 mt-1">
+                          <AlertTriangle className="h-12 w-12 text-rose-400 mx-auto mb-3" />
+                          <p className="text-lg text-rose-600 font-bold mb-2">所有資源解析失敗</p>
+                          <p className="text-xs text-slate-500 mb-4 leading-relaxed">
                             {Object.values(parseJobFailures).length > 0
-                              ? `原因：${Object.values(parseJobFailures)[0].slice(0, 80)}`
+                              ? `常見原因：${Object.values(parseJobFailures)[0].slice(0, 60)}`
                               : '請檢查資源格式或聯繫管理員'}
                           </p>
-                          <p className="text-xs text-slate-400 mt-2">可嘗試刪除後重新上傳，或更換檔案格式</p>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`一鍵重新解析所有 ${documents.length} 筆失敗資源？`)) return;
+                              try {
+                                const { resourceLibraryService } = await import('@/lib/api/services');
+                                const res = await resourceLibraryService.batchReparseFailed(activeSubjectId);
+                                alert(`已重新觸發 ${res.count} 筆資源解析`);
+                                location.reload();
+                              } catch (e: unknown) {
+                                const err = e as { message?: string };
+                                alert(`失敗：${err?.message}`);
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white rounded-full font-bold text-sm hover:bg-rose-600 transition-colors"
+                          >
+                            <RefreshCw className="w-4 h-4" /> 全部重新解析
+                          </button>
+                          <div className="mt-3 text-xs">
+                            <Link href="/account/resource-library" className="text-rose-500 hover:text-rose-700 underline">
+                              逐一檢視失敗原因 →
+                            </Link>
+                          </div>
                         </>
                       ) : documents.some(d => d.status === 'PROCESSING') ? (
+                        // 情境 3：處理中
                         <>
-                          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                          <p className="text-sm text-slate-500 font-medium">資源處理中...</p>
-                          <p className="text-xs text-slate-400 mt-1">AI 正在解析文件並萃取知識節點，請稍候</p>
+                          <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                          <p className="text-lg text-slate-700 font-bold mb-2">AI 正在解析學習資源</p>
+                          <ul className="text-xs text-slate-500 mb-3 text-left space-y-1 inline-block">
+                            {documents.filter(d => d.status === 'PROCESSING').slice(0, 3).map(d => (
+                              <li key={d.id} className="truncate max-w-[280px]">⚙️ {d.title}</li>
+                            ))}
+                          </ul>
+                          <p className="text-xs text-slate-400 mt-2">
+                            ⏰ 預估約 1-3 分鐘，離開頁面後仍會繼續處理。每 5 秒自動更新。
+                          </p>
                         </>
                       ) : (
+                        // 情境 4：資源已就緒但尚未生成知識樹
                         <>
-                          <Network className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                          <p className="text-sm text-slate-500 font-medium">尚未生成知識圖譜</p>
-                          <p className="text-xs text-slate-400 mt-1">點擊上方「重新分析」按鈕萃取知識節點</p>
+                          <div className="text-5xl mb-3">🌱</div>
+                          <p className="text-lg text-slate-700 font-bold mb-2">知識樹尚未生成</p>
+                          <p className="text-xs text-slate-500 mb-4">
+                            已有 {documents.length} 份資源，AI 可幫你萃取結構化知識節點。
+                          </p>
+                          <button
+                            onClick={async () => {
+                              if (extracting || !activeSubjectId) return;
+                              const activeSubject = subjects.find(s => s.id === activeSubjectId);
+                              const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+                              setExtracting(true);
+                              setExtractResult(null);
+                              try {
+                                const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
+                                const created = (res as Record<string, number>).nodes_created || 0;
+                                setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                                const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
+                                setNodes((mapRes.nodes || []) as KnowledgeNode[]);
+                                setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
+                              } catch (err) {
+                                const msg = err instanceof Error ? err.message : String(err);
+                                setExtractResult(`❌ 萃取失敗：${msg}`);
+                              } finally {
+                                setExtracting(false);
+                              }
+                            }}
+                            disabled={extracting}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
+                            {extracting ? '萃取中...' : '🤖 萃取知識樹'}
+                          </button>
                         </>
                       )}
                     </div>

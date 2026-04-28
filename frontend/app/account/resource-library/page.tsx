@@ -14,6 +14,7 @@ import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import ShareToInstitutionModal from '@/components/ShareToInstitutionModal';
 import type { ParseStatusResponse } from '@/types/api';
 
 const BADGE_META: Record<string, { label: string; cls: string }> = {
@@ -160,25 +161,23 @@ export default function ResourceLibraryPage() {
   };
 
   // PRD-033 US-03: Ultra 分享給 EDU
-  const handleShare = async (id: string, currentScope: string | undefined) => {
+  // Spec 11 §ShareModal — 取代 prompt() 直接輸入 UUID 的舊流程
+  const [shareModal, setShareModal] = useState<{ id: string; name: string } | null>(null);
+
+  const handleShare = async (id: string, name: string, currentScope: string | undefined) => {
     if (currentScope === 'shared') {
-      if (!confirm('確定撤回此資源對 EDU 的分享？')) return;
+      if (!confirm('確定撤回此資源對機構的分享？')) return;
       try {
         await resourceShareService.revokeShare(id);
         fetch(keyword, activeSubjectId);
-      } catch (e: any) {
-        alert(`撤回失敗：${e?.message}`);
+      } catch (e: unknown) {
+        const err = e as { message?: string };
+        alert(`撤回失敗：${err?.message}`);
       }
       return;
     }
-    const instId = prompt('請輸入目標 EDU 機構 ID（institution_id UUID）：');
-    if (!instId) return;
-    try {
-      await resourceShareService.shareToInstitution(id, instId);
-      fetch(keyword, activeSubjectId);
-    } catch (e: any) {
-      alert(`分享失敗：${e?.message}`);
-    }
+    // 開 modal（取代 prompt）
+    setShareModal({ id, name });
   };
 
   return (
@@ -382,7 +381,7 @@ export default function ResourceLibraryPage() {
                       })()}
                       {isUltra && (r.scope === 'personal' || r.scope === 'shared') && (
                         <button
-                          onClick={() => handleShare(r.resource_id, r.scope)}
+                          onClick={() => handleShare(r.resource_id, r.name, r.scope)}
                           className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
                             r.scope === 'shared'
                               ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
@@ -409,6 +408,15 @@ export default function ResourceLibraryPage() {
             共 {items.length} 筆
           </div>
         </div>
+      )}
+
+      {shareModal && (
+        <ShareToInstitutionModal
+          resourceId={shareModal.id}
+          resourceName={shareModal.name}
+          onClose={() => setShareModal(null)}
+          onSuccess={() => fetch(keyword, activeSubjectId)}
+        />
       )}
     </div>
   );

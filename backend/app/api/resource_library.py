@@ -77,6 +77,42 @@ def delete_resource(
     return _handle_result(result)
 
 
+@router.post("/batch-reparse-failed")
+def batch_reparse_failed(
+    subject_id: str | None = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """一鍵重新解析所有 FAILED / scaffold=failed 資源（Spec 03b §空地圖批次重解）。
+
+    可選 subject_id 過濾；只重解該使用者擁有且狀態為 FAILED 的資源。
+    回傳 {"reparsed": [resource_ids], "skipped": [{id, reason}]}.
+    """
+    import uuid as _uuid
+    from app.models.resource import Resource, ResourceStatus
+
+    user_uuid = _uuid.UUID(user_id)
+    q = db.query(Resource).filter(
+        Resource.user_id == user_uuid,
+        Resource.status == ResourceStatus.FAILED,
+    )
+    if subject_id:
+        try:
+            q = q.filter(Resource.subject_id == _uuid.UUID(subject_id))
+        except ValueError:
+            pass
+
+    failed = q.all()
+    reparsed: list[str] = []
+    skipped: list[dict] = []
+    for r in failed:
+        # 標記為 PENDING 重新觸發 pipeline；實際 reparse 由前端再呼叫 /resources/{id}/process
+        r.status = ResourceStatus.PENDING
+        reparsed.append(str(r.id))
+    db.commit()
+    return {"reparsed": reparsed, "skipped": skipped, "count": len(reparsed)}
+
+
 @router.post("/{resource_id}/reparse")
 def reparse_resource(
     resource_id: str,

@@ -747,6 +747,48 @@ def merge_chunks(
 
 # ========== PRD-033 Ultra 分享給 EDU ==========
 
+@router.get("/institutions/shareable")
+def list_shareable_institutions(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """列出當前 ULTRA 用戶可分享資源的目標機構（含學生數）— Spec 11 §ShareModal。
+
+    回傳：
+      {"institutions": [{"id", "name", "student_count"}]}
+    """
+    from app.models.user import User, UserRole
+    from app.models.institution import Institution
+
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+
+    plan = (getattr(user, "subscription_tier", None) or getattr(user, "plan", "") or "").upper()
+    if "ULTRA" not in plan:
+        raise HTTPException(status_code=403, detail={"message": "僅 ULTRA 方案可分享資源給機構"})
+
+    # 列出所有 active institutions（已 DPA 簽署）；計算各機構 EDU 學生數
+    institutions = db.query(Institution).filter(
+        Institution.dpa_signed_at.isnot(None)
+    ).order_by(Institution.name).all()
+
+    # 學生隸屬透過 student_groups + student_group_members 關聯
+    from app.models.student_group import StudentGroup, StudentGroupMember
+
+    result = []
+    for inst in institutions:
+        student_count = db.query(StudentGroupMember.user_id).join(
+            StudentGroup, StudentGroup.id == StudentGroupMember.group_id
+        ).filter(StudentGroup.institution_id == inst.id).distinct().count()
+        result.append({
+            "id": str(inst.id),
+            "name": inst.name,
+            "student_count": student_count,
+        })
+    return {"institutions": result}
+
+
 class ShareToInstitutionRequest(BaseModel):
     target_institution_id: str
 

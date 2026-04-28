@@ -1275,6 +1275,12 @@ export const subjectService = {
 /**
  * 資源分享服務（PRD-033 US-03）：Ultra 用戶將資源分享給 EDU 機構。
  */
+export interface ShareableInstitution {
+  id: string;
+  name: string;
+  student_count: number;
+}
+
 export const resourceShareService = {
   // US-03：Ultra 分享資源給 EDU
   async shareToInstitution(resourceId: string, targetInstitutionId: string) {
@@ -1284,6 +1290,10 @@ export const resourceShareService = {
   },
   async revokeShare(resourceId: string) {
     return apiClient.delete(`/resources/${resourceId}/share`);
+  },
+  /** 列出當前 ULTRA 用戶可分享資源的目標機構（含學生數）— Spec 11 §ShareModal */
+  async listShareable(): Promise<{ institutions: ShareableInstitution[] }> {
+    return apiClient.get('/resources/institutions/shareable');
   },
 };
 
@@ -1627,6 +1637,11 @@ export const resourceLibraryService = {
   },
   async reparse(resourceId: string): Promise<{ message: string }> {
     return apiClient.post(`/resource-library/${resourceId}/reparse`, {});
+  },
+  /** Spec 03b §空地圖批次重解 — 一鍵重新解析所有 FAILED 資源 */
+  async batchReparseFailed(subjectId?: string): Promise<{ reparsed: string[]; skipped: { id: string; reason: string }[]; count: number }> {
+    const qs = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : '';
+    return apiClient.post(`/resource-library/batch-reparse-failed${qs}`, {});
   },
   async listHidden(): Promise<{ resources: Array<LibraryResource & { hidden_at?: string }> }> {
     return apiClient.get('/resource-library/hidden');

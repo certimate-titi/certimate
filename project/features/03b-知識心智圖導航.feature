@@ -190,3 +190,40 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       Given 節點 101 的 available_questions 為 12
       When 使用者 "pro@example.com" 點選節點 101
       Then 右側欄「練習」與「測驗」按鈕應皆為啟用狀態
+
+  Rule: 後置（空態 UX）- 知識地圖空態應依文件狀態提供精準 CTA
+
+    # Spec 03b §空地圖 polish — 落地紀錄（2026-04-28）：
+    # /knowledge page mindMapNodes.length===0 時依 documents 狀態分 4 種情境，
+    # 每種情境主 CTA 對應實際下一步動作，避免使用者卡在純文字提示。
+
+    Example: 從未上傳資源 — 主 CTA 連結 dashboard 上傳區
+      Given 使用者 "alice@example.com" 從未上傳任何學習資源
+      When 使用者進入 /knowledge 頁面
+      Then 中央空態應顯示 emoji "📚" + 主標題「開始你的學習旅程」
+      And 應提供主 CTA「📤 上傳第一份資源」連結至 /dashboard?openUpload=1
+      And 應提供副連結「或直接從考古題題庫開始 →」
+
+    Example: 全部資源解析失敗 — 主 CTA 一鍵 batch reparse
+      Given 使用者 "alice@example.com" 所有資源狀態皆為 FAILED
+      When 使用者進入 /knowledge 頁面
+      Then 中央空態應顯示 AlertTriangle icon + 主標題「所有資源解析失敗」
+      And 應顯示常見失敗原因（取自 parseJobFailures 第一筆）
+      And 應提供主 CTA「🔁 全部重新解析」按鈕
+      When 使用者點擊主 CTA 並確認
+      Then 系統應呼叫 POST /api/v1/resource-library/batch-reparse-failed?subject_id=...
+      And 所有 FAILED 資源 status 應重置為 PENDING
+      And 頁面應自動 reload
+
+    Example: 處理中 — 顯示處理中資源名 + 預估時間
+      Given 使用者有 3 份資源狀態為 PROCESSING
+      When 使用者進入 /knowledge 頁面
+      Then 中央空態應顯示 spinner + 主標題「AI 正在解析學習資源」
+      And 應條列前 3 份處理中資源的檔名（每行 ⚙️ 開頭）
+      And 應顯示「⏰ 預估約 1-3 分鐘，離開頁面後仍會繼續處理。每 5 秒自動更新。」
+
+    Example: 資源就緒但知識樹尚未萃取 — 主 CTA 萃取按鈕
+      Given 使用者有資源狀態為 COMPLETED 但 mindMapNodes 為空
+      When 使用者進入 /knowledge 頁面
+      Then 中央空態應顯示 emoji "🌱" + 主標題「知識樹尚未生成」
+      And 應提供主 CTA「🤖 萃取知識樹」按鈕（與 toolbar 重新分析按鈕功能等價）
