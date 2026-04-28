@@ -333,7 +333,7 @@ class DocumentProcessingService:
                             subject_id=str(resource.subject_id),
                             incoming_nodes=incoming_nodes_payload,
                             trigger_source="document",
-                            trigger_name=resource.title or resource.original_filename or "",
+                            trigger_name=getattr(resource, "name", "") or "",
                         )
                         if merge_result.get("error"):
                             logger.warning(

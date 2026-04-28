@@ -209,11 +209,12 @@ def _process_import_job_wrapper(task_id: str) -> dict:
     Returns:
         Job result dictionary
     """
-    from app.core.config import settings
+    from app.core.config import get_settings
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from app.services.import_background_worker import ImportBackgroundWorker
 
+    settings = get_settings()
     try:
         # Create a fresh database session for this job
         engine = create_engine(settings.DATABASE_URL)

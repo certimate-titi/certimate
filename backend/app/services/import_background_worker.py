@@ -144,12 +144,18 @@ class ImportBackgroundWorker:
             self.task_service.mark_importing(task_uuid)
 
             # Step 6: Import to database (Phase 2)
+            # 修正（2026-04-28）：補上 import_exam_paper 必填參數 + subject_name；
+            # subject_name 缺漏會讓 F26 自動觸發在 Subject lookup 階段失敗（fallback by name 找不到）。
             logger.info("Starting database import")
             import_result = self.import_service.import_exam_paper(
                 legacy_output,
-                user_id=task.user_id,
+                exam_code=task.exam_code,
+                category_code=task.category_code,
+                subject_code=task.subject_code,
+                exam_name=task.exam_name,
+                subject_name=task.exam_name,  # 暫以 exam_name 充當 subject_name；前端表單缺獨立欄位
+                tenant_id=task.tenant_id,
                 skip_existing=False,
-                tenant_id=task.tenant_id
             )
 
             if import_result.get("error"):
