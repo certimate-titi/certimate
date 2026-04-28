@@ -1,7 +1,7 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
-**最後更新**：2026-04-28
+**最後更新**：2026-04-29
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -11,19 +11,19 @@
 - [ ] `/dashboard` — 備考模式標籤 Sprint/Standard/Mastery 無任何 Feature 覆蓋（首見：2026-04-24）
 - [x] `/dashboard` — ~~核心指標卡（streak、答題數、答對率、預測及格率）缺 Feature Scenario~~ Feature 13 Rule「每日登入並學習應累積連勝天數」(L73) 含 streak_7 驗證（確認：2026-04-27 自動巡檢）
 - [x] `/knowledge` — ~~科目切換器無 active Scenario（Feature 03 全 @ignore）~~ Feature 03 有 8 個 active scenario（科目切換、佈局、AI 教練互動、節點顏色），9 個仍 @ignore（確認：2026-04-26 自動巡檢）
-- [ ] `/knowledge/mindmap` — ForceGraph/MindMapTree 視圖切換無任何 Feature 覆蓋（首見：2026-04-24）
+- [x] `/knowledge/mindmap` — ~~ForceGraph/MindMapTree 視圖切換無任何 Feature 覆蓋~~ Feature 03b Rule「知識地圖中央區應提供 ForceGraph / MindMapTree / Document 三視圖切換」(L231) 含 3 個 Example（預設 ForceGraph、切換 MindMapTree、切換 Document）（確認：2026-04-29 自動巡檢）
 - [ ] `/exam/results` — 成績卡片下載按鈕無 Feature Scenario（功能目前為 stub）（首見：2026-04-24）
 - [x] `/exam/workspace` — ~~番茄鐘計時器 Feature 21 存在但 0 active Scenario~~ Feature 21 已有 15 個 active Scenario，無 @ignore 標記（確認：2026-04-25 自動巡檢）
 - [x] `/account/my-subjects` — ~~刪除科目功能無任何 Feature 覆蓋~~ Feature 13 Rule「帳戶頁面科目編輯與移除」(L357) + 前端 handleDelete 已實作（確認：2026-04-27 自動巡檢）
 - [x] `/account/resource-library` — ~~資源分享功能無 active Feature Scenario（Feature 11 @wip）~~ Feature 11 已有 15 個 active Scenario，無 @wip 標記（確認：2026-04-25 自動巡檢）
-- [ ] `/library` — Tab 切換無任何 Feature 覆蓋（首見：2026-04-24）
+- [x] `/library` — ~~Tab 切換無任何 Feature 覆蓋~~ **頁面不存在**（`frontend/app/library/page.tsx` 不存在），此條目為過時參照，應移除（確認：2026-04-29 自動巡檢）
 - [x] `/edu-console` — ~~CSV 匯入 / 新增學員 Feature 10 全 @ignore，無 active Scenario~~ Feature 10 已有 55 個 active Example（@command 標記非 @ignore），含 CSV 匯入、DPA 簽署、學員上限等 Scenario（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/settings/flags` — ~~Feature Flag 設定無任何 Feature 覆蓋~~ Feature 12c 含「更新 Feature Flag 上線比例」+「Feature Flag 切換開關」Rule（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/settings/plans` — ~~方案配額管理無 active Feature Scenario~~ Feature 12c Rule「方案配額表格應支援行內編輯與儲存」已 active（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/users/[userId]` — ~~用戶詳情頁無 active Feature Scenario~~ Feature 12 Rule「用戶詳情頁應回傳六個資訊區塊」已 active（確認：2026-04-27 自動巡檢）
 - [x] `/review` — ~~Feature 07（錯題複習與 AI 教練）整個 Feature 全 @ignore~~ Feature-level @ignore 已移除（改為 @query），6 個 scenario-level @ignore 已解封（側邊列表切換→@playwright-e2e、答案對比→@playwright-e2e、引用來源切換、毛玻璃遮罩、月配額限制、空狀態）。後端 step definitions 齊全。13 個 AI 安全 scenario 維持 @skip（標記 @infra-heavy，待基礎設施就緒）（修復：2026-04-25 自動巡檢，**高優先已解決**）
 - [x] `/practice` — blindInferenceService（信心度校準）Feature 20 核心後端 Scenario 已全部 active，僅 2 個 UI scenario 仍 @ignore（確認：2026-04-24 15:08 自動巡檢）
-- [ ] `/super-admin/settings/version` — 版本資訊頁無任何 Feature 覆蓋（首見：2026-04-24）
+- [x] `/super-admin/settings/version` — ~~版本資訊頁無任何 Feature 覆蓋~~ Feature 12c Rule「版本資訊頁應顯示後端 / 前端 build 資訊」(L260) 含 Example（顯示 commit、deployed_at、revision + 複製按鈕）（確認：2026-04-29 自動巡檢）
 - [x] `19-交錯練習.feature` + `32-節點練習模式.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples）（確認：2026-04-24 自動巡檢；46-Canvas.feature + 46b-Analytics.feature 已於 2026-04-28 整檔刪除，CEO 簽核移除 PRD-046 Canvas 功能）
 - [x] `/dashboard` — ~~待辦提醒（activityItems）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒」(L59) 已 active（確認：2026-04-27 自動巡檢）
 - [x] `/dashboard` — ~~DomainRadarChart（領域雷達圖）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「雷達圖應顯示各領域的強度資料」(L228) 含能力分布驗證（確認：2026-04-27 自動巡檢）
@@ -32,20 +32,22 @@
 - [x] `/super-admin/retirement` — ~~Feature 25（AI 考題退場與放榜確認）全 @ignore，無 active Scenario~~ Feature 25 已有 36 個 active Example（0 @ignore），涵蓋來源標記、品質管理、退場流程（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
 - [ ] `/super-admin/platform-subjects` — 平台科目管理無任何 Feature 覆蓋（首見：2026-04-27）
-- [ ] `/resources/[id]/candidates` — 候選考題管理頁面無任何 Feature 覆蓋（Feature 23/25 未對應此路徑）（首見：2026-04-27）
-- [ ] `/exam/setup` — Feature 19（交錯練習）規定測驗設定頁可切換題目**排列模式**（interleaved / grouped / sequential），但頁面目前無此 UI 選項；頁面有難易度滑桿與 exam_mode toggle，唯獨缺排列模式選擇器（首見：2026-04-28）
+- [ ] `/resources/[id]/candidates` — Feature 23 Rule (L132) 已定義 Scenario（審核/採納/退回），但前端頁面 `frontend/app/resources/[id]/candidates/page.tsx` 尚未建立（首見：2026-04-27，更新：2026-04-29 自動巡檢）
+- [ ] `/exam/workspace` — Feature 05 Scenario「AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 實作（首見：2026-04-29）
+- [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
+- [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 元素（首見：2026-04-29）
 
 ---
 
 ## 🟠 實作缺失 — 需補前端功能
 
-- [ ] `/exam/results` — Feature 06 描述「逐題解析」查看，但頁面無跳轉逐題解析的按鈕或入口（首見：2026-04-24）
+- [x] `/exam/results` — ~~Feature 06 描述「逐題解析」查看，但頁面無跳轉逐題解析的按鈕或入口~~ 頁面 L240 已有 Link 至 `/review?examId=${examId}&all=1`，文字「逐題解析（含答對題）」，入口完整（確認：2026-04-29 自動巡檢）
 - [ ] `/exam/results` — 成績卡片下載按鈕功能為 alert stub（`"即將推出"`），需實作實際下載功能（首見：2026-04-24）
-- [ ] `/exam/workspace` — Feature 21（番茄鐘）存在，但頁面無 pomodoro/番茄鐘相關實作邏輯，需確認並實作（首見：2026-04-24）
+- [x] `/exam/workspace` — ~~Feature 21（番茄鐘）存在，但頁面無 pomodoro/番茄鐘相關實作邏輯，需確認並實作~~ PomodoroTimer 已在 line 226 確認渲染（`<PomodoroTimer examDurationSec={totalTimeLimit} paused={isPaused} />`），Feature 21 覆蓋完整（確認：2026-04-29 自動巡檢）
 - [x] ~~`/knowledge` — Feature 46（知識地圖 Canvas 三層 Zoom）存在，頁面使用 ForceGraph 但三層 Zoom 邏輯未明確實作，需對照 PRD-046（首見：2026-04-24）~~ **CEO 2026-04-24 決議移除 PRD-046 Canvas（合併至既有 ForceGraph mindmap）**；spec 46 + 46b 與 frontend/lib/analytics.ts 已於 2026-04-28 整檔刪除
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
-- [ ] `/review` — 頁面 disclaimer 聲稱「支援 KaTeX 數學公式渲染」但 page.tsx 無任何 KaTeX 套件 import（`katex` / `react-katex` / `remark-math` 均未引入）；屬虛假宣稱，需補實作或移除 disclaimer；Feature 07 亦無對應 Scenario（首見：2026-04-28）
+- [ ] `/review` — 頁面 disclaimer 聲稱「支援 KaTeX 數學公式渲染」，page.tsx 使用 MathContent component（已確認 import），但 `katex`/`react-katex` 未直接 import；MathContent 是否實際執行 KaTeX 渲染待確認；Feature 07 亦無對應 Scenario（首見：2026-04-28，狀態更新：2026-04-29）
 - [ ] `/knowledge` — 「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal，屬跨頁面導航行為；Feature 03 無 Scenario 覆蓋此互動路徑，導航目標變更時無回歸保護（首見：2026-04-28）
 - [x] `/practice` — ~~Feature 32 要求空節點空態有「選擇其他節點」與「回知識圖譜」兩個操作按鈕~~ 兩個按鈕皆已實作於 `page.tsx` line 384（選擇其他節點）和 line 388-393（回知識圖譜，連結至 `/knowledge`）（確認：2026-04-26 自動巡檢）
 - [x] `/account/resource-library` — FAILED 資源 failure_reason 已透過 title tooltip 向用戶呈現（hover「解析失敗」可見詳細原因），並透過 resourceParseService.getStatus() 主動輪詢（確認：2026-04-25 自動巡檢）
@@ -58,11 +60,13 @@
 - [x] `/knowledge/mindmap` — mindMapNodes.length === 0 空態已根據文件狀態區分四種情境：無資源/全部失敗/處理中/未萃取（修復：2026-04-24 自動巡檢）
 - [x] `/practice` — phase === 'no-questions' 空態已新增提示訊息（AI 出題可能失敗）及「前往出題」快捷按鈕（修復：2026-04-24 自動巡檢）
 - [x] `/exam/setup` — documents.length === 0 空態已新增提示：若已上傳資源但為空，引導至知識庫查看解析狀態（修復：2026-04-24 自動巡檢）
-- [ ] `/library` — 頁面空態情況不明，建議確認 Tab 切換後空態是否查詢相關 job 狀態（首見：2026-04-24）
+- [x] `/library` — ~~頁面空態情況不明~~ **頁面不存在**（`frontend/app/library/page.tsx` 不存在），此條目為過時參照，應移除（確認：2026-04-29 自動巡檢）
 - [ ] `/practice` — no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**，僅文字引導，需補強至主動查 job 表（首見：2026-04-24）
 - [ ] `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但**未查詢後端 job 表**（`exam_generation_jobs` / `resource_parse_jobs`），無法區分「真正全答對」vs「job FAILED 導致無錯題記錄」；違反 Layer 3 規則（首見：2026-04-28）
 - [x] `/account/resource-library` — FAILED 資源 badge 已顯示，failure_reason 透過 tooltip 呈現（確認：2026-04-25 自動巡檢）
 - [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
+- [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29）
+- [x] `/verify-email/sent` — ~~resend 重寄失敗時 `catch {}` block 為空（silent fail），使用者無任何錯誤提示~~ 已修復：新增 `resendError` state，catch block 顯示「驗證信寄送失敗，請稍後再試。」紅色提示框，同時重設 cooldown 讓使用者可立即重試（修復：2026-04-29 自動巡檢）
 
 ---
 

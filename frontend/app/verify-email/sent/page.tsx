@@ -18,6 +18,7 @@ function SentContent() {
   const email = searchParams.get('email') || '';
   const [cooldown, setCooldown] = useState(0);
   const [resent, setResent] = useState(false);
+  const [resendError, setResendError] = useState('');
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -29,11 +30,13 @@ function SentContent() {
     if (cooldown > 0 || !email) return;
     setCooldown(60);
     setResent(false);
+    setResendError('');
     try {
       await authService.resendVerification(email);
       setResent(true);
     } catch {
-      // silent fail
+      setCooldown(0);
+      setResendError('驗證信寄送失敗，請稍後再試。');
     }
   };
 
@@ -60,6 +63,12 @@ function SentContent() {
         {resent && (
           <div className="p-3 bg-emerald-50 text-emerald-700 text-sm rounded-xl border border-emerald-100 mb-4">
             驗證信已重新寄出！
+          </div>
+        )}
+
+        {resendError && (
+          <div className="p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-100 mb-4">
+            {resendError}
           </div>
         )}
 
