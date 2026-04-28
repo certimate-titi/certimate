@@ -132,16 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [fetchMe]);
 
-  // Start analytics flusher once user is authenticated
-  useEffect(() => {
-    if (!user) return;
-    let stop: (() => void) | undefined;
-    import('./analytics').then(({ startAnalyticsFlusher, flushQueue }) => {
-      void flushQueue();
-      stop = startAnalyticsFlusher();
-    });
-    return () => { stop?.(); };
-  }, [user]);
+  // PRD-046 Canvas analytics flusher 於 2026-04-28 隨 Canvas 功能移除而移除
 
   const loginWithCredentials = useCallback(async (email: string, password: string) => {
     const res = await apiClient.post<BackendLoginResponse>('/auth/login', { email, password });

@@ -7,10 +7,10 @@
 
 使用：
     from app.core.cache import cache
-    data = cache.get("canvas:tier1:{sid}:{uid}")
+    data = cache.get(f"subject:{{sid}}:nodes")
     if data is None:
         data = compute()
-        cache.set("canvas:tier1:...", data, ttl=60)
+        cache.set(f"subject:{{sid}}:nodes", data, ttl=60)
 """
 
 from __future__ import annotations

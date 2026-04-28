@@ -24,7 +24,7 @@
 - [x] `/review` — ~~Feature 07（錯題複習與 AI 教練）整個 Feature 全 @ignore~~ Feature-level @ignore 已移除（改為 @query），6 個 scenario-level @ignore 已解封（側邊列表切換→@playwright-e2e、答案對比→@playwright-e2e、引用來源切換、毛玻璃遮罩、月配額限制、空狀態）。後端 step definitions 齊全。13 個 AI 安全 scenario 維持 @skip（標記 @infra-heavy，待基礎設施就緒）（修復：2026-04-25 自動巡檢，**高優先已解決**）
 - [x] `/practice` — blindInferenceService（信心度校準）Feature 20 核心後端 Scenario 已全部 active，僅 2 個 UI scenario 仍 @ignore（確認：2026-04-24 15:08 自動巡檢）
 - [ ] `/super-admin/settings/version` — 版本資訊頁無任何 Feature 覆蓋（首見：2026-04-24）
-- [x] `19-交錯練習.feature` + `32-節點練習模式.feature` + `46-知識地圖Canvas.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples, 46：6 Examples）（確認：2026-04-24 自動巡檢）
+- [x] `19-交錯練習.feature` + `32-節點練習模式.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples）（確認：2026-04-24 自動巡檢；46-Canvas.feature + 46b-Analytics.feature 已於 2026-04-28 整檔刪除，CEO 簽核移除 PRD-046 Canvas 功能）
 - [x] `/dashboard` — ~~待辦提醒（activityItems）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒」(L59) 已 active（確認：2026-04-27 自動巡檢）
 - [x] `/dashboard` — ~~DomainRadarChart（領域雷達圖）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「雷達圖應顯示各領域的強度資料」(L228) 含能力分布驗證（確認：2026-04-27 自動巡檢）
 - [ ] `/dashboard` — StudyBuddyBanner（ULTRA 共讀橫幅）無任何 Feature 覆蓋（首見：2026-04-27）
@@ -42,7 +42,7 @@
 - [ ] `/exam/results` — Feature 06 描述「逐題解析」查看，但頁面無跳轉逐題解析的按鈕或入口（首見：2026-04-24）
 - [ ] `/exam/results` — 成績卡片下載按鈕功能為 alert stub（`"即將推出"`），需實作實際下載功能（首見：2026-04-24）
 - [ ] `/exam/workspace` — Feature 21（番茄鐘）存在，但頁面無 pomodoro/番茄鐘相關實作邏輯，需確認並實作（首見：2026-04-24）
-- [ ] `/knowledge` — Feature 46（知識地圖 Canvas 三層 Zoom）存在，頁面使用 ForceGraph 但三層 Zoom 邏輯未明確實作，需對照 PRD-046（首見：2026-04-24）
+- [x] ~~`/knowledge` — Feature 46（知識地圖 Canvas 三層 Zoom）存在，頁面使用 ForceGraph 但三層 Zoom 邏輯未明確實作，需對照 PRD-046（首見：2026-04-24）~~ **CEO 2026-04-24 決議移除 PRD-046 Canvas（合併至既有 ForceGraph mindmap）**；spec 46 + 46b 與 frontend/lib/analytics.ts 已於 2026-04-28 整檔刪除
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
 - [ ] `/review` — 頁面 disclaimer 聲稱「支援 KaTeX 數學公式渲染」但 page.tsx 無任何 KaTeX 套件 import（`katex` / `react-katex` / `remark-math` 均未引入）；屬虛假宣稱，需補實作或移除 disclaimer；Feature 07 亦無對應 Scenario（首見：2026-04-28）
