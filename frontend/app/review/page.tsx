@@ -455,8 +455,7 @@ function ReviewBookPage() {
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="mt-2 flex justify-between items-center px-1">
-                  <span className="text-[10px] text-slate-400">支援 KaTeX 數學公式渲染</span>
+                <div className="mt-2 flex justify-end items-center px-1">
                   {sending && (
                     <span className="text-[10px] text-emerald-600 flex items-center gap-1">
                       <RefreshCw className="h-3 w-3 animate-spin" /> 思考中...

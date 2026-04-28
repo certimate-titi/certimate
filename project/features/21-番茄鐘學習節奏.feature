@@ -1,9 +1,10 @@
-@frontend @not-implemented
+@frontend
 Feature: 番茄鐘學習節奏
 
   # 設計決策（2026-04-27 CTO + CEO）：番茄鐘為純前端功能（localStorage + 客戶端計時）。
   # 後端不提供 endpoint；spec 維持於此供 Playwright BDD 驗收。
-  # 現況：前端尚未實作（無對應 component），@not-implemented tag 表示 spec 待落地。
+  # 落地紀錄（2026-04-28）：components/PomodoroTimer.tsx 實作完成，
+  # 引入於 /exam/workspace page header 區塊。@not-implemented tag 移除。
   # 違規歷史：backend/tests/features/21-番茄鐘.feature 曾以 memo 假驗證跑綠燈，
   # 已於 2026-04-27 整檔刪除並寫入 docs/bdd/tag-conventions.md 規範。
 

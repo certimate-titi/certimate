@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Clock, Flag, ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react';
+import PomodoroTimer from '@/components/PomodoroTimer';
 import { useAuth } from '@/lib/auth-context';
 import { examService } from '@/lib/api/services';
 import type { Question } from '@/types';
@@ -221,6 +222,8 @@ function MockExamWorkspacePage() {
               {formatTime(timeRemaining)}
             </span>
           </div>
+          {/* Spec 21: 番茄鐘倒數（純前端、localStorage） */}
+          <PomodoroTimer examDurationSec={totalTimeLimit} paused={isPaused} />
 
           <button
             onClick={() => setShowGrid(!showGrid)}
