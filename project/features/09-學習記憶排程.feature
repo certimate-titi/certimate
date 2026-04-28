@@ -124,3 +124,23 @@ Feature: 動態大腦精力調度排程
       When 使用者 "proplus@example.com" 將 AWS SAA 考試日期從 2026-04-08 修改為 2026-04-01
       Then AWS SAA 的學習模式應重新計算
       And PMP 的學習模式應維持不變
+
+  # ========== Dashboard 排程入口卡（cross-ref Feature 13）==========
+
+  Rule: 後置（UI）- 儀表板提供排程入口卡（ScheduleWeekCard），cross-ref Feature 13
+
+    # 落地紀錄（2026-04-28）：儀表板右欄 ScheduleWeekCard 呼叫 scheduleService.getRecommendations()
+    # 並以前端聚合計算 7 日熱度橫條。完整功能頁面為 /schedule。
+
+    @frontend
+    Example: 儀表板 ScheduleWeekCard 呼叫排程建議 API 並渲染各科模式
+      Given 使用者 "proplus@example.com" 的 AWS SAA 學習模式為 "sprint"，pending_questions 為 8
+      When 使用者 "proplus@example.com" 進入儀表板
+      Then 儀表板學習排程卡應向 GET /api/v1/schedule/recommendations 請求資料
+      And 卡片應顯示 AWS SAA 的「Sprint」模式 badge 與待複習題數 8
+
+    @frontend
+    Example: 儀表板排程卡「前往完整」連結指向 /schedule
+      Given 使用者 "proplus@example.com" 在儀表板查看學習排程卡
+      When 使用者點擊「前往完整」
+      Then 頁面應導向至 /schedule 完整排程頁

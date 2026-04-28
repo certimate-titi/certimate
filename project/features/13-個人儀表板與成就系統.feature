@@ -395,3 +395,33 @@ Feature: 個人儀表板與成就系統
       Given 使用者 "alice@example.com" 的備考模式為 "mastery"
       When 使用者進入儀表板
       Then 頁面應顯示備考模式徽章「Mastery 精熟」（藍色）
+
+  # ========== 學習排程卡（取代原艾賓浩斯複習月曆）==========
+
+  Rule: 後置（UI）- 儀表板右欄應顯示學習排程卡（ScheduleWeekCard）取代複習日曆
+
+    # 落地紀錄（2026-04-28）：「艾賓浩斯複習月曆」widget 已從儀表板右欄移除，
+    # 改由 ScheduleWeekCard 取代，提供各科今日排程 + 本週 7 日待複習熱度橫條。
+    # cross-ref: Feature 09（動態大腦精力調度排程）。
+
+    Example: 儀表板顯示學習排程卡，含各科模式 badge 與今日推薦
+      Given 使用者 "alice@example.com" 的備考科目 AWS SAA 學習模式為 "sprint"，待複習 8 題，推薦 10 題
+      When 使用者進入儀表板
+      Then 儀表板右欄應顯示「學習排程」卡
+      And 卡片中應包含 AWS SAA 的模式 badge「Sprint」
+      And 卡片中應顯示「待複習 8」與「推薦 10」
+      And 卡片右上角應有「前往完整」連結指向 /schedule
+      And 卡片應提供「開始今日複習」按鈕連結至 /exam/setup?subjectId=...&from=schedule
+
+    Example: 學習排程卡本週 7 日橫條顯示熱度
+      Given 使用者 "alice@example.com" 的 AWS SAA next_review_at 為今日
+      When 使用者進入儀表板
+      Then 學習排程卡下半應顯示本週 7 日橫條
+      And 今日格應有高亮邊框（ring-2 ring-emerald-400）且標示「今」
+      And 有待複習題數的日期格應顯示對應熱度色階
+
+    Example: 無備考科目時排程卡顯示空態引導
+      Given 使用者 "alice@example.com" 尚未設定任何備考科目
+      When 使用者進入儀表板
+      Then 學習排程卡應顯示空態提示「尚無備考科目排程」
+      And 應提供「前往設定」連結

@@ -526,6 +526,28 @@ def _process_resource_background(resource_id: str, user_id: str, tenant_id: str 
     except Exception as e:
         logger.exception(f"[BG Process] resource={resource_id} exception: {e}")
     finally:
+        # Bug #2 兜底：若 background task 異常終止（OOM SIGKILL / uncaught exception
+        # / crash），resource 會永遠 stuck PROCESSING。在 finally 強制檢查並回寫 FAILED。
+        # 注意：這個 finally 在 OOM SIGKILL 情境下**不會**執行（容器整個被殺）；
+        # 真正解決需 watchdog 掃 stale PROCESSING（見 Bug #2 完整修補的 watchdog）。
+        # 此處兜底處理「Python exception 未被內層 try 接住」的情境。
+        try:
+            from app.models.resource import Resource as _Resource
+            from app.models.resource import ResourceStatus as _ResourceStatus
+            stuck = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+            if stuck and stuck.status == _ResourceStatus.PROCESSING:
+                stuck.status = _ResourceStatus.FAILED
+                stuck.error_message = (
+                    stuck.error_message or "背景處理異常終止（finally fallback）"
+                )[:500]
+                db.commit()
+                logger.warning(
+                    f"[BG Process] resource={resource_id} forced FAILED (was stuck PROCESSING)"
+                )
+        except Exception as fe:
+            logger.warning(
+                f"[BG Process] resource={resource_id} fallback status update failed: {fe}"
+            )
         db.close()
 
 

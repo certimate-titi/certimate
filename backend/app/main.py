@@ -1,5 +1,20 @@
 """FastAPI 主應用程式入口 - CertiMate API。"""
 
+import logging as _logging_setup
+import sys as _sys
+
+# Bug #4 修補（2026-04-29）— Cloud Run / 本地都要把 app logger 導向 stdout
+# 否則 logger.info/warning 不會進 Cloud Logging（之前雲端故障無法追查的根因）
+# 注意：必須在 import FastAPI 前設定，否則 uvicorn 自家 handler 會覆蓋 root logger
+_logging_setup.basicConfig(
+    level=_logging_setup.INFO,
+    stream=_sys.stdout,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    force=True,  # 蓋掉預設 / 既有 handler，確保 stdout 路徑生效
+)
+# 提升 app.* logger 至 INFO（uvicorn 預設只到 WARNING）
+_logging_setup.getLogger("app").setLevel(_logging_setup.INFO)
+
 from contextlib import asynccontextmanager
 
 from pathlib import Path
@@ -132,6 +147,33 @@ async def lifespan(app: FastAPI):
     print(f"✅ Database connected: {settings.DATABASE_URL.split('@')[-1]}")
     _run_migrations()
     _seed_on_startup(session_local)
+
+    # Bug #2 watchdog（2026-04-29）：啟動時掃 stale PROCESSING resources
+    # OOM SIGKILL 情境下背景任務的 finally 不會跑，會留下永遠 stuck PROCESSING 的資源
+    # 服務重啟（含 Cloud Run cold start / scale up）時掃過去 30 分鐘以上沒更新的 PROCESSING
+    # 一律標記 FAILED 並寫 error_message，避免用戶看到永遠 spinner
+    try:
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import text as _text
+        with session_local() as _ws:
+            cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+            res = _ws.execute(
+                _text(
+                    "UPDATE resources SET status='FAILED', "
+                    "error_message=COALESCE(error_message, '背景處理超時，啟動掃描自動標記失敗'), "
+                    "updated_at=NOW() "
+                    "WHERE status='PROCESSING' AND updated_at < :cutoff "
+                    "RETURNING id"
+                ),
+                {"cutoff": cutoff},
+            )
+            stuck_ids = [str(row[0]) for row in res]
+            _ws.commit()
+            if stuck_ids:
+                print(f"⚠️  Stale PROCESSING watchdog: {len(stuck_ids)} resources marked FAILED")
+    except Exception as e:
+        print(f"⚠️ Stale PROCESSING watchdog 警告: {e}")
+
     # 啟動背景排程
     init_scheduler(session_local)
     await start_scheduler()

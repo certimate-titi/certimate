@@ -9,8 +9,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Youtube, FileText, Image as ImageIcon, Clock, TrendingUp, BookOpen, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, AlertCircle, Sparkles, Lock, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
+import { Upload, Youtube, FileText, Clock, TrendingUp, BookOpen, AlertCircle, Sparkles, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
 import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
+import ScheduleWeekCard from '@/components/ScheduleWeekCard';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import StreakCounter from '@/components/StreakCounter';
@@ -41,10 +42,6 @@ export default function DashboardPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Calendar state
-  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1); // 1-12
-  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
   // Subject state
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
@@ -335,11 +332,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const reviewDates = new Set(data.reviewCalendar.map(r => {
-    const d = new Date(r.date);
-    return d.getDate();
-  }));
 
   return (
     <>
@@ -638,99 +630,8 @@ export default function DashboardPage() {
 
           {/* Right Column */}
           <div className="space-y-8">
-            {/* Ebbinghaus Review Calendar */}
-            <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5 text-blue-500" /> 複習日曆
-                </h2>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => { if (calendarMonth === 1) { setCalendarMonth(12); setCalendarYear(calendarYear - 1); } else { setCalendarMonth(calendarMonth - 1); } }} className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronLeft className="h-4 w-4 text-slate-600" /></button>
-                  <span className="text-sm font-medium text-slate-700">{calendarYear !== new Date().getFullYear() ? `${calendarYear}年${calendarMonth}月` : `${calendarMonth}月`}</span>
-                  <button onClick={() => { if (calendarMonth === 12) { setCalendarMonth(1); setCalendarYear(calendarYear + 1); } else { setCalendarMonth(calendarMonth + 1); } }} className="p-1 rounded-full hover:bg-slate-100 transition-colors"><ChevronRight className="h-4 w-4 text-slate-600" /></button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1 text-center mb-1">
-                {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-                  <div key={day} className="text-[10px] font-medium text-slate-400 py-1">{day}</div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: new Date(calendarYear, calendarMonth, 0).getDate() }).map((_, i) => {
-                  const day = i + 1;
-                  const now = new Date();
-                  const isToday = day === now.getDate() && calendarMonth === now.getMonth() + 1 && calendarYear === now.getFullYear();
-                  const hasReview = reviewDates.has(day);
-                  const calendarDay = data.reviewCalendar.find(r => new Date(r.date).getDate() === day);
-                  const reviewCount = calendarDay?.reviewCount ?? 0;
-
-                  return (
-                    <div
-                      key={day}
-                      className={`
-                        relative flex flex-col items-center justify-center p-1 rounded-lg border
-                        ${isToday ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-transparent hover:border-slate-200 hover:bg-slate-50'}
-                        ${hasReview && !isToday ? 'bg-slate-50/50' : ''}
-                        cursor-pointer transition-all aspect-square
-                      `}
-                      title={calendarDay ? calendarDay.topics.join(', ') : undefined}
-                    >
-                      <span className={`text-xs font-medium ${isToday ? 'text-blue-700' : 'text-slate-700'}`}>
-                        {day}
-                      </span>
-                      {hasReview && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {Array.from({ length: Math.min(reviewCount, 3) }).map((_, j) => (
-                            <div key={j} className={`w-1 h-1 rounded-full ${isToday ? 'bg-blue-500' : 'bg-emerald-400'}`} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Today's Tasks — dynamic based on study mode */}
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-900 mb-2">
-                  今日特訓 ({new Date().getMonth() + 1}月{new Date().getDate()}日)
-                </h3>
-                <div className="space-y-1.5">
-                  {(data.todayTasks || []).length > 0 ? (
-                    (data.todayTasks as Array<{title: string; type: string}>).slice(0, 3).map((task, idx) => {
-                      const typeConfig: Record<string, {color: string; label: string; labelColor: string}> = {
-                        wrong: { color: 'bg-rose-500', label: '錯題', labelColor: 'bg-rose-100 text-rose-600' },
-                        unseen: { color: 'bg-amber-500', label: '新題', labelColor: 'bg-amber-100 text-amber-600' },
-                        review: { color: 'bg-emerald-500', label: '複習', labelColor: 'bg-emerald-100 text-emerald-600' },
-                      };
-                      const cfg = typeConfig[task.type] || typeConfig.review;
-                      return (
-                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer">
-                          <div className="flex items-center gap-2 truncate pr-2">
-                            <div className={`w-1.5 h-1.5 rounded-full ${cfg.color} shrink-0`} />
-                            <span className="text-xs font-medium text-slate-700 truncate">{task.title}</span>
-                          </div>
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${cfg.labelColor}`}>
-                            {cfg.label}
-                          </span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center py-3 text-xs text-slate-400">
-                      {(data.todo_reminders?.wrong_answers || 0) > 0
-                        ? `有 ${data.todo_reminders?.wrong_answers} 題錯題待複習`
-                        : '今日無特訓任務，保持複習節奏！'}
-                    </div>
-                  )}
-                </div>
-                <Link href={(data.todo_reminders?.wrong_answers ?? 0) > 0 ? '/review' : '/exam/setup'} className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
-                  <Play className="h-3 w-3" /> {(data.todo_reminders?.wrong_answers ?? 0) > 0 ? '複習錯題' : '開始特訓'}
-                </Link>
-              </div>
-            </section>
+            {/* Schedule Week Card — replaces Ebbinghaus Review Calendar */}
+            <ScheduleWeekCard isAuthenticated={isAuthenticated} />
 
             {/* Learning Stats */}
             <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">

@@ -179,6 +179,45 @@ def heal_orphan_resources(
     return result
 
 
+@router.post("/resources/heal-stale-processing")
+def heal_stale_processing(
+    minutes: int = 30,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Bug #2 兜底（2026-04-29）— 掃 stale PROCESSING resource 強制標 FAILED。
+
+    Cloud Run OOM SIGKILL 後 background task 無法 finally 兜底，resource 會永遠卡
+    PROCESSING。Admin 可隨時呼叫此 endpoint 把超過 N 分鐘沒更新的 PROCESSING 標記為
+    FAILED，讓用戶可看見錯誤訊息並重新上傳。
+
+    Args:
+        minutes: 多少分鐘沒更新算 stale，預設 30
+    """
+    import uuid
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import text
+    from app.models.user import User, UserRole
+    user = db.query(User).filter_by(id=uuid.UUID(user_id)).first()
+    if not user or user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+        raise HTTPException(status_code=403, detail={"message": "需要管理員權限"})
+
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    res = db.execute(
+        text(
+            "UPDATE resources SET status='FAILED', "
+            "error_message=COALESCE(error_message, :msg), "
+            "updated_at=NOW() "
+            "WHERE status='PROCESSING' AND updated_at < :cutoff "
+            "RETURNING id, name"
+        ),
+        {"cutoff": cutoff, "msg": f"背景處理超時（{minutes} 分鐘無進度），admin 手動標記失敗"},
+    )
+    healed = [{"id": str(r[0]), "name": r[1]} for r in res]
+    db.commit()
+    return {"healed_count": len(healed), "healed": healed}
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")
