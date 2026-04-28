@@ -1154,11 +1154,13 @@ from .knowledge_merge.aggregate_given import merge_conflicts  # noqa: F401
 from .knowledge_merge.aggregate_given import merge_state  # noqa: F401
 from .knowledge_merge.aggregate_given import node_setup  # noqa: F401
 from .knowledge_merge.aggregate_given import unified_knowledge_tree  # noqa: F401
+from .knowledge_merge.aggregate_given import uploaded_documents  # noqa: F401
 
 # Knowledge Merge — commands
 from .knowledge_merge.commands import trigger_merge  # noqa: F401
 from .knowledge_merge.commands import resolve_conflict  # noqa: F401
 from .knowledge_merge.commands import trigger_chunk_remap  # noqa: F401
+from .knowledge_merge.commands import unified_extract  # noqa: F401
 
 # Knowledge Merge — query
 from .knowledge_merge.query import merge_conflicts_list  # noqa: F401
@@ -1172,9 +1174,11 @@ from .knowledge_merge.query import query_wrong_answer_map_feature29  # noqa: F40
 from .knowledge_merge.aggregate_then import conflict_resolved  # noqa: F401
 from .knowledge_merge.aggregate_then import mastery_preserved  # noqa: F401
 from .knowledge_merge.aggregate_then import chunks_mapped  # noqa: F401
+from .knowledge_merge.aggregate_then import depth_one_constraints  # noqa: F401
 
 # Knowledge Merge — readmodel_then
 from .knowledge_merge.readmodel_then import unified_tree  # noqa: F401
+from .knowledge_merge.readmodel_then import dashboard_depth_one  # noqa: F401
 from .knowledge_merge.readmodel_then import merge_result  # noqa: F401
 from .knowledge_merge.readmodel_then import semantic_similarity  # noqa: F401
 from .knowledge_merge.readmodel_then import conflict_records  # noqa: F401
@@ -1382,3 +1386,23 @@ from .canvas.aggregate_given import fixtures as canvas_fixtures  # noqa: F401
 from .canvas.commands import canvas_queries  # noqa: F401
 from .canvas.commands import analytics_calls  # noqa: F401
 from .canvas.readmodel_then import canvas_assertions  # noqa: F401
+
+# Bloom Analysis (Feature 18) — 題目分類與考試趨勢分析
+from .bloom_analysis.aggregate_given import (  # noqa: F401
+    background as ba_background,
+    exam_setup as ba_exam_setup,
+    exam_completed as ba_exam_completed,
+    admin_import as ba_admin_import,
+)
+from .bloom_analysis.query import bloom_distribution as ba_query_dist  # noqa: F401
+from .bloom_analysis.commands import (  # noqa: F401
+    submit_config as ba_submit_config,
+    admin_actions as ba_admin_actions,
+    view_result as ba_view_result,
+)
+from .bloom_analysis.readmodel_then import (  # noqa: F401
+    bloom_distribution_then as ba_dist_then,
+    exam_response_then as ba_exam_response_then,
+    result_bloom_then as ba_result_then,
+    admin_then as ba_admin_then,
+)
