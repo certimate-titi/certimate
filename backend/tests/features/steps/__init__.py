@@ -1077,6 +1077,7 @@ from .reverse_engineering.aggregate_given import reverse_engineering_completed  
 
 # Reverse Engineering — commands
 from .reverse_engineering.commands import trigger_reverse_engineering  # noqa: F401
+from .reverse_engineering.commands import auto_trigger as re_auto_trigger  # noqa: F401
 from .reverse_engineering.commands import trigger_incremental  # noqa: F401
 from .reverse_engineering.commands import import_markdown  # noqa: F401
 

@@ -157,6 +157,14 @@ Feature: 考古題現代化匯入 (Modern PDF Extraction Pipeline)
       Then 匯入應成功（略過驗證）
       And 應記錄警告：檔案因管理員命令略過驗證
 
+    # 設計變更紀錄（2026-04-28，CEO 簽核 B 路徑） — cross-ref Feature 26
+    # ImportTask 完成（mark_completed）時自動觸發 F26 考綱逆向工程
+    # （實作見 commit 6fd15ac，import_task_service._trigger_reverse_engineering_safe）。
+    # 自動觸發失敗以 warning log 記錄，**不阻擋匯入交易**；
+    # admin 可透過 F26 admin API endpoints 補跑或重跑。
+    # 行為的 BDD 驗證放在 Feature 26 「Rule: 命令（自動觸發）」 — 此處不重複 Example，
+    # 避免 F32 baseline 與 F26 fixture 不相容造成假性 fail。
+
   Rule: 僅提取與驗證 (Extract Only)
 
     Example: 預檢驗證（不匯入）

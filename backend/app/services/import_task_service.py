@@ -323,8 +323,22 @@ class ImportTaskService(BaseService):
                 )
                 return
 
+            # 取觸發者 user_id（從 ImportTask 找回 admin）
+            task = self.db.query(ImportTask).filter(
+                ImportTask.historical_exam_id == historical_exam_id
+            ).first()
+            triggered_by = str(task.user_id) if task and task.user_id else None
+            if not triggered_by:
+                logger.info(
+                    "Reverse engineering skipped: no triggered_by user for "
+                    "historical_exam %s",
+                    historical_exam_id,
+                )
+                return
+
             re_service = ReverseEngineeringService(self.db)
-            result = re_service.extract(str(subject.id))
+            # trigger() 會自己驗 admin 權限 + 題庫數量檢查
+            result = re_service.trigger(triggered_by, str(subject.id))
             if result.get("error"):
                 logger.warning(
                     "Reverse engineering trigger failed for subject %s: %s",

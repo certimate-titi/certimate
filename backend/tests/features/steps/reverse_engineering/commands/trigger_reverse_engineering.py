@@ -35,3 +35,14 @@ def step_impl_user(context, email, subject_name):
         headers={"Authorization": f"Bearer {token}"},
     )
     context.last_response = response
+
+
+# Spec 26 §設計變更（2026-04-28 B 路徑）— admin override 採用「透過 API」措辭
+@when('管理員 "{email}" 透過 API 對考科 "{subject_name}" 執行考綱逆向工程')
+def step_admin_via_api(context, email, subject_name):
+    step_impl(context, email, subject_name)
+
+
+@when('使用者 "{email}" 透過 API 對考科 "{subject_name}" 執行考綱逆向工程')
+def step_user_via_api(context, email, subject_name):
+    step_impl_user(context, email, subject_name)

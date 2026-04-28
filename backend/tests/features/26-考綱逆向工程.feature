@@ -29,22 +29,41 @@ Feature: 考綱逆向工程
       | 1       | 1       | 信託業業務人員 | true       |
 
   # ========== 觸發逆向工程 ==========
+  #
+  # 設計變更紀錄（2026-04-28，CEO 簽核 B 路徑）：
+  # 主要觸發點為「考古題 ImportTask 完成時系統自動執行」（commit 6fd15ac）；
+  # admin endpoints 保留作為 monitoring / override（重跑、增量、品質審查）。
 
-  Rule: 命令（觸發）- 管理員可對考科題庫執行考綱逆向工程
+  Rule: 命令（自動觸發）- 考古題匯入完成後系統自動執行考綱逆向工程
 
-    Example: 對已有考古題的考科啟動考綱逆向工程
+    Example: 考古題 ImportTask 完成自動觸發逆向工程
       Given 考科 "信託業業務人員" 已匯入 180 題考古題
-      When 管理員 "admin@example.com" 對考科 "信託業業務人員" 執行考綱逆向工程
+      When 考古題 ImportTask 狀態轉為 COMPLETED
+      Then 系統應自動建立一筆逆向工程任務，狀態為 "PROCESSING"
+
+    Example: 自動觸發失敗不阻擋匯入交易
+      Given 考科 "信託業業務人員" 已匯入 180 題考古題
+      When 考古題 ImportTask 狀態轉為 COMPLETED 但逆向工程觸發拋出例外
+      Then ImportTask 仍維持 COMPLETED 狀態
+      And 系統應記錄 warning log 供 monitoring
+
+  Rule: 命令（管理員 override）- admin 可透過 API 重跑或增量逆向工程
+
+    # 用途：自動觸發失敗補跑、新題目增量、結構校正後重建。
+
+    Example: admin 透過 API 對已有考古題的考科手動補跑逆向工程
+      Given 考科 "信託業業務人員" 已匯入 180 題考古題
+      When 管理員 "admin@example.com" 透過 API 對考科 "信託業業務人員" 執行考綱逆向工程
       Then 操作成功
       And 系統應建立一筆逆向工程任務，狀態為 "PROCESSING"
 
     Example: 題庫不足時拒絕執行逆向工程
       Given 考科 "信託業業務人員" 僅有 5 題考古題
-      When 管理員 "admin@example.com" 對考科 "信託業業務人員" 執行考綱逆向工程
+      When 管理員 "admin@example.com" 透過 API 對考科 "信託業業務人員" 執行考綱逆向工程
       Then 操作失敗，錯誤為「題庫數量不足，至少需要 30 題才能進行考綱逆向工程」
 
     Example: 一般使用者無法執行考綱逆向工程
-      When 使用者 "pro@example.com" 對考科 "信託業業務人員" 執行考綱逆向工程
+      When 使用者 "pro@example.com" 透過 API 對考科 "信託業業務人員" 執行考綱逆向工程
       Then 操作失敗，錯誤為「僅管理員可執行此操作」
 
   # ========== 語意階層萃取（第一階段） ==========
