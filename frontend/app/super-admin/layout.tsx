@@ -26,8 +26,6 @@ import {
   Upload,
   DollarSign,
   Zap,
-  Wrench,
-  GitMerge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -51,8 +49,10 @@ const sidebarItems = [
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },
   { name: '成本監控', href: '/super-admin/cost-monitor', icon: DollarSign },
   { name: '放榜與退場', href: '/super-admin/retirement', icon: Zap },
-  { name: '考綱逆向工程', href: '/super-admin/reverse-engineering', icon: Wrench },
-  { name: '知識樹合併', href: '/super-admin/knowledge-merge', icon: GitMerge },
+  // 考綱逆向工程（F26）/ 知識樹合併（F29）— 已轉為後台自動觸發功能：
+  //   - F26：考古題 ImportTask 完成時自動觸發 ReverseEngineeringService
+  //   - F29：每次資源上傳完成時自動觸發 KnowledgeMergeService
+  // Admin 不再需要手動入口；如需 monitoring/override 走後端 admin endpoints。
 ];
 
 export default function SuperAdminLayout({

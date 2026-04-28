@@ -263,6 +263,11 @@ class ImportTaskService(BaseService):
             task.error_message = None
             self.db.commit()
 
+            # Spec 26 §自動觸發考綱逆向工程
+            # 考古題匯入完成 → 對對應 Subject 觸發 reverse engineering（從題目反推知識樹）
+            # 失敗不阻擋 import 流程；admin endpoint 僅作為 monitoring/override
+            self._trigger_reverse_engineering_safe(historical_exam_id)
+
             return self.ok(
                 {
                     "status": task.status,
@@ -273,6 +278,69 @@ class ImportTaskService(BaseService):
         except Exception as e:
             self.db.rollback()
             return self.error(f"Failed to mark completed: {str(e)}", 500)
+
+    def _trigger_reverse_engineering_safe(
+        self, historical_exam_id: Optional[uuid.UUID]
+    ) -> None:
+        """Spec 26 §考古題匯入完成 → 自動觸發考綱逆向工程。
+
+        從 historical_exam 找對應 Subject（透過 subject_code → exam_subject_codes
+        或 subject_name 匹配），再呼叫 ReverseEngineeringService.extract。
+        失敗只 log warning，不影響匯入交易。
+        """
+        if not historical_exam_id:
+            return
+        try:
+            import logging
+            from app.models.historical_exam import HistoricalExam
+            from app.models.subject import Subject
+            from app.services.reverse_engineering_service import (
+                ReverseEngineeringService,
+            )
+
+            logger = logging.getLogger(__name__)
+            he = self.db.query(HistoricalExam).filter_by(id=historical_exam_id).first()
+            if not he:
+                return
+
+            # 找對應 Subject：優先用 subject_code 比對 exam_subject_codes（JSON list）
+            subject = None
+            if he.subject_code:
+                subjects = self.db.query(Subject).all()
+                for s in subjects:
+                    codes = s.exam_subject_codes or []
+                    if any(he.subject_code in str(c) for c in codes):
+                        subject = s
+                        break
+            if not subject and he.subject_name:
+                subject = self.db.query(Subject).filter_by(name=he.subject_name).first()
+
+            if not subject:
+                logger.info(
+                    "Reverse engineering skipped: no Subject matched for "
+                    "historical_exam %s (subject_code=%s, subject_name=%s)",
+                    historical_exam_id, he.subject_code, he.subject_name,
+                )
+                return
+
+            re_service = ReverseEngineeringService(self.db)
+            result = re_service.extract(str(subject.id))
+            if result.get("error"):
+                logger.warning(
+                    "Reverse engineering trigger failed for subject %s: %s",
+                    subject.id, result.get("message"),
+                )
+            else:
+                logger.info(
+                    "Auto reverse engineering triggered for subject %s after "
+                    "historical_exam %s import",
+                    subject.id, historical_exam_id,
+                )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Reverse engineering auto-trigger crashed (non-blocking): %s", e,
+            )
 
     def mark_failed(
         self,

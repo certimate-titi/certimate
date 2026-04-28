@@ -1,4 +1,15 @@
-"""Knowledge Merge Service — 知識樹合併對齊業務邏輯。"""
+"""Knowledge Merge Service — 知識樹合併對齊業務邏輯。
+
+🔧 後台自動觸發功能（2026-04-28 起）：
+此服務已轉為**後台自動觸發**，前端 UI 已移除。觸發點：
+  - DocumentProcessingService Step 11（每次資源上傳完成後）自動呼叫 .merge()
+  - similarity >= 0.85 自動 merge / 0.65-0.85 落 MergeConflict / < 0.65 add as new
+  - 失敗只 log warning 不阻斷上傳
+
+admin endpoints (`/api/v1/knowledge-merge/*`) 保留作為 monitoring / override：
+  - 列衝突 / 解決衝突 / 看 merge 歷史
+這些 endpoint 仍可用，但前端不再提供操作頁；如需呼叫請直接打 API 或寫 admin 工具。
+"""
 
 import difflib
 import json

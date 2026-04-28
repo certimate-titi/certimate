@@ -1,4 +1,16 @@
-"""Reverse Engineering Service — 考綱逆向工程業務邏輯。"""
+"""Reverse Engineering Service — 考綱逆向工程業務邏輯。
+
+🔧 後台自動觸發功能（2026-04-28 起）：
+此服務已轉為**後台自動觸發**，前端 UI 已移除。觸發點：
+  - ImportTaskService.mark_completed() 完成考古題匯入時自動呼叫 .extract()
+  - 失敗只 log warning 不阻斷匯入
+
+admin endpoints (`/api/v1/reverse-engineering/*`) 保留作為 monitoring / override：
+  - 重新跑 extract（手動補跑失敗的）
+  - 增量 incremental（新增考古題後）
+  - 匯入/匯出 Markdown（內容校正）
+這些 endpoint 仍可用，但前端不再提供操作頁；如需呼叫請直接打 API 或寫 admin 工具。
+"""
 
 import uuid
 from decimal import Decimal

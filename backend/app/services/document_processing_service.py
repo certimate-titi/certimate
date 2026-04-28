@@ -290,6 +290,7 @@ class DocumentProcessingService:
 
             # Step 11: 自動觸發統一知識樹萃取（如果資源有 subject_id）
             extraction_result = None
+            merge_result = None
             if resource.subject_id:
                 try:
                     from app.services.unified_knowledge_extraction_service import (
@@ -305,12 +306,59 @@ class DocumentProcessingService:
                 except Exception as e:
                     logger.warning("Unified extraction skipped: %s", e)
 
+                # Spec 29 §知識樹合併對齊 — 每次資源上傳自動 merge
+                # 取本次新建的 KnowledgeNode（resource_id == this resource）作為 incoming，
+                # 對該 subject 的既有樹做合併：
+                #   similarity >= 0.85 自動 merge / 0.65-0.85 落 conflicts / < 0.65 add as new
+                # 失敗只 log warning 不阻斷上傳。Admin 端 UI 已移除（後台自動觸發）；
+                # MergeConflict 表透過 admin endpoint /knowledge-merge/* 提供 monitoring/override
+                try:
+                    from app.services.knowledge_merge_service import (
+                        KnowledgeMergeService,
+                    )
+                    incoming_nodes_payload = [
+                        {
+                            "name": n.name,
+                            "depth": n.depth or 0,
+                            "parent_id": str(n.parent_id) if n.parent_id else None,
+                            "source_origin": "document",
+                        }
+                        for n in nodes
+                        if getattr(n, "name", None)
+                    ]
+                    if incoming_nodes_payload and resource.user_id:
+                        merge_service = KnowledgeMergeService(self.db)
+                        merge_result = merge_service.merge(
+                            user_id=str(resource.user_id),
+                            subject_id=str(resource.subject_id),
+                            incoming_nodes=incoming_nodes_payload,
+                            trigger_source="document",
+                            trigger_name=resource.title or resource.original_filename or "",
+                        )
+                        if merge_result.get("error"):
+                            logger.warning(
+                                "Auto knowledge merge warning for resource %s: %s",
+                                resource_id, merge_result.get("message"),
+                            )
+                        else:
+                            logger.info(
+                                "Auto knowledge merge for resource %s: "
+                                "merged=%s added=%s conflicts=%s",
+                                resource_id,
+                                merge_result.get("nodes_merged"),
+                                merge_result.get("nodes_added"),
+                                merge_result.get("conflicts_count"),
+                            )
+                except Exception as e:
+                    logger.warning("Auto knowledge merge skipped: %s", e)
+
             return {
                 "status": "completed",
                 "chunks_created": len(chunks_data),
                 "nodes_created": len(nodes),
                 "markdown_path": md_path,
                 "extraction": extraction_result,
+                "merge": merge_result,
             }
 
         except Exception as e:

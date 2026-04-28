@@ -595,55 +595,13 @@ export interface ScheduleRecommendation {
   recommended_count: number;
 }
 
-/** Spec 26 §考綱逆向工程 */
-export const reverseEngineeringService = {
-  async extract(subjectId: string): Promise<{ nodes_created: number; status: string }> {
-    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/extract`, {});
-  },
-  async trigger(subjectId: string): Promise<{ task_id: string }> {
-    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/trigger`, {});
-  },
-  async incremental(subjectId: string): Promise<{ added: number }> {
-    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/incremental`, {});
-  },
-  async getKnowledgeTree(subjectId: string): Promise<{ tree: Array<Record<string, unknown>> }> {
-    return apiClient.get(`/reverse-engineering/subjects/${subjectId}/knowledge-tree`);
-  },
-  async exportMarkdown(subjectId: string): Promise<{ markdown: string }> {
-    return apiClient.get(`/reverse-engineering/subjects/${subjectId}/knowledge-tree/markdown`);
-  },
-  async importMarkdown(subjectId: string, markdown: string): Promise<{ nodes_created: number }> {
-    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/import-markdown`, { markdown });
-  },
-};
-
-/** Spec 29 §知識樹合併對齊 */
-export interface MergeConflict {
-  id: string;
-  subject_id: string;
-  source_node: { id: string; name: string };
-  target_node: { id: string; name: string };
-  conflict_type: string;
-  detected_at: string;
-  resolved: boolean;
-}
-export const knowledgeMergeService = {
-  async listConflicts(subjectId: string): Promise<{ conflicts: MergeConflict[] }> {
-    return apiClient.get(`/knowledge-merge/subjects/${subjectId}/conflicts`);
-  },
-  async resolve(conflictId: string, decision: 'use_source' | 'use_target' | 'merge_both' | 'reject'): Promise<{ ok: boolean }> {
-    return apiClient.post(`/knowledge-merge/conflicts/${conflictId}/resolve`, { decision });
-  },
-  async merge(subjectId: string): Promise<{ status: string }> {
-    return apiClient.post(`/knowledge-merge/subjects/${subjectId}/merge`, {});
-  },
-  async compare(subjectId: string): Promise<{ comparison: Record<string, unknown> }> {
-    return apiClient.post(`/knowledge-merge/subjects/${subjectId}/compare`, {});
-  },
-  async history(subjectId: string): Promise<{ history: Array<Record<string, unknown>> }> {
-    return apiClient.get(`/knowledge-merge/subjects/${subjectId}/history`);
-  },
-};
+// Spec 26 §考綱逆向工程（reverseEngineeringService）— 已移除前端 service。
+// 後端 ReverseEngineeringService 改為 ImportTask 完成後自動觸發；admin endpoints
+// 仍存在於後端用於 monitoring/override，但前端不暴露 UI。
+//
+// Spec 29 §知識樹合併對齊（knowledgeMergeService）— 已移除前端 service。
+// 後端 KnowledgeMergeService 改為每次資源上傳完成後在 document_processing_service
+// Step 11 自動呼叫；MergeConflict 紀錄保留於 DB 供後端 admin endpoints 監控。
 
 export const scheduleService = {
   async getRecommendations(): Promise<{ subjects: ScheduleRecommendation[] }> {
