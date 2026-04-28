@@ -17,7 +17,7 @@ from typing import Literal
 
 from sqlalchemy.orm import Session
 
-from app.models.audit_log import AuditLog
+from app.models.audit_log import AdminAuditLog as AuditLog
 from app.models.user import User, UserRole
 from app.services.email_service import EmailService
 
@@ -163,8 +163,30 @@ class ApiKeyHealthService:
             "last_failure_reason": reason,
         }
 
+    # In-memory 通知 dedup 紀錄：(provider, reason_hash) → last_sent_at
+    # 同一 provider 的同種失敗原因 30 分鐘內只發 1 次（防 spam，Spec 12c §dedup）
+    _notify_dedup: dict[tuple[Provider, str], datetime] = {}
+    DEDUP_WINDOW_MINUTES = 30
+
+    @classmethod
+    def _should_notify(cls, provider: Provider, reason: str) -> bool:
+        """判斷此次失敗是否應發通知（30 分鐘內同 provider+原因不重發）。"""
+        from datetime import timedelta
+        # 取 reason 前 60 字當 fingerprint（401/403/timeout 等）
+        fp = (reason or '')[:60]
+        key = (provider, fp)
+        now = datetime.now(timezone.utc)
+        last = cls._notify_dedup.get(key)
+        if last and (now - last) < timedelta(minutes=cls.DEDUP_WINDOW_MINUTES):
+            return False
+        cls._notify_dedup[key] = now
+        return True
+
     def _notify_failure(self, provider: Provider, reason: str) -> None:
-        """寄信通知所有 SUPER_ADMIN。Spec Q3: 每次失敗即通知。"""
+        """寄信通知所有 SUPER_ADMIN。Spec 12c §dedup: 30 分鐘內同 provider+reason 只發 1 次。"""
+        if not self._should_notify(provider, reason):
+            logger.info(f"Skip notify (deduped): provider={provider} reason={reason[:30]}")
+            return
         try:
             super_admins = self.db.query(User).filter(
                 User.role == UserRole.SUPER_ADMIN

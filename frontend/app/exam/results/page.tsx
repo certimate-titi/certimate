@@ -9,7 +9,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, ArrowRight, BrainCircuit, Trophy, Target, Clock, TrendingUp, TrendingDown, Flag, Share2, Download, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, BrainCircuit, Trophy, Target, Clock, TrendingUp, TrendingDown, Flag, Share2, Download, Sparkles, FileText } from 'lucide-react';
 import { examService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { GetExamResultsResponse } from '@/types';
@@ -234,8 +234,11 @@ function ExamResultsPage() {
             <p className="text-slate-300 text-sm mb-8 leading-relaxed">
               AI 教練已為你準備好錯題解析，包含盲點痛擊與記憶口訣。
             </p>
-            <Link href={`/review?examId=${examId}`} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md">
-              進入錯題本 <ArrowRight className="h-5 w-5" />
+            <Link href={`/review?examId=${examId}`} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md mb-3">
+              進入錯題本（AI 解析 + 教練）<ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link href={`/review?examId=${examId}&all=1`} className="w-full bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 border border-white/10 text-sm">
+              <FileText className="h-4 w-4" /> 逐題解析（含答對題）
             </Link>
           </div>
         </div>
@@ -359,14 +362,14 @@ function ExamResultsPage() {
         <div className="relative z-10">
           <h3 className="text-lg font-bold mb-2">分享你的成績卡</h3>
           <p className="text-sm text-slate-400 mb-6">生成精美的個人化成績圖卡，與朋友分享你的備考成果！</p>
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/10">
+          <div id="score-card-snapshot" className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 mb-6 border border-white/10">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">CertiMate Score Card</span>
               <span className="text-xs text-slate-400">{new Date().toLocaleDateString('zh-TW')}</span>
             </div>
             <div className="text-center">
               <p className="text-sm text-slate-300 mb-1">{user?.displayName || '考生'}</p>
-              <p className="text-xl font-bold mb-2">{exam.title}</p>
+              <p className="text-xl font-bold text-white mb-2">{exam.title}</p>
               <p className="text-4xl font-extrabold text-emerald-400">{score} 分</p>
               <p className="text-sm text-slate-400 mt-2 italic">&ldquo;{scoreMessage}&rdquo;</p>
             </div>
@@ -381,7 +384,27 @@ function ExamResultsPage() {
               <Share2 className="h-4 w-4" /> 分享至 LinkedIn
             </button>
             <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 border border-white/10"
-              onClick={() => alert('成績卡片下載功能即將推出，敬請期待！')}>
+              onClick={async () => {
+                // Spec 06 §「成績卡片下載」— 用 html2canvas 截 #score-card-snapshot 為 PNG
+                const target = document.getElementById('score-card-snapshot');
+                if (!target) return;
+                try {
+                  const html2canvas = (await import('html2canvas')).default;
+                  const canvas = await html2canvas(target, {
+                    backgroundColor: '#0f172a',
+                    scale: 2,
+                    logging: false,
+                  });
+                  const dataUrl = canvas.toDataURL('image/png');
+                  const a = document.createElement('a');
+                  a.href = dataUrl;
+                  a.download = `CertiMate_Score_${score}_${new Date().toISOString().slice(0, 10)}.png`;
+                  a.click();
+                } catch (e) {
+                  console.error('Download failed:', e);
+                  alert('下載失敗：' + (e instanceof Error ? e.message : String(e)));
+                }
+              }}>
               <Download className="h-4 w-4" /> 下載圖卡
             </button>
           </div>

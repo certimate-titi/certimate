@@ -256,3 +256,30 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
     Example: 非 SUPER_ADMIN 寫入應 403
       When 使用者 "alice@example.com" (USER role) 嘗試 PUT /api/v1/admin/api-keys/anthropic
       Then 操作失敗，HTTP 403 回應「需要 SUPER_ADMIN 權限」
+
+  Rule: 後置（UI）- 版本資訊頁應顯示後端 / 前端 build 資訊
+
+    # 落地紀錄（自動巡檢 2026-04-28）：/super-admin/settings/version 頁顯示
+    # build commit、build time、Cloud Run revision、deploy 環境。
+
+    Example: 版本資訊頁顯示完整 build 資料
+      When 使用者 "super@certimate.com" 進入 /super-admin/settings/version
+      Then 頁面應顯示前端資訊：NEXT_PUBLIC_BUILD_COMMIT 與 NEXT_PUBLIC_BUILD_TIME
+      And 應顯示後端 GET /api/v1/admin/version 回傳：commit、deployed_at、revision
+      And 應提供「複製版本資訊」按鈕（複製為 markdown 表格）
+
+  Rule: 後置（UI）- 平台科目管理頁應支援列表 / 編輯 / 啟停用
+
+    # 落地紀錄（自動巡檢 2026-04-28）：/super-admin/platform-subjects 頁
+    # 列出所有平台預載科目，可編輯名稱 / 描述 / 啟停用狀態。
+
+    Example: 列表顯示所有平台科目
+      When 使用者 "super@certimate.com" 進入 /super-admin/platform-subjects
+      Then 應顯示表格：名稱、考試代碼、狀態（啟用/停用）、學員數、最後更新
+      And 應提供「新增平台科目」按鈕
+
+    Example: 停用科目應同步標記所有相關預載資源為隱藏
+      Given 平台科目 "S1" 為啟用狀態，含 5 份預載資源
+      When admin 點擊「停用」按鈕並確認
+      Then S1 狀態應更新為 inactive
+      And 該科目下 5 份預載資源應對所有用戶呈現「不可見」

@@ -128,3 +128,20 @@ Feature: 考古題題庫管理
       When 呼叫 DELETE /api/v1/admin/subjects/{S1}/default-resources/{R_PLATFORM}
       Then 操作成功
       And 使用者 "u1@example.com" 的 GET /api/v1/resources 不再包含 R_PLATFORM
+
+  Rule: 後置（UI）- 候選考題管理頁 (/resources/{id}/candidates) 應支援審核 / 採納 / 退回
+
+    # 落地紀錄（自動巡檢 2026-04-28）：/resources/[id]/candidates 頁列出 T2/T3 候選題，
+    # admin/owner 可審核並決定是否採納為正式題庫。
+
+    Example: 列出該資源的所有候選題
+      Given 資源 R1 經 LLM 解析後產生 10 筆候選題（T2: 6, T3: 4）
+      When 擁有者 "alice@example.com" 進入 /resources/R1/candidates
+      Then 頁面應顯示候選題列表，每筆含：題幹、選項、tier (T2/T3)、信心度、source_page
+      And 應提供「採納」「退回」「編輯」三個操作按鈕
+
+    Example: 採納候選題應寫入 questions 表並從 candidates 移除
+      When 使用者點擊某筆 T2 候選題的「採納」按鈕並確認
+      Then 該筆應從 question_candidates 表移除
+      And 應寫入 questions 表，source 標記為 user_curated
+      And 列表應 refresh

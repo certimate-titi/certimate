@@ -314,3 +314,17 @@ Feature: 資源庫管理與連鎖清除防呆機制
       When 使用者在資源庫點擊資源 R1 的「分享」按鈕
       Then 應彈出 confirm 對話框
       And 文案應包含「撤回此資源對機構的分享」（不應出現「EDU」字樣，避免與 EDU 學生用戶混淆）
+
+  Rule: 後置（UI）- 學習庫頁應提供「我的素材」與「知識地圖」兩個 Tab 切換
+
+    # 落地紀錄（自動巡檢 2026-04-28）：/account/resource-library 頁有 Tab
+    # 「📁 我的素材」「🗂️ 知識地圖」可切換，預設「我的素材」。
+
+    Example: 預設顯示我的素材 Tab
+      When 使用者 "alice@example.com" 進入 /account/resource-library
+      Then 中央區應顯示資源列表（我的素材 Tab）
+      And 「我的素材」Tab 應呈 active 狀態（綠色底線）
+
+    Example: 切換至知識地圖 Tab 應導航至 /knowledge
+      When 使用者點擊「知識地圖」Tab
+      Then 應導航至 /knowledge 頁

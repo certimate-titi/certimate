@@ -79,6 +79,8 @@ function ExamSetupPage() {
   const [questionCount, setQuestionCount] = useState<typeof QUESTION_COUNTS[number]>(20);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
   const [examMode, setExamMode] = useState<'hybrid' | 'historical_only'>('hybrid');
+  // Spec 19 §「題目排列模式」— interleaved（預設、跨節點交錯）/ grouped（同節點集中）/ sequential（按難度）
+  const [orderMode, setOrderMode] = useState<'interleaved' | 'grouped' | 'sequential'>('interleaved');
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(
     new Set(['MULTIPLE_CHOICE'])
   );
@@ -346,6 +348,7 @@ function ExamSetupPage() {
         difficulty,
         questionTypes: Array.from(questionTypes),
         examMode,
+        question_order_mode: orderMode,  // Spec 19 §排列模式
       };
       // Attach custom ratios if advanced recipe is enabled
       if (showAdvancedRecipe && Object.keys(customPointRatio).length > 0) {
@@ -594,6 +597,30 @@ function ExamSetupPage() {
                     <span className="block font-bold">考古題模擬考</span>
                     <span className="text-xs opacity-75">100% 歷年真題</span>
                   </button>
+                </div>
+
+                {/* Spec 19 §「題目排列模式」 */}
+                <label className="block text-sm font-medium text-slate-700 mb-3">題目排列模式</label>
+                <div className="grid grid-cols-3 gap-2 mb-6">
+                  {[
+                    { v: 'interleaved' as const, label: '交錯', desc: '跨節點輪流（預設）', emoji: '🔀' },
+                    { v: 'grouped' as const, label: '分組', desc: '同節點集中', emoji: '📦' },
+                    { v: 'sequential' as const, label: '依難度', desc: '由易到難', emoji: '📈' },
+                  ].map((m) => (
+                    <button
+                      key={m.v}
+                      onClick={() => setOrderMode(m.v)}
+                      className={`px-3 py-2.5 rounded-xl text-xs transition-colors border-2 ${
+                        orderMode === m.v
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold'
+                          : 'border-slate-200 text-slate-600 hover:border-blue-300'
+                      }`}
+                    >
+                      <span className="block text-lg mb-0.5">{m.emoji}</span>
+                      <span className="block font-bold">{m.label}</span>
+                      <span className="block text-[10px] opacity-75">{m.desc}</span>
+                    </button>
+                  ))}
                 </div>
 
                 <label className="block text-sm font-medium text-slate-700 mb-3">題數選擇</label>

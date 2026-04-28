@@ -227,3 +227,25 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       When 使用者進入 /knowledge 頁面
       Then 中央空態應顯示 emoji "🌱" + 主標題「知識樹尚未生成」
       And 應提供主 CTA「🤖 萃取知識樹」按鈕（與 toolbar 重新分析按鈕功能等價）
+
+  Rule: 後置（UI）- 知識地圖中央區應提供 ForceGraph / MindMapTree / Document 三視圖切換
+
+    # 落地紀錄（自動巡檢 2026-04-28）：toolbar 提供「🌐 圖譜」「📋 列表」「📄 文件」三按鈕，
+    # 切換 centerView 與 graphView 狀態。
+
+    Example: 預設顯示 ForceGraph 圖譜視圖
+      When 使用者 "pro@example.com" 進入 /knowledge 頁面且有節點資料
+      Then 中央區應顯示 ForceGraph 互動圖譜（centerView=graph, graphView=force）
+      And toolbar「🌐 圖譜」按鈕應為 active 狀態
+
+    Example: 切換到 MindMapTree 列表視圖
+      When 使用者點擊 toolbar「📋 列表」按鈕
+      Then centerView 應為 graph 且 graphView 應為 tree
+      And 中央區應顯示 MindMapTree 階層列表
+      And toolbar「📋 列表」按鈕應為 active 狀態
+
+    Example: 切換到 Document 文件原文視圖
+      Given 已選取某資源並載入 chunks
+      When 使用者點擊 toolbar「📄 文件」按鈕
+      Then centerView 應為 document
+      And 中央區應顯示完整文件 Markdown 原文

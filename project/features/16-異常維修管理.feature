@@ -126,3 +126,26 @@ Feature: 異常維修管理
       When 系統偵測到結束時間已到達
       Then 系統應自動關閉維修模式
       And 用戶應能正常存取所有功能
+
+  Rule: 後置（操作）- 提供「批次修復」一鍵將多筆相似異常一起標記為已修復
+
+    # 落地紀錄（2026-04-28）：頁面 /super-admin/anomaly 新增多選 checkbox
+    # + 「批次修復」按鈕；後端用既有 patch endpoint 並行呼叫。
+
+    Example: 多選異常並批次標記為已修復
+      Given 系統異常清單有 5 筆相同類型「Database Timeout」異常
+      When admin "ops@certimate.com" 進入異常維修管理頁面
+      And 勾選 5 筆異常後點擊「批次修復」按鈕
+      Then 應彈出 confirm 對話框：「確定將 5 筆異常標記為已修復？」
+      When admin 確認
+      Then 系統應依序對每筆異常呼叫 PATCH /api/v1/admin/anomalies/{id} body={"status":"resolved"}
+      And 應顯示成功訊息「已修復 5 筆異常」
+      And 異常清單應 refresh，已修復項目消失或標記為 resolved
+      And 每筆操作應記錄至 audit_logs
+
+    Example: 批次修復遇部分失敗時應分別呈現
+      Given admin 勾選 3 筆異常進行批次修復
+      And 其中 1 筆 PATCH 回傳 500
+      When 批次修復完成
+      Then 應顯示混合訊息：「已修復 2 筆，1 筆失敗」
+      And 失敗項目應保留勾選狀態並顯示錯誤 icon

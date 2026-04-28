@@ -375,3 +375,23 @@ Feature: 個人儀表板與成就系統
       When 使用者 "pro@example.com" 查詢儀表板
       Then 雷達圖應顯示 N 個軸
       And 每個軸的標籤應與 depth=1 節點的名稱一致
+
+  Rule: 後置（UI）- 儀表板應顯示備考模式標籤 (Sprint / Standard / Mastery)
+
+    # 落地紀錄（自動巡檢 2026-04-28）：dashboard 顯示「Standard 正常」等備考模式標籤，
+    # 對應使用者的學習節奏設定（Sprint 衝刺 / Standard 標準 / Mastery 精熟）。
+
+    Example: Standard 模式使用者顯示「Standard 正常」標籤
+      Given 使用者 "alice@example.com" 的備考模式為 "standard"
+      When 使用者進入儀表板
+      Then 頁面應顯示備考模式徽章「Standard 正常」（綠色）
+
+    Example: Sprint 模式使用者顯示「Sprint 衝刺」標籤
+      Given 使用者 "alice@example.com" 的備考模式為 "sprint"
+      When 使用者進入儀表板
+      Then 頁面應顯示備考模式徽章「Sprint 衝刺」（紅色強調）
+
+    Example: Mastery 模式使用者顯示「Mastery 精熟」標籤
+      Given 使用者 "alice@example.com" 的備考模式為 "mastery"
+      When 使用者進入儀表板
+      Then 頁面應顯示備考模式徽章「Mastery 精熟」（藍色）
