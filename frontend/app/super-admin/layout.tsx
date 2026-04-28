@@ -25,7 +25,9 @@ import {
   FileText,
   Upload,
   DollarSign,
-  Zap
+  Zap,
+  Wrench,
+  GitMerge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -49,6 +51,8 @@ const sidebarItems = [
   { name: 'Prompt 模板', href: '/super-admin/prompt-templates', icon: FileText },
   { name: '成本監控', href: '/super-admin/cost-monitor', icon: DollarSign },
   { name: '放榜與退場', href: '/super-admin/retirement', icon: Zap },
+  { name: '考綱逆向工程', href: '/super-admin/reverse-engineering', icon: Wrench },
+  { name: '知識樹合併', href: '/super-admin/knowledge-merge', icon: GitMerge },
 ];
 
 export default function SuperAdminLayout({

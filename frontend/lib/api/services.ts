@@ -581,6 +581,78 @@ export interface NextStrategyResponse {
 /**
  * 難度自動推進服務：開始流程、查下一步策略、取得整條 trail。
  */
+/** Spec 09 §動態大腦精力調度排程 */
+export interface ScheduleRecommendation {
+  journey_id?: string;
+  subject_id: string;
+  subject_name: string;
+  exam_date: string | null;
+  mode: 'sprint' | 'standard' | 'mastery';
+  mode_reason: string;
+  pending_questions: number;
+  next_review_at: string | null;
+  recommended_count: number;
+}
+
+/** Spec 26 §考綱逆向工程 */
+export const reverseEngineeringService = {
+  async extract(subjectId: string): Promise<{ nodes_created: number; status: string }> {
+    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/extract`, {});
+  },
+  async trigger(subjectId: string): Promise<{ task_id: string }> {
+    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/trigger`, {});
+  },
+  async incremental(subjectId: string): Promise<{ added: number }> {
+    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/incremental`, {});
+  },
+  async getKnowledgeTree(subjectId: string): Promise<{ tree: Array<Record<string, unknown>> }> {
+    return apiClient.get(`/reverse-engineering/subjects/${subjectId}/knowledge-tree`);
+  },
+};
+
+/** Spec 29 §知識樹合併對齊 */
+export interface MergeConflict {
+  id: string;
+  subject_id: string;
+  source_node: { id: string; name: string };
+  target_node: { id: string; name: string };
+  conflict_type: string;
+  detected_at: string;
+  resolved: boolean;
+}
+export const knowledgeMergeService = {
+  async listConflicts(subjectId: string): Promise<{ conflicts: MergeConflict[] }> {
+    return apiClient.get(`/knowledge-merge/subjects/${subjectId}/conflicts`);
+  },
+  async resolve(conflictId: string, decision: 'use_source' | 'use_target' | 'merge_both' | 'reject'): Promise<{ ok: boolean }> {
+    return apiClient.post(`/knowledge-merge/conflicts/${conflictId}/resolve`, { decision });
+  },
+  async merge(subjectId: string): Promise<{ status: string }> {
+    return apiClient.post(`/knowledge-merge/subjects/${subjectId}/merge`, {});
+  },
+  async compare(subjectId: string): Promise<{ comparison: Record<string, unknown> }> {
+    return apiClient.post(`/knowledge-merge/subjects/${subjectId}/compare`, {});
+  },
+  async history(subjectId: string): Promise<{ history: Array<Record<string, unknown>> }> {
+    return apiClient.get(`/knowledge-merge/subjects/${subjectId}/history`);
+  },
+};
+
+export const scheduleService = {
+  async getRecommendations(): Promise<{ recommendations: ScheduleRecommendation[] }> {
+    return apiClient.get('/schedule/recommendations');
+  },
+  async init(subjectId: string): Promise<{ message: string }> {
+    return apiClient.post(`/schedule/init`, { subject_id: subjectId });
+  },
+  async calculateMode(subjectId: string): Promise<{ mode: string; reason: string }> {
+    return apiClient.post(`/schedule/calculate-mode`, { subject_id: subjectId });
+  },
+  async getRecommendedQuestions(subjectId: string, count = 10): Promise<{ questions: Array<Record<string, unknown>> }> {
+    return apiClient.get(`/schedule/recommended-questions?subject_id=${subjectId}&count=${count}`);
+  },
+};
+
 export const difficultyProgressionService = {
   async start(subjectId: string): Promise<{ message: string; status: string }> {
     return apiClient.post(`/difficulty-progression/subjects/${subjectId}/start`);
