@@ -88,7 +88,7 @@ function ExamResultsPage() {
     );
   }
 
-  const { exam, questions, userAnswers, domainAnalysis, aiSummary } = data;
+  const { exam, questions, userAnswers, domainAnalysis, aiSummary, bloomBreakdown } = data;
   const score = exam.score ?? 0;
   const correctCount = userAnswers.filter(a => a.isCorrect).length;
   const wrongCount = userAnswers.filter(a => !a.isCorrect && a.userChoice).length;
@@ -245,6 +245,35 @@ function ExamResultsPage() {
 
         {/* Right Column */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Spec 18 §Bloom 各層次答對率 */}
+          {bloomBreakdown && bloomBreakdown.length > 0 && bloomBreakdown.some(b => b.total > 0) && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <BrainCircuit className="h-6 w-6 text-purple-500" /> Bloom 認知層次分析
+              </h3>
+              <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+                依教育心理學 Bloom 分類法，分析你在記憶 / 理解 / 應用 / 分析 / 評估 / 創造六個層次的答對率。
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {bloomBreakdown.filter(b => b.total > 0).map(b => {
+                  const tone = b.rate < 50 ? 'rose' : b.rate >= 80 ? 'emerald' : 'amber';
+                  const colors = {
+                    rose: 'bg-rose-50 border-rose-200 text-rose-700',
+                    emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+                    amber: 'bg-amber-50 border-amber-200 text-amber-700',
+                  } as const;
+                  return (
+                    <div key={b.category} className={`p-3 rounded-xl border-2 ${colors[tone]}`}>
+                      <div className="text-xs font-medium opacity-75 mb-1">{b.label}</div>
+                      <div className="text-2xl font-extrabold">{b.rate}%</div>
+                      <div className="text-[10px] opacity-60">{b.correct} / {b.total}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Domain Analysis */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">

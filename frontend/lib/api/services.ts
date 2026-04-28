@@ -286,6 +286,7 @@ export const examService = {
       })),
       domainAnalysis: (raw.domain_analysis as GetExamResultsResponse['domainAnalysis']) || [],
       aiSummary: (raw.ai_summary as string) || '',
+      bloomBreakdown: (raw.bloom_breakdown as GetExamResultsResponse['bloomBreakdown']) || [],
     } as unknown as GetExamResultsResponse;
   },
 };

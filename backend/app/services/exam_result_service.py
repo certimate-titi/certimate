@@ -83,6 +83,9 @@ class ExamResultService:
         # Generate domain analysis from knowledge nodes
         domain_analysis = self._build_domain_analysis(exam.id, answers)
 
+        # Spec 18 §測驗結果頁顯示 Bloom 各層次答對率
+        bloom_breakdown = self._build_bloom_breakdown(questions, answer_map)
+
         result = {
             "error": False,
             "exam_id": str(exam.id),
@@ -97,6 +100,7 @@ class ExamResultService:
             "user_answers": user_answers,
             "ai_summary": ai_summary,
             "domain_analysis": domain_analysis,
+            "bloom_breakdown": bloom_breakdown,
             "questions": [
                 {
                     "id": str(q.id),
@@ -116,6 +120,35 @@ class ExamResultService:
         if comparison:
             result["comparison"] = comparison
 
+        return result
+
+    def _build_bloom_breakdown(self, questions, answer_map) -> list[dict]:
+        """Spec 18 §Bloom 各層次答對率 — 統計每個 Bloom 認知層次的正確 / 總數 / 百分比。"""
+        bloom_labels = {
+            "remember": "記憶", "understand": "理解", "apply": "應用",
+            "analyze": "分析", "evaluate": "評估", "create": "創造",
+        }
+        stats: dict[str, list[int]] = {}
+        for q in questions:
+            b_raw = getattr(q, 'bloom_category', None)
+            b = (b_raw.value if hasattr(b_raw, 'value') else b_raw) or 'remember'
+            a = answer_map.get(str(q.id))
+            is_correct = 1 if (a and a.is_correct) else 0
+            stats.setdefault(b, [0, 0])
+            stats[b][0] += is_correct
+            stats[b][1] += 1
+        # 確保 6 層級都有（即使 0 題）
+        ordered = ["remember", "understand", "apply", "analyze", "evaluate", "create"]
+        result = []
+        for b in ordered:
+            c, t = stats.get(b, [0, 0])
+            result.append({
+                "category": b,
+                "label": bloom_labels[b],
+                "correct": c,
+                "total": t,
+                "rate": round(c / t * 100) if t > 0 else 0,
+            })
         return result
 
     def _get_or_generate_ai_summary(self, exam, questions, answer_map) -> str:

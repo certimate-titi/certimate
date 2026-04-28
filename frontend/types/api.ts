@@ -96,12 +96,22 @@ export interface SubmitExamResponse {
   aiSummary: string; // AI-generated post-exam summary
 }
 
+/** Spec 18 §測驗結果 Bloom 各層次答對率 */
+export interface BloomBreakdownItem {
+  category: 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create';
+  label: string;
+  correct: number;
+  total: number;
+  rate: number;
+}
+
 export interface GetExamResultsResponse {
   exam: Exam;
   questions: Question[];
   userAnswers: UserAnswer[];
   domainAnalysis: DomainAnalysis[];
   aiSummary: string;
+  bloomBreakdown?: BloomBreakdownItem[];
 }
 
 // ===========================
