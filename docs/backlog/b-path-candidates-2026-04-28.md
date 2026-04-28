@@ -46,3 +46,19 @@
 ## 後續
 
 backlog 兩項建議併入下一個 spec reconciliation sprint，與其他 271 failed scenario 一同處理。
+
+---
+
+## 新增 backlog（2026-04-28 e2e QA 衍生）
+
+### F26 PDF Vision Gemini multimodal refactor（中）
+- **問題**：`backend/app/services/exam_pdf_extraction_service.py` 直接用 Anthropic SDK 跑 Claude Vision；本地 dev 沒 Anthropic key（user 決議「本地 Anthropic 改用 claude code，雲端才用 Anthropic api」）→ 永遠 401
+- **架構違規**：CLAUDE.md 規定 Gemini 為主 LLM，Anthropic 為雙 LLM 交叉驗證；PDF Vision 應用 Gemini multimodal（已有 valid key + `resource_parse_service` 已驗 pattern 可用）
+- **建議**：把 `extract_questions_from_pdf` 換成 Gemini 2.5 Pro multimodal（client.files.upload + generate_content），保留 Anthropic 作為 cross-validation fallback
+- **工期**：6-8h（含 prompt 對齊 + structured output schema）
+- **影響**：F26 考綱逆向 e2e 本地驗證會通過
+
+### uvicorn logger INFO invisibility（小）
+- **問題**：uvicorn 預設不印 app logger INFO 級別到 stdout，本地 debug 看不到 `logger.info(...)` 訊息（如 F29 hook 的「Entering auto knowledge merge」）
+- **建議**：uvicorn 啟動加 `--log-level info` 或在 `app/core/logging.py` 顯式設 `logging.basicConfig(level=logging.INFO)`
+- **工期**：30 分鐘
