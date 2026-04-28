@@ -33,7 +33,7 @@ export default function SchedulePage() {
     if (authLoading) return;
     if (!isAuthenticated) { router.replace('/login'); return; }
     scheduleService.getRecommendations()
-      .then((res) => setRecs(res.recommendations || []))
+      .then((res) => setRecs(res.subjects || []))
       .catch((e: unknown) => {
         const err = e as { message?: string };
         setError(err?.message || '載入排程失敗');

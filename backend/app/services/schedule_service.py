@@ -43,12 +43,30 @@ class ScheduleService:
         for journey, subj in journeys:
             mode = self._calculate_mode(journey.exam_date, date.today())
             subjects.append({
+                "subject_id": str(subj.id),
+                "journey_id": str(journey.id),
                 "subject_name": subj.name,
                 "exam_date": journey.exam_date.isoformat() if journey.exam_date else None,
-                "learning_mode": mode,
+                "mode": mode,
+                "learning_mode": mode,  # 向後相容舊欄位名
+                "mode_reason": self._mode_reason(mode, journey.exam_date),
+                "pending_questions": 0,  # TODO: 串接 NodeMastery 計待複習
+                "recommended_count": 10,  # 預設推薦題數
+                "next_review_at": None,  # TODO: SuperMemo-2 next review
             })
 
         return {"subjects": subjects}
+
+    def _mode_reason(self, mode: str, exam_date) -> str:
+        """產生模式推導原因說明。"""
+        if not exam_date:
+            return "尚未設定考試日期，預設 Standard 模式"
+        days = (exam_date - date.today()).days
+        if mode == "sprint":
+            return f"距考日 {days} 天（< 14 天），優先錯題與 AI 生題"
+        if mode == "mastery":
+            return f"距考日 {days} 天（> 6 個月），廣讀探索盲區"
+        return f"距考日 {days} 天，遵循 SuperMemo-2 遺忘曲線"
 
     def init_schedule(self, user_id: str, subject_id: str):
         """初始化排程。"""

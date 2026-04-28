@@ -7,8 +7,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles } from 'lucide-react';
+import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles, FileText, ArrowRight } from 'lucide-react';
 import type { LearningStyle } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { accountService, subscriptionService, subjectService } from '@/lib/api/services';
@@ -887,6 +888,47 @@ export default function AccountPage() {
               <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900 mb-6">學習歷程</h2>
                 <GrowthTimeline milestones={achievements.milestones} />
+              </section>
+
+              {/* Spec 14 + 18 — 歷史週報 / 測驗回顧入口（Layer 4 跨頁導航修補） */}
+              <section className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-3xl p-6 border border-emerald-200">
+                <h3 className="text-sm font-bold text-slate-700 mb-4">學習紀錄與報告</h3>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <Link
+                    href="/account/weekly-reports"
+                    className="bg-white rounded-2xl p-4 border border-emerald-200 hover:border-emerald-400 hover:shadow-sm transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">歷史週報</h4>
+                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                          AI 進度摘要、學習時數、完成測驗
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                  </Link>
+                  <Link
+                    href="/review"
+                    className="bg-white rounded-2xl p-4 border border-blue-200 hover:border-blue-400 hover:shadow-sm transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shrink-0">
+                        <BookOpen className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">測驗回顧</h4>
+                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                          錯題複習、Bloom 認知層次分析
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                  </Link>
+                </div>
               </section>
             </>
           )}

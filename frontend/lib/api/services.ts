@@ -609,6 +609,12 @@ export const reverseEngineeringService = {
   async getKnowledgeTree(subjectId: string): Promise<{ tree: Array<Record<string, unknown>> }> {
     return apiClient.get(`/reverse-engineering/subjects/${subjectId}/knowledge-tree`);
   },
+  async exportMarkdown(subjectId: string): Promise<{ markdown: string }> {
+    return apiClient.get(`/reverse-engineering/subjects/${subjectId}/knowledge-tree/markdown`);
+  },
+  async importMarkdown(subjectId: string, markdown: string): Promise<{ nodes_created: number }> {
+    return apiClient.post(`/reverse-engineering/subjects/${subjectId}/import-markdown`, { markdown });
+  },
 };
 
 /** Spec 29 §知識樹合併對齊 */
@@ -640,7 +646,7 @@ export const knowledgeMergeService = {
 };
 
 export const scheduleService = {
-  async getRecommendations(): Promise<{ recommendations: ScheduleRecommendation[] }> {
+  async getRecommendations(): Promise<{ subjects: ScheduleRecommendation[] }> {
     return apiClient.get('/schedule/recommendations');
   },
   async init(subjectId: string): Promise<{ message: string }> {

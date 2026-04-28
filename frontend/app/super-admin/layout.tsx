@@ -102,7 +102,12 @@ export default function SuperAdminLayout({
       >
         <nav className="flex-1 py-4 space-y-1 px-3">
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.href;
+            // 容忍 trailing slash（Next.js static export + Firebase rewrite 會帶 / 或不帶）
+            // 並用 startsWith 容忍子路徑（例 /super-admin/users/abc 仍高亮 /super-admin/users）
+            const normalizedPath = pathname?.replace(/\/$/, '') ?? '';
+            const isActive =
+              normalizedPath === item.href ||
+              normalizedPath.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
