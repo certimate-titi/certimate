@@ -393,6 +393,9 @@ class DashboardService:
                     group_total += t
                     child_items.append({
                         "domain": child.name[:20],
+                        "name": child.name[:20],  # Spec 29 §儀表板回應 — id+name alias
+                        "id": str(child.id),
+                        "node_id": str(child.id),
                         "correct": c,
                         "total": t,
                         "percentage": pct,
@@ -429,6 +432,8 @@ class DashboardService:
 
             groups.append({
                 "domain": root.name[:20],
+                "name": root.name[:20],  # Spec 29 §儀表板回應 — id+name alias
+                "id": str(root.id),
                 "node_id": str(root.id),
                 "correct": group_correct,
                 "total": group_total,
@@ -442,6 +447,9 @@ class DashboardService:
             for label in labels:
                 groups.append({
                     "domain": label,
+                    "name": label,  # Spec 29 alias
+                    "id": None,
+                    "node_id": None,
                     "correct": 0,
                     "total": 0,
                     "percentage": 0,

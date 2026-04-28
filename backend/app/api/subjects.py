@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_db, get_current_user_id
 from app.services.onboarding_service import OnboardingService
+from app.services.bloom_analytics_service import BloomAnalyticsService
 
 router = APIRouter(prefix="/subjects")
 
@@ -157,4 +158,28 @@ def confirm_remove_subject(
         return {"message": "取消移除"}
     service = OnboardingService(db)
     result = service.confirm_remove_subject(user_id=user_id, subject_id=subject_id)
+    return _handle_result(result)
+
+
+@router.get("/{subject_id}/bloom-distribution")
+def get_bloom_distribution(
+    subject_id: str,
+    trend_by: str | None = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Spec 18 — 學科 Bloom 認知層次分佈 / 年度趨勢。
+
+    Query params:
+        trend_by: "year" → 回傳各年度趨勢；省略 → 回傳整體分佈
+
+    Returns:
+        - 整體分佈 distribution: list of {bloom_category, count, percentage}
+        - 年度趨勢 trend: list of {year, remember, understand, ..., create, total}
+    """
+    service = BloomAnalyticsService(db)
+    if trend_by == "year":
+        result = service.get_trend_by_year(subject_id)
+    else:
+        result = service.get_distribution(subject_id)
     return _handle_result(result)
