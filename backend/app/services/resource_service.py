@@ -102,7 +102,18 @@ class ResourceService:
         plan = _get_plan_value(user.subscription_plan)
 
         # Determine resource type from extension
-        r_type = resource_type or EXTENSION_TO_RESOURCE_TYPE.get(ext, "pdf")
+        # RC4 修補（2026-04-29）：傳入的 resource_type 必須 normalize 為小寫
+        # PostgreSQL enum resource_type 只接受小寫 value，前端傳 "PDF" 會直接 raise
+        # InvalidTextRepresentation。空字串 / None 退回副檔名映射。
+        _input_type = (resource_type or "").strip().lower()
+        r_type = _input_type or EXTENSION_TO_RESOURCE_TYPE.get(ext, "pdf")
+        # 白名單驗證：只接受 EXTENSION_TO_RESOURCE_TYPE 的 value 集合
+        _valid_types = set(EXTENSION_TO_RESOURCE_TYPE.values())
+        if r_type not in _valid_types:
+            return {
+                "error": True, "status_code": 400,
+                "message": f"不支援的 resource_type: {resource_type!r}（合法：{sorted(_valid_types)}）",
+            }
         is_image = ext in IMAGE_EXTENSIONS or r_type == "image"
 
         # Check if image upload requires PRO_PLUS or above
