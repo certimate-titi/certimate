@@ -62,3 +62,18 @@ backlog 兩項建議併入下一個 spec reconciliation sprint，與其他 271 f
 - **問題**：uvicorn 預設不印 app logger INFO 級別到 stdout，本地 debug 看不到 `logger.info(...)` 訊息（如 F29 hook 的「Entering auto knowledge merge」）
 - **建議**：uvicorn 啟動加 `--log-level info` 或在 `app/core/logging.py` 顯式設 `logging.basicConfig(level=logging.INFO)`
 - **工期**：30 分鐘
+
+### Pipeline 細粒度拆解 epic（A 方案 — 大）
+- **觸發條件**：DAU 持續超過 1000 且 worker 整體成本 > $50/月，或 parse 階段失敗率 > 10%（持續 1 個月）
+- **內容**：把 B+ 的單一 process_resource task 拆成 chunk / extract / parse / merge 4 個獨立 task type
+- **新增**：`background_tasks` 表 + per-stage Cloud Tasks queue + dispatcher worker
+- **預期效益**：高 DAU 時 worker 規格量身訂做、並行度提升、重試精細化（只重失敗階段）
+- **工期**：5-7 天
+- **盈虧平衡**：DAU 1500 後 12 個月內 TCO 反超
+
+### 🚨 main service 明文 secrets（高優先 security ticket）
+- **問題**：`certimate-titi` Cloud Run service 的 DATABASE_URL（含 password `CertiMate2026!`）、JWT_SECRET_KEY、SMTP_PASSWORD 是 `--set-env-vars` 明文，未走 Secret Manager
+- **違反**：[feedback_secret_manager.md](file:///Users/simon/.claude/projects/-Users-simon-certimate-project/memory/feedback_secret_manager.md)「生產 API key 必走 Secret Manager + 專用 runtime SA，禁 --set-env-vars 明文」
+- **發現於**：2026-04-29 cloud-engineer Pipeline Split epic 評估時
+- **修補**：把三個 env 改用 `--update-secrets DATABASE_URL=db-url:latest,...` 注入；建 Secret Manager 對應 secrets
+- **工期**：1h

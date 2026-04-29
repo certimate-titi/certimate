@@ -1407,3 +1407,6 @@ from .bloom_analysis.readmodel_then import (  # noqa: F401
     result_bloom_then as ba_result_then,
     admin_then as ba_admin_then,
 )
+
+# Cloud Tasks Pipeline Split (Worker B+ epic, 2026-04-29)
+from .tasks.commands import process_resource_task as _tasks_process_resource  # noqa: F401

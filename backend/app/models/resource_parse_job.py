@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -39,6 +39,7 @@ class ResourceParseJob(Base):
         failure_reason: 失敗原因（QA 空態判斷必查）
         critical_pages: 關鍵頁清單
         detected_content_type: 偵測內容型別
+        checkpoint_data: Worker checkpoint 進度（schema: {last_completed_step, step_data}）
     """
 
     __tablename__ = "resource_parse_jobs"
@@ -68,6 +69,9 @@ class ResourceParseJob(Base):
         ARRAY(Integer), nullable=False, server_default="{}"
     )
     detected_content_type: Mapped[str | None] = mapped_column(String(30))
+    checkpoint_data: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, server_default="{}"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

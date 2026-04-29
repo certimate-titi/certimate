@@ -16,7 +16,6 @@ from app.api.admin import router as admin_router
 from app.api.admin_finance import router as admin_finance_router
 from app.api.admin_moderation import router as admin_moderation_router
 from app.api.admin_settings import router as admin_settings_router
-from app.api.admin_platform_subjects import router as admin_platform_subjects_router
 from app.api.dashboard import router as dashboard_router
 from app.api.subjects import router as subjects_router
 from app.api.ecpay import router as ecpay_router
@@ -37,12 +36,9 @@ from app.api.prompt_template import router as prompt_template_router
 from app.api.prompt_template import internal_router as prompt_template_internal_router
 from app.api.account import router as account_router
 from app.api.practice import router as practice_router
-from app.api.exam_import import router as exam_import_router
-from app.api.exam_import_async import router as exam_import_async_router
-from app.api.exam_import_monitoring import router as exam_import_monitoring_router
 from app.api.users import router as users_router
 from app.api.cost_monitor import router as cost_monitor_router
-from app.api.resource_parse import router as resource_parse_router
+from app.api.tasks import router as tasks_router
 
 router = APIRouter()
 
@@ -60,7 +56,6 @@ router.include_router(admin_router, tags=["admin"])
 router.include_router(admin_finance_router, tags=["admin-finance"])
 router.include_router(admin_moderation_router, tags=["admin-moderation"])
 router.include_router(admin_settings_router, tags=["admin-settings"])
-router.include_router(admin_platform_subjects_router, tags=["admin-platform-subjects"])
 router.include_router(dashboard_router, tags=["dashboard"])
 router.include_router(subjects_router, tags=["subjects"])
 router.include_router(ecpay_router, tags=["ecpay"])
@@ -81,9 +76,6 @@ router.include_router(prompt_template_router, tags=["prompt-templates"])
 router.include_router(prompt_template_internal_router, tags=["prompt-templates-internal"])
 router.include_router(account_router, tags=["account"])
 router.include_router(practice_router, tags=["practice"])
-router.include_router(exam_import_router, tags=["exam-import"])
-router.include_router(exam_import_async_router, tags=["exam-import-async"])
-router.include_router(exam_import_monitoring_router, tags=["exam-import-monitoring"])
 router.include_router(users_router, tags=["users"])
 router.include_router(cost_monitor_router, tags=["cost-monitor"])
-router.include_router(resource_parse_router, tags=["resource-parse"])
+router.include_router(tasks_router, tags=["tasks"])

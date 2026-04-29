@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.deps import get_db, get_current_user_id, get_tenant_id
+from app.core.deps import get_db, get_current_user_id, get_current_user_with_tenant, PUBLIC_B2C_TENANT_ID
 from app.repositories.resource_repository import ResourceRepository
 from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
 from app.repositories.user_repository import UserRepository
@@ -33,65 +33,17 @@ def list_resources(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """列出使用者的所有資源。"""
+    """列出使用者的所有資源。
+
+    若提供 subject_id，會額外把該科目預載的考古題以虛擬資源（type=historical_exam）形式合併回傳。
+    """
     from app.models.resource import Resource
-    from app.models.subject_default_resource import SubjectDefaultResource
-    from app.models.user import User
-    from sqlalchemy import or_
+    from app.services.historical_markdown_service import HistoricalMarkdownService
 
-    user = db.query(User).filter_by(id=user_id).first()
-    user_inst_id = getattr(user, "org_id", None) if user else None
-
-    # PRD-033 US-02/03/04：混合四類
-    # 1) 個人 (personal + user_id=me)
-    # 2) 平台預設 (透過 subject_default_resources 關聯到 subject_id)
-    # 3) 機構 (institution + user 屬於該機構)
-    # 4) Ultra 分享 (shared + target_institution_id = user 的機構)
-    or_clauses = [(Resource.scope == "personal") & (Resource.user_id == user_id)]
-
-    if subject_id:
-        default_ids = [
-            row[0] for row in
-            db.query(SubjectDefaultResource.resource_id)
-            .filter(SubjectDefaultResource.subject_id == subject_id)
-            .all()
-        ]
-        if default_ids:
-            or_clauses.append(Resource.id.in_(default_ids))
-
-    if user_inst_id:
-        or_clauses.append(
-            (Resource.scope == "institution") & (Resource.institution_id == user_inst_id)
-        )
-        or_clauses.append(
-            (Resource.scope == "shared") & (Resource.target_institution_id == user_inst_id)
-        )
-
-    q = db.query(Resource).filter(or_(*or_clauses))
+    q = db.query(Resource).filter(Resource.user_id == user_id)
     if subject_id:
         q = q.filter(Resource.subject_id == subject_id)
-
-    # 排除使用者已軟隱藏的 Resource
-    from app.models.user_hidden_resource import UserHiddenResource
-    hidden_ids = [
-        row[0] for row in
-        db.query(UserHiddenResource.resource_id)
-        .filter(UserHiddenResource.user_id == user_id)
-        .all()
-    ]
-    if hidden_ids:
-        q = q.filter(~Resource.id.in_(hidden_ids))
-
     resources = q.order_by(Resource.created_at.desc()).all()
-
-    def _badge(r):
-        if str(r.scope) == "platform":
-            return "official_default"
-        if str(r.scope) == "shared":
-            return "edu_shared"
-        if str(r.scope) == "institution":
-            return "institution"
-        return "personal"
 
     items = [
         {
@@ -103,13 +55,29 @@ def list_resources(
             "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
             "youtube_url": r.youtube_url or "",
             "created_at": r.created_at.isoformat() if r.created_at else None,
-            "scope": r.scope.value if hasattr(r.scope, 'value') else r.scope,
-            "badge": _badge(r),
-            "is_readonly": str(r.user_id) != str(user_id),
-            "error_message": r.error_message,
         }
         for r in resources
     ]
+
+    if subject_id:
+        try:
+            historical = HistoricalMarkdownService(db).list_for_subject(subject_id)
+            for h in historical:
+                items.append({
+                    "id": f"hist:{h['id']}",
+                    "filename": h["name"],
+                    "resource_type": "historical_exam",
+                    "status": "ready",
+                    "subject_id": subject_id,
+                    "file_size_mb": None,
+                    "youtube_url": "",
+                    "created_at": None,
+                    "historical_exam_id": h["id"],
+                    "total_questions": h["total_questions"],
+                    "year": h["year"],
+                })
+        except Exception:
+            pass
 
     return {"resources": items}
 
@@ -170,14 +138,7 @@ def get_resource_chunks(
 
     SEED_USER_ID = "00000000-0000-0000-0000-000000000001"
 
-    # 虛擬資源（如考古題題庫 hist:UUID）不在 resources 表，直接回 404
-    # 防禦前端不慎傳入此類 id 觸發 SQLAlchemy invalid UUID 拋 500
-    try:
-        rid_uuid = uuid.UUID(resource_id)
-    except (ValueError, TypeError):
-        raise HTTPException(status_code=404, detail="資源不存在")
-
-    resource = db.query(Resource).filter(Resource.id == rid_uuid).first()
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
 
@@ -224,31 +185,16 @@ def delete_resource(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """刪除資源及其關聯的 chunks 和 knowledge nodes。
-
-    非擁有者（如平台預設 / 機構分享 Resource）→ 軟隱藏：寫入 user_hidden_resources，
-    回 200。這樣該使用者的 /resources 與知識地圖都不再看到，但不影響其他使用者。
-    """
+    """刪除資源及其關聯的 chunks 和 knowledge nodes。"""
     from app.models.resource import Resource
     from app.models.knowledge_node import KnowledgeNode
     from app.models.resource_chunk import ResourceChunk
-    from app.models.user_hidden_resource import UserHiddenResource
 
-    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    resource = db.query(Resource).filter(
+        Resource.id == resource_id, Resource.user_id == user_id
+    ).first()
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
-
-    if str(resource.user_id) != str(user_id):
-        # 非擁有者 → 軟隱藏（idempotent）
-        existing_hide = db.query(UserHiddenResource).filter_by(
-            user_id=uuid.UUID(user_id), resource_id=resource.id
-        ).first()
-        if not existing_hide:
-            db.add(UserHiddenResource(
-                user_id=uuid.UUID(user_id), resource_id=resource.id
-            ))
-            db.commit()
-        return {"message": "資源已從您的清單中隱藏"}
 
     rid = resource.id
     subject_id = str(resource.subject_id) if resource.subject_id else None
@@ -352,7 +298,6 @@ def retry_upload(
 def upload_resource(
     request: UploadResourceRequest,
     user_id: str = Depends(get_current_user_id),
-    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
     """上傳資源（JSON metadata）。"""
@@ -362,58 +307,19 @@ def upload_resource(
         subject_id=request.subject_id,
         file_size_mb=request.file_size_mb,
         resource_type=request.type,
-        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
     return result
 
 
-def _presubmit_validate_pdf(pdf_bytes: bytes) -> str | None:
-    """上傳時同步預檢 PDF：可解析性 + 版權關鍵字。
-
-    發現問題回傳錯誤訊息，通過則回傳 None。讓用戶在上傳當下就看到具體原因，
-    而不是上傳成功後到背景處理才失敗。
-    """
-    try:
-        import fitz
-    except Exception:
-        return None  # PyMuPDF 不可用 → 跳過預檢，交背景處理
-    try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    except Exception:
-        return "PDF 檔案損毀或無法解析，請確認檔案完整後重新上傳。"
-    try:
-        page_count = len(doc)
-        if page_count == 0:
-            return "PDF 沒有任何頁面，請重新上傳有效文件。"
-        sample_text = ""
-        for i in range(min(2, page_count)):
-            sample_text += doc[i].get_text() + "\n"
-    finally:
-        doc.close()
-
-    from app.services.document_processing_service import COPYRIGHT_KEYWORDS
-    sample_lower = sample_text.lower()
-    for kw in COPYRIGHT_KEYWORDS:
-        if kw.lower() in sample_lower:
-            return f"偵測到版權限制關鍵字「{kw}」，請確認您擁有此文件的合法使用授權後重新上傳。"
-
-    if not sample_text.strip():
-        return "PDF 前兩頁無法擷取文字（可能為純圖片或掃描檔）。請先 OCR 後再上傳，或升級至 PRO_PLUS 使用圖片辨識功能。"
-
-    return None
-
-
-@router.post("/resources/upload-file")
+@router.post("/resources/upload-file", status_code=202)
 async def upload_resource_file(
     file: UploadFile = File(...),
     subject_id: str = Form(...),
     filename: Optional[str] = Form(None),
     resource_type: Optional[str] = Form(None),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
     user_id: str = Depends(get_current_user_id),
-    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
     db: Session = Depends(get_db),
 ):
@@ -421,16 +327,13 @@ async def upload_resource_file(
 
     接受實際檔案，存入 Storage Service，設定 gcs_path。
     本地開發存到 uploads/，雲端存到 GCS。
+    回傳 202 Accepted：資源已建立，處理工作已送至背景佇列。
     """
+    from app.services.cloud_tasks_service import enqueue_process_resource
+
     actual_filename = filename or file.filename or "unnamed"
     file_data = await file.read()
     file_size_mb = len(file_data) / (1024 * 1024)
-
-    # 上傳時同步預檢：解析性 + 版權關鍵字（只對 PDF，發現問題立即回 400）
-    if actual_filename.lower().endswith(".pdf"):
-        precheck_error = _presubmit_validate_pdf(file_data)
-        if precheck_error:
-            raise HTTPException(status_code=400, detail={"message": precheck_error})
 
     # 先做驗證（用原有 service）
     result = service.upload(
@@ -439,7 +342,6 @@ async def upload_resource_file(
         subject_id=subject_id,
         file_size_mb=file_size_mb,
         resource_type=resource_type,
-        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -466,28 +368,28 @@ async def upload_resource_file(
     result["gcs_path"] = storage_path
     result["file_size_bytes"] = len(file_data)
 
-    # 自動觸發背景文件處理（解析→切塊→embedding→知識樹）
-    background_tasks.add_task(_process_resource_background, resource_id, user_id, tenant_id)
+    # 送至 Cloud Tasks（或 inline fallback — 依 BACKGROUND_PROCESSOR env 決定）
+    tenant_id = PUBLIC_B2C_TENANT_ID  # 預設 B2C 租戶；B2B 流程需從 JWT 取得
+    enqueue_process_resource(
+        resource_id=resource_id,
+        user_id=user_id,
+        tenant_id=tenant_id,
+    )
 
     return result
 
 
-def _process_resource_background(resource_id: str, user_id: str, tenant_id: str | None = None):
-    """背景執行文件處理 pipeline（獨立 DB session）。
-
-    必須呼叫 set_rls_tenant — 否則新開的 session 繼承連線池上一次的 GUC，
-    造成 RLS policy cast 失敗或跨租戶污染（PRD-033 §5 US-05）。
-    """
+def _process_resource_background(resource_id: str, user_id: str):
+    """背景執行文件處理 pipeline（獨立 DB session）。"""
     import logging
     logger = logging.getLogger(__name__)
-    from app.core.deps import _SessionLocal, set_rls_tenant, PUBLIC_B2C_TENANT_ID
+    from app.core.deps import _SessionLocal
     if _SessionLocal is None:
         logger.error("[BG Process] Session factory not initialized")
         return
 
     db = _SessionLocal()
     try:
-        set_rls_tenant(db, tenant_id or PUBLIC_B2C_TENANT_ID)
         from app.services.document_processing_service import DocumentProcessingService
         svc = DocumentProcessingService(db)
         result = svc.process_resource(uuid.UUID(resource_id))
@@ -495,92 +397,36 @@ def _process_resource_background(resource_id: str, user_id: str, tenant_id: str 
             logger.error(f"[BG Process] resource={resource_id} failed: {result.get('message')}")
         else:
             logger.info(f"[BG Process] resource={resource_id} completed: {result.get('chunks_created', 0)} chunks")
-
-        # 知識樹處理完成後，順便觸發 LLM 解析（學習鷹架 + T1/T2/T3 候選題）
-        try:
-            from app.models.resource import Resource
-            from app.services.resource_parse_service import create_parse_job, run_parse_job
-            resource = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
-            if resource and resource.gcs_path:
-                job = create_parse_job(db, resource)
-                db.commit()
-                outcome = run_parse_job(db, job.id)
-                db.commit()
-                logger.info(f"[BG Parse] resource={resource_id} parse outcome={outcome.status}")
-
-                # 只在 parse_job SUCCESS 時 cleanup 原始檔，避免失敗也刪檔導致無法 retry
-                from app.models.resource_parse_job import ParseJobStatus
-                if outcome and outcome.status == ParseJobStatus.SUCCESS.value:
-                    try:
-                        from app.services.document_processing_service import DocumentProcessingService
-                        DocumentProcessingService(db)._cleanup_original_file(resource)
-                    except Exception as ce:
-                        logger.warning(f"[BG Cleanup] resource={resource_id} cleanup failed (non-fatal): {ce}")
-                else:
-                    logger.info(f"[BG Cleanup] resource={resource_id} skipped (parse not success)")
-            else:
-                logger.info(f"[BG Parse] resource={resource_id} skipped (no gcs_path)")
-        except Exception as e:
-            logger.exception(f"[BG Parse] resource={resource_id} parse failed: {e}")
-            db.rollback()
     except Exception as e:
         logger.exception(f"[BG Process] resource={resource_id} exception: {e}")
     finally:
-        # Bug #2 兜底：若 background task 異常終止（OOM SIGKILL / uncaught exception
-        # / crash），resource 會永遠 stuck PROCESSING。在 finally 強制檢查並回寫 FAILED。
-        # 注意：這個 finally 在 OOM SIGKILL 情境下**不會**執行（容器整個被殺）；
-        # 真正解決需 watchdog 掃 stale PROCESSING（見 Bug #2 完整修補的 watchdog）。
-        # 此處兜底處理「Python exception 未被內層 try 接住」的情境。
-        try:
-            from app.models.resource import Resource as _Resource
-            from app.models.resource import ResourceStatus as _ResourceStatus
-            stuck = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
-            if stuck and stuck.status == _ResourceStatus.PROCESSING:
-                stuck.status = _ResourceStatus.FAILED
-                stuck.error_message = (
-                    stuck.error_message or "背景處理異常終止（finally fallback）"
-                )[:500]
-                db.commit()
-                logger.warning(
-                    f"[BG Process] resource={resource_id} forced FAILED (was stuck PROCESSING)"
-                )
-        except Exception as fe:
-            logger.warning(
-                f"[BG Process] resource={resource_id} fallback status update failed: {fe}"
-            )
         db.close()
 
 
-@router.post("/resources/youtube")
+@router.post("/resources/youtube", status_code=202)
 def submit_youtube(
     request: SubmitYoutubeRequest,
-    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
-    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
-    """submit youtube。
+    """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。"""
+    from app.services.cloud_tasks_service import enqueue_process_resource
 
-    此 endpoint 對應 `submit_youtube` 操作。
-
-    Args:
-        service: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     result = service.submit_youtube(
         user_id=user_id,
         youtube_url=request.youtube_url,
         subject_id=request.subject_id,
-        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
 
-    # 自動觸發背景文件處理
+    # 送至 Cloud Tasks（或 inline fallback）
     if result.get("id"):
-        background_tasks.add_task(_process_resource_background, result["id"], user_id, tenant_id)
+        enqueue_process_resource(
+            resource_id=result["id"],
+            user_id=user_id,
+            tenant_id=PUBLIC_B2C_TENANT_ID,
+        )
 
     return result
 
@@ -617,17 +463,6 @@ def complete_parsing(
     user_id: str = Depends(get_current_user_id),
     service: KnowledgeMapService = Depends(_get_knowledge_map_service),
 ):
-    """complete parsing。
-
-    此 endpoint 對應 `complete_parsing` 操作。
-
-    Args:
-        resource_id: 參數。
-        service: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     result = service.complete_parsing(resource_id=resource_id, user_id=user_id)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -640,17 +475,6 @@ def generate_map(
     user_id: str = Depends(get_current_user_id),
     service: KnowledgeMapService = Depends(_get_knowledge_map_service),
 ):
-    """generate map。
-
-    此 endpoint 對應 `generate_map` 操作。
-
-    Args:
-        resource_id: 參數。
-        service: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     result = service.generate_map(resource_id=resource_id, user_id=user_id)
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -676,25 +500,14 @@ def _handle_chunked_result(result: dict):
 def init_chunked_upload(
     body: InitChunkedUploadRequest,
     user_id: str = Depends(get_current_user_id),
-    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db),
 ):
-    """init chunked upload。
-
-    此 endpoint 對應 `init_chunked_upload` 操作。
-
-    Args:
-        body: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     file_size = body.file_size
     if file_size is None and body.file_size_mb is not None:
         file_size = body.file_size_mb * 1024 * 1024
-    result = service.init_upload(user_id=user_id, filename=body.filename, file_size=file_size or 0, subject_id=body.subject_id, tenant_id=tenant_id)
+    result = service.init_upload(user_id=user_id, filename=body.filename, file_size=file_size or 0, subject_id=body.subject_id)
     return _handle_chunked_result(result)
 
 
@@ -706,18 +519,6 @@ async def upload_chunk(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """upload chunk。
-
-    此 endpoint 對應 `upload_chunk` 操作。
-
-    Args:
-        upload_id: 參數。
-        chunk_index: 參數。
-        file: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     from app.services.chunked_upload_service import ChunkedUploadService
     chunk_data = await file.read()
     service = ChunkedUploadService(db)
@@ -731,16 +532,6 @@ def get_chunked_upload_status(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """get chunked upload status。
-
-    此 endpoint 對應 `get_chunked_upload_status` 操作。
-
-    Args:
-        upload_id: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     result = service.get_upload_status(user_id=user_id, upload_id=upload_id)
@@ -750,115 +541,10 @@ def get_chunked_upload_status(
 @router.post("/resources/chunked/{upload_id}/merge")
 def merge_chunks(
     upload_id: str,
-    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """合併分片並觸發完整背景 pipeline（Spec 02 §「大檔分片與小檔上傳最終都應跑完整 Pipeline」）。"""
     from app.services.chunked_upload_service import ChunkedUploadService
     service = ChunkedUploadService(db)
     result = service.merge_chunks(user_id=user_id, upload_id=upload_id)
-    # 與 small file 上傳路徑一致：合併完成後觸發完整 pipeline（chunking + scaffold + candidates）
-    if isinstance(result, dict) and result.get("resource_id"):
-        from app.models.resource import Resource
-        resource = db.query(Resource).filter_by(id=uuid.UUID(result["resource_id"])).first()
-        tenant_id = str(resource.tenant_id) if resource and resource.tenant_id else None
-        background_tasks.add_task(_process_resource_background, result["resource_id"], user_id, tenant_id)
     return _handle_chunked_result(result)
-
-
-# ========== PRD-033 Ultra 分享給 EDU ==========
-
-@router.get("/institutions/shareable")
-def list_shareable_institutions(
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    """列出當前 ULTRA 用戶可分享資源的目標機構（含學生數）— Spec 11 §ShareModal。
-
-    回傳：
-      {"institutions": [{"id", "name", "student_count"}]}
-    """
-    from app.models.user import User, UserRole
-    from app.models.institution import Institution
-
-    user = db.query(User).filter_by(id=user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
-
-    plan = (getattr(user, "subscription_tier", None) or getattr(user, "plan", "") or "").upper()
-    if "ULTRA" not in plan:
-        raise HTTPException(status_code=403, detail={"message": "僅 ULTRA 方案可分享資源給機構"})
-
-    # 列出所有 active institutions（已 DPA 簽署）；計算各機構 EDU 學生數
-    institutions = db.query(Institution).filter(
-        Institution.dpa_signed_at.isnot(None)
-    ).order_by(Institution.name).all()
-
-    # 學生隸屬透過 student_groups + student_group_members 關聯
-    from app.models.student_group import StudentGroup, StudentGroupMember
-
-    result = []
-    for inst in institutions:
-        student_count = db.query(StudentGroupMember.user_id).join(
-            StudentGroup, StudentGroup.id == StudentGroupMember.group_id
-        ).filter(StudentGroup.institution_id == inst.id).distinct().count()
-        result.append({
-            "id": str(inst.id),
-            "name": inst.name,
-            "student_count": student_count,
-        })
-    return {"institutions": result}
-
-
-class ShareToInstitutionRequest(BaseModel):
-    target_institution_id: str
-
-
-@router.post("/resources/{resource_id}/share-to-institution")
-def share_to_institution(
-    resource_id: str,
-    body: ShareToInstitutionRequest,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    """Ultra 用戶把 personal 資源分享給 EDU 機構（scope→shared）。PRD-033 US-03。"""
-    from app.models.resource import Resource
-    from app.models.user import User
-
-    user = db.query(User).filter_by(id=user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
-
-    plan = (getattr(user, "subscription_tier", None) or getattr(user, "plan", "") or "").upper()
-    if "ULTRA" not in plan:
-        raise HTTPException(status_code=403, detail={"message": "僅 ULTRA 方案可分享資源給 EDU"})
-
-    resource = db.query(Resource).filter_by(id=resource_id, user_id=user_id).first()
-    if not resource:
-        raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
-
-    resource.scope = "shared"
-    resource.target_institution_id = uuid.UUID(body.target_institution_id)
-    db.commit()
-    return {"ok": True, "resource_id": str(resource.id), "scope": "shared",
-            "target_institution_id": body.target_institution_id}
-
-
-@router.delete("/resources/{resource_id}/share")
-def revoke_share(
-    resource_id: str,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    """撤回 EDU 分享。PRD-033 US-03。"""
-    from app.models.resource import Resource
-    resource = db.query(Resource).filter_by(id=resource_id, user_id=user_id).first()
-    if not resource:
-        raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
-    if str(resource.scope) != "shared":
-        raise HTTPException(status_code=400, detail={"message": "該資源未處於分享狀態"})
-    resource.scope = "personal"
-    resource.target_institution_id = None
-    db.commit()
-    return {"ok": True, "resource_id": str(resource.id), "scope": "personal"}
