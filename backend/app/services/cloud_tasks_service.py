@@ -154,15 +154,18 @@ def _enqueue_cloud_tasks(
             resource_id,
         )
 
-    except ImportError:
-        logger.warning(
-            "[cloud_tasks] google-cloud-tasks SDK 未安裝，fallback 至 inline 模式（resource=%s）",
-            resource_id,
+    except ImportError as ie:
+        # 升級為 ERROR：production 必須裝 SDK，靜默 fallback 會隱藏部署問題（RC1 經驗）
+        logger.error(
+            "[cloud_tasks] google-cloud-tasks SDK 未安裝（CRITICAL）— "
+            "production 必須在 requirements.txt 含 google-cloud-tasks。"
+            "暫時 fallback 至 inline 模式但管線會塞住 main service（resource=%s）: %s",
+            resource_id, ie,
         )
         _enqueue_inline(resource_id, user_id)
 
     except Exception as exc:
-        logger.warning(
+        logger.exception(
             "[cloud_tasks] enqueue 失敗，fallback 至 inline 模式（resource=%s）: %s",
             resource_id,
             exc,

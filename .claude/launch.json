@@ -2,6 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "frontend-cloud-api",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["/opt/homebrew/bin/npm", "run", "dev"],
+      "cwd": "frontend",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "https://certimate-titi-nfwnajqofa-de.a.run.app/api/v1",
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+      },
+      "port": 3000,
+      "autoPort": true
+    },
+    {
       "name": "frontend-dev",
       "runtimeExecutable": "/opt/homebrew/bin/node",
       "runtimeArgs": ["/opt/homebrew/bin/npm", "run", "dev"],

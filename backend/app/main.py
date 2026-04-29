@@ -236,6 +236,23 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": {"message": "必要參數未提供"}},
     )
 
+
+# Generic exception handler — 確保所有未捕捉例外都印 traceback 到 stdout
+# 對應 RC2（2026-04-29 cloud QA）：原本 silent server error 沒 traceback 無法 debug
+import logging as _err_logging
+_err_logger = _err_logging.getLogger("app.main.unhandled")
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception):
+    _err_logger.exception(
+        "Unhandled exception at %s %s: %s",
+        request.method, request.url.path, exc,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": {"message": f"Internal Server Error: {type(exc).__name__}"}},
+    )
+
 # 靜態檔案：考古題圖像（爬蟲 PyMuPDF 抽出），供題目卡渲染
 _hist_dir = Path(__file__).resolve().parent.parent / "data" / "historical_questions"
 if _hist_dir.exists():
