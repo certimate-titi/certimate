@@ -313,6 +313,14 @@ def process_resource_task(
     # 1. 驗證 OIDC token
     _verify_oidc_token(authorization)
 
+    # RC13 修補（2026-04-30）：設 RLS tenant_id GUC
+    # tasks.py 用 Depends(get_db) 取 raw session，沒套用 set_rls_tenant
+    # → process_resource 內部各服務雖能跑（service 內自設），但 tasks.py
+    # 直接 db.query() 時 RLS policy 會擋（既有 _process_resource_background
+    # 在 line 490 都會 set_rls_tenant 確保 GUC 設好）
+    from app.core.deps import set_rls_tenant, PUBLIC_B2C_TENANT_ID
+    set_rls_tenant(db, payload.tenant_id or PUBLIC_B2C_TENANT_ID)
+
     # 2. 驗證 resource 存在
     resource_id = payload.resource_id
     user_id = payload.user_id
