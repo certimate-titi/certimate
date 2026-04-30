@@ -160,11 +160,25 @@ def step_impl_view_audit_log_list(context, email):
 
 @when('點擊「下一頁」按鈕')
 def step_impl_next_page(context):
-    """切換至下一頁稽核日誌。"""
+    """切換至下一頁（用戶列表或稽核日誌，依 context 決定）。"""
     token = context.memo.get("admin_token")
-    current_page = context.memo.get("audit_current_page", 1)
-    next_page = current_page + 1
-    if token:
+    if not token:
+        return
+
+    if "user_list_current_page" in context.memo:
+        # 用戶管理列表分頁
+        current_page = context.memo.get("user_list_current_page", 1)
+        next_page = current_page + 1
+        response = context.api_client.get(
+            f"/api/v1/admin/users?page={next_page}&per_page=20",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        context.last_response = response
+        context.memo["user_list_current_page"] = next_page
+    else:
+        # 稽核日誌分頁（預設）
+        current_page = context.memo.get("audit_current_page", 1)
+        next_page = current_page + 1
         response = context.api_client.get(
             f"/api/v1/admin/system-settings/audit-logs?page={next_page}&per_page=50",
             headers={"Authorization": f"Bearer {token}"},
