@@ -236,13 +236,18 @@ def run_process_resource_pipeline(
         parse_outcome_status = None
         try:
             print(f"[FP] entering RC11 inner try resource={resource_id}", flush=True)
-            # RC15：用全新獨立 session 跑 parse_job，避開 process_resource 後 db
-            # session 的髒狀態（commits / rollbacks 留下的 transaction 狀態）
-            from app.core.deps import _SessionLocal as _SL, set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT
+            # RC16：dynamic access app.core.deps._SessionLocal（不用 from import as
+            # 因為 _SessionLocal 是 module-level None → set_session_factory 改寫，
+            # 早期 import 會固化在 None 上）
+            from app.core import deps as _deps
+            from app.core.deps import set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT
             from app.models.resource import Resource as _Resource
             from app.services.resource_parse_service import create_parse_job, run_parse_job
-            print(f"[FP] RC11 imports OK", flush=True)
-            parse_db = _SL()
+            print(f"[FP] RC11 imports OK, _SessionLocal={_deps._SessionLocal}", flush=True)
+            if _deps._SessionLocal is None:
+                print(f"[FP] RC11 ABORT: _SessionLocal is None (factory not initialized)", flush=True)
+                raise RuntimeError("_SessionLocal not initialized in worker")
+            parse_db = _deps._SessionLocal()
             print(f"[FP] RC11 new session created", flush=True)
             try:
                 _set_rls(parse_db, payload.tenant_id or _DEFAULT)
