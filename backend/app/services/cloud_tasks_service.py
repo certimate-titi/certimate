@@ -142,9 +142,12 @@ def _enqueue_cloud_tasks(
         }
 
         if oidc_sa:
+            # RC7 修補（2026-04-30）：Cloud Run OIDC audience 必須是 service base URL
+            # （不含 path），否則 platform 層 audience 校驗 401。target_url 含 path
+            # `/api/v1/tasks/process-resource` 不可當 audience。
             task["http_request"]["oidc_token"] = {
                 "service_account_email": oidc_sa,
-                "audience": target_url,
+                "audience": worker_url.rstrip("/"),
             }
 
         response = client.create_task(request={"parent": parent, "task": task})
