@@ -63,8 +63,10 @@ def _verify_oidc_token(authorization: str | None) -> None:
         from google.oauth2 import id_token  # type: ignore[import]
         import google.auth.transport.requests  # type: ignore[import]
 
+        # RC9 修補（2026-04-30）：audience 必須是 worker service base URL（不含 path）
+        # 與 main 端 cloud_tasks_service 簽發時一致；Cloud Run platform 校驗也接受同形式。
         worker_url = os.environ.get("WORKER_SERVICE_URL", "")
-        audience = f"{worker_url.rstrip('/')}/api/v1/tasks/process-resource"
+        audience = worker_url.rstrip("/")
         request_obj = google.auth.transport.requests.Request()
         id_token.verify_oauth2_token(token, request_obj, audience)
 
