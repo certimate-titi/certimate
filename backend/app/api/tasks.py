@@ -233,48 +233,11 @@ def run_process_resource_pipeline(
         # 原 inline _process_resource_background 在 chunk/embed/knowledge 後會跑
         # create_parse_job + run_parse_job 產生學習鷹架（scaffolds）；refactor 為
         # worker 時遺漏。若無此步 scaffolds=0 永遠是「合理空態」假象。
-        parse_outcome_status = None
-        try:
-            print(f"[FP] entering RC11 inner try resource={resource_id}", flush=True)
-            # RC16：dynamic access app.core.deps._SessionLocal（不用 from import as
-            # 因為 _SessionLocal 是 module-level None → set_session_factory 改寫，
-            # 早期 import 會固化在 None 上）
-            from app.core import deps as _deps
-            from app.core.deps import set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT
-            from app.models.resource import Resource as _Resource
-            from app.services.resource_parse_service import create_parse_job, run_parse_job
-            print(f"[FP] RC11 imports OK, _SessionLocal={_deps._SessionLocal}", flush=True)
-            if _deps._SessionLocal is None:
-                print(f"[FP] RC11 ABORT: _SessionLocal is None (factory not initialized)", flush=True)
-                raise RuntimeError("_SessionLocal not initialized in worker")
-            parse_db = _deps._SessionLocal()
-            print(f"[FP] RC11 new session created", flush=True)
-            try:
-                _set_rls(parse_db, payload.tenant_id or _DEFAULT)
-                print(f"[FP] RC11 RLS set on new session", flush=True)
-                resource = parse_db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
-                print(f"[FP] RC11 query found={resource is not None}", flush=True)
-                if resource and resource.gcs_path:
-                    job = create_parse_job(parse_db, resource)
-                    parse_db.commit()
-                    print(f"[FP] RC11 parse_job created id={job.id}", flush=True)
-                    outcome = run_parse_job(parse_db, job.id)
-                    parse_db.commit()
-                    print(f"[FP] RC11 run_parse_job status={outcome.status}", flush=True)
-                    parse_outcome_status = outcome.status
-                else:
-                    print(f"[FP] RC11 skipped: no resource or no gcs_path", flush=True)
-            finally:
-                parse_db.close()
-        except Exception as parse_exc:
-            print(f"[FP] RC11 EXCEPTION: {type(parse_exc).__name__}: {str(parse_exc)[:300]}", flush=True)
-
-        logger.info(
-            "[pipeline] resource=%s completed: %s chunks, parse=%s",
-            resource_id,
-            result.get("chunks_created", 0),
-            parse_outcome_status or "skipped",
-        )
+        # RC17（2026-04-30）：parse_job 邏輯**移出 run_process_resource_pipeline**
+        # 改在 handler 端執行（process_resource 之後）。理由：
+        # - 多輪 fingerprint 顯示「entering RC11 inner try」print 為最後可見輸出，
+        #   後續 print/import/logger 全失蹤（未捕獲 exception 也未 hang），症狀奇異
+        # - 在更淺層（handler）做避開深層 try 互動
         return result
 
     except Exception as exc:
@@ -372,8 +335,38 @@ def process_resource_task(
             detail={"message": result.get("message", "資源處理失敗")},
         )
 
+    # RC17（2026-04-30）：parse_job 自動觸發 — 從 pipeline runner 移到 handler
+    # 用既有 `resource` 變數（line 337 已查），不另開 session，避開深層 try 怪事
+    parse_outcome_status = None
+    try:
+        print(f"[FP-RC17] handler-level parse_job start resource={resource_id}", flush=True)
+        from app.services.resource_parse_service import create_parse_job, run_parse_job
+        # 重設 RLS GUC（process_resource 內部 commit 可能影響）
+        from app.core.deps import set_rls_tenant as _rrls
+        _rrls(db, payload.tenant_id or PUBLIC_B2C_TENANT_ID)
+        # 重 fetch resource（detached state 後 ORM 物件可能 stale）
+        resource_fresh = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
+        print(f"[FP-RC17] resource fetched found={resource_fresh is not None}", flush=True)
+        if resource_fresh and resource_fresh.gcs_path:
+            job = create_parse_job(db, resource_fresh)
+            db.commit()
+            print(f"[FP-RC17] parse_job created id={job.id}", flush=True)
+            outcome = run_parse_job(db, job.id)
+            db.commit()
+            parse_outcome_status = outcome.status
+            print(f"[FP-RC17] run_parse_job done status={outcome.status}", flush=True)
+        else:
+            print(f"[FP-RC17] skipped no gcs_path", flush=True)
+    except Exception as e:
+        print(f"[FP-RC17] EXCEPTION {type(e).__name__}: {str(e)[:300]}", flush=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
     return {
         "ok": True,
         "resource_id": resource_id,
         "chunks_created": result.get("chunks_created", 0),
+        "parse_status": parse_outcome_status,
     }
