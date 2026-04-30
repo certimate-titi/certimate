@@ -485,6 +485,7 @@ Table exams {
   submitted_at timestamptz
   custom_point_ratio json [note: '教師自訂節點出題比例']
   custom_bloom_ratio json [note: '教師自訂 Bloom 配比']
+  question_order_mode varchar(20) [default: 'interleaved', note: 'interleaved=交錯練習 / sequential=依難度排列 / grouped=集中練習']
   created_at timestamptz [default: `now()`]
 }
 

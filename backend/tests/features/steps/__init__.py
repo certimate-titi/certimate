@@ -515,6 +515,7 @@ from .onboarding.aggregate_given import parent_child_subjects  # noqa: F401
 from .onboarding.aggregate_given import subject_in_category  # noqa: F401
 from .onboarding.aggregate_given import subject_with_level  # noqa: F401
 from .onboarding.aggregate_given import current_category  # noqa: F401
+from .onboarding.aggregate_given import custom_subject_owner  # noqa: F401
 
 # Onboarding — commands
 from .onboarding.commands import view_status  # noqa: F401
@@ -544,6 +545,7 @@ from .onboarding.commands import add_custom_subject  # noqa: F401
 from .onboarding.commands import switch_subject_level  # noqa: F401
 from .onboarding.commands import click_edit_section  # noqa: F401
 from .onboarding.commands import switch_category  # noqa: F401
+from .onboarding.commands import create_custom_subject  # noqa: F401
 
 # Onboarding — aggregate_then
 from .onboarding.aggregate_then import journeys_created  # noqa: F401
@@ -558,6 +560,7 @@ from .onboarding.aggregate_then import journey_active  # noqa: F401
 from .onboarding.aggregate_then import journey_contains  # noqa: F401
 from .onboarding.aggregate_then import journey_archived_by_name  # noqa: F401
 from .onboarding.aggregate_then import active_journey_excludes  # noqa: F401
+from .onboarding.aggregate_then import custom_subject_assertions  # noqa: F401
 
 # Onboarding — readmodel_then
 from .onboarding.readmodel_then import onboarding_status  # noqa: F401

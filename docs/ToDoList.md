@@ -1,7 +1,7 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
-**最後更新**：2026-04-30 自動巡檢
+**最後更新**：2026-05-01 QA 自動巡檢
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -36,7 +36,10 @@
 - [ ] `/exam/workspace` — Feature 05 Scenario「AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 實作（首見：2026-04-29）
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
 - [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 元素（首見：2026-04-29）
-- [ ] `/pricing` — PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false，與 Feature 03 明定 PRO_PLUS_399 可使用完整 AI 教練（含深度策略分析、後端切換 Claude 3.5 Sonnet）相違背；定價頁說明與規格不一致，可能誤導用戶升級決策（首見：2026-04-30）
+- [ ] `/pricing` — PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false，與 Feature 03 明定 PRO_PLUS_399 可使用完整 AI 教練（含深度策略分析、後端切換 Claude 3.5 Sonnet）相違背；定價頁說明與規格不一致，可能誤導用戶升級決策（首見：2026-04-30，最後確認：2026-05-01）
+- [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
+- [ ] `/exam/results` — Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符（已實作）；需更新 Feature Scenario 以反映已實作狀態，防止回歸測試誤判（首見：2026-05-01）
+- [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）目前存 localStorage，Feature 22 規格描述為 API 操作；規格與實作不同步，需統一（首見：2026-05-01）
 
 ---
 
@@ -50,6 +53,11 @@
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
 - [x] `/review` — ~~KaTeX 渲染待確認~~ MathContent component 確認使用 `rehype-katex` + `remark-math` + `katex/dist/katex.min.css`，透過 ReactMarkdown 實作完整 KaTeX 數學公式渲染；Feature 07 仍無對應 Scenario 但功能實作完整（確認：2026-04-30 自動巡檢）
 - [ ] `/knowledge` — 「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal，屬跨頁面導航行為；Feature 03 無 Scenario 覆蓋此互動路徑，導航目標變更時無回歸保護（首見：2026-04-28）
+- [ ] `/exam/workspace` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，workspace 頁面無任何對應 UI 元素（首見：2026-05-01）
+- [ ] `/practice` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，practice answering phase 無任何對應 UI 元素（首見：2026-05-01）
+- [ ] `/exam/setup` — Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能（首見：2026-05-01）
+- [ ] `/exam/setup` — Feature 04 規格描述測驗生成應使用 SSE 推送即時進度；前端目前使用 `ExamLoadingOverlay` 模擬假階段動畫，未實際訂閱 SSE 端點（首見：2026-05-01）
+- [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）需改為後端 API 儲存（目前僅存 localStorage）；Feature 22 規格描述為 API 操作，規格與實作不同步（首見：2026-05-01）
 - [x] `/practice` — ~~Feature 32 要求空節點空態有「選擇其他節點」與「回知識圖譜」兩個操作按鈕~~ 兩個按鈕皆已實作於 `page.tsx` line 384（選擇其他節點）和 line 388-393（回知識圖譜，連結至 `/knowledge`）（確認：2026-04-26 自動巡檢）
 - [x] `/account/resource-library` — FAILED 資源 failure_reason 已透過 title tooltip 向用戶呈現（hover「解析失敗」可見詳細原因），並透過 resourceParseService.getStatus() 主動輪詢（確認：2026-04-25 自動巡檢）
 
@@ -68,6 +76,8 @@
 - [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
 - [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29）
 - [ ] `/account/weekly-reports` — `reports.length === 0` 空態顯示「尚無週報」，未查詢週報產生 job 是否有失敗記錄，無法區分「真正無週報」vs「cron job 失敗導致週報未產生」；違反 Layer 3 規則（首見：2026-04-30）
+- [ ] `/knowledge/mindmap` — `mindMapNodes.length === 0` 空態顯示「上傳教材後系統會自動生成」，未查詢 `resource_parse_jobs` 取得 failure_reason，無法區分「尚未上傳」vs「parse job 失敗」；違反 Layer 3 規則（首見：2026-05-01）
+- [ ] `/knowledge` — documents 與 nodes 皆空時顯示靜態提示，未查詢 `resource_parse_jobs` 確認是否有 failed job，無法區分「正常空態」vs「解析失敗導致空態」；違反 Layer 3 規則（首見：2026-05-01）
 - [x] `/verify-email/sent` — ~~resend 重寄失敗時 `catch {}` block 為空（silent fail），使用者無任何錯誤提示~~ 已修復：新增 `resendError` state，catch block 顯示「驗證信寄送失敗，請稍後再試。」紅色提示框，同時重設 cooldown 讓使用者可立即重試（修復：2026-04-29 自動巡檢）
 
 ---

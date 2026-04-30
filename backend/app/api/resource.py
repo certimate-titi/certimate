@@ -438,11 +438,14 @@ def submit_youtube(
 @router.post("/resources/{resource_id}/process")
 def process_resource(
     resource_id: str,
-    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db),
 ):
-    """觸發文件處理（解析→切塊→embedding）。非同步執行。"""
+    """觸發文件處理（解析→切塊→embedding）。非同步執行，立即回 202 queued。
+    F02 修補（2026-05-01）：改非同步避免 500（gcs_path 未設等情境）。
+    走既有 cloud_tasks_service.enqueue_process_resource 路徑（與 upload-file 一致）。
+    """
     from app.models.resource import Resource
     resource = db.query(Resource).filter(
         Resource.id == resource_id,
@@ -451,14 +454,13 @@ def process_resource(
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
 
-    from app.services.document_processing_service import DocumentProcessingService
-    service = DocumentProcessingService(db)
-
-    # Run processing synchronously for now (BackgroundTasks shares the same db session)
-    result = service.process_resource(uuid.UUID(resource_id))
-    if result.get("error"):
-        raise HTTPException(status_code=500, detail=result["message"])
-    return {"status": "completed", **result}
+    from app.services.cloud_tasks_service import enqueue_process_resource
+    enqueue_process_resource(
+        resource_id=resource_id,
+        user_id=user_id,
+        tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+    )
+    return {"status": "queued", "resource_id": resource_id}
 
 
 @router.post("/resources/{resource_id}/complete-parsing")

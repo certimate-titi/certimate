@@ -21,11 +21,25 @@ def step_impl(context, subject_name):
                 break
     user_uuid = uuid.UUID(context.ids[email])
 
-    subj = db.query(Subject).filter_by(name=subject_name).first()
-    assert subj is not None, f"找不到科目 '{subject_name}'"
+    # 優先從 context.ids 取已知 subject_id，避免同名 subject（migration seed vs step 建立）導致查錯
+    known_subject_id = context.ids.get(f"subject_{subject_name}")
+    if known_subject_id:
+        subj_ids = [uuid.UUID(known_subject_id)]
+    else:
+        # fallback：查所有同名 subject
+        subjs = db.query(Subject).filter(Subject.name == subject_name).all()
+        assert subjs, f"找不到科目 '{subject_name}'"
+        subj_ids = [s.id for s in subjs]
 
-    journey = db.query(LearningJourney).filter_by(
-        user_id=user_uuid, subject_id=subj.id, is_archived=False
-    ).first()
+    # 只要有任一 subject 對應到使用者的活躍 journey 即可
+    journey = (
+        db.query(LearningJourney)
+        .filter(
+            LearningJourney.user_id == user_uuid,
+            LearningJourney.subject_id.in_(subj_ids),
+            LearningJourney.is_archived == False,  # noqa: E712
+        )
+        .first()
+    )
     assert journey is not None, \
         f"使用者 {email} 的 '{subject_name}' 學習歷程應仍存在"

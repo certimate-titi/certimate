@@ -797,7 +797,12 @@ class OnboardingService:
         return {"categories": result, "subjects": all_subjects}
 
     def remove_subject(self, user_id: str, subject_id: str):
-        """移除備考科目（返回確認提示）。"""
+        """移除備考科目。
+
+        - 若有活躍 journey：回傳確認提示（封存流程）
+        - 若是 scope=personal 的自訂考科且 owner 為本人：直接刪除 subject
+        - 否則：404
+        """
         user_uuid = uuid.UUID(user_id)
         subj_uuid = uuid.UUID(subject_id)
 
@@ -805,13 +810,20 @@ class OnboardingService:
             user_id=user_uuid, subject_id=subj_uuid, is_archived=False
         ).first()
 
-        if not journey:
-            return {"error": True, "status_code": 404, "message": "找不到該學習歷程"}
+        if journey:
+            return {
+                "confirm_message": "移除後該科目的學習紀錄將被封存，確定要移除嗎？",
+                "subject_id": subject_id,
+            }
 
-        return {
-            "confirm_message": "移除後該科目的學習紀錄將被封存，確定要移除嗎？",
-            "subject_id": subject_id,
-        }
+        # PRD-033：若是本人的自訂考科（scope=personal, owner=本人），直接刪除
+        subj = self.db.query(Subject).filter_by(id=subj_uuid).first()
+        if subj and subj.scope == "personal" and subj.owner_user_id == user_uuid:
+            self.db.delete(subj)
+            self.db.commit()
+            return {"message": f"已刪除自訂考科 {subj.name}"}
+
+        return {"error": True, "status_code": 404, "message": "找不到該學習歷程"}
 
     def _archive_journey(self, user_id: str, subject_id: str, *, active_only: bool = True):
         """ archive journey。"""
