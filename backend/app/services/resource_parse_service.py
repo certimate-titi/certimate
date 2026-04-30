@@ -33,6 +33,7 @@ LLM 整合:
 from __future__ import annotations
 
 import json
+import re
 import logging
 import time
 from dataclasses import dataclass
@@ -318,10 +319,18 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
                 pass
 
     text = getattr(resp, "text", None) or ""
+    # RC19 修補（2026-04-30）：Gemini 偶爾回 JSON 但 markdown 字串內含
+    # unescaped 控制字元（裸 \n / \t），strict mode 拒絕 → 改用 strict=False。
+    # 順帶移除可能的 markdown code fence（```json ... ```）
+    text_to_parse = text.strip()
+    if text_to_parse.startswith("```"):
+        # 移除 ```json 或 ``` 開頭、``` 結尾
+        text_to_parse = re.sub(r"^```(?:json)?\s*\n?", "", text_to_parse, flags=re.IGNORECASE)
+        text_to_parse = re.sub(r"\n?```\s*$", "", text_to_parse)
     try:
-        parsed = json.loads(text)
+        parsed = json.loads(text_to_parse, strict=False)
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"gemini returned non-JSON: {text[:500]}") from e
+        raise RuntimeError(f"gemini returned non-JSON: {text_to_parse[:500]}") from e
     if isinstance(parsed, dict):
         logger.info(
             "parse result resource=%s questions=%d scaffolds=%d md_len=%d",
