@@ -87,6 +87,7 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（回應）- PRO 以上用戶可向 AI 教練提問且回應以串流方式輸出
 
+    @llm-mock
     Example: PRO 用戶成功與 AI 教練對話取得串流回應
       When 使用者 "pro@example.com" 在測驗 2 題目 201 的 AI 教練視窗輸入 "我還是不懂觸發條件的判斷邏輯"
       Then 操作成功
@@ -96,6 +97,7 @@ Feature: 錯題複習與 AI 教練
 
   Rule: 後置（個人化）- AI 教練應根據使用者的年齡、學歷與職業調整回覆方式
 
+    @llm-mock
     Example: 高中學歷使用者收到淺顯易懂的比喻式回覆
       Given 使用者 "pro@example.com" 的個人資料為：
         | 欄位     | 值          |
@@ -106,6 +108,7 @@ Feature: 錯題複習與 AI 教練
       Then AI 教練回覆應使用生活化比喻（例如「像是餐廳在尖峰時段自動增加服務生」）
       And AI 教練回覆不應假設使用者具備進階技術背景知識
 
+    @llm-mock
     Example: 碩士學歷且具技術背景的使用者收到精準技術回覆
       Given 使用者 "ultra@example.com" 的個人資料為：
         | 欄位     | 值           |

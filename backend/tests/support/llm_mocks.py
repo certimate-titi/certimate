@@ -159,10 +159,42 @@ class MockLLMService:
         return json.loads(raw)
 
 
+_MOCK_COACH_REPLIES = {
+    "simple": (
+        "加油！別擔心，讓我用一個簡單的比喻來解釋。\n\n"
+        "想像一下，這個概念就像是餐廳在尖峰時段自動增加服務生一樣，"
+        "好比是一個自動調節的系統。繼續努力，你做得很好！"
+    ),
+    "technical": (
+        "讓我們從技術角度來分析。\n\n"
+        "Auto Scaling 的觸發機制主要透過 CloudWatch Alarm 搭配 Target Tracking Policy 來實現。"
+        "你可以透過 AWS CLI 指令 `aws autoscaling describe-policies` 來查看相關設定。"
+        "Scaling Policy 與 CloudWatch Alarm 的配合是關鍵。"
+    ),
+    "advanced": (
+        "從架構角度分析，這個機制涉及多個層面。\n\n"
+        "Auto Scaling 透過 CloudWatch Alarm 與 Target Tracking Policy 實現精確擴縮容。"
+        "理解這些概念有助於設計高可用架構。繼續深入研究吧！"
+    ),
+    "general": (
+        "加油！讓我來幫你理解這個概念。\n\n"
+        "這道題目考的是核心觀念，EC2 Auto Scaling 的觸發條件相當重要。"
+        "繼續努力，你做得很好！別擔心，多練習就會理解的。"
+    ),
+}
+
+
+def _mock_coach_reply_for_tone(tone: str) -> str:
+    """回傳符合 tone 的確定性 mock 教練回覆（BDD 測試用）。"""
+    return _MOCK_COACH_REPLIES.get(tone, _MOCK_COACH_REPLIES["general"])
+
+
 def install_llm_mock(context) -> None:
     """在 AiGenerationService 中替換 _llm 為 MockLLMService。
 
-    同時強制 _rag_enabled=True 讓 stage2/3 走 _stage2_claude 路徑。
+    同時：
+    - 強制 _rag_enabled=True 讓 stage2/3 走 _stage2_claude 路徑
+    - 攔截 WrongAnswerService._generate_coach_reply 回傳確定性 tone-aware 回覆
     """
     from app.services import ai_generation_service as mod
 
@@ -176,9 +208,26 @@ def install_llm_mock(context) -> None:
     mod.AiGenerationService.__init__ = patched_init
     context.memo["_ai_gen_init_original"] = original_init
 
+    # Patch WrongAnswerService._generate_coach_reply for deterministic AI coach responses
+    from app.services import wrong_answer_service as wa_mod
+
+    original_coach_reply = wa_mod.WrongAnswerService._generate_coach_reply
+
+    def mock_coach_reply(self, question, message, tone, history_context=None,
+                         conversation_history=None, confidence_quadrant=None, user_id=None):
+        return _mock_coach_reply_for_tone(tone)
+
+    wa_mod.WrongAnswerService._generate_coach_reply = mock_coach_reply
+    context.memo["_wa_coach_reply_original"] = original_coach_reply
+
 
 def uninstall_llm_mock(context) -> None:
     original = context.memo.get("_ai_gen_init_original") if hasattr(context, "memo") else None
     if original:
         from app.services import ai_generation_service as mod
         mod.AiGenerationService.__init__ = original
+
+    wa_original = context.memo.get("_wa_coach_reply_original") if hasattr(context, "memo") else None
+    if wa_original:
+        from app.services import wrong_answer_service as wa_mod
+        wa_mod.WrongAnswerService._generate_coach_reply = wa_original
