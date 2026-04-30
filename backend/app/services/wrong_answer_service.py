@@ -606,9 +606,25 @@ class WrongAnswerService:
                     "cooldown": True,
                 }
 
+            # F07 spec line 244 文案對齊：「這個問題超出 {科目名稱} 的範圍。試試問我跟考試內容相關的問題吧！」
+            subject_name = "目前科目"
+            try:
+                if question and question.exam_id:
+                    from app.models.exam import Exam as _Exam
+                    exam = self.db.query(_Exam).filter_by(id=question.exam_id).first()
+                    if exam and exam.subject_id:
+                        from app.models.subject import Subject as _Subject
+                        subj = self.db.query(_Subject).filter_by(id=exam.subject_id).first()
+                        if subj and subj.name:
+                            subject_name = subj.name
+            except Exception:
+                pass
+            out_of_scope_msg = (
+                f"這個問題超出 {subject_name} 的範圍。試試問我跟考試內容相關的問題吧！"
+            )
             return {
-                "reply": "此問題超出目前題庫範圍，請聚焦在考試相關的問題上。",
-                "content": "此問題超出目前題庫範圍，請聚焦在考試相關的問題上。",
+                "reply": out_of_scope_msg,
+                "content": out_of_scope_msg,
                 "streaming": True,
             }
 
