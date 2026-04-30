@@ -1368,18 +1368,21 @@ from .common_then import error_code as common_error_code  # noqa: F401
 from .mindmap_upgrade.aggregate_given import (  # noqa: F401
     setup_nodes_and_chunks as mu_setup,
     rerank_schema_setup as mu_rerank_setup,
+    llm_integration_setup as mu_llm_setup,
 )
 
 # Mindmap Upgrade (Feature 34) — commands
 from .mindmap_upgrade.commands import (  # noqa: F401
     direct_service_calls as mu_commands,
     rerank_schema_commands as mu_rerank_commands,
+    llm_integration_commands as mu_llm_commands,
 )
 
 # Mindmap Upgrade (Feature 34) — aggregate_then
 from .mindmap_upgrade.aggregate_then import (  # noqa: F401
     assertions as mu_assertions,
     rerank_schema_assertions as mu_rerank_assertions,
+    llm_integration_assertions as mu_llm_assertions,
 )
 
 # Coverage retrofit (Feature 35, ISS-015)
