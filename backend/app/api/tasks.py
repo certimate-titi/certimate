@@ -236,52 +236,33 @@ def run_process_resource_pipeline(
         parse_outcome_status = None
         try:
             print(f"[FP] entering RC11 inner try resource={resource_id}", flush=True)
+            # RC15：用全新獨立 session 跑 parse_job，避開 process_resource 後 db
+            # session 的髒狀態（commits / rollbacks 留下的 transaction 狀態）
+            from app.core.deps import _SessionLocal as _SL, set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT
             from app.models.resource import Resource as _Resource
             from app.services.resource_parse_service import create_parse_job, run_parse_job
-            from app.core.deps import set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT_TENANT
-            print(f"[FP] RC11 imports OK resource={resource_id}", flush=True)
-            # RC14：process_resource 內部可能 rollback / reset GUC，重設 tenant 確保 RLS 通過
+            print(f"[FP] RC11 imports OK", flush=True)
+            parse_db = _SL()
+            print(f"[FP] RC11 new session created", flush=True)
             try:
-                _set_rls(db, _DEFAULT_TENANT)
-                print(f"[FP] RC11 set_rls_tenant OK", flush=True)
-            except Exception as rls_exc:
-                print(f"[FP] RC11 set_rls_tenant FAILED: {type(rls_exc).__name__}: {rls_exc}", flush=True)
-            try:
-                print(f"[FP] RC11 about to query Resource", flush=True)
-                resource = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
-                print(f"[FP] RC11 query returned: found={resource is not None}", flush=True)
-            except Exception as q_exc:
-                print(f"[FP] RC11 query RAISED: {type(q_exc).__name__}: {str(q_exc)[:200]}", flush=True)
-                raise
-            print(f"[FP] RC11 resource query: found={resource is not None} gcs_path={getattr(resource, 'gcs_path', None) if resource else None}", flush=True)
-            if resource and resource.gcs_path:
-                print(f"[FP] RC11 calling create_parse_job", flush=True)
-                job = create_parse_job(db, resource)
-                db.commit()
-                print(f"[FP] RC11 parse_job created id={job.id}", flush=True)
-                outcome = run_parse_job(db, job.id)
-                db.commit()
-                print(f"[FP] RC11 run_parse_job done status={outcome.status}", flush=True)
-                parse_outcome_status = outcome.status
-                logger.info(
-                    "[pipeline] resource=%s parse_job %s (status=%s)",
-                    resource_id, job.id, outcome.status,
-                )
-                _write_checkpoint(
-                    db, resource_id, "parse",
-                    {"parse_job_id": str(job.id), "parse_status": str(outcome.status)},
-                )
-            else:
-                logger.info(
-                    "[pipeline] resource=%s parse skipped (no gcs_path)",
-                    resource_id,
-                )
+                _set_rls(parse_db, payload.tenant_id or _DEFAULT)
+                print(f"[FP] RC11 RLS set on new session", flush=True)
+                resource = parse_db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+                print(f"[FP] RC11 query found={resource is not None}", flush=True)
+                if resource and resource.gcs_path:
+                    job = create_parse_job(parse_db, resource)
+                    parse_db.commit()
+                    print(f"[FP] RC11 parse_job created id={job.id}", flush=True)
+                    outcome = run_parse_job(parse_db, job.id)
+                    parse_db.commit()
+                    print(f"[FP] RC11 run_parse_job status={outcome.status}", flush=True)
+                    parse_outcome_status = outcome.status
+                else:
+                    print(f"[FP] RC11 skipped: no resource or no gcs_path", flush=True)
+            finally:
+                parse_db.close()
         except Exception as parse_exc:
-            logger.exception(
-                "[pipeline] resource=%s parse failed (non-fatal): %s",
-                resource_id, parse_exc,
-            )
-            db.rollback()
+            print(f"[FP] RC11 EXCEPTION: {type(parse_exc).__name__}: {str(parse_exc)[:300]}", flush=True)
 
         logger.info(
             "[pipeline] resource=%s completed: %s chunks, parse=%s",
