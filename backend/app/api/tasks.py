@@ -196,25 +196,14 @@ def run_process_resource_pipeline(
     # 它內部依序執行 chunk → embed → knowledge extract → parse → merge
     # 若有 checkpoint 表且 resume_from_idx > 0，可傳入 resume hint
 
-    # RC12 診斷指紋（2026-04-30）— 確認 deployed code 真的是 latest
-    # QA round 9 發現 image=02ab54f 但 RC11 logger 0 hit；用顯眼 fingerprint
-    # 排查是否是 stale image / logger flush / code path 跳過
-    logger.warning(
-        "[pipeline-fingerprint] RC12-DIAG resource=%s pipeline_runner_entry build=02ab54f+RC12",
-        resource_id,
-    )
-    print(f"[pipeline-fingerprint] STDOUT RC12-DIAG resource={resource_id}", flush=True)
-
     try:
         from app.services.document_processing_service import DocumentProcessingService
 
         svc = DocumentProcessingService(db)
-        print(f"[FP] before process_resource resource={resource_id}", flush=True)
 
         # 如果有 checkpoint，記錄但仍讓 service 完整執行
         # （DocumentProcessingService 本身具備冪等性：已存在 chunks 不重複建立）
         result = svc.process_resource(uuid.UUID(resource_id))
-        print(f"[FP] after process_resource resource={resource_id} result_type={type(result).__name__} keys={list(result.keys()) if isinstance(result, dict) else 'N/A'}", flush=True)
 
         if result.get("error"):
             logger.error(
@@ -225,19 +214,10 @@ def run_process_resource_pipeline(
             return result
 
         # 標記 chunk + embed + knowledge merge 階段完成
-        print(f"[FP] before write_checkpoint(merge) resource={resource_id}", flush=True)
         _write_checkpoint(db, resource_id, "merge", {"chunks_created": result.get("chunks_created", 0)})
-        print(f"[FP] after write_checkpoint(merge) resource={resource_id}", flush=True)
-
-        # RC11 修補（2026-04-30）：補 parse_job 自動觸發
-        # 原 inline _process_resource_background 在 chunk/embed/knowledge 後會跑
-        # create_parse_job + run_parse_job 產生學習鷹架（scaffolds）；refactor 為
-        # worker 時遺漏。若無此步 scaffolds=0 永遠是「合理空態」假象。
-        # RC17（2026-04-30）：parse_job 邏輯**移出 run_process_resource_pipeline**
-        # 改在 handler 端執行（process_resource 之後）。理由：
-        # - 多輪 fingerprint 顯示「entering RC11 inner try」print 為最後可見輸出，
-        #   後續 print/import/logger 全失蹤（未捕獲 exception 也未 hang），症狀奇異
-        # - 在更淺層（handler）做避開深層 try 互動
+        # 注意：parse_job 觸發已移到 handler 端（process_resource_task）
+        # 因為 process_resource 內部 SQL error 會留 aborted transaction，
+        # 必須在 handler 層級 db.rollback() 後才能跑 create_parse_job
         return result
 
     except Exception as exc:
@@ -335,37 +315,37 @@ def process_resource_task(
             detail={"message": result.get("message", "資源處理失敗")},
         )
 
-    # RC17（2026-04-30）：parse_job 自動觸發 — 從 pipeline runner 移到 handler
-    # 用既有 `resource` 變數（line 337 已查），不另開 session，避開深層 try 怪事
+    # RC17+RC18（2026-04-30）：parse_job 自動觸發
+    # 移到 handler 端執行避開 pipeline runner 深層 try 怪事；先 rollback 修
+    # process_resource 內部留下的 aborted transaction（InFailedSqlTransaction）
     parse_outcome_status = None
     try:
-        print(f"[FP-RC17] handler-level parse_job start resource={resource_id}", flush=True)
-        # RC18：process_resource 內部某 SQL error 留下 aborted transaction
-        # 必須 rollback 否則「current transaction is aborted, commands ignored」
+        # 必須先 rollback：process_resource 內某 SQL error 會留 aborted tx
+        # 後續任何 db.execute 都失敗（commands ignored until end of tx block）
         try:
             db.rollback()
-            print(f"[FP-RC18] rollback OK", flush=True)
-        except Exception as rb:
-            print(f"[FP-RC18] rollback failed: {rb}", flush=True)
+        except Exception as rb_exc:
+            logger.warning("[parse-trigger] rollback failed (non-fatal): %s", rb_exc)
         from app.services.resource_parse_service import create_parse_job, run_parse_job
-        # 重設 RLS GUC（process_resource 內部 commit 可能影響）
-        from app.core.deps import set_rls_tenant as _rrls
-        _rrls(db, payload.tenant_id or PUBLIC_B2C_TENANT_ID)
-        # 重 fetch resource（detached state 後 ORM 物件可能 stale）
+        from app.core.deps import set_rls_tenant as _set_rls
+        _set_rls(db, payload.tenant_id or PUBLIC_B2C_TENANT_ID)
+        # 重 fetch resource 確保 ORM session fresh
         resource_fresh = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
-        print(f"[FP-RC17] resource fetched found={resource_fresh is not None}", flush=True)
         if resource_fresh and resource_fresh.gcs_path:
             job = create_parse_job(db, resource_fresh)
             db.commit()
-            print(f"[FP-RC17] parse_job created id={job.id}", flush=True)
             outcome = run_parse_job(db, job.id)
             db.commit()
             parse_outcome_status = outcome.status
-            print(f"[FP-RC17] run_parse_job done status={outcome.status}", flush=True)
-        else:
-            print(f"[FP-RC17] skipped no gcs_path", flush=True)
-    except Exception as e:
-        print(f"[FP-RC17] EXCEPTION {type(e).__name__}: {str(e)[:300]}", flush=True)
+            logger.info(
+                "[parse-trigger] resource=%s parse_job=%s status=%s",
+                resource_id, job.id, outcome.status,
+            )
+    except Exception as parse_exc:
+        logger.exception(
+            "[parse-trigger] resource=%s parse_job 觸發失敗 (non-fatal): %s",
+            resource_id, parse_exc,
+        )
         try:
             db.rollback()
         except Exception:

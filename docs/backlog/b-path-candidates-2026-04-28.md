@@ -77,3 +77,18 @@ backlog 兩項建議併入下一個 spec reconciliation sprint，與其他 271 f
 - **發現於**：2026-04-29 cloud-engineer Pipeline Split epic 評估時
 - **修補**：把三個 env 改用 `--update-secrets DATABASE_URL=db-url:latest,...` 注入；建 Secret Manager 對應 secrets
 - **工期**：1h
+
+### Gemini parse_job JSON 解析錯誤（高優先 — scaffold 生不出來）
+- **發現於**：2026-04-30 EPIC pipeline-split RC18 後 e2e 驗證
+- **症狀**：`run_parse_job` 跑到 Gemini API 但 response parse 失敗：
+  ```
+  gemini error: gemini returned non-JSON: { "markdown": "...", ... }
+  ```
+- **位置**：`backend/app/services/resource_parse_service.py` `_call_gemini_once` 或 JSON parse 區段
+- **根因**：Gemini 回的是 wrapped JSON（含 markdown 字段），但 parser 期望 strict JSON 結構
+- **影響**：parse_job 永遠 FAILED → scaffolds=0 → 學習鷹架功能在雲端不可用
+- **建議修法**：
+  1. 檢查 Gemini response_mime_type='application/json' 是否仍生效
+  2. 或調整 parser 接受 wrapped JSON（從 response 中萃取 nested 結構）
+  3. 加 unit test 用 fixture response 確保 parser 韌性
+- **工期**：2-3h
