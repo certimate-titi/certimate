@@ -3,7 +3,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -14,11 +14,18 @@ from app.services.feedback_service import FeedbackService
 router = APIRouter(prefix="/feedback")
 
 
+class AttachmentMeta(BaseModel):
+    """附件元數據（測試 / API 用）。"""
+    file_path: str
+    file_size: int
+    mime_type: str = "image/png"
+
+
 class SubmitFeedbackRequest(BaseModel):
     type: Optional[str] = None
     subject: Optional[str] = None
     content: Optional[str] = None
-    attachments: Optional[list[dict]] = None
+    attachments: Optional[list[AttachmentMeta]] = None
 
 
 class UpdateFeedbackRequest(BaseModel):
@@ -42,16 +49,7 @@ def admin_list_feedbacks(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """admin list feedbacks。
-
-    此 endpoint 對應 `admin_list_feedbacks` 操作。
-
-    Args:
-        status: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """管理員查看所有反饋清單，可依狀態篩選。"""
     _check_admin(user_id, db)
     service = FeedbackService(db)
     return service.admin_list_feedbacks(status_filter=status)
@@ -62,13 +60,7 @@ def admin_get_stats(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """admin get stats。
-
-    此 endpoint 對應 `admin_get_stats` 操作。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """管理員查看反饋統計摘要。"""
     _check_admin(user_id, db)
     service = FeedbackService(db)
     return service.admin_get_stats()
@@ -81,17 +73,7 @@ def admin_update_feedback(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """admin update feedback。
-
-    此 endpoint 對應 `admin_update_feedback` 操作。
-
-    Args:
-        feedback_id: 參數。
-        body: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """管理員更新反饋狀態並可回覆使用者。"""
     _check_admin(user_id, db)
     service = FeedbackService(db)
     result = service.admin_update_feedback(
@@ -113,57 +95,29 @@ def admin_update_feedback(
 
 @router.post("")
 def submit_feedback(
+    body: SubmitFeedbackRequest,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
-    # Accept both JSON body and multipart/form-data (frontend sends FormData for file uploads)
-    type: Optional[str] = Form(None),
-    subject: Optional[str] = Form(None),
-    content: Optional[str] = Form(None),
-    attachments: Optional[list[UploadFile]] = File(None),
 ):
-    """submit feedback。
-
-    此 endpoint 對應 `submit_feedback` 操作。
-
-    Args:
-        type: 參數。
-        subject: 參數。
-        content: 參數。
-        attachments: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
-    from app.models.feedback import FeedbackAttachment
+    """提交意見反饋（JSON body）。附件以元數據方式傳入。"""
     service = FeedbackService(db)
 
-    # Upload files to GCS and collect metadata
     attachment_data = None
-    if attachments:
-        from app.services.storage_service import upload_feedback_attachment
-        attachment_data = []
-        for f in attachments:
-            if f.filename:
-                file_bytes = f.file.read()
-                if len(file_bytes) > 5 * 1024 * 1024:
-                    continue  # skip files > 5MB
-                gcs_url = upload_feedback_attachment(
-                    file_bytes=file_bytes,
-                    filename=f.filename,
-                    content_type=f.content_type or "image/png",
-                )
-                if gcs_url:
-                    attachment_data.append({
-                        "file_path": gcs_url,
-                        "file_size": len(file_bytes),
-                        "mime_type": f.content_type or "image/png",
-                    })
+    if body.attachments:
+        attachment_data = [
+            {
+                "file_path": att.file_path,
+                "file_size": att.file_size,
+                "mime_type": att.mime_type,
+            }
+            for att in body.attachments
+        ]
 
     result = service.submit_feedback(
         user_id=user_id,
-        feedback_type=type or "",
-        subject=subject or "",
-        content=content or "",
+        feedback_type=body.type or "",
+        subject=body.subject or "",
+        content=body.content or "",
         attachments=attachment_data,
     )
     if result.get("error"):
@@ -179,13 +133,7 @@ def list_my_feedbacks(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """list my feedbacks。
-
-    此 endpoint 對應 `list_my_feedbacks` 操作。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """使用者查看自己的反饋清單。"""
     service = FeedbackService(db)
     return service.list_user_feedbacks(user_id)
 
@@ -196,16 +144,7 @@ def get_feedback_detail(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """get feedback detail。
-
-    此 endpoint 對應 `get_feedback_detail` 操作。
-
-    Args:
-        feedback_id: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
+    """使用者查看單筆反饋詳情。"""
     service = FeedbackService(db)
     result = service.get_feedback_detail(user_id, feedback_id)
     if result.get("error"):
