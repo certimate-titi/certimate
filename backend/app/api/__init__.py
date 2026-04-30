@@ -42,6 +42,7 @@ from app.api.tasks import router as tasks_router
 from app.api.exam_import import router as exam_import_router
 from app.api.exam_import_async import router as exam_import_async_router
 from app.api.exam_import_monitoring import router as exam_import_monitoring_router
+from app.api.resource_parse import router as resource_parse_router
 
 router = APIRouter()
 
@@ -85,3 +86,4 @@ router.include_router(tasks_router, tags=["tasks"])
 router.include_router(exam_import_router, tags=["exam-import"])
 router.include_router(exam_import_async_router, tags=["exam-import-async"])
 router.include_router(exam_import_monitoring_router, tags=["exam-import-monitoring"])
+router.include_router(resource_parse_router, tags=["resource-parse"])
