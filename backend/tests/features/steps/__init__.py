@@ -1413,3 +1413,8 @@ from .bloom_analysis.readmodel_then import (  # noqa: F401
 
 # Cloud Tasks Pipeline Split (Worker B+ epic, 2026-04-29)
 from .tasks.commands import process_resource_task as _tasks_process_resource  # noqa: F401
+
+# F19 Interleaved Practice
+from .interleaved.aggregate_given import exam_setup as _il_exam_setup  # noqa: F401
+from .interleaved.commands import interleaved_actions as _il_actions  # noqa: F401
+from .interleaved.readmodel_then import interleaved_assertions as _il_assertions  # noqa: F401

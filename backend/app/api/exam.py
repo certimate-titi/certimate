@@ -23,6 +23,7 @@ class ExamConfigRequest(BaseModel):
     question_types: list[str] | None = None
     exam_mode: str | None = None  # "hybrid" (default) | "historical_only"
     custom_bloom_ratio: dict | None = None
+    question_order_mode: str | None = None  # F19: interleaved/sequential/grouped
 
 
 class SelectResourceRequest(BaseModel):
@@ -87,6 +88,7 @@ def submit_exam_config(
         custom_bloom_ratio=body.custom_bloom_ratio,
         question_types=body.question_types,
         exam_mode=body.exam_mode,
+        question_order_mode=body.question_order_mode,
     )
     return _handle_result(result)
 

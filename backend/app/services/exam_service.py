@@ -33,9 +33,12 @@ class ExamService:
                       user_id: str, difficulty_distribution: dict | None = None,
                       custom_bloom_ratio: dict | None = None,
                       question_types: list[str] | None = None,
-                      exam_mode: str | None = None) -> dict:
+                      exam_mode: str | None = None,
+                      question_order_mode: str | None = None) -> dict:
         """submit config。"""
+        from app.services.interleaved_practice_service import determine_order_mode
         uid = uuid.UUID(user_id)
+        resolved_order_mode = determine_order_mode(node_ids, question_order_mode)
 
         # 驗證：至少選擇一個節點
         if not node_ids:
@@ -195,6 +198,7 @@ class ExamService:
                 duration_minutes=max(15, int(actual_count * 1.5)),
                 difficulty_distribution=difficulty_distribution,
                 historical_priority=True,
+                question_order_mode=resolved_order_mode,
             )
             self.db.add(exam)
             self.db.flush()
@@ -244,6 +248,7 @@ class ExamService:
                 "sse_enabled": False,
                 "bloom_source": "historical",
                 "ai_generated_count": 0,
+                "question_order_mode": resolved_order_mode,
             }
             if hint:
                 response["hint"] = hint
@@ -317,6 +322,7 @@ class ExamService:
             custom_bloom_ratio=custom_bloom_ratio if bloom_source == "custom" else None,
             historical_priority=plan_val == "ULTRA",
             question_types=question_types,
+            question_order_mode=resolved_order_mode,
         )
         self.db.add(exam)
         self.db.commit()
@@ -330,6 +336,7 @@ class ExamService:
             "sse_enabled": True,
             "bloom_source": bloom_source,
             "historical_ratio": historical_ratio,
+            "question_order_mode": resolved_order_mode,
         }
 
         if bloom_distribution:

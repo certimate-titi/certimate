@@ -120,6 +120,16 @@ class ExamResultService:
         if comparison:
             result["comparison"] = comparison
 
+        # F19 排列模式標籤 + 提示
+        from app.services.interleaved_practice_service import (
+            DISPLAY_LABELS, INTERLEAVED_HINT, ORDER_INTERLEAVED,
+        )
+        order_mode = exam.question_order_mode or ORDER_INTERLEAVED
+        result["question_order_mode"] = order_mode
+        result["question_order_label"] = DISPLAY_LABELS.get(order_mode, "交錯練習")
+        if order_mode == ORDER_INTERLEAVED:
+            result["question_order_hint"] = INTERLEAVED_HINT
+
         return result
 
     def _build_bloom_breakdown(self, questions, answer_map) -> list[dict]:
@@ -504,10 +514,13 @@ class ExamResultService:
     def _get_comparison(self, current_exam: Exam, user_id: uuid.UUID) -> str | None:
         # Find previous submitted exam (before current one)
         """取得 comparison。"""
+        if current_exam.submitted_at is None:
+            return None
         previous = self.db.query(Exam).filter(
             Exam.user_id == user_id,
             Exam.status == ExamStatus.SUBMITTED,
             Exam.id != current_exam.id,
+            Exam.submitted_at.is_not(None),
             Exam.submitted_at < current_exam.submitted_at,
         ).order_by(Exam.submitted_at.desc()).first()
 

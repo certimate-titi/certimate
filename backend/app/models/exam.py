@@ -74,6 +74,10 @@ class Exam(Base):
     passing_score: Mapped[int | None] = mapped_column(Integer)
     difficulty_distribution: Mapped[dict | None] = mapped_column(JSON)
     question_types: Mapped[list | None] = mapped_column(ARRAY(String))
+    question_order_mode: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="interleaved",
+        comment="F19 題目排列模式：interleaved / sequential / grouped",
+    )
     score: Mapped[int | None] = mapped_column(Integer)
     correct_count: Mapped[int | None] = mapped_column(Integer)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
