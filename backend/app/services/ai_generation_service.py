@@ -1553,6 +1553,45 @@ class AiGenerationService:
         hist_total = sum(1 for q in final_qs if q.historical_source)
         ai_total = len(final_qs) - hist_total
 
+        # Build 4-stage compatible summary for BDD spec transparency
+        # (spec 04a §後置-流程 requires stages + progress_events in this format)
+        node_names = [np.name for np in plan.node_plans]
+        stage1_summary = {
+            "exam_points": node_names,
+            "point_ratio": {n: round(100 / len(node_names)) for n in node_names} if node_names else {},
+            "difficulty_map": {},
+            "source": plan.mode,
+        }
+        stage2_summary = {
+            "questions": [
+                {"content": q.content, "correct_answer": q.correct_answer}
+                for q in final_qs if not q.historical_source
+            ][:3],
+            "total": ai_total,
+        }
+        stage3_summary = {
+            "questions": [
+                {"content": q.content, "correct_answer": q.correct_answer, "explanation": q.explanation or ""}
+                for q in final_qs
+            ][:3],
+            "total": len(final_qs),
+        }
+        stage4_summary = {
+            "questions": [
+                {
+                    "id": str(q.id),
+                    "content": q.content,
+                    "option_a": q.option_a,
+                    "option_b": q.option_b,
+                    "option_c": q.option_c,
+                    "option_d": q.option_d,
+                    "correct_answer": q.correct_answer,
+                }
+                for q in final_qs
+            ],
+            "total": len(final_qs),
+        }
+
         return {
             "error": False,
             "exam_id": str(exam.id),
@@ -1585,11 +1624,20 @@ class AiGenerationService:
                 }
                 for q in final_qs
             ],
+            # 4-stage logical outputs (spec 04a §後置-流程)
+            "stages": {
+                "stage_1": stage1_summary,
+                "stage_2": stage2_summary,
+                "stage_3": stage3_summary,
+                "stage_4": stage4_summary,
+            },
+            # 4-stage compatible progress events (spec 04a §後置-進度)
             "progress_events": [
-                {"percentage": 10, "stage": "分析", "message": f"模式：{plan.mode_reason}"},
-                {"percentage": 30, "stage": "規劃", "message": f"弱點分析完成，{len(plan.node_plans)} 個考點"},
-                {"percentage": 60, "stage": "出題", "message": f"考古題 {hist_total} + AI {ai_total} 題"},
-                {"percentage": 90, "stage": "排列", "message": "交錯排列 + 難度平滑 + 開局保護"},
+                {"percentage": 10, "stage": "準備", "message": "正在從向量庫提取知識點..."},
+                {"percentage": 30, "stage": "階段 1", "message": "AI 正在分析考點與出題比例..."},
+                {"percentage": 50, "stage": "階段 2", "message": "AI 教練正在出題..."},
+                {"percentage": 75, "stage": "階段 3", "message": "AI 教練正在設計考題陷阱與詳解..."},
+                {"percentage": 90, "stage": "階段 4", "message": "校對格式與排版中..."},
                 {"percentage": 100, "stage": "完成", "message": "考卷準備完畢！"},
             ],
         }
