@@ -212,13 +212,49 @@ def run_process_resource_pipeline(
             )
             return result
 
-        # 標記 pipeline 完成
+        # 標記 chunk + embed + knowledge merge 階段完成
         _write_checkpoint(db, resource_id, "merge", {"chunks_created": result.get("chunks_created", 0)})
 
+        # RC11 修補（2026-04-30）：補 parse_job 自動觸發
+        # 原 inline _process_resource_background 在 chunk/embed/knowledge 後會跑
+        # create_parse_job + run_parse_job 產生學習鷹架（scaffolds）；refactor 為
+        # worker 時遺漏。若無此步 scaffolds=0 永遠是「合理空態」假象。
+        parse_outcome_status = None
+        try:
+            from app.models.resource import Resource as _Resource
+            from app.services.resource_parse_service import create_parse_job, run_parse_job
+            resource = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+            if resource and resource.gcs_path:
+                job = create_parse_job(db, resource)
+                db.commit()
+                outcome = run_parse_job(db, job.id)
+                db.commit()
+                parse_outcome_status = outcome.status
+                logger.info(
+                    "[pipeline] resource=%s parse_job %s (status=%s)",
+                    resource_id, job.id, outcome.status,
+                )
+                _write_checkpoint(
+                    db, resource_id, "parse",
+                    {"parse_job_id": str(job.id), "parse_status": str(outcome.status)},
+                )
+            else:
+                logger.info(
+                    "[pipeline] resource=%s parse skipped (no gcs_path)",
+                    resource_id,
+                )
+        except Exception as parse_exc:
+            logger.exception(
+                "[pipeline] resource=%s parse failed (non-fatal): %s",
+                resource_id, parse_exc,
+            )
+            db.rollback()
+
         logger.info(
-            "[pipeline] resource=%s completed: %s chunks",
+            "[pipeline] resource=%s completed: %s chunks, parse=%s",
             resource_id,
             result.get("chunks_created", 0),
+            parse_outcome_status or "skipped",
         )
         return result
 
