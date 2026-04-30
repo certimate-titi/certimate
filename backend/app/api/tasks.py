@@ -209,14 +209,12 @@ def run_process_resource_pipeline(
         from app.services.document_processing_service import DocumentProcessingService
 
         svc = DocumentProcessingService(db)
+        print(f"[FP] before process_resource resource={resource_id}", flush=True)
 
         # 如果有 checkpoint，記錄但仍讓 service 完整執行
         # （DocumentProcessingService 本身具備冪等性：已存在 chunks 不重複建立）
         result = svc.process_resource(uuid.UUID(resource_id))
-        logger.warning(
-            "[pipeline-fingerprint] RC12-DIAG after process_resource resource=%s result_keys=%s",
-            resource_id, list(result.keys()) if isinstance(result, dict) else type(result).__name__,
-        )
+        print(f"[FP] after process_resource resource={resource_id} result_type={type(result).__name__} keys={list(result.keys()) if isinstance(result, dict) else 'N/A'}", flush=True)
 
         if result.get("error"):
             logger.error(
@@ -227,7 +225,9 @@ def run_process_resource_pipeline(
             return result
 
         # 標記 chunk + embed + knowledge merge 階段完成
+        print(f"[FP] before write_checkpoint(merge) resource={resource_id}", flush=True)
         _write_checkpoint(db, resource_id, "merge", {"chunks_created": result.get("chunks_created", 0)})
+        print(f"[FP] after write_checkpoint(merge) resource={resource_id}", flush=True)
 
         # RC11 修補（2026-04-30）：補 parse_job 自動觸發
         # 原 inline _process_resource_background 在 chunk/embed/knowledge 後會跑
@@ -235,14 +235,20 @@ def run_process_resource_pipeline(
         # worker 時遺漏。若無此步 scaffolds=0 永遠是「合理空態」假象。
         parse_outcome_status = None
         try:
+            print(f"[FP] entering RC11 inner try resource={resource_id}", flush=True)
             from app.models.resource import Resource as _Resource
             from app.services.resource_parse_service import create_parse_job, run_parse_job
+            print(f"[FP] RC11 imports OK resource={resource_id}", flush=True)
             resource = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+            print(f"[FP] RC11 resource query: found={resource is not None} gcs_path={getattr(resource, 'gcs_path', None) if resource else None}", flush=True)
             if resource and resource.gcs_path:
+                print(f"[FP] RC11 calling create_parse_job", flush=True)
                 job = create_parse_job(db, resource)
                 db.commit()
+                print(f"[FP] RC11 parse_job created id={job.id}", flush=True)
                 outcome = run_parse_job(db, job.id)
                 db.commit()
+                print(f"[FP] RC11 run_parse_job done status={outcome.status}", flush=True)
                 parse_outcome_status = outcome.status
                 logger.info(
                     "[pipeline] resource=%s parse_job %s (status=%s)",
