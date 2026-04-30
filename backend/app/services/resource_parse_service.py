@@ -429,6 +429,7 @@ def _map_questions_to_nodes(db: Session, resource: Resource) -> int:
     """將本次解析的 T1 題目用 Voyage embedding 映射到 subject 的知識節點。"""
     import math
 
+    from sqlalchemy import text  # RC20: 補漏 import 修 NameError
     from app.services.embedding_service import EmbeddingService
 
     nodes = db.execute(
