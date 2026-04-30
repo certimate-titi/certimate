@@ -195,6 +195,16 @@ def run_process_resource_pipeline(
     # 現有 DocumentProcessingService 封裝了完整 pipeline
     # 它內部依序執行 chunk → embed → knowledge extract → parse → merge
     # 若有 checkpoint 表且 resume_from_idx > 0，可傳入 resume hint
+
+    # RC12 診斷指紋（2026-04-30）— 確認 deployed code 真的是 latest
+    # QA round 9 發現 image=02ab54f 但 RC11 logger 0 hit；用顯眼 fingerprint
+    # 排查是否是 stale image / logger flush / code path 跳過
+    logger.warning(
+        "[pipeline-fingerprint] RC12-DIAG resource=%s pipeline_runner_entry build=02ab54f+RC12",
+        resource_id,
+    )
+    print(f"[pipeline-fingerprint] STDOUT RC12-DIAG resource={resource_id}", flush=True)
+
     try:
         from app.services.document_processing_service import DocumentProcessingService
 
@@ -203,6 +213,10 @@ def run_process_resource_pipeline(
         # 如果有 checkpoint，記錄但仍讓 service 完整執行
         # （DocumentProcessingService 本身具備冪等性：已存在 chunks 不重複建立）
         result = svc.process_resource(uuid.UUID(resource_id))
+        logger.warning(
+            "[pipeline-fingerprint] RC12-DIAG after process_resource resource=%s result_keys=%s",
+            resource_id, list(result.keys()) if isinstance(result, dict) else type(result).__name__,
+        )
 
         if result.get("error"):
             logger.error(
