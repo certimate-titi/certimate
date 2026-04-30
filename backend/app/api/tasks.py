@@ -238,8 +238,21 @@ def run_process_resource_pipeline(
             print(f"[FP] entering RC11 inner try resource={resource_id}", flush=True)
             from app.models.resource import Resource as _Resource
             from app.services.resource_parse_service import create_parse_job, run_parse_job
+            from app.core.deps import set_rls_tenant as _set_rls, PUBLIC_B2C_TENANT_ID as _DEFAULT_TENANT
             print(f"[FP] RC11 imports OK resource={resource_id}", flush=True)
-            resource = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+            # RC14：process_resource 內部可能 rollback / reset GUC，重設 tenant 確保 RLS 通過
+            try:
+                _set_rls(db, _DEFAULT_TENANT)
+                print(f"[FP] RC11 set_rls_tenant OK", flush=True)
+            except Exception as rls_exc:
+                print(f"[FP] RC11 set_rls_tenant FAILED: {type(rls_exc).__name__}: {rls_exc}", flush=True)
+            try:
+                print(f"[FP] RC11 about to query Resource", flush=True)
+                resource = db.query(_Resource).filter_by(id=uuid.UUID(resource_id)).first()
+                print(f"[FP] RC11 query returned: found={resource is not None}", flush=True)
+            except Exception as q_exc:
+                print(f"[FP] RC11 query RAISED: {type(q_exc).__name__}: {str(q_exc)[:200]}", flush=True)
+                raise
             print(f"[FP] RC11 resource query: found={resource is not None} gcs_path={getattr(resource, 'gcs_path', None) if resource else None}", flush=True)
             if resource and resource.gcs_path:
                 print(f"[FP] RC11 calling create_parse_job", flush=True)
