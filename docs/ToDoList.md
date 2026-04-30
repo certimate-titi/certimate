@@ -1,7 +1,7 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
-**最後更新**：2026-05-01 QA 自動巡檢
+**最後更新**：2026-05-01 TiTi Commander 定期巡檢
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -36,7 +36,7 @@
 - [ ] `/exam/workspace` — Feature 05 Scenario「AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 實作（首見：2026-04-29）
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
 - [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 元素（首見：2026-04-29）
-- [ ] `/pricing` — PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false，與 Feature 03 明定 PRO_PLUS_399 可使用完整 AI 教練（含深度策略分析、後端切換 Claude 3.5 Sonnet）相違背；定價頁說明與規格不一致，可能誤導用戶升級決策（首見：2026-04-30，最後確認：2026-05-01）
+- [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
 - [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
 - [ ] `/exam/results` — Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符（已實作）；需更新 Feature Scenario 以反映已實作狀態，防止回歸測試誤判（首見：2026-05-01）
 - [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）目前存 localStorage，Feature 22 規格描述為 API 操作；規格與實作不同步，需統一（首見：2026-05-01）
