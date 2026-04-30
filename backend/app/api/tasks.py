@@ -340,6 +340,13 @@ def process_resource_task(
     parse_outcome_status = None
     try:
         print(f"[FP-RC17] handler-level parse_job start resource={resource_id}", flush=True)
+        # RC18：process_resource 內部某 SQL error 留下 aborted transaction
+        # 必須 rollback 否則「current transaction is aborted, commands ignored」
+        try:
+            db.rollback()
+            print(f"[FP-RC18] rollback OK", flush=True)
+        except Exception as rb:
+            print(f"[FP-RC18] rollback failed: {rb}", flush=True)
         from app.services.resource_parse_service import create_parse_job, run_parse_job
         # 重設 RLS GUC（process_resource 內部 commit 可能影響）
         from app.core.deps import set_rls_tenant as _rrls
