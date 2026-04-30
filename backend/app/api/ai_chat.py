@@ -2,7 +2,7 @@
 
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -74,7 +74,7 @@ def ai_chat(
         quota = db.query(PlanQuota).filter_by(plan=plan).first()
 
     daily_limit = quota.daily_ai_chats if quota else 3
-    period = datetime.now().strftime("%Y-%m")
+    period = datetime.now(timezone.utc).strftime("%Y-%m")
     usage = db.query(UserUsage).filter_by(user_id=user_uuid, period=period).first()
     daily_used = usage.daily_ai_chats_used if usage else 0
 
