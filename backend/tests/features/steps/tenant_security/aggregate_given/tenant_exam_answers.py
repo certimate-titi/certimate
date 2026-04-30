@@ -16,38 +16,50 @@ def step_impl(context, slug):
     # 取用已有的 subject
     subject_key = f"subject_{slug}"
     if subject_key not in context.ids:
-        from app.models.subject import Subject
+        from app.models.subject import Subject, SubjectCategory
+        category = context.db_session.query(SubjectCategory).first()
+        if category is None:
+            category = SubjectCategory(name="Test Category")
+            context.db_session.add(category)
+            context.db_session.commit()
+            context.db_session.refresh(category)
         subject = Subject(
             id=uuid.uuid4(),
             name=f"Subject for {slug}",
-            category_id=None,
+            category_id=category.id,
         )
         context.db_session.merge(subject)
         context.db_session.commit()
         context.ids[subject_key] = str(subject.id)
     subject_id = uuid.UUID(context.ids[subject_key])
 
-    # 建立 exam
+    # 建立 exam（status 使用 ExamStatus enum）
+    from app.models.exam import ExamStatus
     exam = Exam(
         id=uuid.uuid4(),
         user_id=user_id,
         subject_id=subject_id,
-        mode="practice",
-        question_count=1,
-        status="completed",
+        total_questions=1,
+        status=ExamStatus.SUBMITTED,
         tenant_id=tenant_id,
     )
     context.db_session.merge(exam)
     context.db_session.commit()
 
-    # 建立 question
+    # 建立 question（關聯到 exam，符合 Question model 欄位）
     question = Question(
         id=uuid.uuid4(),
-        subject_id=subject_id,
-        question_text="Test question?",
-        options_json=["A", "B", "C", "D"],
-        answer="A",
+        exam_id=exam.id,
+        question_number=1,
+        type="multiple_choice",
         difficulty="easy",
+        content="Test question for tenant isolation?",
+        option_a="Option A",
+        option_b="Option B",
+        option_c="Option C",
+        option_d="Option D",
+        correct_answer="A",
+        source_type="ai",
         tenant_id=tenant_id,
     )
     context.db_session.merge(question)

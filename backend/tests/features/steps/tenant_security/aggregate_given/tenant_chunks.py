@@ -16,10 +16,17 @@ def step_impl(context, slug, count, slug2):
     # 建立一個 subject（需要關聯）
     subject_key = f"subject_{slug}"
     if subject_key not in context.ids:
+        from app.models.subject import SubjectCategory
+        category = context.db_session.query(SubjectCategory).first()
+        if category is None:
+            category = SubjectCategory(name="Test Category")
+            context.db_session.add(category)
+            context.db_session.commit()
+            context.db_session.refresh(category)
         subject = Subject(
             id=uuid.uuid4(),
             name=f"Subject for {slug}",
-            category_id=None,
+            category_id=category.id,
         )
         context.db_session.merge(subject)
         context.db_session.commit()

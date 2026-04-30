@@ -182,8 +182,17 @@ class ResourceService:
         if not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 
+        # F31 修補：SSRF 驗證 — 防 URL 指向內網或 Cloud Metadata 服務
+        from app.core.security import validate_url_for_ssrf, SSRFError
+        try:
+            validate_url_for_ssrf(youtube_url)
+        except SSRFError as exc:
+            return {"error": True, "status_code": 422, "message": str(exc)}
+        except ValueError as exc:
+            return {"error": True, "status_code": 422, "message": f"不是有效的 YouTube URL: {exc}"}
+
         if not YOUTUBE_REGEX.match(youtube_url):
-            return {"error": True, "status_code": 400, "message": "無效的 YouTube URL"}
+            return {"error": True, "status_code": 422, "message": "不是有效的 YouTube URL"}
 
         from app.core.deps import PUBLIC_B2C_TENANT_ID
         resource = Resource(

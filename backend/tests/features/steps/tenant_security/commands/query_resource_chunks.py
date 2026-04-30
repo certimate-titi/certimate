@@ -9,9 +9,10 @@ def step_impl(context, slug, slug2):
     tenant_id = context.ids.get(slug) or context.memo.get(f"tenant_id_{slug}")
 
     # 模擬設定 PostgreSQL session 的 app.current_tenant_id
+    # SET LOCAL 不支援 bind parameter，需直接 interpolate 值
+    safe_tid = str(tenant_id).replace("'", "")  # sanitize UUID string
     context.db_session.execute(
-        __import__("sqlalchemy").text("SET LOCAL app.current_tenant_id = :tid"),
-        {"tid": str(tenant_id)},
+        __import__("sqlalchemy").text(f"SET LOCAL \"app.current_tenant_id\" = '{safe_tid}'"),
     )
 
     from app.models.resource_chunk import ResourceChunk

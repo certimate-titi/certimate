@@ -9,12 +9,13 @@ from app.models.user import User
 def step_impl(context):
     """建立 B2C 用戶，並生成舊格式 JWT（不含 tenant_id）。"""
     user_id = uuid.uuid4()
+    from app.models.user import UserStatus
     user = User(
         id=user_id,
         email="legacy_user@test.example.com",
         password_hash="$2b$12$test_hash_placeholder",
-        is_verified=True,
-        subscription_tier="FREE",
+        status=UserStatus.ACTIVE,
+        subscription_plan="FREE",
     )
     context.db_session.merge(user)
     context.db_session.commit()

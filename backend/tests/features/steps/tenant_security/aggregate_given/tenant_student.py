@@ -16,12 +16,13 @@ def step_impl(context):
         user_id = uuid.uuid4()
 
         # 建立用戶並關聯租戶
+        from app.models.user import UserStatus
         user = User(
             id=user_id,
             email=email,
             password_hash="$2b$12$test_hash_placeholder",
-            is_verified=True,
-            subscription_tier="FREE",
+            status=UserStatus.ACTIVE,
+            subscription_plan="FREE",
         )
         context.db_session.merge(user)
         context.db_session.commit()

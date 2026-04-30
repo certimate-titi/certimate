@@ -16,18 +16,23 @@ def step_impl(context, url):
     if not subject_id:
         import uuid
         from app.models.subject import Subject
-        subject = Subject(id=uuid.uuid4(), name="一般科目", category_id=None)
+        from app.models.subject import SubjectCategory
+        category = context.db_session.query(SubjectCategory).first()
+        if category is None:
+            category = SubjectCategory(name="一般分類")
+            context.db_session.add(category)
+            context.db_session.commit()
+            context.db_session.refresh(category)
+        subject = Subject(id=uuid.uuid4(), name="一般科目", category_id=category.id)
         context.db_session.merge(subject)
         context.db_session.commit()
         subject_id = str(subject.id)
         context.ids["subject_default"] = subject_id
 
     response = context.api_client.post(
-        "/api/v1/resources/upload",
+        "/api/v1/resources/youtube",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "name": "YouTube Video",
-            "type": "youtube",
             "youtube_url": url,
             "subject_id": subject_id,
         },

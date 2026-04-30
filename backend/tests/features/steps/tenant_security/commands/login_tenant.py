@@ -1,6 +1,16 @@
-"""When 租戶 "{slug}" 的學生使用有效帳密登入 → POST /api/v1/auth/login."""
+"""When/Given 租戶 "{slug}" 的學生使用有效帳密登入 → POST /api/v1/auth/login."""
 
-from behave import when
+from behave import when, given
+
+
+@given('租戶 "{slug}" 的學生使用有效帳密登入')
+def step_given_tenant_login(context, slug):
+    """Given 版本：設定租戶 slug 供後續 When POST /api/v1/auth/login 使用。"""
+    context.memo["login_tenant_slug"] = slug
+    user_id = context.ids.get(f"user_{slug}")
+    context.memo["login_user_id"] = user_id
+    tenant_id = context.ids.get(slug) or context.memo.get(f"tenant_id_{slug}")
+    context.memo["current_tenant_id"] = tenant_id
 
 
 @when('租戶 "{slug}" 的學生使用有效帳密登入')

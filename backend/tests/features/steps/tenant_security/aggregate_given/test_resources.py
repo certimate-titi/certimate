@@ -18,16 +18,24 @@ def step_impl(context, count):
     from app.models.user import User
 
     user_id = _uuid.uuid4()
+    from app.models.user import UserStatus
     user = User(
         id=user_id,
         email=f"test_tenant_user_{user_id.hex[:8]}@test.example.com",
         password_hash="$2b$12$test_hash",
-        is_verified=True,
-        subscription_tier="FREE",
+        status=UserStatus.ACTIVE,
+        subscription_plan="FREE",
     )
     context.db_session.merge(user)
 
-    subject = Subject(id=_uuid.uuid4(), name="Test Subject", category_id=None)
+    from app.models.subject import SubjectCategory
+    category = context.db_session.query(SubjectCategory).first()
+    if category is None:
+        category = SubjectCategory(name="Test Category")
+        context.db_session.add(category)
+        context.db_session.commit()
+        context.db_session.refresh(category)
+    subject = Subject(id=_uuid.uuid4(), name="Test Subject", category_id=category.id)
     context.db_session.merge(subject)
     context.db_session.commit()
 

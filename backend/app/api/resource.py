@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.deps import get_db, get_current_user_id, get_current_user_with_tenant, PUBLIC_B2C_TENANT_ID
+from app.core.deps import get_db, get_current_user_id, get_current_user_with_tenant, get_tenant_id, PUBLIC_B2C_TENANT_ID
 from app.repositories.resource_repository import ResourceRepository
 from app.repositories.knowledge_node_repository import KnowledgeNodeRepository
 from app.repositories.user_repository import UserRepository
@@ -320,6 +320,7 @@ async def upload_resource_file(
     filename: Optional[str] = Form(None),
     resource_type: Optional[str] = Form(None),
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
     db: Session = Depends(get_db),
 ):
@@ -342,6 +343,7 @@ async def upload_resource_file(
         subject_id=subject_id,
         file_size_mb=file_size_mb,
         resource_type=resource_type,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -369,11 +371,11 @@ async def upload_resource_file(
     result["file_size_bytes"] = len(file_data)
 
     # 送至 Cloud Tasks（或 inline fallback — 依 BACKGROUND_PROCESSOR env 決定）
-    tenant_id = PUBLIC_B2C_TENANT_ID  # 預設 B2C 租戶；B2B 流程需從 JWT 取得
+    # F31 修補：tenant_id 從 JWT 解析（get_tenant_id DI），不再硬編碼 B2C 預設
     enqueue_process_resource(
         resource_id=resource_id,
         user_id=user_id,
-        tenant_id=tenant_id,
+        tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
     )
 
     return result
@@ -407,6 +409,7 @@ def _process_resource_background(resource_id: str, user_id: str):
 def submit_youtube(
     request: SubmitYoutubeRequest,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
     """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。"""
@@ -416,6 +419,7 @@ def submit_youtube(
         user_id=user_id,
         youtube_url=request.youtube_url,
         subject_id=request.subject_id,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
@@ -425,7 +429,7 @@ def submit_youtube(
         enqueue_process_resource(
             resource_id=result["id"],
             user_id=user_id,
-            tenant_id=PUBLIC_B2C_TENANT_ID,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
         )
 
     return result
