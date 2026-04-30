@@ -39,6 +39,9 @@ from app.api.practice import router as practice_router
 from app.api.users import router as users_router
 from app.api.cost_monitor import router as cost_monitor_router
 from app.api.tasks import router as tasks_router
+from app.api.exam_import import router as exam_import_router
+from app.api.exam_import_async import router as exam_import_async_router
+from app.api.exam_import_monitoring import router as exam_import_monitoring_router
 
 router = APIRouter()
 
@@ -79,3 +82,6 @@ router.include_router(practice_router, tags=["practice"])
 router.include_router(users_router, tags=["users"])
 router.include_router(cost_monitor_router, tags=["cost-monitor"])
 router.include_router(tasks_router, tags=["tasks"])
+router.include_router(exam_import_router, tags=["exam-import"])
+router.include_router(exam_import_async_router, tags=["exam-import-async"])
+router.include_router(exam_import_monitoring_router, tags=["exam-import-monitoring"])
