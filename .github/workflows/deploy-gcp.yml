@@ -115,6 +115,33 @@ jobs:
             --quiet
 
       # ========================================
+      # 5b. Deploy WORKER to Cloud Run（共用 image，異步 pipeline 處理）
+      # ========================================
+      # 接 Cloud Tasks 推送的 /api/v1/tasks/process-resource 請求；
+      # main service 上傳完成後 enqueue 到 worker，避開 main 512Mi OOM。
+      # 新規格：2Gi/2CPU/timeout 900/concurrency 4，scale 0-5（idle 不計費）。
+      - name: Deploy worker to Cloud Run
+        run: |
+          DOCKER_IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.SERVICE_NAME }}:${{ steps.commit.outputs.short_sha }}"
+
+          gcloud run deploy ${{ env.SERVICE_NAME }}-worker \
+            --image=$DOCKER_IMAGE \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --no-allow-unauthenticated \
+            --service-account=certimate-titi-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --memory=2Gi \
+            --cpu=2 \
+            --min-instances=0 \
+            --max-instances=5 \
+            --concurrency=4 \
+            --timeout=900 \
+            --add-cloudsql-instances=${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }} \
+            --set-env-vars="DATABASE_URL=postgresql+psycopg://postgres:${{ secrets.DB_PASSWORD }}@/certimate?host=/cloudsql/${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:${{ env.DB_INSTANCE }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},FRONTEND_URL=https://certimate-titi.web.app,FIREBASE_PROJECT_ID=certimate-titi,GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},BUILD_COMMIT=${{ steps.commit.outputs.short_sha }},DEPLOYED_AT=${{ steps.commit.outputs.build_time }},STORAGE_BACKEND=gcs,GCS_BUCKET=certimate-titi-data,BACKGROUND_PROCESSOR=worker,WORKER_SERVICE_URL=https://certimate-titi-worker-nfwnajqofa-de.a.run.app,WORKER_OIDC_SERVICE_ACCOUNT=certimate-titi-runtime@certimate-titi.iam.gserviceaccount.com" \
+            --set-secrets="GEMINI_API_KEY=gemini-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,VOYAGE_API_KEY=voyage-api-key:latest" \
+            --quiet
+
+      # ========================================
       # 6. Get backend URL
       # ========================================
       - name: Get backend URL
