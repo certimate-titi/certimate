@@ -100,7 +100,6 @@ class BloomAnalyticsService:
             }
             for b in _ALL_BLOOMS
         ]
-
         # F23 題庫統計：計算有答案題目佔比
         answered_count = 0
         if he_ids:
