@@ -1252,6 +1252,14 @@ from .tenant_security.readmodel_then import jwt_tenant_id  # noqa: F401
 from .tenant_security.readmodel_then import legacy_compat  # noqa: F401
 from .tenant_security.readmodel_then import ssrf_rejection  # noqa: F401
 from .tenant_security.readmodel_then import bdd_env_isolation  # noqa: F401
+from .tenant_security.readmodel_then import guc_null_safe  # noqa: F401
+
+# Tenant Security (PRD-033) — undefined steps fix
+from .tenant_security.aggregate_given import no_guc_set  # noqa: F401
+from .tenant_security.aggregate_given import null_tenant_rows  # noqa: F401
+from .tenant_security.aggregate_then import migration_061_backfill  # noqa: F401
+from .tenant_security.commands import alembic_upgrade_061  # noqa: F401
+from .tenant_security.commands import query_resources_no_guc  # noqa: F401
 
 # Confidence Calibration (Feature 20) — aggregate_given
 from .confidence_calibration.aggregate_given import exam_with_answers  # noqa: F401

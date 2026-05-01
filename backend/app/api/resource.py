@@ -298,6 +298,7 @@ def retry_upload(
 def upload_resource(
     request: UploadResourceRequest,
     user_id: str = Depends(get_current_user_id),
+    tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
 ):
     """上傳資源（JSON metadata）。"""
@@ -307,6 +308,7 @@ def upload_resource(
         subject_id=request.subject_id,
         file_size_mb=request.file_size_mb,
         resource_type=request.type,
+        tenant_id=tenant_id,
     )
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
