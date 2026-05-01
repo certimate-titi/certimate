@@ -726,16 +726,22 @@ from .admin_settings.aggregate_given import many_audit_logs  # noqa: F401
 from .admin_settings.commands import update_model_routing  # noqa: F401
 from .admin_settings.commands import update_plan_quota  # noqa: F401
 from .admin_settings.commands import create_announcement  # noqa: F401
+from .admin_settings.commands import create_announcement_admin  # noqa: F401
 from .admin_settings.commands import update_feature_flag  # noqa: F401
 from .admin_settings.commands import view_audit_logs  # noqa: F401
 from .admin_settings.commands import query_public_announcements  # noqa: F401
+from .admin_settings.commands import query_active_announcements  # noqa: F401
 from .admin_settings.commands import deactivate_announcement  # noqa: F401
+from .admin_settings.commands import deactivate_announcement_by_title  # noqa: F401
 from .admin_settings.commands import delete_announcement  # noqa: F401
 from .admin_settings.commands import create_admin_user  # noqa: F401
 from .admin_settings.commands import clear_cache  # noqa: F401
 from .admin_settings.commands import reset_ai_limits  # noqa: F401
 from .admin_settings.commands import settings_ui_actions  # noqa: F401
 from .admin_settings.commands import list_settings  # noqa: F401
+
+# Admin Settings — aggregate_given (feature 24)
+from .admin_settings.aggregate_given import announcements_table  # noqa: F401
 
 # Admin Settings — aggregate_then
 from .admin_settings.aggregate_then import model_routing_updated  # noqa: F401
@@ -745,6 +751,8 @@ from .admin_settings.aggregate_then import feature_flag_updated  # noqa: F401
 from .admin_settings.aggregate_then import announcement_status_by_id  # noqa: F401
 from .admin_settings.aggregate_then import announcement_not_exists  # noqa: F401
 from .admin_settings.aggregate_then import activation_email_sent  # noqa: F401
+from .admin_settings.aggregate_then import announcement_exists_by_title  # noqa: F401
+from .admin_settings.aggregate_then import announcement_is_active_field  # noqa: F401
 
 # Admin Settings — readmodel_then
 from .admin_settings.readmodel_then import audit_log_fields  # noqa: F401
@@ -753,6 +761,7 @@ from .admin_settings.readmodel_then import response_not_contains_announcement  #
 from .admin_settings.readmodel_then import settings_page_hints  # noqa: F401
 from .admin_settings.readmodel_then import admin_table  # noqa: F401
 from .admin_settings.readmodel_then import audit_log_ui  # noqa: F401
+from .admin_settings.readmodel_then import announcement_count_and_title  # noqa: F401
 
 # Dashboard — aggregate_given
 from .dashboard.aggregate_given import user_subjects  # noqa: F401
