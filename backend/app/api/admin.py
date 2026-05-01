@@ -1132,14 +1132,19 @@ def bind_default_resource(
     from app.models.resource import Resource
     from app.models.subject_default_resource import SubjectDefaultResource
 
-    user = db.query(User).filter_by(id=user_id).first()
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "僅平台管理員可綁定預設資源"})
+    user = db.query(User).filter_by(id=user_uuid).first()
     if not user or (getattr(user, "role", "") not in ("admin", "super_admin")):
         raise HTTPException(status_code=403, detail={"message": "僅平台管理員可綁定預設資源"})
 
     resource = db.query(Resource).filter_by(id=body.resource_id).first()
     if not resource:
         raise HTTPException(status_code=404, detail={"message": "資源不存在"})
-    if str(resource.scope) != "platform":
+    resource_scope_val = resource.scope.value if hasattr(resource.scope, "value") else str(resource.scope)
+    if resource_scope_val != "platform":
         raise HTTPException(status_code=400, detail={"message": "只能綁定 scope=platform 的資源"})
 
     existing = db.query(SubjectDefaultResource).filter_by(
@@ -1170,7 +1175,11 @@ def unbind_default_resource(
     from app.models.user import User
     from app.models.subject_default_resource import SubjectDefaultResource
 
-    user = db.query(User).filter_by(id=user_id).first()
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "僅平台管理員可操作"})
+    user = db.query(User).filter_by(id=user_uuid).first()
     if not user or (getattr(user, "role", "") not in ("admin", "super_admin")):
         raise HTTPException(status_code=403, detail={"message": "僅平台管理員可操作"})
 

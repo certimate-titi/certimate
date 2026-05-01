@@ -5,9 +5,13 @@ from app.repositories.user_repository import UserRepository
 
 ROLE_MAP = {
     "USER": UserRole.USER,
+    "user": UserRole.USER,
     "ADMIN": UserRole.ADMIN,
+    "admin": UserRole.ADMIN,
     "ORG_ADMIN": UserRole.ORG_ADMIN,
+    "org_admin": UserRole.ORG_ADMIN,
     "SUPER_ADMIN": UserRole.SUPER_ADMIN,
+    "super_admin": UserRole.SUPER_ADMIN,
 }
 
 

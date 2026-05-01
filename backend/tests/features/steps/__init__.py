@@ -1429,3 +1429,6 @@ from .tasks.commands import process_resource_task as _tasks_process_resource  # 
 from .interleaved.aggregate_given import exam_setup as _il_exam_setup  # noqa: F401
 from .interleaved.commands import interleaved_actions as _il_actions  # noqa: F401
 from .interleaved.readmodel_then import interleaved_assertions as _il_assertions  # noqa: F401
+
+# F23 考古題題庫管理
+from .exam_bank import exam_bank_steps as _f23_exam_bank  # noqa: F401

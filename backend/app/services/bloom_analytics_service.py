@@ -100,12 +100,25 @@ class BloomAnalyticsService:
             }
             for b in _ALL_BLOOMS
         ]
+
+        # F23 題庫統計：計算有答案題目佔比
+        answered_count = 0
+        if he_ids:
+            answered_count = self.db.query(Question).filter(
+                Question.historical_exam_id.in_(he_ids),
+                Question.correct_answer.isnot(None),
+                Question.correct_answer != "",
+            ).count()
+        answer_rate = round(answered_count / total * 100, 1) if total > 0 else 0.0
+
         return {
             "error": False,
             "subject_id": str(subj.id),
             "subject_name": subj.name,
             "total_questions": total,
             "distribution": distribution,
+            "bloom_distribution": distribution,  # F23 API contract alias
+            "answer_rate": answer_rate,           # F23 題庫統計
         }
 
     def get_trend_by_year(self, subject_id: str) -> dict:
