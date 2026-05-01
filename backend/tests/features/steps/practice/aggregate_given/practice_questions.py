@@ -47,12 +47,21 @@ def step_impl(context, node_name):
 
     historical_exam_id = _ensure_practice_exam(context)
 
-    for row in context.table:
+    # 計算目前 historical_exam 已用的最大 question_number
+    from app.models.question import Question as _Q
+    from sqlalchemy import func
+    max_num = (
+        db.query(func.max(_Q.question_number))
+        .filter(_Q.historical_exam_id == historical_exam_id)
+        .scalar()
+    ) or 0
+
+    for idx, row in enumerate(context.table):
         q_key = row["題目 ID"]
         question = Question(
             node_id=node_id,
             historical_exam_id=historical_exam_id,
-            question_number=1,
+            question_number=max_num + idx + 1,
             type="single_choice",
             difficulty="medium",
             content=row["題目內容"],
