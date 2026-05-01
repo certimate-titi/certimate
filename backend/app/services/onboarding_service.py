@@ -77,6 +77,18 @@ class OnboardingService:
         # 決定查詢考古題的 subject_id（優先用父科目）
         exam_subject_id = parent_subject.id if parent_subject else subject.id
 
+        # 確保 SYSTEM_USER 存在（避免 FK 違反，尤其是在測試環境）
+        system_user = self.db.query(User).filter_by(id=self.SYSTEM_USER_ID).first()
+        if system_user is None:
+            system_user = User(
+                id=self.SYSTEM_USER_ID,
+                email="system@certimate.app",
+                password_hash="!system-account-no-login",
+                display_name="System",
+            )
+            self.db.add(system_user)
+            self.db.flush()
+
         # 建立系統級考古題 Resource
         resource = Resource(
             user_id=self.SYSTEM_USER_ID,
