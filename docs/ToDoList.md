@@ -1,7 +1,7 @@
 # 代辦項目及處理程序紀錄
 
 ## 待辦事項
-**最後更新**：2026-05-02 04:03 TiTi Commander 排程巡檢（逐項原始碼驗證：🔴5 🟠8 🟡6 共 19 項未解決，與前次一致，無新增無解決）
+**最後更新**：2026-05-03 TiTi Commander 排程巡檢（本次修復 3 項：PRO_PLUS 題數上限 BUG ✅、PRO_199 升級提示文字 ✅、結果頁交錯練習標籤 ✅；剩餘未解決：🔴3 🟠7 🟡5 共 15 項）
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -58,6 +58,9 @@
 - [ ] `/exam/setup` — Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能（首見：2026-05-01）
 - [ ] `/exam/setup` — Feature 04 規格描述測驗生成應使用 SSE 推送即時進度；前端目前使用 `ExamLoadingOverlay` 模擬假階段動畫，未實際訂閱 SSE 端點（首見：2026-05-01）
 - [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）需改為後端 API 儲存（目前僅存 localStorage）；Feature 22 規格描述為 API 操作，規格與實作不同步（首見：2026-05-01）
+- [x] `/exam/setup` — ~~**P1 BUG**: `TIER_QUESTION_LIMITS` PRO_PLUS_399 的 `max` 設為 50，Feature 04 L71-83 明確規定 PRO_PLUS 上限為 100 題~~ 已修正：`max: 50` → `max: 100`，`upgradeMessage` 更新為「PRO_PLUS 方案每次測驗最多 100 題，升級 ULTRA 無題數上限」（修復：2026-05-03 TiTi Commander 排程巡檢）
+- [x] `/exam/setup` — ~~**P2 BUG**: PRO_199 升級提示文字「升級 ULTRA 最多可出 100 題以上」錯誤~~ 已修正：PRO_199 → 「升級 PRO_PLUS 最多可出 100 題」（對齊 Feature 04 L65）；PRO_PLUS_399 → 獨立文字「升級 ULTRA 無題數上限」（修復：2026-05-03 TiTi Commander 排程巡檢）
+- [x] `/exam/results` — ~~Feature 19 L85-89 規格要求結果頁顯示排列模式標籤「交錯練習」及提示文字~~ 已修正：新增 `questionOrderMode` 至 Exam 型別（`types/models.ts`）、`services.ts` 映射 `question_order_mode`、結果頁顯示🔀交錯練習標籤 + 提示文字「交錯練習有助於長期記憶，持續使用效果更佳」（修復：2026-05-03 TiTi Commander 排程巡檢）
 - [x] `/practice` — ~~Feature 32 要求空節點空態有「選擇其他節點」與「回知識圖譜」兩個操作按鈕~~ 兩個按鈕皆已實作於 `page.tsx` line 384（選擇其他節點）和 line 388-393（回知識圖譜，連結至 `/knowledge`）（確認：2026-04-26 自動巡檢）
 - [x] `/account/resource-library` — FAILED 資源 failure_reason 已透過 title tooltip 向用戶呈現（hover「解析失敗」可見詳細原因），並透過 resourceParseService.getStatus() 主動輪詢（確認：2026-04-25 自動巡檢）
 

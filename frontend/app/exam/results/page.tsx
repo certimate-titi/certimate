@@ -129,6 +129,16 @@ function ExamResultsPage() {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-extrabold text-slate-900 mb-4">測驗結果分析</h1>
         <p className="text-lg text-slate-600">{exam.title} • {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('zh-TW') : new Date().toLocaleDateString('zh-TW')}</p>
+        {/* Feature 19: 交錯練習模式標籤 */}
+        {exam.questionOrderMode === 'interleaved' && (
+          <div className="mt-3 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full px-4 py-1.5 text-sm font-medium">
+            <span>🔀</span>
+            <span>交錯練習</span>
+          </div>
+        )}
+        {exam.questionOrderMode === 'interleaved' && (
+          <p className="mt-2 text-sm text-indigo-500">交錯練習有助於長期記憶，持續使用效果更佳</p>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">

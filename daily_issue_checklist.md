@@ -1,256 +1,201 @@
 # CertiMate Daily QA Issue Checklist
-**產出時間**：2026-05-01 10:30 (Asia/Taipei)
-**審查頁面數**：49 頁（其中重點深析 10 頁）
+**產出時間**：2026-05-03 01:08 (Asia/Taipei)
+**審查頁面數**：49 頁
 **Feature File 數**：44 個
-**發現問題總計**：🔴 5 + 🟠 8 + 🟡 6
+**發現問題總計**：🔴 3 + 🟠 8 + 🟡 5
 
 ---
 
 ## 頁面審查清單
 
-### /dashboard — 使用者主控台首頁
+### /dashboard — 個人儀表板
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 科目切換器 (SubjectSwitcher) | 互動 | Feature 13 L40 Rule 已覆蓋 | 已實作 | |
-| 連勝計數器 (StreakCounter) | 統計顯示 | Feature 13 L73 已覆蓋 | 已實作 | |
-| 每日任務 (DailyQuestCard) | 互動 | Feature 13 L96 已覆蓋 | 已實作 | |
-| 核心指標卡（倒數/答題數/答對率/預測及格率） | 統計顯示 | Feature 13 L59 已覆蓋 | 已實作 | |
-| 備考模式 Badge（Sprint/Standard/Mastery） | 互動 Tooltip | Feature 13 L379-411 已覆蓋 | 已實作 | |
-| 快速上傳區（PDF/Office/音訊/影片/圖片） | 互動表單 | Feature 13 L164-195 已覆蓋 | 已實作 | |
-| YouTube 連結解析 | 互動表單 | Feature 13 L184 已覆蓋 | 已實作 | |
-| 待辦提醒 (activityItems) | 清單 | Feature 13 L59 已覆蓋 | 已實作 | |
-| DomainRadarChart（領域雷達圖） | 圖表 | Feature 13 L228 已覆蓋 | 已實作 | |
-| StudyBuddyBanner (ULTRA 共讀計數) | 橫幅 | 無 Feature 覆蓋 | 程式碼僅有 comment，未實作 | 🔴 Feature 缺失 |
-
-**問題**：StudyBuddyBanner 功能（ULTRA 共讀人數）在程式碼中僅留有 comment（`{/* Ultra: Co-study counter — requires backend /community/online-count API */}`），既無 Feature Scenario 覆蓋，也未實作。
+| AnnouncementBanner | 顯示 | ✅ Feature 24 | ✅ 實作 | |
+| StreakCounter（學習連勝） | 顯示 | ✅ Feature 13 L73 | ✅ 實作 | |
+| DomainRadarChart（領域雷達圖） | 顯示 | ✅ Feature 13 L228 | ✅ 實作 | |
+| SubjectSwitcher（科目切換器） | 互動 | ✅ Feature 13 L40 | ✅ 實作 | |
+| DailyQuestCard（每日任務） | 顯示 | ✅ Feature 13 L96 | ✅ 實作 | |
+| ScheduleWeekCard（本週複習） | 顯示 | ✅ Feature 09 | ✅ 實作 | |
+| 備考模式標籤 Sprint/Standard/Mastery | 顯示 | ✅ Feature 13 L379 | ✅ 實作 | |
+| StudyBuddyBanner（ULTRA 共讀橫幅） | 顯示 | 🔴 無 Feature Scenario | ⚠️ 有程式碼邏輯但 feature 未覆蓋 | 需補 Feature Scenario |
 
 ---
 
-### /knowledge — 知識地圖頁
+### /knowledge — 知識心智圖
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 左側知識樹/圖譜 (ForceGraph + MindMapTree) | 圖表互動 | Feature 03b L231 + 03 已覆蓋 | 已實作 | |
-| 右側節點詳情面板 (NodeDetailPanel) | 面板 | Feature 03b L64-76 已覆蓋 | 已實作 | |
-| AI 教練聊天框 | 互動 | Feature 03b L96-114 已覆蓋 | 已實作 | |
-| 搜尋框 | 互動 | Feature 03 搜尋規則已覆蓋 | 已實作 | |
-| 資源刪除確認 Modal | 互動 | Feature 03 已覆蓋 | 已實作 | |
-| 資源上傳入口（導向 dashboard） | 互動按鈕 | 無 Scenario 覆蓋此導向路徑 | 點擊導向 `/dashboard` 而非 modal | 🟠 導航行為無回歸保護 |
-| 節點練習按鈕 | 互動 | Feature 32 導航規則已覆蓋 | 已實作 | |
-| FREE 用戶使用次數計數器 | 提示 | Feature 03b L89 已覆蓋 | 已實作 | |
-| ScaffoldMaterial / ScaffoldNotebook / ScaffoldReplayCard | 學習鷹架 | Feature 03a 已覆蓋 | 已實作 | |
-| 空態（mindMapNodes.length === 0） | 空態 | 有文字說明 | 未查詢 resource_parse_jobs | 🟡 空態未補強 |
-
-**問題**：
-1. 知識頁的新增資源按鈕（`+ 新增資源`）導向 `/dashboard`，Feature 03 無 Scenario 覆蓋此路徑，導航目標改變時無回歸保護。
-2. 空態顯示「上傳教材後系統會自動生成」，但未主動查詢 `resource_parse_jobs` 確認是否有 FAILED job，違反 Layer 3 規則。
+| ForceGraph / MindMapTree / Document 三視圖 | 互動 | ✅ Feature 03b L231 | ✅ 實作 | |
+| Batch reparse failed 全部失敗空態 | 按鈕 | ✅ Feature 03b | ✅ 實作（L794 batchReparseFailed） | |
+| FREE 用戶 AI 追問限制（3次/節點） | 付費牆 | ✅ Feature 03b L88 | ✅ 實作（剩 {freeQueriesLeft}/3） | |
+| FAILED 文件查詢 failure_reason | 空態補強 | ✅ Feature 03b 四種空態 | ✅ 實作（resourceParseService.getStatus()） | |
+| 全螢幕地圖節點點擊互動面板 | 互動 | 🔴 無任何 Scenario | ⚠️ 僅 setSelectedNodeId，無視覺反饋 | 已於上次巡檢列入 |
 
 ---
 
-### /knowledge/mindmap — 全螢幕知識地圖頁
+### /exam/setup — 測驗設定
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| ForceGraph 動態圖譜 | 圖表 | Feature 03b L231 已覆蓋 | 已實作 | |
-| MindMapTree 列表模式 | 圖表 | Feature 03b L231 已覆蓋 | 已實作 | |
-| 科目切換器 | 互動 | Feature 03b L23 已覆蓋 | 已實作 | |
-| 視圖切換按鈕（動態圖譜/列表模式） | 互動 | Feature 03b L231 已覆蓋 | 已實作 | |
-| 返回按鈕（回 /knowledge） | 導航 | 隱含於導航規格 | 已實作 | |
-| 空態（mindMapNodes.length === 0） | 空態 | 有文字說明 | 未查詢 resource_parse_jobs | 🟡 空態未補強 |
-| 節點點擊後無詳情面板 | 互動 | 全螢幕地圖頁節點點擊無 Scenario | 僅 setSelectedNodeId，無視覺反饋 | 🔴 Feature 缺失 |
-
-**問題**：
-1. `/knowledge/mindmap` 頁節點點擊僅呼叫 `setSelectedNodeId`，無任何詳情面板彈出或跳轉邏輯。Feature 03b 對「全螢幕地圖頁節點點擊的互動行為」無對應 Scenario。
-2. 空態未查詢 `resource_parse_jobs`。
+| 題數上限 FREE=10 / PRO=50 / PRO_PLUS=100 / ULTRA=無限 | 限制 | ✅ Feature 04 | 🟠 **BUG: PRO_PLUS_399 max=50，規格應為 100** | TIER_QUESTION_LIMITS L31 |
+| 升級提示文字（PRO_199 → PRO_PLUS 100 題） | 顯示 | ✅ Feature 04 L65 | 🟠 **BUG: 文字錯誤**，顯示「升級 ULTRA 最多 100 題以上」應為「升級 PRO_PLUS 最多可出 100 題」 | L30 |
+| Bloom 認知層次配比（ULTRA 專屬） | 付費牆 | ✅ Feature 04 | 🟠 **BUG: 以 `isAdmin` 守衛**，ULTRA 付費用戶無法存取 | L699 |
+| 測驗生成進度 SSE 串流 | 即時回饋 | ✅ Feature 04 | 🟠 **缺失**: 使用假動畫 overlay，未實際訂閱 SSE 端點 | L37-42 |
+| interleaved / grouped / sequential 排列模式 | 互動 | ✅ Feature 19 | ✅ 實作（三按鈕 UI） | |
+| 考古題模式（historical_only） | 互動 | ✅ Feature 04 L118 | ✅ 實作 | |
 
 ---
 
-### /practice — 自由練習模式頁
+### /exam/workspace — 測驗作答
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 葉節點列表（選擇知識節點） | 選擇互動 | Feature 32 已覆蓋 | 已實作 | |
-| 節點掌握度徽章（%/顏色） | 顯示 | Feature 32 已覆蓋 | 已實作 | |
-| 題目進度條 | 顯示 | Feature 32 已覆蓋 | 已實作 | |
-| 答案選項（ABCD） | 互動 | Feature 32 已覆蓋 | 已實作 | |
-| 答題回饋（詳解/進度更新） | 顯示 | Feature 32 已覆蓋 | 已實作 | |
-| AI 推論揭示（ai_inferred 題目） | 互動 | Feature 20 blindInference 已覆蓋 | 已實作 | |
-| 信心度標記（😰😐😎） | 互動 | Feature 20 要求此 UI | 練習頁面無此 UI 元素 | 🟠 實作缺失 |
-| no-questions 空態 | 空態 | Feature 32 L67 已覆蓋 | 有文字提示，未查詢 resource_parse_jobs | 🟡 空態未補強 |
-| 科目切換器 | 互動 | Feature 19/32 已覆蓋 | 已實作 | |
-
-**問題**：
-1. Feature 20（信心度校準）要求「答案選項下方應出現信心度標記列：😰 😐 😎」（L117），但 `/practice` 頁的答題回合中完全無此 UI 元素，功能缺失。
-2. `no-questions` 空態（`phase === 'no-questions'`）僅以文字引導，未主動查詢 `resource_parse_jobs` 取得 `failure_reason`。
+| PomodoroTimer | 計時 | ✅ Feature 21 | ✅ 實作 | |
+| 信心度標記三個圖示（😰😐😎） | 互動 | ✅ Feature 20 | 🟠 **缺失**: 答案選項下方無信心度標記 UI | 已於上次巡檢列入 |
+| 開考前 AI 打氣（Certi 角色） | 顯示 | ✅ Feature 05 | 🔴 **缺失**: 頁面程式碼無任何 Certi 打氣 UI | 已於上次巡檢列入 |
 
 ---
 
-### /review — 錯題複習簿頁
+### /exam/results — 測驗結果
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 左側錯題列表 | 側邊欄 | Feature 07 已覆蓋 | 已實作 | |
-| 中央題目與答案對比 | 顯示 | Feature 07 已覆蓋 | 已實作 | |
-| 詳細解析（毛玻璃付費牆） | 顯示 | Feature 07 已覆蓋 | 已實作 | |
-| AI 蘇格拉底教練聊天 | 互動 | Feature 07 已覆蓋 | 已實作 | |
-| 來源查看 Popover | 互動 | Feature 07 已覆蓋 | 已實作 | |
-| MathContent KaTeX 渲染 | 顯示 | Feature 07 已覆蓋 | 已實作 | |
-| 空態（wrongQuestions.length === 0） | 空態 | Feature 07 未覆蓋空態 job 查詢 | 顯示「全部答對！」但未查詢 job 表 | 🟡 空態未補強 |
-| 科目切換器 | 互動 | Feature 07 L26 已覆蓋 | 已實作 | |
-
-**問題**：`wrongQuestions.length === 0` 時直接顯示「全部答對！太厲害了！」，但未查詢後端 `exam_generation_jobs` / `resource_parse_jobs` 確認是否有 FAILED job 造成無錯題記錄（違反 Layer 3 規則）。
+| 分享至 LinkedIn 按鈕（placeholder 即將推出） | 按鈕 | ✅ Feature 06 L136-141 | 🟠 **規格不符**: 規格要「即將推出」提示，實作已做真實 LinkedIn 分享 | Feature Scenario 需更新 |
+| 下載成績卡片（placeholder 即將推出） | 按鈕 | ✅ Feature 06 L143-148 | 🟠 **規格不符**: 規格要「即將推出」提示，實作已用 html2canvas 真實下載 | Feature Scenario 需更新 |
+| 排列模式標籤「交錯練習」及提示文字 | 顯示 | ✅ Feature 19 L85-89 | 🟠 **缺失**: 結果頁無 question_order_mode 標籤顯示 | |
+| 知識地圖（ForceGraph）灰色節點說明 | 顯示 | ✅ Feature 06 | ✅ 實作（灰色節點保留） | 無明確說明文字 |
+| 逐題解析連結 | 按鈕 | ✅ Feature 06 | ✅ 實作（/review?examId=... L240） | |
 
 ---
 
-### /exam/setup — 考試設定頁
+### /practice — 節點練習
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 科目切換器 | 互動 | Feature 04 L22 已覆蓋 | 已實作 | |
-| 知識節點選擇（考古題題庫） | 勾選清單 | Feature 04 已覆蓋 | 已實作 | |
-| 題數選擇（訂閱方案限制） | 按鈕群 | Feature 04 已覆蓋 | 已實作 | |
-| 難度滑桿 | 互動 | Feature 04 已覆蓋 | 已實作 | |
-| 題目排列模式（🔀/📦/📈） | 按鈕群 | Feature 19 已覆蓋 | 已實作 | |
-| 出題模式（AI 混合/考古題） | 切換按鈕 | Feature 04 已覆蓋 | 已實作 | |
-| 進階出題配方（Bloom 配比/節點比例） | 折疊面板 | Feature 04 ULTRA 配比規格 | 僅 isAdmin 可見，ULTRA 一般用戶無法使用 | 🟠 實作缺失 |
-| 生成中動畫 (ExamLoadingOverlay) | 狀態 | Feature 04 SSE 推送規格 | 前端使用模擬動畫非 SSE | 🟠 實作缺失 |
-
-**問題**：
-1. Feature 04 規格「ULTRA 方案可自訂 Bloom 認知層級比例」，但程式碼中進階配方面板使用 `isAdmin` 判斷，ULTRA_1599 一般使用者（非 admin）無法使用此功能，與規格不一致。
-2. Feature 04 規格要求透過 SSE 推送生成進度（四階段事件），前端使用 ExamLoadingOverlay 模擬動畫，非實際 SSE 訂閱。
+| 節點熟練度徽章（green/yellow/red/gray） | 顯示 | ✅ Feature 32 | ✅ 實作（mastery_color L336-346） | |
+| no-questions 空態「前往出題」按鈕 | 空態 | ✅ Feature 32 | ✅ 實作（L384） | |
+| ?nodeId=N 直接導航 | 路由 | ✅ Feature 32 | ✅ 實作 | |
+| no-questions 空態查詢 resource_parse_jobs | Layer 3 | ✅ Feature 03b | 🟡 **未查 job 表**：僅文字提示，未調用 API 取得 failure_reason | |
+| 信心度標記（😰😐😎） | 互動 | ✅ Feature 20 | 🟠 **缺失**: answering phase 無信心度標記 UI（確認：L610 僅為結果顯示，非作答中標記） | 已於上次巡檢列入 |
 
 ---
 
-### /exam/workspace — 模擬考作答頁
+### /review — 錯題複習
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 計時器（倒數/低於 5 分紅色警示） | 顯示 | Feature 05 已覆蓋 | 已實作 | |
-| 番茄鐘計時器 (PomodoroTimer) | 互動 | Feature 21 已覆蓋 | 已實作 | |
-| 題號導覽網格 | 互動 | Feature 05 已覆蓋 | 已實作 | |
-| 標記複查按鈕 | 互動 | Feature 05 已覆蓋 | 已實作 | |
-| 暫停/交卷/總覽 Modal | 互動 | Feature 05 已覆蓋 | 已實作 | |
-| AI 教練「打氣語句」（開始測驗前） | 情感互動 | Feature 05 已定義 | 頁面無任何對應 UI | 🟠 實作缺失 |
-| 信心度標記 UI（😰😐😎） | 互動 | Feature 20 要求 | 頁面無此 UI | 🟠 實作缺失 |
-| beforeunload 離頁警告 | 瀏覽器事件 | Feature 05 已覆蓋 | 已實作 | |
-
-**問題**：
-1. Feature 05 Scenario「開始測驗前 AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面完全無此 UI 元素。
-2. Feature 20（信心度校準）要求作答時可標記信心度（😰😐😎），但 `/exam/workspace` 完全無此 UI。
+| KaTeX 數學公式渲染 | 顯示 | ✅ Feature 07 | ✅ 實作（MathContent + rehype-katex） | |
+| FREE 用戶毛玻璃遮罩 | 付費牆 | ✅ Feature 07 | ✅ 實作 | |
+| AI 教練引用來源切換 | 互動 | ✅ Feature 07 | ✅ 實作 | |
+| wrongQuestions === 0 空態查詢 job 表 | Layer 3 | ✅ 規則要求 | 🟡 **未查 job 表**：「全部答對！」未確認後端 job 狀態 | 已於上次巡檢列入 |
 
 ---
 
-### /exam/results — 考試結果頁
+### /schedule — 備考計劃
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 分數與及格判斷 | 顯示 | Feature 06 已覆蓋 | 已實作 | |
-| 撒花動畫 (Confetti) | 情感互動 | Feature 06 已覆蓋 | 實作觸發條件 >= 80，規格為通過（>= 70）| |
-| Bloom 認知層次分析 | 圖表 | Feature 04/18 已覆蓋 | 已實作 | |
-| 知識點弱點分析（進度條） | 圖表 | Feature 06 已覆蓋 | 已實作 | |
-| 知識圖譜 (ForceGraph) | 圖表 | Feature 06 L190 已覆蓋 | 已實作 | |
-| 分享至 LinkedIn 按鈕 | 互動 | Feature 06：應為 placeholder | 實際已直接開啟分享視窗 | 🔴 規格與實作不同步 |
-| 下載成績卡片按鈕 | 互動 | Feature 06：應為 placeholder | 實際已用 html2canvas 實作 | 規格需更新 |
-| AI 分析摘要 | 顯示 | Feature 06 已覆蓋 | 已實作 | |
-| 錯題本入口 | 導航 | Feature 06 已覆蓋 | 已實作 | |
-| 免責聲明 | 文字 | Feature 06 已覆蓋 | 已實作 | |
-
-**問題**：Feature 06 明確規定「分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態」，但目前頁面已實際開啟 LinkedIn 分享視窗。Feature 需更新以反映現有實作狀態。
+| Sprint/Standard/Mastery 模式顯示 | 顯示 | ✅ Feature 13 | ✅ 實作 | |
+| recs.length === 0 空態查詢 schedule job | Layer 3 | 規則要求 | 🟡 **未查 job 表**：直接顯示「尚無備考科目」 | 已於上次巡檢列入 |
 
 ---
 
-### /account — 個人帳戶設定頁
+### /pricing — 訂閱方案
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 個人資料 Tab（顯示名稱/年齡/學歷/職業） | 表單 | Feature 22 已覆蓋 | 已實作 | |
-| 訂閱與帳單 Tab | 顯示 | Feature 08/22 已覆蓋 | 已實作 | |
-| 安全性 Tab（密碼修改/刪除帳號） | 表單 | Feature 22 已覆蓋 | 已實作 | |
-| 偏好設定 Tab（深色模式/通知） | 互動 | Feature 22 已覆蓋 | 通知偏好存 localStorage 非 API | 🟠 實作與規格不符 |
-| 成就與歷程 Tab | 顯示 | Feature 13 L123 已覆蓋 | 已實作 | |
-
-**問題**：通知偏好（daily_reminder / pre_exam_reminder / weekly_report）目前存 localStorage，但 Feature 22 規格描述為 API 操作。
+| FREE / PRO / PRO+ / ULTRA 方案卡片 | 顯示 | ✅ Feature 18 | ✅ 實作 | |
+| EDU 學生方案說明區塊 | 顯示 | ✅ Feature 18 | ✅ 實作（頁面底部 EDU 說明 div L196-216） | 前次誤報為缺失，已確認存在 |
 
 ---
 
-### /pricing — 訂閱方案定價頁
+### /account — 帳戶設定
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 四方案比較卡片 | 顯示 | Feature 18 已覆蓋 | 已實作 | |
-| PRO_PLUS_399「進階 AI 教練」 | 顯示 | Feature 03/18 有覆蓋 | `included: false`，與規格矛盾 | 🔴 規格不一致 |
-| 目前方案標記 | 顯示 | Feature 18 已覆蓋 | 已實作 | |
-| 升級按鈕（ECPay 結帳） | 互動 | Feature 08a 已覆蓋 | 已實作 | |
-
-**問題**：`PRO_PLUS_399` 方案的「進階 AI 教練」功能顯示為 `included: false`，但 Feature 03 明定 PRO_PLUS_399 可使用完整 AI 教練。定價頁資訊誤導用戶。
+| 通知偏好（daily_reminder 等）儲存方式 | 後端同步 | ✅ Feature 22 | 🟠 **規格不符**: 存 localStorage，規格描述為 API 操作 | 已於上次巡檢列入 |
 
 ---
 
-### /schedule — 學習排程頁
+### /account/weekly-reports — 學習週報
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 科目排程卡片（Sprint/Standard/Mastery） | 顯示 | Feature 09 已覆蓋 | 已實作 | |
-| 「開始今日複習」按鈕 | 互動 | Feature 09 已覆蓋 | 已實作 | |
-| 空態（recs.length === 0） | 空態 | 顯示「尚無備考科目」 | 未查詢 schedule job 表 | 🟡 空態未補強 |
+| reports.length === 0 空態查詢 weekly report job | Layer 3 | 規則要求 | 🟡 **未查 job 表**：直接顯示「尚無週報」 | 已於上次巡檢列入 |
 
 ---
 
-## Feature File 覆蓋摘要
+### /super-admin/anomaly — 異常管理
 
-| Feature File | Scenario 數（估計） | @ignore/@wip 數 | 無對應頁面元素 |
-|-------------|-------------------|----------------|--------------|
-| 01-身分驗證 | 40+ | 3 (@manual) | 無 |
-| 02-資源上傳 | 30+ | 4 (@prd-033 @wip) | 分片上傳後端 Pipeline 前端無直接 UI |
-| 03-知識心智圖 | 8 active | 0 | 左右 75%/25% 佈局 Scenario vs 靈活佈局實作 |
-| 03a-知識心智圖生成 | 4 | 0 | 無 |
-| 03b-知識心智圖導航 | 15+ | 0 | 全螢幕地圖頁節點點擊詳情無實作 |
-| 04-測驗設定 | 25+ | 0 | ULTRA Bloom 配比自訂僅 Admin 可用 |
-| 04a-AI考題生成服務 | 10+ | 0 | SSE 進度推送（前端用模擬動畫） |
-| 05-模擬機考 | 20+ | 0 | AI 打氣語句無實作、信心度標記無實作 |
-| 06-測驗結果 | 20+ | 0 | LinkedIn/下載按鈕 Scenario 已過時 |
-| 07-錯題複習與AI教練 | 15+ | 0 | 無 |
-| 08-訂閱管理 | 10+ | 0 | 無 |
-| 09-學習記憶排程 | 10+ | 0 | 無 |
-| 13-個人儀表板與成就系統 | 36 | 0 | ULTRA 共讀橫幅 |
-| 17-意見反饋 | 10+ | 0 | 無 |
-| 18-定價與升級引導 | 10+ | 0 | PRO_PLUS 進階 AI 教練功能矩陣錯誤 |
-| 19-交錯練習 | 8 | 0 | 無 |
-| 20-信心度校準 | 13+ | 0 | 練習頁/機考頁缺信心度 UI |
-| 21-番茄鐘學習節奏 | 15 | 0 | 無 |
-| 22-帳號設定與個人偏好 | 12 | 0 | 通知偏好存 localStorage 非 API |
-| 27-個人化錯題地圖 | 8+ | 0 | 無 |
-| 32-節點練習模式 | 9 | 0 | 無 |
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 批次修復 UI 與 Scenario | 互動 | ✅ Feature 16 | 🟠 **缺失**: 批次修復 Scenario 存在但頁面無對應 UI | 已於上次巡檢列入 |
 
 ---
 
-## 問題彙整
+## 問題彙整（本次新發現標記 ★）
 
-### 🔴 Feature 缺失（需新增 Scenario 或更新規格）
+### 🔴 Feature 缺失（UI 元素無任何 Feature Scenario）
 
-1. `/dashboard` — StudyBuddyBanner（ULTRA 共讀在線人數橫幅）無 Feature Scenario 覆蓋，程式碼僅留 comment 未實作（首見：2026-04-27）
-2. `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/導航）無 Feature Scenario 覆蓋；實作僅 setSelectedNodeId 無任何視覺反饋（首見：2026-05-01）
-3. `/exam/results` — Feature 06 規格要求「LinkedIn 分享為 placeholder 即將推出提示」，但實作已直接開啟分享視窗；Feature 規格與實作不同步，需更新（首見：2026-04-30）
-4. `/pricing` — PRO_PLUS_399「進階 AI 教練」在 PLANS 陣列中設定 `included: false`，與 Feature 03 規格矛盾，定價頁誤導用戶（首見：2026-04-30）
-5. `/account` — 通知偏好（daily/pre-exam/weekly_report）目前存 localStorage，Feature 22 規格描述為 API 操作；規格與實作不同步（首見：2026-05-01）
+| # | 頁面 | 元素 | 說明 |
+|---|------|------|------|
+| 1 | `/dashboard` | StudyBuddyBanner | 無 Feature Scenario 覆蓋 |
+| 2 | `/knowledge` | 全螢幕地圖節點點擊互動面板 | 僅 setSelectedNodeId，無視覺反饋且無 Scenario |
+| 3 | `/exam/workspace` | 開考前 AI 打氣（Certi 角色） | Feature 05 有 Scenario 但頁面完全未實作 UI |
 
-### 🟠 實作缺失（Feature 存在但頁面缺功能）
+---
 
-1. `/exam/workspace` — Feature 05：開始測驗前 AI 教練（Certi）打氣語句介面，頁面完全無此 UI 元素（首見：2026-04-29）
-2. `/exam/workspace` — Feature 20：作答時信心度標記 UI（😰😐😎），頁面完全無此 UI（首見：2026-05-01）
-3. `/practice` — Feature 20：練習模式答題時信心度標記 UI（😰😐😎），頁面完全無此 UI（首見：2026-05-01）
-4. `/exam/setup` — Feature 04：ULTRA 方案 Bloom 配比自訂功能僅 `isAdmin` 可用，ULTRA_1599 一般用戶無法存取，與規格不符（首見：2026-05-01）
-5. `/exam/setup` — Feature 04：SSE 進度推送，前端使用 ExamLoadingOverlay 模擬動畫非真正 SSE 訂閱（首見：2026-05-01）
-6. `/knowledge` — Feature 03：「+ 新增資源」按鈕導向 `/dashboard` 而非就地上傳，Feature 03 無 Scenario 覆蓋此導航路徑，改動無回歸保護（首見：2026-04-28）
-7. `/super-admin/anomaly` — Feature 16「批次修復」互動元素缺乏對應 UI 與 Scenario 覆蓋（首見：2026-04-24）
-8. `/account` — Feature 22：通知偏好應透過 API 儲存，目前僅存 localStorage（首見：2026-05-01）
+### 🟠 實作缺失（Feature Scenario 存在但頁面功能有誤或未實作）
 
-### 🟡 空態需補強（需查 Job 表）
+| # | 頁面 | 問題 | Feature | 嚴重度 |
+|---|------|------|---------|--------|
+| 1 ★ | `/exam/setup` | PRO_PLUS_399 題數上限 code=50 但規格應為 100 | Feature 04 L71-83 | P1 |
+| 2 ★ | `/exam/setup` | PRO_199 升級提示文字錯誤（寫 ULTRA 應寫 PRO_PLUS） | Feature 04 L65 | P2 |
+| 3 | `/exam/setup` | Bloom 認知層次配比以 `isAdmin` 守衛，ULTRA 用戶無法存取 | Feature 04 | P1 |
+| 4 | `/exam/setup` | 測驗生成進度用假動畫 overlay，未實際訂閱 SSE 端點 | Feature 04 | P2 |
+| 5 | `/exam/results` | 排列模式標籤「交錯練習」及提示文字未顯示 | Feature 19 L85-89 | P2 |
+| 6 | `/exam/results` | LinkedIn 分享與成績卡片下載已實作，但 Feature Scenario 仍寫「即將推出」→ Scenario 需更新 | Feature 06 L136-148 | P3（Spec 落後） |
+| 7 | `/exam/workspace` | 信心度標記（😰😐😎）在作答中未顯示 | Feature 20 | P2 |
+| 8 | `/practice` | 信心度標記（😰😐😎）在 answering phase 未顯示 | Feature 20 | P2 |
+| 9 | `/account` | 通知偏好存 localStorage，規格要求 API | Feature 22 | P2 |
+| 10 | `/super-admin/anomaly` | 批次修復功能 Scenario 存在但頁面無 UI | Feature 16 | P2 |
 
-1. `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但未查詢 `exam_generation_jobs` / `resource_parse_jobs` 確認是否 FAILED（違反 Layer 3，首見：2026-04-28）
-2. `/practice` — `no-questions` 空態有文字 hint 但未查詢 `resource_parse_jobs` 取得 `failure_reason`（首見：2026-04-24）
-3. `/knowledge/mindmap` — 空態顯示「上傳教材後系統會自動生成」但未查詢 parse jobs 確認 FAILED 狀態（首見：2026-05-01）
-4. `/knowledge` — 空態（documents 及 nodes 皆為空）時，需補充查詢 `resource_parse_jobs` 的 FAILED 狀態（首見：2026-05-01）
-5. `/schedule` — `recs.length === 0` 顯示「尚無備考科目」，未查詢 schedule job 失敗記錄（首見：2026-04-29）
-6. `/account/weekly-reports` — `reports.length === 0` 顯示「尚無週報」，未查詢週報 cron job 失敗記錄（首見：2026-04-30）
+---
+
+### 🟡 空態補強（空態未查詢 Job 表違反 Layer 3 規則）
+
+| # | 頁面 | 空態條件 | 應查詢的 Job 表 |
+|---|------|---------|---------------|
+| 1 | `/practice` | phase === 'no-questions' | resource_parse_jobs (failure_reason) |
+| 2 | `/review` | wrongQuestions.length === 0 | exam_generation_jobs / resource_parse_jobs |
+| 3 | `/schedule` | recs.length === 0 | schedule_jobs 或相關 job 表 |
+| 4 | `/account/weekly-reports` | reports.length === 0 | weekly_report_jobs (cron) |
+| 5 | `/knowledge` | documents 與 nodes 皆空時 | resource_parse_jobs (failure_reason) |
+
+---
+
+## 修復優先序
+
+### P1 — 本週必修（影響付費用戶功能）
+1. **`/exam/setup` PRO_PLUS_399 max=100**（TIER_QUESTION_LIMITS L31 改 `max: 100`）
+2. **`/exam/setup` PRO_199 升級提示文字**（L30 改為「升級 PRO_PLUS 最多可出 100 題」）
+3. **`/exam/setup` Bloom 守衛改為 `isUltra`**（L699 `isAdmin` → `isUltra`）
+
+### P2 — 兩週內（功能正確性）
+4. `/exam/results` 補排列模式標籤「交錯練習」
+5. `/exam/workspace` + `/practice` 補信心度標記 UI（Feature 20）
+6. `/account` 通知偏好改為 API 儲存（Feature 22）
+7. `/exam/setup` SSE 進度串流（替換假動畫）
+8. `/super-admin/anomaly` 補批次修復 UI
+
+### P3 — 排期中（規格補強）
+9. Feature 06 更新 Scenario（LinkedIn 分享與成績卡片下載已實作，需更新 spec 反映實際狀態）
+10. 五個 🟡 空態頁面補查 job 表
+11. Feature 05 實作開考前 Certi 打氣 UI
+12. StudyBuddyBanner 補 Feature Scenario
+
+---
+
+*本 checklist 由 TiTi Commander 排程巡檢自動產出。*

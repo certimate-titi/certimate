@@ -76,6 +76,7 @@ export interface Exam {
   timeSpent: number; // seconds (actual time taken)
   passingScore: number;
   passStatus: string;
+  questionOrderMode?: string; // interleaved / sequential / grouped (Feature 19)
   createdAt: string; // ISO timestamp
 }
 

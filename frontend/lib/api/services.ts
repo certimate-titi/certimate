@@ -277,6 +277,7 @@ export const examService = {
         passingScore: Number(raw.passing_score) || 60,
         passStatus: (raw.pass_status as string) || (score >= 60 ? '通過' : '未通過'),
         timeSpent: (raw.time_spent_seconds as number) || 0,
+        questionOrderMode: (raw.question_order_mode as string) || undefined,
       },
       questions: (raw.questions as GetExamResultsResponse['questions']) || [],
       userAnswers: (raw.user_answers as GetExamResultsResponse['userAnswers']) || Array.from({ length: totalQuestions }, (_, i) => ({

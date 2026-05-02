@@ -27,8 +27,8 @@ const QUESTION_COUNTS = [10, 20, 50, 100] as const;
 
 const TIER_QUESTION_LIMITS: Record<SubscriptionTier, { max: number; upgradeMessage: string | null }> = {
   FREE: { max: 10, upgradeMessage: 'FREE 方案每次測驗最多 10 題，升級 PRO 最多可出 50 題' },
-  PRO_199: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
-  PRO_PLUS_399: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 ULTRA 最多可出 100 題以上' },
+  PRO_199: { max: 50, upgradeMessage: 'PRO 方案每次測驗最多 50 題，升級 PRO_PLUS 最多可出 100 題' },
+  PRO_PLUS_399: { max: 100, upgradeMessage: 'PRO_PLUS 方案每次測驗最多 100 題，升級 ULTRA 無題數上限' },
   ULTRA_1599: { max: Infinity, upgradeMessage: null },
   EDU: { max: 50, upgradeMessage: 'EDU 方案每次測驗最多 50 題' },
 };
