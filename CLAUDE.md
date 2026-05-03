@@ -102,3 +102,4 @@ cd backend
 - DBML SSOT：[project/specs/entity/erm.dbml](project/specs/entity/erm.dbml)
 - Feature 規格：[project/features/](project/features/)
 - Memory 規則：`~/.claude/projects/-Users-simon-certimate-project/memory/MEMORY.md`
+- 待辦清單 SSOT：[docs/ToDoList.md](docs/ToDoList.md)（根目錄 `ToDoList.md` 為 symlink）
