@@ -14,10 +14,11 @@ const PLAN_TO_TIER: Record<string, SubscriptionTier> = {
   EDU: 'EDU',
 };
 
-/** Backend role → frontend role mapping */
+/** Backend role → frontend role mapping（保留 SUPER_ADMIN 區分以支援更細的權限守衛） */
 function mapRole(backendRole: string): UserRole {
-  if (backendRole === 'ADMIN' || backendRole === 'SUPER_ADMIN') return 'ADMIN';
-  if (backendRole === 'student') return 'STUDENT';
+  if (backendRole === 'SUPER_ADMIN') return 'SUPER_ADMIN';
+  if (backendRole === 'ADMIN') return 'ADMIN';
+  if (backendRole === 'student' || backendRole === 'STUDENT') return 'STUDENT';
   return 'USER';
 }
 
@@ -92,7 +93,10 @@ interface AuthContextValue {
   isPro: boolean;
   isProPlus: boolean;
   isUltra: boolean;
+  /** ADMIN 或 SUPER_ADMIN（管理面後台存取） */
   isAdmin: boolean;
+  /** 僅 SUPER_ADMIN（含所有權限，含 ULTRA-only 功能） */
+  isSuperAdmin: boolean;
   isStudent: boolean;
   isEdu: boolean;
   isTrial: boolean;
@@ -178,7 +182,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isPro: subscriptionTier === 'PRO_199' || subscriptionTier === 'PRO_PLUS_399' || subscriptionTier === 'ULTRA_1599',
     isProPlus: subscriptionTier === 'PRO_PLUS_399' || subscriptionTier === 'ULTRA_1599',
     isUltra: subscriptionTier === 'ULTRA_1599',
-    isAdmin: user?.role === 'ADMIN',
+    isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
+    isSuperAdmin: user?.role === 'SUPER_ADMIN',
     isStudent: user?.role === 'STUDENT',
     isEdu: subscriptionTier === 'EDU',
     isTrial: user?.subscriptionStatus === 'TRIAL',

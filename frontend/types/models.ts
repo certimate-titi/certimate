@@ -6,7 +6,7 @@
 
 export type SubscriptionTier = 'FREE' | 'PRO_199' | 'PRO_PLUS_399' | 'ULTRA_1599' | 'EDU';
 
-export type UserRole = 'USER' | 'ADMIN' | 'STUDENT';
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'STUDENT';
 
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIAL';
 
