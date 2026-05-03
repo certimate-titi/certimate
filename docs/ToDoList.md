@@ -5,10 +5,20 @@
 ## 待辦事項
 **最後更新**：2026-05-03 TiTi Commander 三項修復 + 權限模型整理（L42 結果頁 spec 同步 ✅、L57 practice 信心度 emoji UI ✅、L58 ULTRA-only 守衛收斂 ✅；新增 isSuperAdmin flag、auth-context 保留 SUPER_ADMIN 區分、Navbar 教育管理改為 ULTRA-or-SuperAdmin、review 頁付費 fallback 排除純 ADMIN；剩餘未解決：🔴3 🟠4 🟡5 共 12 項，另含 1 項部署待辦）
 
-**權限模型備忘**：
-- 管理者帳號（不是用戶）：`ADMIN`（後台權限）/ `SUPER_ADMIN`（後台權限 + 含所有 user-facing tier 功能）
-- 用戶 tier：`FREE` / `PRO_199` / `PRO_PLUS_399` / `ULTRA_1599` / `EDU`
-- 守衛規則：純 ADMIN 不享 user-facing 付費功能（如 ULTRA-only 進階配方、PRO chat）；只有 SUPER_ADMIN 自動 bypass tier gate
+**權限模型備忘**（2026-05-03 最終確認）：
+
+| 帳號類型 | 內容 |
+|---------|------|
+| 管理者 `ADMIN` | 後台基本權限（用戶問題協助排除、客服級操作）+ 自動含所有 user-facing tier 功能（含 ULTRA） |
+| 管理者 `SUPER_ADMIN` | 含所有 ADMIN 權限 + **高等設定權限**：Prompt 模板設定、金額/預算上限、Feature Flag、系統設定、AI 模型路由、成本監控等 |
+| 用戶 tier | `FREE` / `PRO_199` / `PRO_PLUS_399` / `ULTRA_1599` / `EDU` |
+
+**守衛規則**：
+- `(isUltra \|\| isAdmin)` — 守 user-facing tier 功能（兩種管理者皆 bypass）
+- `isAdmin` — 守一般管理者後台（ADMIN + SUPER_ADMIN 皆可進）
+- `isSuperAdmin` — 守高等設定（Prompt / 預算 / 系統設定 / Feature Flag 等）— 純 ADMIN 不可
+
+**待補稽核**（次要）：`/super-admin/settings/*`、`/super-admin/prompt-templates/`、`/super-admin/cost-monitor/`、`/super-admin/settings/flags`、`/super-admin/settings/plans` 等高等設定頁應改用 `isSuperAdmin` 守衛（目前皆用 `isAdmin`）。後端 `require_super_admin` 已存在，需 audit endpoint 一致性。
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 

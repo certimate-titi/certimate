@@ -61,7 +61,7 @@ function ExamSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedNodeId = searchParams.get('nodeId');
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier, isUltra, isSuperAdmin } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier, isUltra, isAdmin } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -695,8 +695,8 @@ function ExamSetupPage() {
                 </div>
               </div>
 
-              {/* Advanced Recipe Panel — ULTRA tier only (SUPER_ADMIN 因含所有權限亦可) */}
-              {(isUltra || isSuperAdmin) && (
+              {/* Advanced Recipe Panel — ULTRA tier 用戶；管理者帳號（ADMIN/SUPER_ADMIN）亦自動含 */}
+              {(isUltra || isAdmin) && (
                 <div className="border-t border-slate-200 pt-6">
                   <button
                     type="button"

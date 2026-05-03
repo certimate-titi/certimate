@@ -29,7 +29,7 @@ export default function ReviewBookPageWrapper() {
 function ReviewBookPage() {
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId');
-  const { isPro, isProPlus, isSuperAdmin, isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
+  const { isPro, isProPlus, isAdmin, isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier } = useAuth();
   const router = useRouter();
 
   // Subject state
@@ -44,10 +44,10 @@ function ReviewBookPage() {
   const [sending, setSending] = useState(false);
   const [showCitation, setShowCitation] = useState(false);
 
-  // 純 ADMIN 不享 user-facing tier 功能；僅 SUPER_ADMIN 自動含所有權限
-  const isFreeUser = subscriptionTier === 'FREE' && !isSuperAdmin;
-  const isPro199Only = subscriptionTier === 'PRO_199' && !isSuperAdmin;
-  const canChat = isPro || isProPlus || isSuperAdmin; // PRO, PRO_PLUS, ULTRA, SUPER_ADMIN
+  // 管理者帳號（ADMIN/SUPER_ADMIN）自動含所有 user-facing tier 功能
+  const isFreeUser = subscriptionTier === 'FREE' && !isAdmin;
+  const isPro199Only = subscriptionTier === 'PRO_199' && !isAdmin;
+  const canChat = isPro || isProPlus || isAdmin; // PRO, PRO_PLUS, ULTRA, ADMIN, SUPER_ADMIN
 
   // Load subjects + guard
   useEffect(() => {
