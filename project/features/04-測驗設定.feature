@@ -210,6 +210,28 @@ Feature: 測驗設定
       And 測驗任務的 bloom_source 應為 "default"（非 custom）
       And 回應應包含提示 "Bloom 自訂比例為 ULTRA 方案專屬功能"
 
+  @frontend
+  Rule: 前置（UI）- 進階出題配方面板僅 ULTRA tier 與管理者帳號可見
+
+    # 落地紀錄（2026-05-03）：守衛 (isUltra || isAdmin)。對齊權限模型備忘：
+    # 管理者帳號（ADMIN/SUPER_ADMIN）自動含 user-facing tier 功能。
+    # 純 USER tier（FREE / PRO / PRO_PLUS）看不到此面板。
+
+    Example: ULTRA 用戶於測驗設定頁可見「進階出題配方」面板
+      Given 使用者 "ultra@example.com" 已登入
+      When 使用者 "ultra@example.com" 進入測驗設定頁
+      Then 頁面應顯示「進階出題配方」面板
+
+    Example: FREE 用戶於測驗設定頁看不見「進階出題配方」面板
+      Given 使用者 "free@example.com" 已登入
+      When 使用者 "free@example.com" 進入測驗設定頁
+      Then 頁面應不顯示「進階出題配方」面板
+
+    Example: ADMIN 管理者於測驗設定頁可見「進階出題配方」面板
+      Given 使用者 "admin@example.com" 已登入
+      When 使用者 "admin@example.com" 進入測驗設定頁
+      Then 頁面應顯示「進階出題配方」面板
+
     Example: ULTRA 用戶自訂 Bloom 比例加總不為 100 時失敗
       When 使用者 "ultra@example.com" 提交測驗設定，選擇節點 6，題數為 50，自訂 Bloom 比例為：
         | bloom_category | percentage |

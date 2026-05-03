@@ -305,3 +305,56 @@ Then(
   },
 );
 
+
+// ── L58 ULTRA Bloom guard：進階出題配方面板可見性 ──
+//
+// 不走 loginAs UI 流程（按鈕文字已改為「以 Email 繼續」），
+// 改用直接呼叫 mock /auth/login → 注入 token 至 localStorage。
+
+const PASSWORDS: Record<string, string> = { 'admin@certimate.com': 'admin123' };
+
+Given('使用者 {string} 已登入', async ({ page }, email: string) => {
+  const password = PASSWORDS[email] || 'Password1!';
+  await page.goto('/');
+  await page.evaluate(async ({ email, password }) => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('certimate_jwt_token', data.access_token);
+      localStorage.setItem('certimate_remember', 'true');
+    }
+  }, { email, password });
+});
+
+When('使用者 {string} 進入測驗設定頁', async ({ page }, email: string) => {
+  const password = PASSWORDS[email] || 'Password1!';
+  await page.goto('/');
+  await page.evaluate(async ({ email, password }) => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('certimate_jwt_token', data.access_token);
+      localStorage.setItem('certimate_remember', 'true');
+    }
+  }, { email, password });
+  await page.goto('/exam/setup');
+  await page.waitForLoadState('networkidle').catch(() => {});
+});
+
+Then('頁面應顯示「進階出題配方」面板', async ({ page }) => {
+  const panel = page.getByText('進階出題配方', { exact: false });
+  await expect(panel).toBeVisible({ timeout: 5000 });
+});
+
+Then('頁面應不顯示「進階出題配方」面板', async ({ page }) => {
+  const panel = page.getByText('進階出題配方', { exact: false });
+  await expect(panel).not.toBeVisible();
+});

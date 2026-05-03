@@ -23,7 +23,11 @@ export const test = base.extend<{
       await page.goto('/login');
       await page.getByPlaceholder('電子郵件').fill(email);
       await page.getByPlaceholder('密碼').fill(password);
-      await page.getByRole('button', { name: '登入', exact: true }).click();
+      // Login button text changed from "登入" to "以 Email 繼續" (2026-04-xx)
+      const submitBtn = page.getByRole('button', { name: '以 Email 繼續', exact: true });
+      const fallbackBtn = page.getByRole('button', { name: '登入', exact: true });
+      const target = (await submitBtn.count().catch(() => 0)) > 0 ? submitBtn : fallbackBtn;
+      await target.click();
       // Wait for either successful navigation or error message
       await Promise.race([
         page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 }),

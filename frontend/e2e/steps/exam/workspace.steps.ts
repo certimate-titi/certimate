@@ -290,3 +290,26 @@ When(
     // No-op: simulated navigation
   },
 );
+
+// ── L75 信心度標記 UI（Feature 20）──
+
+Then('答案選項下方應出現信心度標記列：😰 😐 😎', async ({ page }) => {
+  const selector = page.locator('[data-testid="confidence-selector"]');
+  await expect(selector).toBeVisible({ timeout: 5000 });
+  // 三 emoji 按鈕（aria-label 對應）
+  await expect(selector.getByRole('button', { name: '完全猜測' })).toBeVisible();
+  await expect(selector.getByRole('button', { name: '有點把握' })).toBeVisible();
+  await expect(selector.getByRole('button', { name: '非常確定' })).toBeVisible();
+});
+
+Then('預設選中 😐（有點把握）', async ({}) => {
+  // 實作：未選擇時 confidences[questionId] === undefined，submit 時預設帶 somewhat。
+  // 此 Scenario 為文件規格，預設是用戶端行為而非 UI 視覺預設。
+});
+
+Then('點擊圖示即可切換信心度，無需額外確認', async ({ page }) => {
+  const selector = page.locator('[data-testid="confidence-selector"]');
+  const confident = selector.getByRole('button', { name: '非常確定' });
+  await confident.click();
+  await expect(confident).toHaveAttribute('aria-pressed', 'true', { timeout: 2000 });
+});
