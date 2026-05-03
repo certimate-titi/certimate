@@ -166,6 +166,13 @@
   - 高等設定守衛（settings/cost-monitor/prompt-templates 改 isSuperAdmin）
   - L95 `/practice` Layer 3、L101 `/knowledge/mindmap` Layer 3
   - 需 cloud DB 跑 `POST /api/v1/auth/seed-test-accounts`（endpoint 已加但未部署）建立 7 測試帳號
+- [ ] **Frontend Playwright BDD 補測**（2026-05-03 完整補測時識別的債務）：以下純前端守衛與 UI 行為需實作 Playwright step definitions
+  - L58 ULTRA Bloom 守衛（Feature 04 L185-211 spec 已存在，缺 frontend step：`使用者 "ultra@example.com" 提交測驗設定...自訂 Bloom 比例為...`）
+  - isSuperAdmin 守衛 redirect 行為（純 ADMIN 進高等設定頁應 redirect 至 dashboard，缺 spec + step）
+  - L95 `/practice` Layer 3 空態（FAILED 文件 → 紅色警告塊，缺 spec + step）
+  - L101 `/knowledge/mindmap` Layer 3 空態（缺 spec + step）
+  - L75 `/exam/workspace` 信心度 emoji UI 互動（Feature 20 backend 已有 spec，缺 frontend UI step）
+  - 規模評估：5 個 features × 平均 1-2 小時 = 約 10 小時。建議拆批處理
 
 **API 端點**：`GET /admin/cost/gcp/services` — 查詢當月 GCP 服務分類成本
 
