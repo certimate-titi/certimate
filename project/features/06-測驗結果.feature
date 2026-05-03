@@ -133,19 +133,21 @@ Feature: 測驗結果
 
   # ========== UI 元件補充場景 ==========
 
-  Rule: 後置（回應）- 分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態
+  Rule: 後置（回應）- 分享到 LinkedIn 按鈕應開啟 LinkedIn 分享視窗
 
-    Example: 點擊分享到 LinkedIn 按鈕顯示即將推出提示
+    Example: 點擊分享到 LinkedIn 按鈕開啟 LinkedIn 分享頁
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
-      Then 畫面應顯示提示訊息 "LinkedIn 分享功能即將推出，敬請期待"
+      Then 畫面應於新視窗開啟 LinkedIn 分享 URL "https://www.linkedin.com/sharing/share-offsite/"
+      And 分享 URL 的 title 參數應包含使用者測驗分數
 
-  Rule: 後置（回應）- 下載成績卡片按鈕應顯示為 placeholder 未實作狀態
+  Rule: 後置（回應）- 下載成績卡片按鈕應產生 PNG 圖檔下載
 
-    Example: 點擊下載成績卡片按鈕顯示即將推出提示
+    Example: 點擊下載成績卡片按鈕觸發 PNG 下載
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
-      Then 畫面應顯示提示訊息 "成績卡片下載功能即將推出，敬請期待"
+      Then 瀏覽器應觸發下載 PNG 檔案，檔名格式為 "CertiMate_Score_{score}_{YYYY-MM-DD}.png"
+      And 圖檔內容應為成績卡片快照（透過 html2canvas 擷取 #score-card-snapshot 元素）
 
   Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
 

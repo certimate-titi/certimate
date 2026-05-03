@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 TiTi Commander SSOT 統一 + 深度內容驗證（本次處理：合併 2 對重複條目、標註 2 項已完成（`/knowledge` 新增資源按鈕、`/knowledge` Layer 3 空態查詢）；剩餘未解決：🔴4 🟠6 🟡5 共 15 項，另含 1 項部署待辦）
+**最後更新**：2026-05-03 TiTi Commander 三項修復（L42 結果頁 spec 同步 ✅、L57 practice 信心度 emoji UI ✅、L58 ULTRA Bloom 守衛 ✅；剩餘未解決：🔴3 🟠4 🟡5 共 12 項，另含 1 項部署待辦）
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -39,7 +39,7 @@
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
 - [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
 - [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
-- [ ] `/exam/results` — Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符（已實作）；需更新 Feature Scenario 以反映已實作狀態，防止回歸測試誤判（首見：2026-05-01）
+- [x] `/exam/results` — ~~Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符~~ Feature 06 L136-148 已更新：分享按鈕應開啟 LinkedIn 分享視窗、下載按鈕應觸發 PNG 下載（檔名 `CertiMate_Score_{score}_{YYYY-MM-DD}.png`）；spec 與實作對齊（修復：2026-05-03 TiTi Commander）
 
 ---
 
@@ -54,8 +54,8 @@
 - [x] `/review` — ~~KaTeX 渲染待確認~~ MathContent component 確認使用 `rehype-katex` + `remark-math` + `katex/dist/katex.min.css`，透過 ReactMarkdown 實作完整 KaTeX 數學公式渲染；Feature 07 仍無對應 Scenario 但功能實作完整（確認：2026-04-30 自動巡檢）
 - [x] `/knowledge` — ~~「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal~~ knowledge/page.tsx L475 已確認 `Link href="/dashboard"`，跨頁導航行為符合現行設計；待補 Feature 03 Scenario 但功能正常（確認：2026-05-03 內容驗證）
 - [ ] `/exam/workspace` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，workspace 頁面無任何對應 UI 元素（首見：2026-05-01）
-- [ ] `/practice` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，practice answering phase 無任何對應 UI 元素（首見：2026-05-01）
-- [ ] `/exam/setup` — Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能（首見：2026-05-01）
+- [x] `/practice` — ~~Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」~~ practice/page.tsx 答題區新增 `confidence-selector`（😰完全猜測 / 😐有點把握 / 😎非常確定）；`practiceService.submitAnswer` 擴充支援 `userConfidence`，後端 `PracticeSubmitRequest` 接受 `user_confidence` 欄位，預設值 somewhat（修復：2026-05-03 TiTi Commander）
+- [x] `/exam/setup` — ~~Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能~~ setup/page.tsx L699 守衛改為 `(isUltra || isAdmin)`，ULTRA 用戶現可存取進階出題配方面板（修復：2026-05-03 TiTi Commander）
 - [ ] `/exam/setup` — Feature 04 規格描述測驗生成應使用 SSE 推送即時進度；前端目前使用 `ExamLoadingOverlay` 模擬假階段動畫，未實際訂閱 SSE 端點（首見：2026-05-01）
 - [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）需改為後端 API 儲存（目前僅存 localStorage）；Feature 22 規格描述為 API 操作，規格與實作不同步（首見：2026-05-01）
 - [x] `/exam/setup` — ~~**P1 BUG**: `TIER_QUESTION_LIMITS` PRO_PLUS_399 的 `max` 設為 50，Feature 04 L71-83 明確規定 PRO_PLUS 上限為 100 題~~ 已修正：`max: 50` → `max: 100`，`upgradeMessage` 更新為「PRO_PLUS 方案每次測驗最多 100 題，升級 ULTRA 無題數上限」（修復：2026-05-03 TiTi Commander 排程巡檢）

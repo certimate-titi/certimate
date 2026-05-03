@@ -1813,10 +1813,15 @@ export const practiceService = {
   },
 
   /** 提交練習作答（即時回饋 + 知識圖譜進度更新） */
-  async submitAnswer(questionId: string, selectedAnswer: string): Promise<PracticeSubmitResponse> {
+  async submitAnswer(
+    questionId: string,
+    selectedAnswer: string,
+    userConfidence?: 'confident' | 'somewhat' | 'guessing' | null,
+  ): Promise<PracticeSubmitResponse> {
     return apiClient.post('/practice/submit', {
       question_id: questionId,
       selected_answer: selectedAnswer,
+      user_confidence: userConfidence ?? null,
     });
   },
 };

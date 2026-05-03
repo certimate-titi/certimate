@@ -79,6 +79,8 @@ function PracticePage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<PracticeSubmitResponse | null>(null);
   const [judgmentSet, setJudgmentSet] = useState(false);
+  // Feature 20: 信心度校準（confident / somewhat / guessing）
+  const [userConfidence, setUserConfidence] = useState<'confident' | 'somewhat' | 'guessing' | null>(null);
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
@@ -157,7 +159,11 @@ function PracticePage() {
     if (!selectedAnswer || !questions[currentIdx]) return;
     setSubmitting(true);
     try {
-      const res = await practiceService.submitAnswer(questions[currentIdx].id, selectedAnswer);
+      const res = await practiceService.submitAnswer(
+        questions[currentIdx].id,
+        selectedAnswer,
+        userConfidence ?? 'somewhat', // Feature 20: 預設為「有點把握」
+      );
       setFeedback(res);
       setPhase('feedback');
       setJudgmentSet(false);
@@ -174,6 +180,7 @@ function PracticePage() {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);
       setSelectedAnswer(null);
+      setUserConfidence(null);
       setFeedback(null);
       setPhase('answering');
     } else {
@@ -487,6 +494,35 @@ function PracticePage() {
                   >
                     <span className="font-bold mr-2 text-xs">{opt.key}.</span>
                     {opt.text}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 20: 信心度校準（emoji 三圖示） */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6">
+              <p className="text-xs font-medium text-slate-600 mb-2">標記你的信心度（選填）</p>
+              <div className="flex gap-2" data-testid="confidence-selector">
+                {([
+                  { k: 'guessing' as const, emoji: '😰', label: '完全猜測' },
+                  { k: 'somewhat' as const, emoji: '😐', label: '有點把握' },
+                  { k: 'confident' as const, emoji: '😎', label: '非常確定' },
+                ]).map((c) => (
+                  <button
+                    key={c.k}
+                    type="button"
+                    onClick={() => setUserConfidence(c.k)}
+                    disabled={submitting}
+                    aria-label={c.label}
+                    aria-pressed={userConfidence === c.k}
+                    className={`flex-1 py-2 px-3 rounded-lg border-2 transition-all text-sm flex items-center justify-center gap-1 ${
+                      userConfidence === c.k
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                    } ${submitting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span className="text-lg" aria-hidden>{c.emoji}</span>
+                    <span className="text-xs">{c.label}</span>
                   </button>
                 ))}
               </div>

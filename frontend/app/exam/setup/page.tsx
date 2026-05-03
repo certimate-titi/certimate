@@ -61,7 +61,7 @@ function ExamSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedNodeId = searchParams.get('nodeId');
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier, isAdmin } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, subscriptionTier, isAdmin, isUltra } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -695,8 +695,8 @@ function ExamSetupPage() {
                 </div>
               </div>
 
-              {/* Advanced Recipe Panel — B2B teachers only */}
-              {isAdmin && (
+              {/* Advanced Recipe Panel — ULTRA users + B2B teachers (admin) */}
+              {(isUltra || isAdmin) && (
                 <div className="border-t border-slate-200 pt-6">
                   <button
                     type="button"

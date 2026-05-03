@@ -60,6 +60,7 @@ def get_node_questions(
 class PracticeSubmitRequest(BaseModel):
     question_id: str
     selected_answer: str
+    user_confidence: str | None = None  # Feature 20: confident / somewhat / guessing
 
 
 @router.post("/submit")
