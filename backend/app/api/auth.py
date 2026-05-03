@@ -229,6 +229,55 @@ def seed_demo_account(db: Session = Depends(get_db)):
     return {"message": "Demo account created", "email": email}
 
 
+@router.post("/auth/seed-test-accounts")
+def seed_test_accounts(db: Session = Depends(get_db)):
+    """建立完整權限矩陣測試帳號（idempotent；每個權限層各 1）。
+
+    對應 docs/permission-model.md 的「6. 測試帳號」段。供端對端權限驗證使用。
+    密碼統一為 `test1234`。
+    """
+    from app.models.user import User, UserStatus, UserRole, SubscriptionPlan
+    import hashlib
+
+    repo = UserRepository(db)
+    pw_hash = hashlib.sha256("test1234".encode()).hexdigest()
+
+    # (email, role, plan, display_name)
+    matrix = [
+        ("super-admin@certimate.test", UserRole.SUPER_ADMIN, SubscriptionPlan.ULTRA, "Test Super Admin"),
+        ("admin@certimate.test", UserRole.ADMIN, SubscriptionPlan.FREE, "Test Admin (FREE)"),
+        ("ultra@certimate.test", UserRole.USER, SubscriptionPlan.ULTRA, "Test ULTRA User"),
+        ("pro-plus@certimate.test", UserRole.USER, SubscriptionPlan.PRO_PLUS, "Test PRO_PLUS User"),
+        ("pro@certimate.test", UserRole.USER, SubscriptionPlan.PRO, "Test PRO User"),
+        ("free@certimate.test", UserRole.USER, SubscriptionPlan.FREE, "Test FREE User"),
+        ("edu@certimate.test", UserRole.STUDENT, SubscriptionPlan.EDU, "Test EDU Student"),
+    ]
+
+    results = []
+    for email, role, plan, display_name in matrix:
+        existing = repo.find_by_email(email)
+        if existing:
+            existing.role = role
+            existing.subscription_plan = plan
+            existing.status = UserStatus.ACTIVE
+            existing.onboarding_completed = True
+            existing.password_hash = pw_hash
+            results.append({"email": email, "action": "updated", "role": role.value, "plan": plan.value})
+        else:
+            db.add(User(
+                email=email,
+                password_hash=pw_hash,
+                display_name=display_name,
+                role=role,
+                status=UserStatus.ACTIVE,
+                subscription_plan=plan,
+                onboarding_completed=True,
+            ))
+            results.append({"email": email, "action": "created", "role": role.value, "plan": plan.value})
+    db.commit()
+    return {"password": "test1234", "accounts": results}
+
+
 @router.delete("/auth/delete-account")
 def delete_account(
     user_id: str = Depends(get_current_user_id),

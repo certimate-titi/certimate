@@ -145,16 +145,56 @@
 
 ## 6. 測試帳號
 
-| Email | 密碼 | role / tier | 備註 |
-|-------|------|------------|------|
-| `admin@certimate.com` | `admin123` | SUPER_ADMIN / ULTRA | 萬能帳號 |
+完整權限矩陣測試帳號（密碼統一 `test1234`）：
 
-⚠️ **缺**：純 ADMIN（非 SUPER_ADMIN）/ 純 ULTRA / PRO_PLUS / PRO / FREE / EDU 帳號 — 端對端權限驗證受限。建議建立 seed script 補齊。
+| Email | role | tier | 備註 |
+|-------|------|------|------|
+| `super-admin@certimate.test` | SUPER_ADMIN | ULTRA | 萬能；對齊 admin@certimate.com |
+| `admin@certimate.test` | ADMIN | FREE | 純 ADMIN 測試（非 SUPER_ADMIN）|
+| `ultra@certimate.test` | USER | ULTRA | 純付費 ULTRA 用戶 |
+| `pro-plus@certimate.test` | USER | PRO_PLUS | |
+| `pro@certimate.test` | USER | PRO | |
+| `free@certimate.test` | USER | FREE | 最受限 |
+| `edu@certimate.test` | STUDENT | EDU | EDU 學生帳號 |
+| `admin@certimate.com` | SUPER_ADMIN | ULTRA | 既有 demo 帳號（密碼 `admin123`）|
+
+### 6.1 建立方式
+
+**雲端後端**（部署後）：
+```bash
+curl -X POST https://<cloud-run-url>/api/v1/auth/seed-test-accounts
+```
+
+**本地後端**（CLI）：
+```bash
+cd backend && .venv/bin/python -m app.scripts.seed_test_accounts
+```
+
+兩者皆 idempotent（已存在則更新為標準狀態）。
+
+### 6.2 端對端驗證結果（2026-05-03 本地驗證）
+
+| 帳號 | 路徑 | 預期 | 實測 |
+|------|------|------|------|
+| ADMIN/FREE | `/super-admin/dashboard` | ✅ 進入 | ✅ |
+| ADMIN/FREE | `/super-admin/cost-monitor` | ❌ redirect→dashboard | ✅ |
+| ADMIN/FREE | `/super-admin/settings` | ❌ redirect→dashboard | ✅ |
+| ADMIN/FREE | `/super-admin/prompt-templates` | ❌ redirect→dashboard | ✅ |
+| ADMIN/FREE | `/exam/setup` 進階配方面板 | ✅ 顯示（isAdmin bypass tier）| ✅ |
+| ADMIN/FREE | nav 教育管理 | ✅ 顯示（isAdmin bypass tier）| ✅ |
+| USER/ULTRA | `/super-admin/dashboard` | ❌ redirect→/dashboard | ✅ |
+| USER/ULTRA | `/exam/setup` 進階配方 | ✅ 顯示（isUltra）| ✅ |
+| USER/ULTRA | nav 教育管理 | ✅ 顯示（isUltra）| ✅ |
+| USER/ULTRA | nav 平台管理 | ❌ 不顯示 | ✅ |
+| USER/FREE | `/exam/setup` 進階配方 | ❌ 不顯示 | ✅ |
+| USER/FREE | nav 教育管理 | ❌ 不顯示 | ✅ |
+| USER/FREE | nav 平台管理 | ❌ 不顯示 | ✅ |
 
 ---
 
 ## 7. 變更歷史
 
+- **2026-05-03 v4** — 新增 `seed_test_accounts` CLI + `/auth/seed-test-accounts` endpoint；建立 7 個權限矩陣測試帳號；本地端對端驗證 13 條守衛規則全綠。
 - **2026-05-03 v3** — `/super-admin/settings/*`、`cost-monitor`、`prompt-templates` 加 `isSuperAdmin` 守衛（SUPER_ADMIN-only 高等設定）。
 - **2026-05-03 v2** — 確認 ADMIN 自動含 ULTRA 功能；3 處 user-facing tier 守衛回退至 `(isUltra || isAdmin)`。
 - **2026-05-03 v1** — 引入 `isSuperAdmin` flag、`auth-context` 不再攤平 SUPER_ADMIN→ADMIN。
