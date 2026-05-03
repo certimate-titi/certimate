@@ -19,6 +19,148 @@ import { useAuth } from '@/lib/auth-context';
 import { adminService } from '@/lib/api/services';
 import type { Student, GetStudentListResponse } from '@/types';
 
+// ─── DPA 簽署 Modal ─────────────────────────────────────────────────────────
+
+interface DpaStatus {
+  signed: boolean;
+  signed_at?: string;
+  signer_name?: string;
+  institution_name?: string;
+}
+
+function DpaSignModal({
+  open,
+  onClose,
+  onSigned,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSigned: () => void;
+}) {
+  const [signerName, setSignerName] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSign = async () => {
+    if (!signerName.trim() || !agreed) return;
+    setSigning(true);
+    setError(null);
+    try {
+      await adminService.signDpa(signerName.trim());
+      onSigned();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '簽署失敗，請稍後再試');
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">簽署資料處理合約（DPA）</h2>
+              <p className="text-xs text-slate-500">匯入學生前須完成此步驟</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* DPA 說明 */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-bold mb-1">為什麼需要簽署 DPA？</p>
+                <p className="text-xs leading-relaxed">
+                  依據個人資料保護法規，機構管理員在匯入學生個人資料前，
+                  須簽署資料處理合約（Data Processing Agreement），
+                  以確保學生資料在平台上受到妥善保護與合規處理。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 合約摘要 */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 space-y-2">
+            <h3 className="text-sm font-bold text-slate-700">合約要點摘要</h3>
+            <p>• 平台僅在教育服務範圍內處理學生資料</p>
+            <p>• 學生資料不會用於廣告或行銷用途</p>
+            <p>• 學生享有存取、更正、刪除及資料可攜權</p>
+            <p>• 資安事件發生時 72 小時內通知機構管理員</p>
+            <p>• ULTRA 方案結束後 90 天內刪除學生資料</p>
+          </div>
+
+          {/* 簽署人姓名 */}
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">簽署人姓名</label>
+            <input
+              type="text"
+              value={signerName}
+              onChange={(e) => setSignerName(e.target.value)}
+              placeholder="請輸入您的姓名"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* 同意勾選 */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-xs text-slate-600 leading-relaxed">
+              我已閱讀並同意<span className="font-bold text-indigo-600">資料處理合約（DPA）</span>的全部條款，
+              並確認我有權代表機構簽署此合約。
+            </span>
+          </label>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+              <p className="text-xs text-rose-700">{error}</p>
+            </div>
+          )}
+
+          {/* 簽署按鈕 */}
+          <button
+            onClick={handleSign}
+            disabled={!signerName.trim() || !agreed || signing}
+            className="w-full bg-indigo-500 hover:bg-indigo-400 disabled:bg-slate-200 disabled:text-slate-400 text-white py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            {signing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                簽署中...
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="h-4 w-4" />
+                確認簽署 DPA
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function TrendIcon({ trend }: { trend: Student['trend'] }) {
@@ -448,6 +590,8 @@ export default function EduConsolePage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeGroup, setActiveGroup] = useState<string>('all');
   const [deleteGroupConfirm, setDeleteGroupConfirm] = useState('');
+  const [dpaStatus, setDpaStatus] = useState<DpaStatus | null>(null);
+  const [dpaModalOpen, setDpaModalOpen] = useState(false);
 
   // 獲取學員資料（B2B dashboard 直接回傳機構學員）
   useEffect(() => {
@@ -474,6 +618,37 @@ export default function EduConsolePage() {
     fetchData();
   }, [refreshKey, authLoading, isAuthenticated]);
 
+
+  // 獲取 DPA 狀態
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    const fetchDpa = async () => {
+      try {
+        const res = await adminService.getDpa();
+        setDpaStatus(res as DpaStatus);
+      } catch {
+        // DPA API 失敗時假設未簽署
+        setDpaStatus({ signed: false });
+      }
+    };
+    fetchDpa();
+  }, [authLoading, isAuthenticated, refreshKey]);
+
+  // 匯入按鈕：未簽署 DPA 時攔截，改為顯示 DPA 簽署 modal
+  const handleImportClick = useCallback(() => {
+    if (dpaStatus && !dpaStatus.signed) {
+      setDpaModalOpen(true);
+    } else {
+      setImportModalOpen(true);
+    }
+  }, [dpaStatus]);
+
+  const handleDpaSigned = useCallback(() => {
+    setDpaStatus(prev => prev ? { ...prev, signed: true } : { signed: true });
+    setDpaModalOpen(false);
+    // DPA 簽署後自動開啟匯入 modal
+    setImportModalOpen(true);
+  }, []);
 
   // 從學員資料提取群組列表
   const groups = [...new Set(students.map(s => s.group).filter(Boolean))] as string[];
@@ -512,7 +687,7 @@ export default function EduConsolePage() {
             <span className="text-white">{students.length} / 200</span>
           </div>
           <button className="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full text-sm font-bold transition-colors"
-            onClick={() => setImportModalOpen(true)}>
+            onClick={handleImportClick}>
             + 匯入學生名單
           </button>
         </div>
@@ -766,7 +941,7 @@ export default function EduConsolePage() {
           {/* ── Quick Actions ── */}
           <div className="grid md:grid-cols-3 gap-4">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
-              onClick={() => setImportModalOpen(true)}>
+              onClick={handleImportClick}>
               <div className="h-11 w-11 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
                 <FileSpreadsheet className="h-5 w-5 text-indigo-500" />
               </div>
@@ -928,6 +1103,31 @@ export default function EduConsolePage() {
           )}
         </div>
       </div>
+
+      {/* DPA 未簽署提示 Banner */}
+      {dpaStatus && !dpaStatus.signed && !isLoading && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-amber-50 border-t-2 border-amber-300 px-6 py-3 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="h-5 w-5 text-amber-600" />
+            <span className="text-sm text-amber-800 font-medium">
+              匯入學生前須先簽署資料處理合約（DPA）
+            </span>
+          </div>
+          <button
+            onClick={() => setDpaModalOpen(true)}
+            className="bg-amber-500 hover:bg-amber-400 text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors"
+          >
+            立即簽署
+          </button>
+        </div>
+      )}
+
+      {/* DPA 簽署 Modal */}
+      <DpaSignModal
+        open={dpaModalOpen}
+        onClose={() => setDpaModalOpen(false)}
+        onSigned={handleDpaSigned}
+      />
 
       {/* CSV Import Modal */}
       <ImportStudentModal

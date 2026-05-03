@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 Batch A — Layer 3 空態查 job 完成（L95 `/practice` ✅、L101 `/knowledge/mindmap` ✅）；L96/L99/L100 改標「待後端 job API」前置條件；剩餘未解決：🔴3 🟠4 🟡3 共 10 項（其中 3 項待後端先補 API），另含 1 項部署 + 1 項雲端驗證待辦
+**最後更新**：2026-05-04 TiTi Commander 排程巡檢 — 修復：🔴1 完成（`/edu-console` DPA UI 已實作）；剩餘未解決：🔴4 🟠5 🟡3 共 12 項（其中 3 項待後端先補 API）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -55,6 +55,8 @@
 - [x] `/super-admin/platform-subjects` — ~~平台科目管理無任何 Feature 覆蓋~~ Feature 12c Rule「平台科目管理頁應支援列表/編輯/啟停用」(L271-282) 含 Scenario，Feature 34 亦覆蓋相關 API（確認：2026-04-30 自動巡檢）
 - [x] `/resources/[id]/candidates` — ~~前端頁面尚未建立~~ `frontend/app/resources/[id]/candidates/page.tsx` 已建立，Feature 23 Rule (L132) Scenario 覆蓋完整（確認：2026-04-30 自動巡檢）
 - [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 教練（Certi）基於使用者狀態動態生成打氣語句」，workspace/page.tsx 無任何對應 UI 元素（首見：2026-04-29；2026-05-03 合併重複條目）
+- [x] `/edu-console` — ~~Feature 10 L58-65 規定「機構管理員首次匯入學生前須簽署資料處理合約（DPA）」；`edu-console/page.tsx` 無 DPA 相關 UI~~ edu-console/page.tsx 新增 DPA 簽署 modal（DpaSignModal）+ 底部未簽署 Banner + handleImportClick 攔截邏輯；呼叫 `adminService.getDpa()` 查狀態、`adminService.signDpa(signerName)` 簽署；簽署後自動開啟 CSV 匯入 modal（修復：2026-05-04 TiTi Commander 排程巡檢）
+- [ ] `/practice` — Feature 28（階層式難度遞進）規定「在進階節點答錯時系統自動回溯到父節點（depth 3→2→1）」；practice/page.tsx 無自動回溯邏輯，空態亦無「切換至父節點」提示（首見：2026-05-04）
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
 - [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
 - [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
@@ -77,6 +79,7 @@
 - [x] `/exam/setup` — ~~Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能~~ setup/page.tsx 守衛改為 `(isUltra || isSuperAdmin)`；同步修復 auth-context：保留 SUPER_ADMIN 區分（不再攤平成 ADMIN），新增 `isSuperAdmin` flag；ULTRA tier + SUPER_ADMIN 可看面板，純 ADMIN 不可（對齊 Feature 04 規格）（修復：2026-05-03 TiTi Commander）
 - [ ] `/exam/setup` — Feature 04 規格描述測驗生成應使用 SSE 推送即時進度；前端目前使用 `ExamLoadingOverlay` 模擬假階段動畫，未實際訂閱 SSE 端點（首見：2026-05-01）
 - [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）需改為後端 API 儲存（目前僅存 localStorage）；Feature 22 規格描述為 API 操作，規格與實作不同步（首見：2026-05-01）
+- [ ] `/knowledge` — Feature 27（個人化錯題地圖）要求「以紅/橘/綠色視覺化呈現個人弱點分佈的獨立熱力圖層」；knowledge/page.tsx 目前僅以 `mastery_color` 近似（由 ForceGraph node color 呈現），缺乏 Feature 27 規格描述的「熱力圖可展開查看節點下錯題明細」互動行為（首見：2026-05-04）
 - [x] `/exam/setup` — ~~**P1 BUG**: `TIER_QUESTION_LIMITS` PRO_PLUS_399 的 `max` 設為 50，Feature 04 L71-83 明確規定 PRO_PLUS 上限為 100 題~~ 已修正：`max: 50` → `max: 100`，`upgradeMessage` 更新為「PRO_PLUS 方案每次測驗最多 100 題，升級 ULTRA 無題數上限」（修復：2026-05-03 TiTi Commander 排程巡檢）
 - [x] `/exam/setup` — ~~**P2 BUG**: PRO_199 升級提示文字「升級 ULTRA 最多可出 100 題以上」錯誤~~ 已修正：PRO_199 → 「升級 PRO_PLUS 最多可出 100 題」（對齊 Feature 04 L65）；PRO_PLUS_399 → 獨立文字「升級 ULTRA 無題數上限」（修復：2026-05-03 TiTi Commander 排程巡檢）
 - [x] `/exam/results` — ~~Feature 19 L85-89 規格要求結果頁顯示排列模式標籤「交錯練習」及提示文字~~ 已修正：新增 `questionOrderMode` 至 Exam 型別（`types/models.ts`）、`services.ts` 映射 `question_order_mode`、結果頁顯示🔀交錯練習標籤 + 提示文字「交錯練習有助於長期記憶，持續使用效果更佳」（修復：2026-05-03 TiTi Commander 排程巡檢）
