@@ -69,7 +69,7 @@
 - [x] `/exam/workspace` — ~~Feature 21（番茄鐘）存在，但頁面無 pomodoro/番茄鐘相關實作邏輯，需確認並實作~~ PomodoroTimer 已在 line 226 確認渲染（`<PomodoroTimer examDurationSec={totalTimeLimit} paused={isPaused} />`），Feature 21 覆蓋完整（確認：2026-04-29 自動巡檢）
 - [x] ~~`/knowledge` — Feature 46（知識地圖 Canvas 三層 Zoom）存在，頁面使用 ForceGraph 但三層 Zoom 邏輯未明確實作，需對照 PRD-046（首見：2026-04-24）~~ **CEO 2026-04-24 決議移除 PRD-046 Canvas（合併至既有 ForceGraph mindmap）**；spec 46 + 46b 與 frontend/lib/analytics.ts 已於 2026-04-28 整檔刪除
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
-- [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
+- [x] `/super-admin/anomaly` — ~~Feature 16「批次修復」情境缺乏對應 UI 元素~~ Spec 已存在（Feature 16 L130-149）；anomaly/page.tsx 新增多選 checkbox 欄位（thead 全選、tbody per-row）+ 「批次修復」按鈕（依序 PATCH /admin/anomalies/{id} status:resolved，部分失敗時保留勾選 + 紅 XCircle icon）；本地端對端驗證：3 筆 fixture seed → 全選 → 批次修復 → 全部標 resolved + 訊息「✓ 已修復 3 筆異常」（修復：2026-05-03）
 - [x] `/review` — ~~KaTeX 渲染待確認~~ MathContent component 確認使用 `rehype-katex` + `remark-math` + `katex/dist/katex.min.css`，透過 ReactMarkdown 實作完整 KaTeX 數學公式渲染；Feature 07 仍無對應 Scenario 但功能實作完整（確認：2026-04-30 自動巡檢）
 - [x] `/knowledge` — ~~「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal~~ knowledge/page.tsx L475 已確認 `Link href="/dashboard"`，跨頁導航行為符合現行設計；待補 Feature 03 Scenario 但功能正常（確認：2026-05-03 內容驗證）
 - [x] `/exam/workspace` — ~~Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」~~ workspace/page.tsx 答案選項下方新增 confidence-selector（per question），confidences state 為 Record<questionId, confidence>；examService.submit 擴充 confidence 欄位，POST /answers 多帶 confidence；後端 SaveAnswerRequest 既有 confidence 欄位（exam.py:122）（修復：2026-05-03）

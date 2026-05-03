@@ -8,7 +8,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { anomalyService, type AnomalyItem } from '@/lib/api/services';
-import { AlertTriangle, Wrench, Calendar, Power } from 'lucide-react';
+import { AlertTriangle, Wrench, Calendar, Power, CheckCheck, XCircle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { text: string; bg: string }> = {
   open: { text: '未處理', bg: 'bg-rose-50 text-rose-700' },
@@ -22,6 +22,10 @@ export default function AnomalyPage() {
   const [items, setItems] = useState<AnomalyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // Feature 16 批次修復：多選異常 id 集合 + 批次失敗 id 集合（用於保留勾選 + 紅 icon）
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchFailedIds, setBatchFailedIds] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskForm, setTaskForm] = useState({ name: '', priority: 'P1', related_error: '', estimated_hours: 1 });
@@ -99,6 +103,52 @@ export default function AnomalyPage() {
     }
   };
 
+  // Feature 16 批次修復：依序對每筆 PATCH /admin/anomalies/{id}（status:resolved），收集成功/失敗
+  const toggleSelect = (errorId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(errorId)) next.delete(errorId); else next.add(errorId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const fixable = items.filter(r => r.status !== 'resolved' && r.status !== 'closed').map(r => r.error_id);
+    if (selectedIds.size === fixable.length && fixable.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(fixable));
+    }
+  };
+
+  const handleBatchFix = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`確定將 ${selectedIds.size} 筆異常標記為已修復？`)) return;
+    setBatchBusy(true);
+    setBatchFailedIds(new Set());
+    const ids = Array.from(selectedIds);
+    const failures: string[] = [];
+    let successCount = 0;
+    for (const id of ids) {
+      try {
+        await anomalyService.updateAnomaly(id, 'resolved');
+        successCount += 1;
+      } catch {
+        failures.push(id);
+      }
+    }
+    if (failures.length === 0) {
+      setMsg(`✓ 已修復 ${successCount} 筆異常`);
+      setSelectedIds(new Set());
+    } else {
+      setMsg(`✗ 已修復 ${successCount} 筆，${failures.length} 筆失敗`);
+      setSelectedIds(new Set(failures));
+      setBatchFailedIds(new Set(failures));
+    }
+    setBatchBusy(false);
+    load();
+  };
+
   const handleActivateMaintenance = async () => {
     if (!maintenanceForm.reason || !maintenanceForm.estimated_recovery) { setMsg('請填寫完整資訊'); return; }
     if (!confirm(`⚠️ 確定要啟動維修模式？\n原因：${maintenanceForm.reason}\n預計恢復：${maintenanceForm.estimated_recovery}`)) return;
@@ -143,6 +193,17 @@ export default function AnomalyPage() {
           <AlertTriangle className="h-5 w-5 text-amber-500" />
           <h2 className="text-lg font-bold text-slate-900">異常清單</h2>
           <span className="text-xs text-slate-500">（共 {items.length} 筆）</span>
+          {/* Feature 16 批次修復按鈕 */}
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBatchFix}
+              disabled={batchBusy}
+              className="ml-auto px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              批次修復（{selectedIds.size}）
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -154,6 +215,18 @@ export default function AnomalyPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
+                  <th className="px-2 py-2 text-center w-8">
+                    <input
+                      type="checkbox"
+                      aria-label="全選可修復異常"
+                      checked={
+                        selectedIds.size > 0 &&
+                        selectedIds.size === items.filter(r => r.status !== 'resolved' && r.status !== 'closed').length
+                      }
+                      onChange={toggleSelectAll}
+                      className="cursor-pointer"
+                    />
+                  </th>
                   <th className="px-4 py-2 text-left">錯誤 ID</th>
                   <th className="px-4 py-2 text-left">類型</th>
                   <th className="px-4 py-2 text-right">發生次數</th>
@@ -165,8 +238,23 @@ export default function AnomalyPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map(r => (
-                  <tr key={r.error_id} className="border-t border-slate-100">
+                {items.map(r => {
+                  const isFixable = r.status !== 'resolved' && r.status !== 'closed';
+                  const isFailed = batchFailedIds.has(r.error_id);
+                  return (
+                  <tr key={r.error_id} className={`border-t border-slate-100 ${isFailed ? 'bg-rose-50' : ''}`}>
+                    <td className="px-2 py-2 text-center">
+                      {isFixable && (
+                        <input
+                          type="checkbox"
+                          aria-label={`選擇異常 ${r.error_id}`}
+                          checked={selectedIds.has(r.error_id)}
+                          onChange={() => toggleSelect(r.error_id)}
+                          className="cursor-pointer"
+                        />
+                      )}
+                      {isFailed && <XCircle className="inline h-4 w-4 text-rose-500 ml-1" aria-label="批次修復失敗" />}
+                    </td>
                     <td className="px-4 py-2 font-mono text-xs">{r.error_id}</td>
                     <td className="px-4 py-2">{r.error_type}{r.classified && <span className="ml-1 text-xs text-amber-600">·重複</span>}</td>
                     <td className="px-4 py-2 text-right font-semibold">{r.occurrence_count}</td>
@@ -192,7 +280,8 @@ export default function AnomalyPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
