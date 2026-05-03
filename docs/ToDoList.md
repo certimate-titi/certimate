@@ -3,7 +3,12 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 TiTi Commander 三項修復（L42 結果頁 spec 同步 ✅、L57 practice 信心度 emoji UI ✅、L58 ULTRA Bloom 守衛 ✅；剩餘未解決：🔴3 🟠4 🟡5 共 12 項，另含 1 項部署待辦）
+**最後更新**：2026-05-03 TiTi Commander 三項修復 + 權限模型整理（L42 結果頁 spec 同步 ✅、L57 practice 信心度 emoji UI ✅、L58 ULTRA-only 守衛收斂 ✅；新增 isSuperAdmin flag、auth-context 保留 SUPER_ADMIN 區分、Navbar 教育管理改為 ULTRA-or-SuperAdmin、review 頁付費 fallback 排除純 ADMIN；剩餘未解決：🔴3 🟠4 🟡5 共 12 項，另含 1 項部署待辦）
+
+**權限模型備忘**：
+- 管理者帳號（不是用戶）：`ADMIN`（後台權限）/ `SUPER_ADMIN`（後台權限 + 含所有 user-facing tier 功能）
+- 用戶 tier：`FREE` / `PRO_199` / `PRO_PLUS_399` / `ULTRA_1599` / `EDU`
+- 守衛規則：純 ADMIN 不享 user-facing 付費功能（如 ULTRA-only 進階配方、PRO chat）；只有 SUPER_ADMIN 自動 bypass tier gate
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 

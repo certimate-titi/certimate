@@ -19,7 +19,7 @@ import TiTiLogo from '@/components/TiTiLogo';
  */
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
+  const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin, isSuperAdmin } = useAuth();
 
   const navLinks = [
     { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
@@ -28,7 +28,9 @@ export default function Navbar() {
     { href: '/practice', label: '練習', icon: Dumbbell },
     { href: '/schedule', label: '排程', icon: Calendar },
     { href: '/review', label: 'AI 教練', icon: BrainCircuit },
-    ...(isUltra || isAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
+    // 教育管理：ULTRA tier 用戶或 SUPER_ADMIN（純 ADMIN 不享 user-facing tier 功能）
+    ...(isUltra || isSuperAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
+    // 平台管理：ADMIN + SUPER_ADMIN 皆可（管理者帳號）
     ...(isAdmin ? [{ href: '/super-admin/dashboard', label: '平台管理', icon: ShieldCheck }] : []),
   ];
 
