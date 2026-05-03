@@ -11,7 +11,11 @@
 |---------|------|
 | 管理者 `ADMIN` | 後台基本權限（用戶問題協助排除、客服級操作）+ 自動含所有 user-facing tier 功能（含 ULTRA） |
 | 管理者 `SUPER_ADMIN` | 含所有 ADMIN 權限 + **高等設定權限**：Prompt 模板設定、金額/預算上限、Feature Flag、系統設定、AI 模型路由、成本監控等 |
-| 用戶 tier | `FREE` / `PRO_199` / `PRO_PLUS_399` / `ULTRA_1599` / `EDU` |
+| 用戶 tier `FREE` | 限制版（10 題/次、3 次免費 AI chat、詳解 select-none） |
+| 用戶 tier `PRO_199` | 50 題/次 + 無限制文件 / YouTube 解析 + 基礎 AI（不含 PRO_PLUS-only chat） |
+| 用戶 tier `PRO_PLUS_399` | 100 題/次 + Vision OCR + 對話式 AI 教練 + 動態弱點出題 |
+| 用戶 tier `ULTRA_1599` | 無題數上限 + 完整 AI 教練 + 教育管理（建立 EDU 學生帳號最多 30 名）+ 進階出題配方 |
+| **附屬 `EDU`**（學生帳號）| **附屬於 ULTRA 機構底下**；50 題/次、共用機構配額池、基礎 AI chat、無限文件解析、無 Vision OCR；不可自行訂閱（僅機構管理員透過 CSV 匯入或邀請建立）；被指派時若已有個人付費訂閱會自動暫停計費 |
 
 **守衛規則**：
 - `(isUltra \|\| isAdmin)` — 守 user-facing tier 功能（兩種管理者皆 bypass）
