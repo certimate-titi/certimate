@@ -70,3 +70,15 @@ Feature: 節點練習模式
     Example: 作答不存在的題目回傳錯誤
       When 使用者 "alice@example.com" 練習作答不存在的題目
       Then 操作失敗，錯誤為「題目不存在」
+
+  Rule: 前置（參數）- 練習作答可選擇性提交信心度（Feature 20 整合）
+
+    # 落地紀錄（2026-05-03）：practice/page.tsx 新增信心度 emoji selector，
+    # submitAnswer 擴充 userConfidence 參數。後端 PracticeSubmitRequest 接受
+    # user_confidence 欄位（confident / somewhat / guessing），目前 API 只驗證
+    # 接受不報錯（contract test），尚未做業務面持久化。
+
+    Example: 練習作答時提交 user_confidence 應被 API 接受
+      When 使用者 "alice@example.com" 練習作答 Q1，選擇 "B" 並標記 user_confidence "confident"
+      Then 作答結果為正確
+      And 回應應包含正確答案 "B"

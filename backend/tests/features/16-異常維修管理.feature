@@ -5,7 +5,7 @@ Feature: 異常維修管理
     Given 系統中有以下使用者帳號：
       | 使用者 ID | Email                   | 訂閱方案 | 角色         |
       | 1        | super@certimate.com     | ULTRA    | SUPER_ADMIN  |
-      | 2        | ops@certimate.com       | ULTRA    | ADMIN        |
+      | 2        | admin@certimate.com     | ULTRA    | ADMIN        |
     And 系統中有以下異常紀錄：
       | 異常 ID  | 錯誤類型                       | 發生次數 | 狀態    | 影響範圍      |
       | ERR-001  | Database Connection Timeout    | 100      | pending | 全站           |
@@ -28,7 +28,7 @@ Feature: 異常維修管理
   Rule: 前置（參數）- 建立維修任務必須提供必要參數
 
     Scenario Outline: 建立維修任務缺少 <缺少參數> 時失敗
-      When 使用者 "ops@certimate.com" 建立維修任務，名稱為 <名稱>，優先級為 <優先級>
+      When 使用者 "batchfix-admin-9876@example.com" 建立維修任務，名稱為 <名稱>，優先級為 <優先級>
       Then 操作失敗，錯誤為「必要參數未提供」
 
       Examples:
@@ -41,7 +41,7 @@ Feature: 異常維修管理
   Rule: 後置（回應）- 異常清單應按時間排序並包含完整屬性
 
     Example: 查看異常清單取得所有紀錄
-      When 使用者 "ops@certimate.com" 查看異常追蹤清單
+      When 使用者 "batchfix-admin-9876@example.com" 查看異常追蹤清單
       Then 操作成功
       And 回應中每筆紀錄應包含：
         | 欄位             | 範例值                        |
@@ -56,14 +56,14 @@ Feature: 異常維修管理
   Rule: 後置（狀態）- 相似錯誤應自動歸類彙整
 
     Example: 100 次相同 Database Timeout 被歸類為一筆彙整項目
-      When 使用者 "ops@certimate.com" 查看異常追蹤清單
+      When 使用者 "batchfix-admin-9876@example.com" 查看異常追蹤清單
       Then 異常 "ERR-001" 的發生次數應為 100
       And 異常 "ERR-001" 應標記為「已歸類」
 
   Rule: 後置（狀態）- 更新異常狀態與指派應記錄審計日誌
 
     Example: 將異常標註為調查中並指派給技術小組
-      When 使用者 "ops@certimate.com" 更新異常 "ERR-001"，狀態為 "investigating"，指派給 "技術小組"
+      When 使用者 "batchfix-admin-9876@example.com" 更新異常 "ERR-001"，狀態為 "investigating"，指派給 "技術小組"
       Then 操作成功
       And 異常 "ERR-001" 的狀態應為 "investigating"
       And 系統應記錄審計日誌：
@@ -77,7 +77,7 @@ Feature: 異常維修管理
   Rule: 後置（狀態）- 建立維修任務後應出現在看板的待處理欄
 
     Example: 建立維修任務成功
-      When 使用者 "ops@certimate.com" 建立維修任務：
+      When 使用者 "batchfix-admin-9876@example.com" 建立維修任務：
         | 欄位            | 值                    |
         | name            | API Gateway 升級      |
         | priority        | medium                |
@@ -89,7 +89,7 @@ Feature: 異常維修管理
   Rule: 後置（狀態）- 變更任務狀態應同步通知相關技術人員
 
     Example: 將任務從待處理移至進行中
-      When 使用者 "ops@certimate.com" 更新維修任務 "MNT-001" 的狀態為 "in_progress"
+      When 使用者 "batchfix-admin-9876@example.com" 更新維修任務 "MNT-001" 的狀態為 "in_progress"
       Then 操作成功
       And 任務 "MNT-001" 的狀態應為 "in_progress"
       And 系統應通知指派的技術人員
@@ -126,3 +126,26 @@ Feature: 異常維修管理
       When 系統偵測到結束時間已到達
       Then 系統應自動關閉維修模式
       And 用戶應能正常存取所有功能
+
+  Rule: 後置（操作）- 提供「批次修復」一鍵將多筆異常一起標記為已修復
+
+    # 落地紀錄（2026-05-03）：頁面 /super-admin/anomaly 新增多選 checkbox
+    # + 「批次修復」按鈕；前端依序對每筆異常呼叫 PUT /admin/anomalies/{id}
+    # body={"status":"resolved"}，部分失敗時保留勾選 + 紅色 icon。
+    # 此處 backend 涵蓋每筆 PATCH 的後端正確性。
+
+    Example: 多筆異常依序標記為已修復
+      Given 系統中有以下異常紀錄：
+        | 異常 ID            | 錯誤類型         | 發生次數 | 狀態    | 影響範圍 |
+        | err_db_timeout_01 | DatabaseTimeout | 5     | pending | admin  |
+        | err_db_timeout_02 | DatabaseTimeout | 3     | pending | admin  |
+        | err_db_timeout_03 | DatabaseTimeout | 2     | pending | admin  |
+      When 使用者 "admin@certimate.com" 更新異常 "err_db_timeout_01"，狀態為 "resolved"，指派給 "self"
+      Then 操作成功
+      When 使用者 "admin@certimate.com" 更新異常 "err_db_timeout_02"，狀態為 "resolved"，指派給 "self"
+      Then 操作成功
+      When 使用者 "admin@certimate.com" 更新異常 "err_db_timeout_03"，狀態為 "resolved"，指派給 "self"
+      Then 操作成功
+      And 異常 "err_db_timeout_01" 的狀態應為 "resolved"
+      And 異常 "err_db_timeout_02" 的狀態應為 "resolved"
+      And 異常 "err_db_timeout_03" 的狀態應為 "resolved"

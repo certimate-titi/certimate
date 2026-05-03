@@ -55,6 +55,28 @@ def step_submit_practice(context, email, q_key, answer):
     context.last_response = response
 
 
+@when('使用者 "{email}" 練習作答 {q_key}，選擇 "{answer}" 並標記 user_confidence "{confidence}"')
+def step_submit_practice_with_confidence(context, email, q_key, answer, confidence):
+    """提交練習作答 + Feature 20 信心度標記（contract test：API 接受 user_confidence）。"""
+    user_id = context.ids.get(email)
+    assert user_id, f"找不到使用者 {email}"
+
+    question_id = context.ids.get(f"question_{q_key}")
+    assert question_id, f"找不到題目 {q_key}"
+
+    token = context.jwt_helper.generate_token(user_id)
+    response = context.api_client.post(
+        "/api/v1/practice/submit",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "question_id": question_id,
+            "selected_answer": answer,
+            "user_confidence": confidence,
+        },
+    )
+    context.last_response = response
+
+
 @when('使用者 "{email}" 練習作答不存在的題目')
 def step_submit_nonexistent(context, email):
     """提交不存在的題目作答。"""
