@@ -106,19 +106,8 @@ Feature: 測驗結果
 
   # ========== UI 元件補充場景 ==========
 
-  Rule: 後置（回應）- 分享到 LinkedIn 按鈕應顯示為 placeholder 未實作狀態
-
-    Example: 點擊分享到 LinkedIn 按鈕顯示即將推出提示
-      When 使用者 "alice@example.com" 查看測驗 2 的結果
-      And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
-      Then 畫面應顯示提示訊息 "LinkedIn 分享功能即將推出，敬請期待"
-
-  Rule: 後置（回應）- 下載成績卡片按鈕應顯示為 placeholder 未實作狀態
-
-    Example: 點擊下載成績卡片按鈕顯示即將推出提示
-      When 使用者 "alice@example.com" 查看測驗 2 的結果
-      And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
-      Then 畫面應顯示提示訊息 "成績卡片下載功能即將推出，敬請期待"
+  # 註：LinkedIn 分享按鈕與成績卡片下載按鈕為純前端行為（window.open + html2canvas），
+  # 規格已移至 project/features/06-測驗結果.feature（@frontend）；後端不再覆蓋這兩個 Rule。
 
   Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
 
