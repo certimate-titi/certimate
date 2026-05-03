@@ -85,6 +85,8 @@ export interface SubmitExamRequest {
   answers: Array<{
     questionId: string;
     userChoice: string;
+    /** Feature 20 信心度校準：confident / somewhat / guessing（可選）*/
+    confidence?: 'confident' | 'somewhat' | 'guessing' | null;
   }>;
   timeSpentSeconds: number;
 }

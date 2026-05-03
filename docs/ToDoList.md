@@ -72,7 +72,7 @@
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
 - [x] `/review` — ~~KaTeX 渲染待確認~~ MathContent component 確認使用 `rehype-katex` + `remark-math` + `katex/dist/katex.min.css`，透過 ReactMarkdown 實作完整 KaTeX 數學公式渲染；Feature 07 仍無對應 Scenario 但功能實作完整（確認：2026-04-30 自動巡檢）
 - [x] `/knowledge` — ~~「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal~~ knowledge/page.tsx L475 已確認 `Link href="/dashboard"`，跨頁導航行為符合現行設計；待補 Feature 03 Scenario 但功能正常（確認：2026-05-03 內容驗證）
-- [ ] `/exam/workspace` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，workspace 頁面無任何對應 UI 元素（首見：2026-05-01）
+- [x] `/exam/workspace` — ~~Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」~~ workspace/page.tsx 答案選項下方新增 confidence-selector（per question），confidences state 為 Record<questionId, confidence>；examService.submit 擴充 confidence 欄位，POST /answers 多帶 confidence；後端 SaveAnswerRequest 既有 confidence 欄位（exam.py:122）（修復：2026-05-03）
 - [x] `/practice` — ~~Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」~~ practice/page.tsx 答題區新增 `confidence-selector`（😰完全猜測 / 😐有點把握 / 😎非常確定）；`practiceService.submitAnswer` 擴充支援 `userConfidence`，後端 `PracticeSubmitRequest` 接受 `user_confidence` 欄位，預設值 somewhat（修復：2026-05-03 TiTi Commander）
 - [x] `/exam/setup` — ~~Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能~~ setup/page.tsx 守衛改為 `(isUltra || isSuperAdmin)`；同步修復 auth-context：保留 SUPER_ADMIN 區分（不再攤平成 ADMIN），新增 `isSuperAdmin` flag；ULTRA tier + SUPER_ADMIN 可看面板，純 ADMIN 不可（對齊 Feature 04 規格）（修復：2026-05-03 TiTi Commander）
 - [ ] `/exam/setup` — Feature 04 規格描述測驗生成應使用 SSE 推送即時進度；前端目前使用 `ExamLoadingOverlay` 模擬假階段動畫，未實際訂閱 SSE 端點（首見：2026-05-01）

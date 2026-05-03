@@ -255,6 +255,7 @@ export const examService = {
       await apiClient.post(`/exams/${req.examId}/answers`, {
         question_id: answer.questionId,
         user_choice: answer.userChoice,
+        confidence: answer.confidence ?? null,
       });
     }
     return apiClient.post<SubmitExamResponse>(`/exams/${req.examId}/submit`);

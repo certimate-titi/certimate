@@ -55,6 +55,8 @@ function MockExamWorkspacePage() {
   const [totalTimeLimit, setTotalTimeLimit] = useState(900);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // Feature 20: 信心度校準（per question）— confident / somewhat / guessing
+  const [confidences, setConfidences] = useState<Record<string, 'confident' | 'somewhat' | 'guessing'>>({});
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
   const [timeRemaining, setTimeRemaining] = useState(900); // default 15 min, updated after API load
   const [loading, setLoading] = useState(true);
@@ -127,6 +129,7 @@ function MockExamWorkspacePage() {
     const answerArray = questions.map(q => ({
       questionId: q.id,
       userChoice: answers[q.id] || '',
+      confidence: confidences[q.id] ?? null,
     }));
     await examService.submit({
       examId,
@@ -134,7 +137,7 @@ function MockExamWorkspacePage() {
       timeSpentSeconds: totalTimeLimit - timeRemaining,
     });
     router.push(`/exam/results?examId=${examId}`);
-  }, [answers, examId, questions, timeRemaining, router]);
+  }, [answers, confidences, examId, questions, timeRemaining, router]);
 
   // Countdown timer (pauses when isPaused is true)
   useEffect(() => {
@@ -346,6 +349,34 @@ function MockExamWorkspacePage() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Feature 20: 信心度校準（per question） */}
+            <div className="mt-6 bg-slate-50 rounded-2xl border border-slate-200 p-4">
+              <p className="text-xs font-medium text-slate-600 mb-2">標記你對此題的信心度（選填）</p>
+              <div className="flex gap-2" data-testid="confidence-selector">
+                {([
+                  { k: 'guessing' as const, emoji: '😰', label: '完全猜測' },
+                  { k: 'somewhat' as const, emoji: '😐', label: '有點把握' },
+                  { k: 'confident' as const, emoji: '😎', label: '非常確定' },
+                ]).map((c) => (
+                  <button
+                    key={c.k}
+                    type="button"
+                    onClick={() => setConfidences(prev => ({ ...prev, [currentQuestion.id]: c.k }))}
+                    aria-label={c.label}
+                    aria-pressed={confidences[currentQuestion.id] === c.k}
+                    className={`flex-1 py-2 px-3 rounded-lg border-2 transition-all text-sm flex items-center justify-center gap-1 ${
+                      confidences[currentQuestion.id] === c.k
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
+                    } cursor-pointer`}
+                  >
+                    <span className="text-lg" aria-hidden>{c.emoji}</span>
+                    <span className="text-xs">{c.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
