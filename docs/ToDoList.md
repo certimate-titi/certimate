@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 TiTi Commander SSOT 統一 + 內容驗證（本次處理：合併 2 對重複條目、`/knowledge` 新增資源按鈕標註已完成；剩餘未解決：🔴4 🟠6 🟡6 共 16 項，另含 1 項部署待辦）
+**最後更新**：2026-05-03 TiTi Commander SSOT 統一 + 深度內容驗證（本次處理：合併 2 對重複條目、標註 2 項已完成（`/knowledge` 新增資源按鈕、`/knowledge` Layer 3 空態查詢）；剩餘未解決：🔴4 🟠6 🟡5 共 15 項，另含 1 項部署待辦）
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -80,7 +80,7 @@
 - [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29）
 - [ ] `/account/weekly-reports` — `reports.length === 0` 空態顯示「尚無週報」，未查詢週報產生 job 是否有失敗記錄，無法區分「真正無週報」vs「cron job 失敗導致週報未產生」；違反 Layer 3 規則（首見：2026-04-30）
 - [ ] `/knowledge/mindmap` — `mindMapNodes.length === 0` 空態顯示「上傳教材後系統會自動生成」，未查詢 `resource_parse_jobs` 取得 failure_reason，無法區分「尚未上傳」vs「parse job 失敗」；違反 Layer 3 規則（首見：2026-05-01）
-- [ ] `/knowledge` — documents 與 nodes 皆空時顯示靜態提示，未查詢 `resource_parse_jobs` 確認是否有 failed job，無法區分「正常空態」vs「解析失敗導致空態」；違反 Layer 3 規則（首見：2026-05-01）
+- [x] `/knowledge` — ~~documents 與 nodes 皆空時顯示靜態提示，未查詢 resource_parse_jobs~~ knowledge/page.tsx L243-251 已實作 Layer 3：useEffect 自動對 FAILED 文件呼叫 `resourceParseService.getStatus()` 並寫入 `parseJobFailures` state，UI 透過 tooltip 呈現 failure_reason（確認：2026-05-03 深度驗證）
 - [x] `/verify-email/sent` — ~~resend 重寄失敗時 `catch {}` block 為空（silent fail），使用者無任何錯誤提示~~ 已修復：新增 `resendError` state，catch block 顯示「驗證信寄送失敗，請稍後再試。」紅色提示框，同時重設 cooldown 讓使用者可立即重試（修復：2026-04-29 自動巡檢）
 
 ---
