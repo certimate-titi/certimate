@@ -103,3 +103,4 @@ cd backend
 - Feature 規格：[project/features/](project/features/)
 - Memory 規則：`~/.claude/projects/-Users-simon-certimate-project/memory/MEMORY.md`
 - 待辦清單 SSOT：[docs/ToDoList.md](docs/ToDoList.md)（根目錄 `ToDoList.md` 為 symlink）
+- 權限模型 SSOT：[docs/permission-model.md](docs/permission-model.md)（帳號類型 / Flag / 守衛規則）

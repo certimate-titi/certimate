@@ -19,6 +19,8 @@ import {
   Legend,
 } from 'recharts';
 import { AlertTriangle, DollarSign, RefreshCw, Settings2, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { costMonitorService } from '@/lib/api/services';
 import type {
   CostSummaryScopeItem,
@@ -480,6 +482,15 @@ function GcpServiceBreakdown({
 // ---------------------------------------------------------------------------
 
 export default function CostMonitorPage() {
+  const router = useRouter();
+  const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
+  // SUPER_ADMIN-only：高等設定（成本監控涉預算/AI 用量）
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !isSuperAdmin) {
+      router.replace('/super-admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scopes, setScopes] = useState<CostSummaryScopeItem[]>([]);
@@ -523,6 +534,14 @@ export default function CostMonitorPage() {
   const totalCurrent = scopes.reduce((sum, s) => sum + s.current_usd, 0);
   const totalLimit = scopes.reduce((sum, s) => sum + s.limit_usd, 0);
   const overallPercent = totalLimit > 0 ? (totalCurrent / totalLimit) * 100 : 0;
+
+  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-slate-500 text-sm">
+        {authLoading ? '載入中⋯' : '需要 SUPER_ADMIN 權限。'}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto bg-slate-50 min-h-screen">

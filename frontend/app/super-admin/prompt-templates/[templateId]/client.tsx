@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   FlaskConical,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 import {
   promptTemplateService,
   PromptTemplateDetail,
@@ -42,6 +43,13 @@ export default function PromptTemplateDetailPage() {
   const params = useParams();
   const router = useRouter();
   const templateId = params.templateId as string;
+  const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
+  // SUPER_ADMIN-only：高等設定（Prompt 模板）
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !isSuperAdmin) {
+      router.replace('/super-admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
 
   const [template, setTemplate] = useState<PromptTemplateDetail | null>(null);
   const [versions, setVersions] = useState<PromptTemplateVersion[]>([]);
@@ -183,6 +191,14 @@ export default function PromptTemplateDetailPage() {
     { id: 'versions', label: `版本歷史 (${versions.length})`, icon: Clock },
     { id: 'ab-test', label: 'A/B 測試', icon: FlaskConical },
   ] as const;
+
+  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-slate-500 text-sm">
+        {authLoading ? '載入中⋯' : '需要 SUPER_ADMIN 權限。'}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">

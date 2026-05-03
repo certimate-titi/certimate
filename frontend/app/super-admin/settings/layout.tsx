@@ -6,9 +6,9 @@
  */
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Cpu,
   Zap,
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useAuth } from '@/lib/auth-context';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,6 +39,23 @@ const SETTINGS_TABS = [
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
+
+  // SUPER_ADMIN-only：高等設定（Prompt / 預算 / Flag / 系統 / AI 路由 / API Keys / 版本）
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !isSuperAdmin) {
+      router.replace('/super-admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
+
+  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-slate-500 text-sm">
+        {authLoading ? '載入中⋯' : '需要 SUPER_ADMIN 權限。'}
+      </div>
+    );
+  }
 
   const getActiveTab = () => {
     // Exact match for root, otherwise match by prefix

@@ -20,6 +20,8 @@ import {
   Tag,
   Zap,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { promptTemplateService, PromptTemplateSummary } from '@/lib/api/services';
 
 const CATEGORIES = ['all', 'safety', 'knowledge', 'exam', 'teaching', 'emotion'];
@@ -42,6 +44,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function PromptTemplatesPage() {
+  const router = useRouter();
+  const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
+  // SUPER_ADMIN-only：高等設定（Prompt 模板）
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !isSuperAdmin) {
+      router.replace('/super-admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
+
   const [templates, setTemplates] = useState<PromptTemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +97,14 @@ export default function PromptTemplatesPage() {
       alert(`停用失敗：${e?.message}`);
     }
   };
+
+  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-slate-500 text-sm">
+        {authLoading ? '載入中⋯' : '需要 SUPER_ADMIN 權限。'}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

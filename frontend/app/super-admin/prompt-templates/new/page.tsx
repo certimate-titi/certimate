@@ -6,10 +6,11 @@
  */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 import { promptTemplateService } from '@/lib/api/services';
 
 const CATEGORIES = [
@@ -31,6 +32,14 @@ const MODELS = [
 
 export default function NewPromptTemplatePage() {
   const router = useRouter();
+  const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
+  // SUPER_ADMIN-only：高等設定（Prompt 模板）
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !isSuperAdmin) {
+      router.replace('/super-admin/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
+
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -74,6 +83,14 @@ export default function NewPromptTemplatePage() {
       setSaving(false);
     }
   };
+
+  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+    return (
+      <div className="p-8 text-slate-500 text-sm">
+        {authLoading ? '載入中⋯' : '需要 SUPER_ADMIN 權限。'}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
