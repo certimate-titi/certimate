@@ -9,7 +9,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Network, ArrowLeft } from 'lucide-react';
-import { knowledgeService, subjectService } from '@/lib/api/services';
+import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
 import type { KnowledgeNode, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
@@ -39,6 +39,8 @@ function FullMindMapPageInner() {
   const [loading, setLoading] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'tree' | 'force'>('force');
+  // Layer 3：mindMapNodes 為空時主動查 resource_parse_jobs，區分「尚未上傳」vs「parse job 失敗」
+  const [parseJobFailures, setParseJobFailures] = useState<Array<{ title: string; reason: string }>>([]);
 
   // Flatten MindMapNode tree → GraphNode[] for ForceGraph
   const graphNodes: GraphNode[] = (() => {
@@ -85,6 +87,30 @@ function FullMindMapPageInner() {
     }).catch(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSubjectId]);
+
+  // Layer 3：mindMapNodes 為空時觸發查詢，區分「尚未上傳」vs「parse job 失敗」
+  useEffect(() => {
+    if (loading || mindMapNodes.length > 0 || !activeSubjectId) {
+      setParseJobFailures([]);
+      return;
+    }
+    documentService.list().then(async (res) => {
+      const subjectFailedDocs = res.documents.filter(
+        (d) => d.subjectId === activeSubjectId && d.status === 'FAILED'
+      );
+      const failures = await Promise.all(
+        subjectFailedDocs.map(async (doc) => {
+          try {
+            const status = await resourceParseService.getStatus(doc.id);
+            return { title: doc.title || '未命名資源', reason: status.failure_reason || '解析失敗（無詳細原因）' };
+          } catch {
+            return { title: doc.title || '未命名資源', reason: '解析失敗（查詢狀態失敗）' };
+          }
+        })
+      );
+      setParseJobFailures(failures);
+    }).catch(() => setParseJobFailures([]));
+  }, [loading, mindMapNodes.length, activeSubjectId]);
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNodeId(nodeId);
@@ -151,11 +177,25 @@ function FullMindMapPageInner() {
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : mindMapNodes.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-slate-400">
-              <div className="text-center">
+            <div className="flex items-center justify-center h-full text-slate-400 px-6">
+              <div className="text-center max-w-md">
                 <Network className="h-12 w-12 mx-auto mb-3 text-slate-300" />
                 <p>尚無知識圖譜節點</p>
-                <p className="text-xs mt-1">上傳教材後系統會自動生成</p>
+                {parseJobFailures.length > 0 ? (
+                  <div className="mt-4 text-left bg-rose-50 border border-rose-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-rose-700 mb-1">⚠️ 偵測到 {parseJobFailures.length} 個資源解析失敗，導致無法生成知識圖譜：</p>
+                    <ul className="text-xs text-rose-600 space-y-1">
+                      {parseJobFailures.slice(0, 3).map((f, i) => (
+                        <li key={i}>• <span className="font-medium">{f.title}</span>：{f.reason}</li>
+                      ))}
+                      {parseJobFailures.length > 3 && (
+                        <li className="italic">…另 {parseJobFailures.length - 3} 個（請至學習庫查看）</li>
+                      )}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-xs mt-1">上傳教材後系統會自動生成</p>
+                )}
               </div>
             </div>
           ) : viewMode === 'force' ? (

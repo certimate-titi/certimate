@@ -20,7 +20,7 @@ import {
   TrendingUp,
   Network,
 } from 'lucide-react';
-import { practiceService, knowledgeService, subjectService, blindInferenceService } from '@/lib/api/services';
+import { practiceService, knowledgeService, subjectService, blindInferenceService, documentService, resourceParseService } from '@/lib/api/services';
 import type { PracticeQuestion, PracticeSubmitResponse } from '@/lib/api/services';
 import type { InferenceJudgment } from '@/types/api';
 import type { UserSubject } from '@/types';
@@ -85,6 +85,34 @@ function PracticePage() {
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
+
+  // Layer 3：當 no-questions 時，主動查 resource_parse_jobs 取得 FAILED 文件 failure_reason
+  // 區分「真的沒題目」vs「資源解析失敗導致無題目」
+  const [parseJobFailures, setParseJobFailures] = useState<Array<{ title: string; reason: string }>>([]);
+
+  // Phase 進入 no-questions 時觸發 Layer 3 查詢
+  useEffect(() => {
+    if (phase !== 'no-questions' || !activeSubjectId) {
+      if (phase !== 'no-questions') setParseJobFailures([]);
+      return;
+    }
+    documentService.list().then(async (res) => {
+      const subjectFailedDocs = res.documents.filter(
+        (d) => d.subjectId === activeSubjectId && d.status === 'FAILED'
+      );
+      const failures = await Promise.all(
+        subjectFailedDocs.map(async (doc) => {
+          try {
+            const status = await resourceParseService.getStatus(doc.id);
+            return { title: doc.title || '未命名資源', reason: status.failure_reason || '解析失敗（無詳細原因）' };
+          } catch {
+            return { title: doc.title || '未命名資源', reason: '解析失敗（查詢狀態失敗）' };
+          }
+        })
+      );
+      setParseJobFailures(failures);
+    }).catch(() => setParseJobFailures([]));
+  }, [phase, activeSubjectId]);
 
   // Auth guard
   useEffect(() => {
@@ -377,9 +405,22 @@ function PracticePage() {
             <p className="text-sm text-slate-500 mb-4">
               此知���節點還沒有可用題目，請先透過測驗產生題目���或選擇其他節點練習。
             </p>
-            <p className="text-xs text-slate-400 mb-6">
+            <p className="text-xs text-slate-400 mb-3">
               提示：若已建立過測驗但仍無題目，可能是 AI 出題任務尚未完成或已失敗，請至測驗頁重新產生。
             </p>
+            {parseJobFailures.length > 0 && (
+              <div className="mb-6 mx-auto max-w-md text-left bg-rose-50 border border-rose-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-rose-700 mb-1">⚠️ 偵測到 {parseJobFailures.length} 個資源解析失敗，可能導致無題目可練：</p>
+                <ul className="text-xs text-rose-600 space-y-1">
+                  {parseJobFailures.slice(0, 3).map((f, i) => (
+                    <li key={i}>• <span className="font-medium">{f.title}</span>：{f.reason}</li>
+                  ))}
+                  {parseJobFailures.length > 3 && (
+                    <li className="italic">…另 {parseJobFailures.length - 3} 個（請至學習庫查看）</li>
+                  )}
+                </ul>
+              </div>
+            )}
             <div className="flex gap-3 justify-center flex-wrap">
               <Link
                 href={selectedNodeId ? `/exam/setup?nodeId=${selectedNodeId}` : '/exam/setup'}

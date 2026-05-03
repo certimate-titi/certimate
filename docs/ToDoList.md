@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 TiTi Commander 三項修復 + 權限模型整理（L42 結果頁 spec 同步 ✅、L57 practice 信心度 emoji UI ✅、L58 ULTRA-only 守衛收斂 ✅；新增 isSuperAdmin flag、auth-context 保留 SUPER_ADMIN 區分、Navbar 教育管理改為 ULTRA-or-SuperAdmin、review 頁付費 fallback 排除純 ADMIN；剩餘未解決：🔴3 🟠4 🟡5 共 12 項，另含 1 項部署待辦）
+**最後更新**：2026-05-03 Batch A — Layer 3 空態查 job 完成（L95 `/practice` ✅、L101 `/knowledge/mindmap` ✅）；L96/L99/L100 改標「待後端 job API」前置條件；剩餘未解決：🔴3 🟠4 🟡3 共 10 項（其中 3 項待後端先補 API），另含 1 項部署 + 1 項雲端驗證待辦
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -92,13 +92,13 @@
 - [x] `/practice` — phase === 'no-questions' 空態已新增提示訊息（AI 出題可能失敗）及「前往出題」快捷按鈕（修復：2026-04-24 自動巡檢）
 - [x] `/exam/setup` — documents.length === 0 空態已新增提示：若已上傳資源但為空，引導至知識庫查看解析狀態（修復：2026-04-24 自動巡檢）
 - [x] `/library` — ~~頁面空態情況不明~~ **頁面不存在**（`frontend/app/library/page.tsx` 不存在），此條目為過時參照，應移除（確認：2026-04-29 自動巡檢）
-- [ ] `/practice` — no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**，僅文字引導，需補強至主動查 job 表（首見：2026-04-24）
-- [ ] `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但**未查詢後端 job 表**（`exam_generation_jobs` / `resource_parse_jobs`），無法區分「真正全答對」vs「job FAILED 導致無錯題記錄」；違反 Layer 3 規則（首見：2026-04-28）
+- [x] `/practice` — ~~no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**~~ practice/page.tsx 已實作 Layer 3：phase 進入 no-questions 時 useEffect 查 documentService.list() 過濾 activeSubjectId + status==='FAILED'，逐個呼叫 resourceParseService.getStatus() 取得 failure_reason，UI 顯示紅色警告塊列出最多 3 個（修復：2026-05-03）
+- [ ] `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但**未查詢後端 job 表**（`exam_generation_jobs` / `resource_parse_jobs`），無法區分「真正全答對」vs「job FAILED 導致無錯題記錄」；違反 Layer 3 規則（首見：2026-04-28；2026-05-03 評估：**前置條件為後端需新增 examGenerationJobs API**，目前 services.ts 無對應端點，待後端補完再實作前端查詢）
 - [x] `/account/resource-library` — FAILED 資源 badge 已顯示，failure_reason 透過 tooltip 呈現（確認：2026-04-25 自動巡檢）
 - [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
-- [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29）
-- [ ] `/account/weekly-reports` — `reports.length === 0` 空態顯示「尚無週報」，未查詢週報產生 job 是否有失敗記錄，無法區分「真正無週報」vs「cron job 失敗導致週報未產生」；違反 Layer 3 規則（首見：2026-04-30）
-- [ ] `/knowledge/mindmap` — `mindMapNodes.length === 0` 空態顯示「上傳教材後系統會自動生成」，未查詢 `resource_parse_jobs` 取得 failure_reason，無法區分「尚未上傳」vs「parse job 失敗」；違反 Layer 3 規則（首見：2026-05-01）
+- [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29；2026-05-03 評估：**前置條件為後端需新增 scheduleJobs API**，待後端補完）
+- [ ] `/account/weekly-reports` — `reports.length === 0` 空態顯示「尚無週報」，未查詢週報產生 job 是否有失敗記錄，無法區分「真正無週報」vs「cron job 失敗導致週報未產生」；違反 Layer 3 規則（首見：2026-04-30；2026-05-03 評估：**前置條件為後端需新增 weeklyReportJobs API**，待後端補完）
+- [x] `/knowledge/mindmap` — ~~mindMapNodes.length === 0 空態顯示「上傳教材後系統會自動生成」，未查詢 resource_parse_jobs~~ mindmap/page.tsx 已實作 Layer 3：mindMapNodes 為空且 loading 結束時 useEffect 查 documentService.list() 過濾 activeSubjectId + FAILED，呼叫 getStatus() 取 failure_reason；空態 UI 改為條件渲染：有失敗時顯示紅色警告塊，無失敗才顯示原「上傳教材後生成」提示（修復：2026-05-03）
 - [x] `/knowledge` — ~~documents 與 nodes 皆空時顯示靜態提示，未查詢 resource_parse_jobs~~ knowledge/page.tsx L243-251 已實作 Layer 3：useEffect 自動對 FAILED 文件呼叫 `resourceParseService.getStatus()` 並寫入 `parseJobFailures` state，UI 透過 tooltip 呈現 failure_reason（確認：2026-05-03 深度驗證）
 - [x] `/verify-email/sent` — ~~resend 重寄失敗時 `catch {}` block 為空（silent fail），使用者無任何錯誤提示~~ 已修復：新增 `resendError` state，catch block 顯示「驗證信寄送失敗，請稍後再試。」紅色提示框，同時重設 cooldown 讓使用者可立即重試（修復：2026-04-29 自動巡檢）
 
@@ -161,6 +161,11 @@
 - ✅ 配置指南文檔（`GCP_BILLING_EXPORT_SETUP.md`）
 - ✅ 實現總結文檔（`BILLING_EXPORT_COMPLETION.md`）
 - [ ] **待部署**：Cloud Run 環境變數 + Service Account key 掛載
+- [ ] **雲端驗證**（2026-05-03 batch A 後新增）：本批改動 commit 須 deploy 到 Cloud Run 後做端對端驗證
+  - L57 / L58 / L42（user-tier 守衛 + spec 同步）
+  - 高等設定守衛（settings/cost-monitor/prompt-templates 改 isSuperAdmin）
+  - L95 `/practice` Layer 3、L101 `/knowledge/mindmap` Layer 3
+  - 需 cloud DB 跑 `POST /api/v1/auth/seed-test-accounts`（endpoint 已加但未部署）建立 7 測試帳號
 
 **API 端點**：`GET /admin/cost/gcp/services` — 查詢當月 GCP 服務分類成本
 
