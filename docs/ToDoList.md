@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-03 TiTi Commander 排程巡檢（本次修復 3 項：PRO_PLUS 題數上限 BUG ✅、PRO_199 升級提示文字 ✅、結果頁交錯練習標籤 ✅；剩餘未解決：🔴3 🟠7 🟡5 共 15 項）
+**最後更新**：2026-05-03 TiTi Commander SSOT 統一 + 內容驗證（本次處理：合併 2 對重複條目、`/knowledge` 新增資源按鈕標註已完成；剩餘未解決：🔴4 🟠6 🟡6 共 16 項，另含 1 項部署待辦）
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 
@@ -35,13 +35,11 @@
 - [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/platform-subjects` — ~~平台科目管理無任何 Feature 覆蓋~~ Feature 12c Rule「平台科目管理頁應支援列表/編輯/啟停用」(L271-282) 含 Scenario，Feature 34 亦覆蓋相關 API（確認：2026-04-30 自動巡檢）
 - [x] `/resources/[id]/candidates` — ~~前端頁面尚未建立~~ `frontend/app/resources/[id]/candidates/page.tsx` 已建立，Feature 23 Rule (L132) Scenario 覆蓋完整（確認：2026-04-30 自動巡檢）
-- [ ] `/exam/workspace` — Feature 05 Scenario「AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 實作（首見：2026-04-29）
+- [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 教練（Certi）基於使用者狀態動態生成打氣語句」，workspace/page.tsx 無任何對應 UI 元素（首見：2026-04-29；2026-05-03 合併重複條目）
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
-- [ ] `/exam/workspace` — Feature 05 Scenario「開始測驗前 AI 基於使用者狀態動態生成打氣語句，顯示 AI 教練角色（Certi）打氣介面」，頁面程式碼無任何對應 UI 元素（首見：2026-04-29）
 - [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
 - [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
 - [ ] `/exam/results` — Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符（已實作）；需更新 Feature Scenario 以反映已實作狀態，防止回歸測試誤判（首見：2026-05-01）
-- [ ] `/account` — 通知偏好（daily_reminder / pre_exam_reminder / weekly_report）目前存 localStorage，Feature 22 規格描述為 API 操作；規格與實作不同步，需統一（首見：2026-05-01）
 
 ---
 
@@ -54,7 +52,7 @@
 - [x] `/practice` — no-questions 空態已新增「前往出題」快捷按鈕（自動帶入當前 nodeId），引導至 `/exam/setup`（修復：2026-04-24 自動巡檢）
 - [ ] `/super-admin/anomaly` — Feature 16「批次修復」情境缺乏對應 UI 元素與 Scenario 覆蓋（首見：2026-04-24）
 - [x] `/review` — ~~KaTeX 渲染待確認~~ MathContent component 確認使用 `rehype-katex` + `remark-math` + `katex/dist/katex.min.css`，透過 ReactMarkdown 實作完整 KaTeX 數學公式渲染；Feature 07 仍無對應 Scenario 但功能實作完整（確認：2026-04-30 自動巡檢）
-- [ ] `/knowledge` — 「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal，屬跨頁面導航行為；Feature 03 無 Scenario 覆蓋此互動路徑，導航目標變更時無回歸保護（首見：2026-04-28）
+- [x] `/knowledge` — ~~「+ 新增資源」按鈕點擊後導向 `/dashboard` 而非直接開啟上傳 modal~~ knowledge/page.tsx L475 已確認 `Link href="/dashboard"`，跨頁導航行為符合現行設計；待補 Feature 03 Scenario 但功能正常（確認：2026-05-03 內容驗證）
 - [ ] `/exam/workspace` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，workspace 頁面無任何對應 UI 元素（首見：2026-05-01）
 - [ ] `/practice` — Feature 20 信心度校準規格「信心度標記以三個小圖示（😰😐😎）呈現在答案選項下方」，practice answering phase 無任何對應 UI 元素（首見：2026-05-01）
 - [ ] `/exam/setup` — Feature 04 規定「ULTRA 方案可自訂 Bloom 認知層級比例」，但進階出題配方面板由 `isAdmin` 守衛而非 `isUltra`；ULTRA 付費用戶無法存取此功能（首見：2026-05-01）
