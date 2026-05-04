@@ -552,6 +552,28 @@ export const accountService = {
   },
 };
 
+/** F27 個人化錯題地圖 — 熱力圖節點 + 錯題明細 */
+export interface WrongAnswerMapNode {
+  id: string;
+  name: string;
+  depth: number;
+  mastery_rate: number | null;
+  color: 'green' | 'orange' | 'red' | 'gray';
+  wrong_count: number;
+  children: WrongAnswerMapNode[];
+}
+
+export const wrongAnswerMapService = {
+  async getMap(subjectId: string, timeRange?: string): Promise<{ nodes: WrongAnswerMapNode[] }> {
+    const q = timeRange ? `?time_range=${encodeURIComponent(timeRange)}` : '';
+    return apiClient.get(`/wrong-answer-map/subjects/${subjectId}/map${q}`);
+  },
+
+  async getNodeWrongAnswers(nodeId: string): Promise<{ wrong_answers: Array<{ question_id: string; content: string; user_choice: string; correct_answer: string; answered_at: string }> }> {
+    return apiClient.get(`/wrong-answer-map/nodes/${nodeId}/wrong-answers`);
+  },
+};
+
 // ===========================
 // Subscription Service
 // ===========================
