@@ -186,6 +186,8 @@ def delete_resource(
     db: Session = Depends(get_db),
 ):
     """刪除資源及其關聯的 chunks 和 knowledge nodes。"""
+    import logging
+    logger = logging.getLogger(__name__)
     from app.models.resource import Resource
     from app.models.knowledge_node import KnowledgeNode
     from app.models.resource_chunk import ResourceChunk
@@ -199,13 +201,22 @@ def delete_resource(
     rid = resource.id
     subject_id = str(resource.subject_id) if resource.subject_id else None
 
-    # Delete chunks
-    db.query(ResourceChunk).filter_by(resource_id=rid).delete()
-    # Delete knowledge nodes
-    db.query(KnowledgeNode).filter_by(resource_id=rid).delete()
-    # Delete resource
-    db.delete(resource)
-    db.commit()
+    try:
+        # Delete chunks
+        db.query(ResourceChunk).filter_by(resource_id=rid).delete()
+        # Delete knowledge nodes
+        db.query(KnowledgeNode).filter_by(resource_id=rid).delete()
+        # Delete resource
+        db.delete(resource)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        # 完整 trace 寫入 stderr 供 Cloud Logging 收集
+        logger.exception("delete_resource failed for resource_id=%s: %s", rid, e)
+        raise HTTPException(
+            status_code=500,
+            detail={"message": f"刪除失敗：{type(e).__name__}: {str(e)[:200]}"},
+        )
 
     # Delete file from storage (local or GCS)
     if resource.gcs_path:

@@ -36,7 +36,7 @@ class MergeConflict(Base):
         UUID(as_uuid=True), ForeignKey("subjects.id"), nullable=False
     )
     existing_node_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id", ondelete="CASCADE")
     )
     incoming_node_name: Mapped[str] = mapped_column(String(300), nullable=False)
     similarity: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
