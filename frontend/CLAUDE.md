@@ -115,7 +115,7 @@ npm run dev    # http://localhost:3005
 
 ## 元件清單
 
-**通用**：Navbar, NavbarWrapper, TiTiLogo, SubjectSwitcher, SubjectPickerModal, AnnouncementBanner, TrialBanner, StudyBuddyBanner, PendingJourneysBanner, MindMapTree, ForceGraph, DomainRadarChart, StreakCounter, DailyQuestCard, AchievementBadge, AchievementGrid, GrowthTimeline, Confetti, ExamLoadingOverlay, ExamSettlementScreen
+**通用**：Navbar, NavbarWrapper, TiTiLogo, SubjectSwitcher, SubjectPickerModal, AnnouncementBanner, TrialBanner, PendingJourneysBanner, MindMapTree, ForceGraph, DomainRadarChart, StreakCounter, DailyQuestCard, AchievementBadge, AchievementGrid, GrowthTimeline, Confetti, ExamLoadingOverlay, ExamSettlementScreen
 
 **考古題匯入**：ExamImportForm, ImportDashboardStats, ImportJobsList, ImportTaskProgressCard
 

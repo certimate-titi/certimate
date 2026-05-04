@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-04 嚴格 TDD 七連發 + 雲端驗證：L96 / L99 / L100 / L57 / L59 / L62 / L80 / L81 / L82 完成（commits 9cbc510 → 7e5b16a），雲端 7 個新 endpoint + migration 076 全部部署綠燈；剩餘 3 項：L51 待 PRD、Cloud Run env/SA 部署、Frontend Playwright 補測（5 子項已落地）
+**最後更新**：2026-05-04 全部待辦清零 ✅。本日嚴格 TDD 九連發（L96/L99/L100/L57/L59/L62/L80/L81/L82 + GCP Billing IAM 收尾 + L51 假陽性清理）+ Frontend Playwright 補測標完成（9 tests passed）+ 雲端 QA 全綠（commits 9cbc510 → dcbfe17）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -48,7 +48,7 @@
 - [x] `19-交錯練習.feature` + `32-節點練習模式.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples）（確認：2026-04-24 自動巡檢；46-Canvas.feature + 46b-Analytics.feature 已於 2026-04-28 整檔刪除，CEO 簽核移除 PRD-046 Canvas 功能）
 - [x] `/dashboard` — ~~待辦提醒（activityItems）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒」(L59) 已 active（確認：2026-04-27 自動巡檢）
 - [x] `/dashboard` — ~~DomainRadarChart（領域雷達圖）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「雷達圖應顯示各領域的強度資料」(L228) 含能力分布驗證（確認：2026-04-27 自動巡檢）
-- [ ] `/dashboard` — **【待 PRD】** StudyBuddyBanner（ULTRA 共讀橫幅）：元件不存在於 frontend/components/、無 Feature spec、無對應後端 endpoint（grep community/online-count 無 hit）；`frontend/CLAUDE.md` L118 僅列為「計畫元件」；屬未排程功能，需 CEO 召喚產品經理撰寫 PRD（What is 共讀？session 模型？線上計數來源？）後再進入技術派任。**禁止盲目實作未排程功能**（CLAUDE.md「不引入超出任務的抽象」原則）（評估：2026-05-04）
+- [x] ~~`/dashboard` StudyBuddyBanner（ULTRA 共讀橫幅）~~ **CEO 已簽核下架**（commit `75a2782` 2026-04-27 走 Feature Spec Authority B 路徑）；元件 + 後端串接 + Feature 14 規格皆已對齊「儀表板不顯示活躍考生橫幅（功能已下架）」；本待辦條目為自動巡檢腳本掃 frontend/CLAUDE.md 過期元件清單觸發的假陽性，現一併修正 frontend/CLAUDE.md L118 移除元件名（清理：2026-05-04）
 - [x] `/super-admin/audit-logs` — ~~審計日誌無 active Feature Scenario（Feature 12 全 @ignore）~~ Feature 12 已有 35 個 active Example（0 @ignore），含 10 處審計日誌記錄驗證（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/retirement` — ~~Feature 25（AI 考題退場與放榜確認）全 @ignore，無 active Scenario~~ Feature 25 已有 36 個 active Example（0 @ignore），涵蓋來源標記、品質管理、退場流程（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
