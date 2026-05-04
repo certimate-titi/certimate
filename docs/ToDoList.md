@@ -164,11 +164,12 @@
 - ✅ 配置指南文檔（`GCP_BILLING_EXPORT_SETUP.md`）
 - ✅ 實現總結文檔（`BILLING_EXPORT_COMPLETION.md`）
 - [ ] **待部署**：Cloud Run 環境變數 + Service Account key 掛載
-- [ ] **雲端驗證**（2026-05-03 batch A 後新增）：本批改動 commit 須 deploy 到 Cloud Run 後做端對端驗證
-  - L57 / L58 / L42（user-tier 守衛 + spec 同步）
-  - 高等設定守衛（settings/cost-monitor/prompt-templates 改 isSuperAdmin）
-  - L95 `/practice` Layer 3、L101 `/knowledge/mindmap` Layer 3
-  - 需 cloud DB 跑 `POST /api/v1/auth/seed-test-accounts`（endpoint 已加但未部署）建立 7 測試帳號
+- [x] **雲端驗證**（2026-05-04 commit `432ac91` 部署後完成端對端）：seed 7 測試帳號 → cloud Cloud Run 驗證 13 條守衛
+  - ADMIN/FREE：cost-monitor/settings/prompt-templates 三頁皆 redirect→dashboard ✅；/exam/setup 進階配方+教育管理 nav 顯示 ✅
+  - USER/ULTRA：/super-admin/dashboard redirect→/dashboard ✅；進階配方+教育管理 nav 顯示 ✅；平台管理 nav 隱藏 ✅
+  - USER/FREE：所有付費/admin 元素皆隱藏 ✅
+  - SUPER_ADMIN：cost-monitor/settings/prompt-templates 三頁皆可進 ✅
+  - console 0 errors
 - [ ] **Frontend Playwright BDD 補測**（2026-05-03 完整補測時識別的債務）：以下純前端守衛與 UI 行為需實作 Playwright step definitions
   - L58 ULTRA Bloom 守衛（Feature 04 L185-211 spec 已存在，缺 frontend step：`使用者 "ultra@example.com" 提交測驗設定...自訂 Bloom 比例為...`）
   - isSuperAdmin 守衛 redirect 行為（純 ADMIN 進高等設定頁應 redirect 至 dashboard，缺 spec + step）
