@@ -202,6 +202,16 @@ def delete_resource(
     subject_id = str(resource.subject_id) if resource.subject_id else None
 
     try:
+        # 先處理 orphan questions：node SET NULL 會觸發 ck_questions_has_parent
+        # CHECK 重檢；已存在 exam_id/historical_exam_id 皆 NULL 的 orphan
+        # 會違反 constraint → 整個 transaction 失敗。先把這類 orphan 直接刪掉。
+        from app.models.question import Question
+        node_ids_subq = db.query(KnowledgeNode.id).filter_by(resource_id=rid).subquery()
+        db.query(Question).filter(
+            Question.node_id.in_(node_ids_subq),
+            Question.exam_id.is_(None),
+            Question.historical_exam_id.is_(None),
+        ).delete(synchronize_session=False)
         # Delete chunks
         db.query(ResourceChunk).filter_by(resource_id=rid).delete()
         # Delete knowledge nodes
