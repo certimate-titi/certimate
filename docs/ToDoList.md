@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-04 TiTi Commander 排程巡檢 — 修復：🔴1 完成（`/edu-console` DPA UI 已實作）；剩餘未解決：🔴4 🟠5 🟡3 共 12 項（其中 3 項待後端先補 API）
+**最後更新**：2026-05-04 嚴格 TDD 七連發 + 雲端驗證：L96 / L99 / L100 / L57 / L59 / L62 / L80 / L81 / L82 完成（commits 9cbc510 → 7e5b16a），雲端 7 個新 endpoint + migration 076 全部部署綠燈；剩餘 3 項：L51 待 PRD、Cloud Run env/SA 部署、Frontend Playwright 補測（5 子項已落地）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
