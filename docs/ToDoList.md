@@ -96,7 +96,7 @@
 - [x] `/exam/setup` — documents.length === 0 空態已新增提示：若已上傳資源但為空，引導至知識庫查看解析狀態（修復：2026-04-24 自動巡檢）
 - [x] `/library` — ~~頁面空態情況不明~~ **頁面不存在**（`frontend/app/library/page.tsx` 不存在），此條目為過時參照，應移除（確認：2026-04-29 自動巡檢）
 - [x] `/practice` — ~~no-questions 空態有文字 hint 提示，但**未實際查詢 resource_parse_jobs 取得 failure_reason**~~ practice/page.tsx 已實作 Layer 3：phase 進入 no-questions 時 useEffect 查 documentService.list() 過濾 activeSubjectId + status==='FAILED'，逐個呼叫 resourceParseService.getStatus() 取得 failure_reason，UI 顯示紅色警告塊列出最多 3 個（修復：2026-05-03）
-- [ ] `/review` — `wrongQuestions.length === 0` 時顯示「全部答對！」但**未查詢後端 job 表**（`exam_generation_jobs` / `resource_parse_jobs`），無法區分「真正全答對」vs「job FAILED 導致無錯題記錄」；違反 Layer 3 規則（首見：2026-04-28；2026-05-03 評估：**前置條件為後端需新增 examGenerationJobs API**，目前 services.ts 無對應端點，待後端補完再實作前端查詢）
+- [x] `/review` — ~~wrongQuestions.length === 0 時未查詢後端 job 表~~ 嚴格 TDD 五階段完成（Schema Analysis → Step Template → Red 404 → Green → Refactor）：後端新增 `GET /api/v1/exams/recent-failures` endpoint 查當前用戶最近 5 筆 status=FAILED 測驗；前端 examService.getRecentFailures + /review 空態 useEffect 觸發；UI 條件渲染：有 FAILED → 紅色警告塊「無錯題記錄」+ 失敗列表；無 → 原「全部答對！」；F07 BDD 新增 Rule + 2 Examples 全綠（修復：2026-05-04）
 - [x] `/account/resource-library` — FAILED 資源 badge 已顯示，failure_reason 透過 tooltip 呈現（確認：2026-04-25 自動巡檢）
 - [x] `/super-admin/exam-import` — Import job FAILED 狀態已顯示 errorMessage（inline 顯示於 ImportJobsList 元件），無 failure_reason 但使用 error_message 欄位，功能正常（確認：2026-04-25 自動巡檢）
 - [ ] `/schedule` — `recs.length === 0` 時直接顯示「尚無備考科目」，未查詢 schedule 相關 job 表，無法區分「真正無科目」vs「schedule job 失敗」；違反 Layer 3 規則（首見：2026-04-29；2026-05-03 評估：**前置條件為後端需新增 scheduleJobs API**，待後端補完）

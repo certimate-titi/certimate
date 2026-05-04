@@ -37,6 +37,43 @@ def _handle_result(result: dict):
     return result
 
 
+@router.get("/recent-failures")
+def get_recent_exam_failures(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取得當前用戶最近的 FAILED 測驗（前端 /review 空態 Layer 3 用）。
+
+    用於區分「真正全答對」vs「測驗生成失敗導致無錯題記錄」。
+    回傳最近 5 筆 status=FAILED 的測驗摘要。
+    """
+    import uuid as uuid_mod
+    from app.models.exam import Exam, ExamStatus
+
+    # 使用 enum value 字串比對（model status 為 String mapped Enum，行為較穩定）
+    failures = (
+        db.query(Exam)
+        .filter(
+            Exam.user_id == uuid_mod.UUID(user_id),
+            Exam.status == ExamStatus.FAILED.value,
+        )
+        .order_by(Exam.id.desc())
+        .limit(5)
+        .all()
+    )
+    return {
+        "failures": [
+            {
+                "exam_id": str(e.id),
+                "status": e.status if isinstance(e.status, str) else e.status.value,
+                "subject_id": str(e.subject_id) if e.subject_id else None,
+                "total_questions": e.total_questions,
+            }
+            for e in failures
+        ]
+    }
+
+
 @router.post("/config")
 def submit_exam_config(
     body: ExamConfigRequest,

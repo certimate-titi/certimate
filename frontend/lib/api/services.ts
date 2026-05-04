@@ -291,6 +291,11 @@ export const examService = {
       bloomBreakdown: (raw.bloom_breakdown as GetExamResultsResponse['bloomBreakdown']) || [],
     } as unknown as GetExamResultsResponse;
   },
+
+  /** Layer 3：取得當前用戶最近的 FAILED 測驗，供 /review 空態區分使用 */
+  async getRecentFailures(): Promise<{ failures: Array<{ exam_id: string; status: string; subject_id: string | null; total_questions: number }> }> {
+    return apiClient.get('/exams/recent-failures');
+  },
 };
 
 // ===========================

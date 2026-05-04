@@ -14,6 +14,7 @@ STATUS_MAP = {
     "IN_PROGRESS": ExamStatus.IN_PROGRESS,
     "SUBMITTED": ExamStatus.SUBMITTED,
     "PENDING": ExamStatus.PENDING,
+    "FAILED": ExamStatus.FAILED,
 }
 
 

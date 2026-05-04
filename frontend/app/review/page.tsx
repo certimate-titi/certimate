@@ -12,7 +12,7 @@ import { ChevronLeft, FileText, Lock, Sparkles, Send, RefreshCw, BookOpen } from
 import TiTiLogo from '@/components/TiTiLogo';
 import MathContent from '@/components/MathContent';
 import Link from 'next/link';
-import { reviewService, subjectService } from '@/lib/api/services';
+import { reviewService, subjectService, examService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { GetReviewQuestionsResponse, ChatMessage, UserSubject } from '@/types';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
@@ -38,6 +38,8 @@ function ReviewBookPage() {
 
   const [data, setData] = useState<GetReviewQuestionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  // Layer 3：當無錯題時查最近失敗的測驗，區分「真全答對」vs「測驗生成失敗」
+  const [recentFailures, setRecentFailures] = useState<Array<{ exam_id: string }>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -82,6 +84,14 @@ function ReviewBookPage() {
     reviewService.getWrongQuestions(examId || undefined, examId ? undefined : targetSubjectId).then(res => {
       setData(res);
       setLoading(false);
+      // Layer 3：若無錯題，查最近失敗的測驗
+      if (res.wrongQuestions.length === 0) {
+        examService.getRecentFailures()
+          .then(r => setRecentFailures(r.failures || []))
+          .catch(() => setRecentFailures([]));
+      } else {
+        setRecentFailures([]);
+      }
     }).catch(() => setLoading(false));
   }, [examId, activeSubjectId, subjects]);
 
@@ -138,13 +148,30 @@ function ReviewBookPage() {
   }
 
   if (data.wrongQuestions.length === 0) {
+    const hasRecentFailures = recentFailures.length > 0;
     return (
       <div className="flex-1 flex flex-col min-h-screen bg-slate-50">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center max-w-md">
             <div className="mx-auto mb-4"><TiTiLogo size={64} /></div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">全部答對！</h2>
-            <p className="text-slate-500 mb-6">目前該學科沒有錯題，太厲害了！</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              {hasRecentFailures ? '無錯題記錄' : '全部答對！'}
+            </h2>
+            <p className="text-slate-500 mb-6">
+              {hasRecentFailures
+                ? '目前該學科沒有錯題記錄。'
+                : '目前該學科沒有錯題，太厲害了！'}
+            </p>
+            {hasRecentFailures && (
+              <div className="mb-6 mx-auto text-left bg-rose-50 border border-rose-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-rose-700 mb-1">⚠️ 偵測到 {recentFailures.length} 個最近失敗的測驗，可能是 AI 出題失敗導致無錯題記錄：</p>
+                <ul className="text-xs text-rose-600 space-y-1">
+                  {recentFailures.slice(0, 3).map(f => (
+                    <li key={f.exam_id}>• 測驗 {f.exam_id.slice(0, 8)}…（生成失敗）</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <Link href="/dashboard" className="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition-colors">
               回到儀表板
             </Link>

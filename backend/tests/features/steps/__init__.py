@@ -256,6 +256,7 @@ from .exam.commands import select_resource  # noqa: F401
 
 # Exam — query
 from .exam.query import select_subject_filter  # noqa: F401
+from .exam.query import recent_failures  # noqa: F401
 
 # Exam — aggregate_then
 from .exam.aggregate_then import exam_task_status  # noqa: F401

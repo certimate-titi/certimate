@@ -487,3 +487,24 @@ Feature: 錯題複習與 AI 教練
       Then 操作成功
       And 回應欄位 "is_correct" 應為 true
       And 回應欄位 "progress" 應為 null
+
+  # Layer 3 Empty State Discrimination — /review Layer 3（前端 Layer 3 query）
+
+  Rule: 後置（查詢）- 提供 GET /exams/recent-failures 讓前端區分「全答對」vs「生成失敗」
+
+    # 落地紀錄（2026-05-04）：/review wrongQuestions.length===0 時前端
+    # 呼叫此 endpoint，若回應含 FAILED exams 則顯示警告塊區分「真全答對」
+    # vs「測驗生成失敗導致無錯題」。
+
+    Example: 用戶有最近 FAILED exam — 回傳列表
+      Given 系統中有以下測驗：
+        | 測驗 ID | 使用者 ID | 狀態   | 總題數 | 考試時長（分鐘） |
+        | 99      | 4        | FAILED | 10     | 30              |
+      When 使用者 "proplus@example.com" 查詢最近失敗的測驗
+      Then 操作成功
+      And 回應應包含 1 個失敗測驗
+
+    Example: 用戶無 FAILED exam — 回傳空列表
+      When 使用者 "free@example.com" 查詢最近失敗的測驗
+      Then 操作成功
+      And 回應應包含 0 個失敗測驗

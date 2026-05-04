@@ -615,7 +615,8 @@
       "Bash(.venv/bin/python -c \"import ast; ast.parse\\(open\\('app/services/knowledge_merge_service.py'\\).read\\(\\)\\); print\\('✅ knowledge_merge_service.py syntax OK'\\)\")",
       "Bash(open -a Docker)",
       "Bash(break)",
-      "Bash(.venv/bin/python -m behave tests/features/13-個人儀表板與成就系統.feature --no-capture)"
+      "Bash(.venv/bin/python -m behave tests/features/13-個人儀表板與成就系統.feature --no-capture)",
+      "Bash(gh run *)"
     ]
   }
 }
