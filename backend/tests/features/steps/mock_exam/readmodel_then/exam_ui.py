@@ -5,18 +5,25 @@ from behave import then
 
 @then('畫面應短暫顯示 AI 教練角色（Certi）的打氣介面')
 def step_impl_ai_coach_intro(context):
-    """驗證 AI 教練打氣介面顯示（Red 階段允許 200/404）。"""
+    """驗證 AI 教練 Certi 打氣介面回應（Green 階段：要求 200 + coach_name=Certi）。"""
     response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert response.status_code == 200, \
+        f"預期 200，實際 {response.status_code}: {response.text[:200]}"
+    body = response.json()
+    assert body.get("coach_name") == "Certi", \
+        f"預期 coach_name='Certi'，實際 {body.get('coach_name')!r}"
 
 
 @then('AI 教練應提供基於使用者近期學習狀態或連續測驗次數所生成的專屬鼓勵對話')
 def step_impl_ai_coach_encouragement(context):
-    """驗證 AI 教練提供專屬鼓勵訊息（Red 階段允許 200/404）。"""
+    """驗證 AI 教練提供基於 learning_state 的鼓勵訊息（Green：要求 message 與 learning_state）。"""
     response = context.last_response
-    assert response.status_code in (200, 201, 404), \
-        f"意外的 HTTP 狀態碼: {response.status_code}"
+    assert response.status_code == 200, \
+        f"預期 200，實際 {response.status_code}"
+    body = response.json()
+    assert body.get("message"), "回應應包含 message 欄位"
+    assert "learning_state" in body, "回應應包含 learning_state 欄位"
+    assert "streak_days" in body["learning_state"], "learning_state 應含 streak_days"
 
 
 @then('計時器的顯示樣式應切換為 "{style}"')

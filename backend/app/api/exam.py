@@ -37,6 +37,50 @@ def _handle_result(result: dict):
     return result
 
 
+@router.get("/{exam_id}/intro")
+def get_exam_intro_encouragement(
+    exam_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取得測驗開始前的 Certi 打氣語句（Feature 05 L57-61）。
+
+    根據用戶最近狀態（streak、近期分數）生成情境式鼓勵訊息。
+    LLM 不可用時回傳 fallback 語句。
+    """
+    import uuid as uuid_mod
+    from app.models.exam import Exam
+    from app.models.user import User
+    from app.services.encouragement_service import EncouragementService
+
+    try:
+        exam = db.query(Exam).filter(Exam.id == uuid_mod.UUID(exam_id)).first()
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail={"message": "測驗不存在"})
+    if not exam:
+        raise HTTPException(status_code=404, detail={"message": "測驗不存在"})
+    if str(exam.user_id) != user_id:
+        raise HTTPException(status_code=403, detail={"message": "無存取此測驗的權限"})
+
+    user = db.query(User).filter(User.id == uuid_mod.UUID(user_id)).first()
+    learning_state = {
+        "streak_days": getattr(user, "current_streak", 0) or 0,
+        "exams_taken_recent": db.query(Exam).filter(
+            Exam.user_id == uuid_mod.UUID(user_id),
+            Exam.status == "SUBMITTED",
+        ).count(),
+    }
+    svc = EncouragementService(db)
+    message = svc.generate("pre_exam_cheer", learning_state)
+    return {
+        "exam_id": exam_id,
+        "trigger_type": "pre_exam_cheer",
+        "coach_name": "Certi",
+        "message": message,
+        "learning_state": learning_state,
+    }
+
+
 @router.get("/recent-failures")
 def get_recent_exam_failures(
     user_id: str = Depends(get_current_user_id),

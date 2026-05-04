@@ -296,6 +296,17 @@ export const examService = {
   async getRecentFailures(): Promise<{ failures: Array<{ exam_id: string; status: string; subject_id: string | null; total_questions: number }> }> {
     return apiClient.get('/exams/recent-failures');
   },
+
+  /** Feature 05：取得測驗開始前的 Certi 打氣語句 */
+  async getIntroEncouragement(examId: string): Promise<{
+    exam_id: string;
+    trigger_type: string;
+    coach_name: string;
+    message: string;
+    learning_state: { streak_days: number; exams_taken_recent: number };
+  }> {
+    return apiClient.get(`/exams/${examId}/intro`);
+  },
 };
 
 // ===========================

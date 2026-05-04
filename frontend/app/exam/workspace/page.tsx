@@ -64,8 +64,23 @@ function MockExamWorkspacePage() {
   const [showGrid, setShowGrid] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  // Feature 05：Certi 打氣介面（短暫顯示後自動消失）
+  const [introMessage, setIntroMessage] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(true);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submitCalledRef = useRef(false);
+
+  // Feature 05：載入 Certi 打氣語句（短暫顯示）
+  useEffect(() => {
+    if (!examId) return;
+    examService.getIntroEncouragement(examId)
+      .then(res => {
+        setIntroMessage(res.message || null);
+        // 5 秒後自動隱藏
+        setTimeout(() => setShowIntro(false), 5000);
+      })
+      .catch(() => setShowIntro(false));
+  }, [examId]);
 
   // Load exam data
   useEffect(() => {
@@ -206,6 +221,29 @@ function MockExamWorkspacePage() {
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+      {/* Feature 05: Certi 打氣介面（短暫顯示） */}
+      {showIntro && introMessage && (
+        <div
+          data-testid="certi-intro-banner"
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-6 py-4 rounded-2xl shadow-xl max-w-md animate-in slide-in-from-top-2 duration-300"
+        >
+          <div className="flex items-start gap-3">
+            <div className="text-3xl" aria-hidden>🐾</div>
+            <div className="flex-1">
+              <p className="text-xs font-bold mb-1 opacity-90">教練 Certi 想對你說</p>
+              <p className="text-sm leading-relaxed">{introMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowIntro(false)}
+              className="text-white/80 hover:text-white text-lg leading-none"
+              aria-label="關閉打氣介面"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       <header className="bg-slate-900 text-slate-300 px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-10">
         <div className="flex items-center gap-6">

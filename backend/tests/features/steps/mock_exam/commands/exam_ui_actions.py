@@ -18,7 +18,7 @@ def step_impl_load_initial_screen(context):
     if not user:
         context.last_response = type("R", (), {"status_code": 404, "json": lambda s: {}})()
         return
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     response = context.api_client.get(
         f"/api/v1/exams/{exam_id_str}/intro",
         headers={"Authorization": f"Bearer {token}"},
@@ -38,7 +38,7 @@ def step_impl_advance_time(context, minutes, seconds):
         from app.models.user import User
         user = context.db_session.query(User).filter(User.email == email).first()
         if user:
-            token = context.jwt_helper.create_token(str(user.id))
+            token = context.jwt_helper.generate_token(str(user.id))
             response = context.api_client.get(
                 f"/api/v1/exams/{exam_id_str}/timer",
                 headers={"Authorization": f"Bearer {token}"},
@@ -52,7 +52,7 @@ def step_impl_try_close_exam(context, email):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     exam_id_str = context.memo.get("current_exam_id", "1")
     response = context.api_client.get(
         f"/api/v1/exams/{exam_id_str}/leave-warning",
@@ -67,7 +67,7 @@ def step_impl_browse_question(context, email, question_id):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     question_uuid = uuid.UUID(int=question_id)
     response = context.api_client.get(
         f"/api/v1/questions/{question_uuid}",
@@ -83,7 +83,7 @@ def step_impl_browse_question_no_input(context, email, question_id):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     question_uuid = uuid.UUID(int=question_id)
     response = context.api_client.get(
         f"/api/v1/questions/{question_uuid}/status",
@@ -99,7 +99,7 @@ def step_impl_pause_exam(context, email, exam_id):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     exam_uuid = uuid.UUID(int=exam_id)
     response = context.api_client.post(
         f"/api/v1/exams/{exam_uuid}/pause",
@@ -115,7 +115,7 @@ def step_impl_resume_after_pause(context, seconds, email, exam_id):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     exam_uuid = uuid.UUID(int=exam_id)
     response = context.api_client.post(
         f"/api/v1/exams/{exam_uuid}/resume",
@@ -131,7 +131,7 @@ def step_impl_open_overview_modal(context, email):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     exam_id_str = context.memo.get("current_exam_id", "1")
     response = context.api_client.get(
         f"/api/v1/exams/{exam_id_str}/overview",
@@ -146,7 +146,7 @@ def step_impl_click_question_nav(context, email, n):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     assert user, f"找不到使用者 {email}"
-    token = context.jwt_helper.create_token(str(user.id))
+    token = context.jwt_helper.generate_token(str(user.id))
     exam_id_str = context.memo.get("current_exam_id", "1")
     response = context.api_client.get(
         f"/api/v1/exams/{exam_id_str}/questions/by-number/{n}",
@@ -162,7 +162,7 @@ def step_impl_currently_viewing_question(context, email, question_id):
     from app.models.user import User
     user = context.db_session.query(User).filter(User.email == email).first()
     if user:
-        token = context.jwt_helper.create_token(str(user.id))
+        token = context.jwt_helper.generate_token(str(user.id))
         question_uuid = uuid.UUID(int=question_id)
         response = context.api_client.get(
             f"/api/v1/questions/{question_uuid}",
