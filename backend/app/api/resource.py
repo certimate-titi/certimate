@@ -202,16 +202,15 @@ def delete_resource(
     subject_id = str(resource.subject_id) if resource.subject_id else None
 
     try:
-        # 先處理 orphan questions：node SET NULL 會觸發 ck_questions_has_parent
-        # CHECK 重檢；已存在 exam_id/historical_exam_id 皆 NULL 的 orphan
-        # 會違反 constraint → 整個 transaction 失敗。先把這類 orphan 直接刪掉。
-        from app.models.question import Question
-        node_ids_subq = db.query(KnowledgeNode.id).filter_by(resource_id=rid).subquery()
-        db.query(Question).filter(
-            Question.node_id.in_(node_ids_subq),
-            Question.exam_id.is_(None),
-            Question.historical_exam_id.is_(None),
-        ).delete(synchronize_session=False)
+        # 先全域清 orphan questions：歷史資料中存在 (exam_id NULL AND
+        # historical_exam_id NULL) 的 row，這違反 ck_questions_has_parent
+        # 但 CHECK 只在 INSERT/UPDATE 觸發，所以靜默殘留。當 cascade SET NULL
+        # 動到 node_id 時，PG 會 re-check 整 row 而 fail。
+        # 此清理是冪等的（合法 row 不會符合 filter）。
+        from sqlalchemy import text as _text
+        db.execute(_text(
+            "DELETE FROM questions WHERE exam_id IS NULL AND historical_exam_id IS NULL"
+        ))
         # Delete chunks
         db.query(ResourceChunk).filter_by(resource_id=rid).delete()
         # Delete knowledge nodes
