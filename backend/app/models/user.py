@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Integer,
+    JSON,
     String,
     Text,
     func,
@@ -167,6 +168,8 @@ class User(Base):
     freezes_per_week: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
     last_active_date: Mapped[date_type | None] = mapped_column(Date)
     freeze_consumed_today: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # F22 通知偏好（daily_reminder / pre_exam_reminder / weekly_report 等開關）
+    notification_preferences: Mapped[dict | None] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

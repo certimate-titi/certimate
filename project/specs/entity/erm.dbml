@@ -272,6 +272,7 @@ Table users {
   career varchar(100)
   agreed_to_terms boolean [default: false]
   last_login_at timestamptz
+  notification_preferences jsonb [default: '{}', note: 'F22 通知偏好：daily_reminder / pre_exam_reminder / weekly_report 等開關（前端 fetch + PATCH /account/notification-preferences 維護）']
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]
 }

@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles, FileText, ArrowRight } from 'lucide-react';
@@ -92,21 +92,41 @@ export default function AccountPage() {
     }).catch(() => {});
   }, []);
 
-  // Load notification preferences from localStorage
+  // F22 / L81：通知偏好讀取（後端 API；localStorage 僅作為 offline fallback）
+  const notifLoadedRef = useRef(false);
   useEffect(() => {
-    const daily = localStorage.getItem('certimate_notif_daily');
-    const preExam = localStorage.getItem('certimate_notif_preexam');
-    const weekly = localStorage.getItem('certimate_notif_weekly');
-    if (daily !== null) setNotifDaily(daily === 'true');
-    if (preExam !== null) setNotifPreExam(preExam === 'true');
-    if (weekly !== null) setNotifWeekly(weekly === 'true');
-  }, []);
+    if (!isAuthenticated) return;
+    accountService.getNotificationPreferences()
+      .then(({ preferences }) => {
+        if (typeof preferences.daily_reminder === 'boolean') setNotifDaily(preferences.daily_reminder);
+        if (typeof preferences.pre_exam_reminder === 'boolean') setNotifPreExam(preferences.pre_exam_reminder);
+        if (typeof preferences.weekly_report === 'boolean') setNotifWeekly(preferences.weekly_report);
+      })
+      .catch(() => {
+        // Fallback：API 失敗時讀 localStorage
+        const daily = localStorage.getItem('certimate_notif_daily');
+        const preExam = localStorage.getItem('certimate_notif_preexam');
+        const weekly = localStorage.getItem('certimate_notif_weekly');
+        if (daily !== null) setNotifDaily(daily === 'true');
+        if (preExam !== null) setNotifPreExam(preExam === 'true');
+        if (weekly !== null) setNotifWeekly(weekly === 'true');
+      })
+      .finally(() => { notifLoadedRef.current = true; });
+  }, [isAuthenticated]);
 
-  // Save notification preferences to localStorage
+  // 偏好變更：PATCH 後端 + localStorage 鏡射（離線可讀取）
   useEffect(() => {
+    if (!notifLoadedRef.current) return; // 避免初始載入立即覆寫後端
     localStorage.setItem('certimate_notif_daily', String(notifDaily));
     localStorage.setItem('certimate_notif_preexam', String(notifPreExam));
     localStorage.setItem('certimate_notif_weekly', String(notifWeekly));
+    accountService.updateNotificationPreferences({
+      daily_reminder: notifDaily,
+      pre_exam_reminder: notifPreExam,
+      weekly_report: notifWeekly,
+    }).catch(() => {
+      // API 失敗無感降級（已存 localStorage）
+    });
   }, [notifDaily, notifPreExam, notifWeekly]);
 
   // Load dark mode from localStorage

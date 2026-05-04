@@ -107,6 +107,19 @@ def delete_account(
     return {"ok": True, "message": "帳號已標記為刪除，將在 30 天後永久移除"}
 
 
+@router.get("/notification-preferences")
+def get_notification_preferences(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """讀取當前用戶的通知偏好設定（F22 / L81）。"""
+    user = _get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+    prefs = getattr(user, "notification_preferences", None) or {}
+    return {"preferences": prefs}
+
+
 @router.patch("/notification-preferences")
 def update_notification_preferences(
     body: dict,
@@ -118,9 +131,8 @@ def update_notification_preferences(
     if not user:
         raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
 
-    # Store preferences in user's metadata or dedicated field
-    if hasattr(user, "notification_preferences"):
-        user.notification_preferences = body
+    # Store preferences in dedicated JSON field (migration 076 added)
+    user.notification_preferences = body
     db.commit()
 
     return {"ok": True, "message": "通知偏好已更新", "preferences": body}

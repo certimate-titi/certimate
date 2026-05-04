@@ -533,6 +533,16 @@ export const accountService = {
     return apiClient.get<GetAchievementsResponse>('/dashboard/achievements');
   },
 
+  /** F22 / L81：讀取通知偏好（取代 localStorage） */
+  async getNotificationPreferences(): Promise<{ preferences: Record<string, boolean> }> {
+    return apiClient.get('/account/notification-preferences');
+  },
+
+  /** F22 / L81：更新通知偏好 */
+  async updateNotificationPreferences(prefs: Record<string, boolean>): Promise<{ ok: boolean; preferences: Record<string, boolean> }> {
+    return apiClient.patch('/account/notification-preferences', prefs);
+  },
+
   async getBillingHistory(): Promise<GetBillingHistoryResponse> {
     return apiClient.get<GetBillingHistoryResponse>('/subscriptions/invoices');
   },
