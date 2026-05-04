@@ -342,12 +342,21 @@ function KnowledgeBasePageInner() {
     setChatLoading(false);
   };
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const handleDeleteDocument = async (docId: string) => {
-    try { await documentService.delete(docId); } catch { /* silent */ }
-    setDocuments(prev => prev.filter(d => d.id !== docId));
-    setNodes(prev => prev.filter(n => n.documentId !== docId));
-    setDeleteConfirmId(null);
-    if (selectedDocId === docId) setSelectedDocId(null);
+    setDeleteError(null);
+    try {
+      await documentService.delete(docId);
+      // 僅刪除成功才更新本地狀態，避免「假刪除復活」假象
+      setDocuments(prev => prev.filter(d => d.id !== docId));
+      setNodes(prev => prev.filter(n => n.documentId !== docId));
+      setDeleteConfirmId(null);
+      if (selectedDocId === docId) setSelectedDocId(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '刪除失敗，請稍後再試';
+      setDeleteError(msg);
+      // 不關 modal，讓使用者看到錯誤
+    }
   };
 
   const handleToggleDocChunks = async (docId: string) => {
@@ -970,7 +979,7 @@ function KnowledgeBasePageInner() {
             const materialSlot = (
               <ScaffoldMaterial
                 nodeId={nodeId}
-                fallbackResourceId={focusResourceId}
+                fallbackResourceId={focusResourceId || selectedNodeDetail?.node?.documentId || null}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
               />
@@ -979,7 +988,7 @@ function KnowledgeBasePageInner() {
             const notebookSlot = (
               <ScaffoldNotebook
                 nodeId={nodeId}
-                fallbackResourceId={focusResourceId}
+                fallbackResourceId={focusResourceId || selectedNodeDetail?.node?.documentId || null}
                 nodeLabel={nodeLabel}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
@@ -1057,11 +1066,16 @@ function KnowledgeBasePageInner() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">確定刪除此教材？</h3>
             </div>
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
               刪除此教材將同步移除心智圖上的關聯節點。<strong className="text-rose-700">此動作無法復原。</strong>
             </p>
+            {deleteError && (
+              <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+                ❌ {deleteError}
+              </div>
+            )}
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-50">取消</button>
+              <button onClick={() => { setDeleteConfirmId(null); setDeleteError(null); }} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-50">取消</button>
               <button onClick={() => handleDeleteDocument(deleteConfirmId)} className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700">確定刪除</button>
             </div>
           </div>

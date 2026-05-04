@@ -91,7 +91,7 @@ class Question(Base):
         comment="歷史考試目錄 FK（爬蟲匯入的考古題）",
     )
     node_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id", ondelete="SET NULL")
     )
     question_number: Mapped[int] = mapped_column(Integer, nullable=False)
     type: Mapped[str] = mapped_column(
@@ -134,7 +134,7 @@ class Question(Base):
     retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     retention_reason: Mapped[str | None] = mapped_column(String(50))
     suggested_node_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id", ondelete="SET NULL")
     )
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True,

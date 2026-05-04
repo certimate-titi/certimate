@@ -46,7 +46,7 @@ class KnowledgeNode(Base):
         UUID(as_uuid=True), ForeignKey("subjects.id")
     )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id")
+        UUID(as_uuid=True), ForeignKey("knowledge_nodes.id", ondelete="CASCADE")
     )
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     depth: Mapped[int] = mapped_column(Integer, default=0)
