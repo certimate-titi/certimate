@@ -343,19 +343,25 @@ function KnowledgeBasePageInner() {
   };
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const removeDocLocally = (docId: string) => {
+    setDocuments(prev => prev.filter(d => d.id !== docId));
+    setNodes(prev => prev.filter(n => n.documentId !== docId));
+    setDeleteConfirmId(null);
+    if (selectedDocId === docId) setSelectedDocId(null);
+  };
   const handleDeleteDocument = async (docId: string) => {
     setDeleteError(null);
     try {
       await documentService.delete(docId);
-      // 僅刪除成功才更新本地狀態，避免「假刪除復活」假象
-      setDocuments(prev => prev.filter(d => d.id !== docId));
-      setNodes(prev => prev.filter(n => n.documentId !== docId));
-      setDeleteConfirmId(null);
-      if (selectedDocId === docId) setSelectedDocId(null);
+      removeDocLocally(docId);
     } catch (e) {
       const msg = e instanceof Error ? e.message : '刪除失敗，請稍後再試';
+      // 後端回 404「資源不存在」表示已不在 DB → 同步前端列表即可
+      if (/不存在|not found|404/i.test(msg)) {
+        removeDocLocally(docId);
+        return;
+      }
       setDeleteError(msg);
-      // 不關 modal，讓使用者看到錯誤
     }
   };
 
@@ -628,7 +634,9 @@ function KnowledgeBasePageInner() {
                               >
                                 📖 原文
                               </button>
-                              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
+                              {!doc.id.startsWith('hist:') && (
+                                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
+                              )}
                             </div>
                           </div>
                           {isExpanded && (
