@@ -20,7 +20,7 @@ import {
   TrendingUp,
   Network,
 } from 'lucide-react';
-import { practiceService, knowledgeService, subjectService, blindInferenceService, documentService, resourceParseService } from '@/lib/api/services';
+import { practiceService, knowledgeService, subjectService, blindInferenceService, documentService, resourceParseService, difficultyProgressionService } from '@/lib/api/services';
 import type { PracticeQuestion, PracticeSubmitResponse } from '@/lib/api/services';
 import type { InferenceJudgment } from '@/types/api';
 import type { UserSubject } from '@/types';
@@ -85,6 +85,14 @@ function PracticePage() {
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
+
+  // Feature 28：階層式難度遞進 — 答錯時建議回溯到父節點
+  const [backtrackSuggestion, setBacktrackSuggestion] = useState<{
+    backtrack_to: string;
+    backtrack_to_id: string;
+    reason: string;
+  } | null>(null);
+  const [consecutiveWrong, setConsecutiveWrong] = useState(0);
 
   // Layer 3：當 no-questions 時，主動查 resource_parse_jobs 取得 FAILED 文件 failure_reason
   // 區分「真的沒題目」vs「資源解析失敗導致無題目」
@@ -196,12 +204,56 @@ function PracticePage() {
       setPhase('feedback');
       setJudgmentSet(false);
       setTotalAnswered(prev => prev + 1);
-      if (res.is_correct) setCorrectCount(prev => prev + 1);
+      if (res.is_correct) {
+        setCorrectCount(prev => prev + 1);
+        setConsecutiveWrong(0);
+        setBacktrackSuggestion(null);
+      } else {
+        // Feature 28：答錯時呼叫 difficulty progression 取得回溯建議
+        const newConsecWrong = consecutiveWrong + 1;
+        setConsecutiveWrong(newConsecWrong);
+        if (selectedNodeId && activeSubjectId) {
+          try {
+            const subjMeta = subjects.find(s => s.id === activeSubjectId);
+            const targetSubjectId = subjMeta?.subjectId || activeSubjectId;
+            const strat = await difficultyProgressionService.nextStrategy(targetSubjectId, {
+              current_node_id: selectedNodeId,
+              original_node_id: selectedNodeId,
+              consecutive_wrong: newConsecWrong,
+            });
+            const stratAny = strat as Record<string, unknown>;
+            if (stratAny.next_action === 'backtrack' && stratAny.current_node_id && stratAny.current_node) {
+              setBacktrackSuggestion({
+                backtrack_to: stratAny.current_node as string,
+                backtrack_to_id: stratAny.current_node_id as string,
+                reason: (stratAny.reason as string) || '建議切換到父節點補強基礎',
+              });
+            }
+          } catch {
+            // 服務不可用就保持原行為
+          }
+        }
+      }
     } catch {
       // handle error silently
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAcceptBacktrack = () => {
+    if (!backtrackSuggestion) return;
+    const targetId = backtrackSuggestion.backtrack_to_id;
+    setBacktrackSuggestion(null);
+    setConsecutiveWrong(0);
+    // 切換 selectedNodeId 並重新載入題目
+    setSelectedNodeId(targetId);
+    setSelectedNodeName(backtrackSuggestion.backtrack_to);
+    setSelectedAnswer(null);
+    setUserConfidence(null);
+    setFeedback(null);
+    setPhase('answering');
+    loadQuestions(targetId);
   };
 
   const handleNext = async () => {
@@ -594,6 +646,32 @@ function PracticePage() {
         {/* Phase: Feedback */}
         {phase === 'feedback' && feedback && (
           <div className="max-w-2xl mx-auto">
+            {/* Feature 28：階層回溯建議 banner（答錯後若需回溯顯示） */}
+            {!feedback.is_correct && backtrackSuggestion && (
+              <div data-testid="backtrack-banner" className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 mb-4 flex items-start gap-3">
+                <Network className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-amber-900 mb-1">建議：先切換到父節點補強基礎</h4>
+                  <p className="text-sm text-amber-800 mb-2">
+                    系統建議切換至「<span className="font-semibold">{backtrackSuggestion.backtrack_to}</span>」練習基礎題。{backtrackSuggestion.reason}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAcceptBacktrack}
+                      className="px-3 py-1.5 text-xs bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                    >
+                      切換至父節點
+                    </button>
+                    <button
+                      onClick={() => setBacktrackSuggestion(null)}
+                      className="px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100 rounded-lg"
+                    >
+                      暫不切換
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Result banner */}
             <div
               className={`p-4 rounded-xl border-2 mb-4 ${
