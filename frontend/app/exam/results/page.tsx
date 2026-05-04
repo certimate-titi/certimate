@@ -36,6 +36,7 @@ function ExamResultsPage() {
   const [data, setData] = useState<GetExamResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
+  const [confidenceData, setConfidenceData] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -48,6 +49,7 @@ function ExamResultsPage() {
     examService.getResults(examId).then(async (res) => {
       setData(res);
       setLoading(false);
+      examService.getConfidenceAnalysis(examId).then(setConfidenceData).catch(() => {});
       if (res.exam.score !== null && res.exam.score >= 80) {
         setTimeout(() => setShowConfetti(true), 300);
       }
@@ -281,6 +283,88 @@ function ExamResultsPage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* 信心度四象限分析 */}
+          {confidenceData && confidenceData.quadrants && (
+            <div data-testid="confidence-quadrant-analysis" className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <BrainCircuit className="h-6 w-6 text-indigo-500" /> 信心度四象限分析
+              </h3>
+              <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+                依作答信心與正確性，將題目分為四個象限，找出認知盲點與幸運猜對的題目。
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {/* 真正掌握 — confident_correct */}
+                {confidenceData.quadrants.confident_correct && (
+                  <div className="p-4 rounded-xl border-2 border-emerald-200 bg-emerald-50">
+                    <div className="text-xs font-medium text-emerald-600 mb-1">{confidenceData.quadrants.confident_correct.label}</div>
+                    <div className="text-3xl font-extrabold text-emerald-700">{confidenceData.quadrants.confident_correct.count}</div>
+                    <div className="text-[10px] text-emerald-500 mt-1">有把握且答對</div>
+                  </div>
+                )}
+                {/* 危險盲點 — confident_incorrect */}
+                {confidenceData.quadrants.confident_incorrect && (
+                  <div className="p-4 rounded-xl border-2 border-rose-200 bg-rose-50">
+                    <div className="text-xs font-medium text-rose-600 mb-1">{confidenceData.quadrants.confident_incorrect.label}</div>
+                    <div className="text-3xl font-extrabold text-rose-700">{confidenceData.quadrants.confident_incorrect.count}</div>
+                    <div className="text-[10px] text-rose-500 mt-1">有把握但答錯</div>
+                  </div>
+                )}
+                {/* 幸運猜對 — guessing_correct */}
+                {confidenceData.quadrants.guessing_correct && (
+                  <div className="p-4 rounded-xl border-2 border-amber-200 bg-amber-50">
+                    <div className="text-xs font-medium text-amber-600 mb-1">{confidenceData.quadrants.guessing_correct.label}</div>
+                    <div className="text-3xl font-extrabold text-amber-700">{confidenceData.quadrants.guessing_correct.count}</div>
+                    <div className="text-[10px] text-amber-500 mt-1">猜對的題目</div>
+                  </div>
+                )}
+                {/* 預期中的弱點 — guessing_incorrect */}
+                {confidenceData.quadrants.guessing_incorrect && (
+                  <div className="p-4 rounded-xl border-2 border-slate-200 bg-slate-50">
+                    <div className="text-xs font-medium text-slate-600 mb-1">{confidenceData.quadrants.guessing_incorrect.label}</div>
+                    <div className="text-3xl font-extrabold text-slate-700">{confidenceData.quadrants.guessing_incorrect.count}</div>
+                    <div className="text-[10px] text-slate-500 mt-1">不確定且答錯</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Calibration Rate */}
+              <div className="mb-5">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-medium text-slate-700">校準率（Calibration Rate）</span>
+                  <span className="font-bold text-indigo-600">{Math.round(confidenceData.calibration_rate * 100)}%</span>
+                </div>
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${Math.round(confidenceData.calibration_rate * 100)}%` }} />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">校準率越高代表你對自己的掌握度判斷越準確</p>
+              </div>
+
+              {/* AI Coach Alerts */}
+              {confidenceData.quadrants.confident_incorrect && confidenceData.quadrants.confident_incorrect.count > 0 && confidenceData.ai_coach_messages?.confident_incorrect && (
+                <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl p-4 mb-3">
+                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center mt-0.5">
+                    <XCircle className="h-4 w-4 text-rose-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-rose-800 mb-0.5">危險盲點提醒</p>
+                    <p className="text-xs text-rose-600 leading-relaxed">{confidenceData.ai_coach_messages.confident_incorrect}</p>
+                  </div>
+                </div>
+              )}
+              {confidenceData.quadrants.guessing_correct && confidenceData.quadrants.guessing_correct.count > 0 && confidenceData.ai_coach_messages?.guessing_correct && (
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
+                    <Sparkles className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-amber-800 mb-0.5">幸運猜對提醒</p>
+                    <p className="text-xs text-amber-600 leading-relaxed">{confidenceData.ai_coach_messages.guessing_correct}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

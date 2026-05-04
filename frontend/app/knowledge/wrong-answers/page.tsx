@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ChevronRight, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { subjectService, wrongAnswerMapService, type WrongAnswerMapNode } from '@/lib/api/services';
+import { subjectService, wrongAnswerMapService, documentService, resourceParseService, type WrongAnswerMapNode } from '@/lib/api/services';
 import type { UserSubject } from '@/types';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 
@@ -50,6 +50,10 @@ function Inner() {
   const [wrongAnswers, setWrongAnswers] = useState<Record<string, Array<{ question_id: string; content: string; user_choice: string; correct_answer: string; answered_at: string }>>>({});
   const [loadingNodeId, setLoadingNodeId] = useState<string | null>(null);
 
+  // Layer 3：當 nodes 為空時，主動查 resource_parse_jobs 取得 FAILED 文件 failure_reason
+  // 區分「真的沒錯題資料」vs「資源解析失敗導致無法產生知識節點與錯題」
+  const [parseFailures, setParseFailures] = useState<Array<{name: string; reason: string}>>([]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) { router.replace('/login'); return; }
@@ -73,6 +77,31 @@ function Inner() {
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSubjectId]);
+
+  // Layer 3：nodes 為空時查詢 parse job 失敗狀態
+  useEffect(() => {
+    if (loading || nodes.length > 0 || !activeSubjectId) {
+      if (nodes.length > 0) setParseFailures([]);
+      return;
+    }
+    documentService.list().then(async (res) => {
+      const subjectFailedDocs = res.documents.filter(
+        (d) => d.subjectId === activeSubjectId && d.status === 'FAILED'
+      );
+      const failures = await Promise.all(
+        subjectFailedDocs.map(async (doc) => {
+          try {
+            const status = await resourceParseService.getStatus(doc.id);
+            return { name: doc.title || '未命名資源', reason: status.failure_reason || '解析失敗（無詳細原因）' };
+          } catch {
+            return { name: doc.title || '未命名資源', reason: '解析失敗（查詢狀態失敗）' };
+          }
+        })
+      );
+      setParseFailures(failures);
+    }).catch(() => setParseFailures([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, nodes.length, activeSubjectId]);
 
   const toggleNode = useCallback(async (nodeId: string) => {
     setExpanded(prev => {
@@ -182,6 +211,19 @@ function Inner() {
               <AlertTriangle className="h-12 w-12 mx-auto text-slate-300 mb-3" />
               <p className="text-slate-600">尚無熱力圖資料</p>
               <p className="text-xs text-slate-400 mt-1">請先完成測驗，系統會根據作答記錄產生個人化錯題地圖</p>
+              {parseFailures.length > 0 && (
+                <div className="mt-4 mx-auto max-w-md text-left bg-rose-50 border border-rose-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-rose-700 mb-1">⚠️ 部分教材解析失敗，可能導致無法產生知識節點與錯題資料：</p>
+                  <ul className="text-xs text-rose-600 space-y-1">
+                    {parseFailures.slice(0, 3).map((f, i) => (
+                      <li key={i}>• <span className="font-medium">{f.name}</span>：{f.reason}</li>
+                    ))}
+                    {parseFailures.length > 3 && (
+                      <li className="italic">…另 {parseFailures.length - 3} 個（請至學習庫查看）</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-2">

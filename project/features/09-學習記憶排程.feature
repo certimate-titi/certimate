@@ -144,3 +144,36 @@ Feature: 動態大腦精力調度排程
       Given 使用者 "proplus@example.com" 在儀表板查看學習排程卡
       When 使用者點擊「前往完整」
       Then 頁面應導向至 /schedule 完整排程頁
+
+  # ========== 完整排程頁 /schedule ==========
+
+  Rule: 後置（UI）- 完整排程頁展示各科學習建議與一鍵複習入口
+
+    # 落地紀錄（2026-05-05）：/schedule page.tsx 已實作完整 UI，
+    # 呼叫 scheduleService.getRecommendations()，各科顯示模式 badge、
+    # 待複習/推薦題數、下次複習時間、「開始今日複習」按鈕。
+
+    @frontend
+    Example: 完整排程頁顯示各科目排程卡片與學習模式
+      Given 使用者 "proplus@example.com" 的 AWS SAA 學習模式為 "sprint"，pending_questions 為 8
+      And 使用者 "proplus@example.com" 的 PMP 學習模式為 "standard"，pending_questions 為 15
+      When 使用者 "proplus@example.com" 進入 /schedule 完整排程頁
+      Then 頁面應向 GET /api/v1/schedule/recommendations 請求資料
+      And 頁面應顯示 AWS SAA 卡片，含「Sprint 衝刺」模式 badge 與待複習題數 8
+      And 頁面應顯示 PMP 卡片，含「Standard 穩紮」模式 badge 與待複習題數 15
+      And 每張卡片應包含「開始今日複習」按鈕，連結至 /exam/setup?subjectId={科目ID}&from=schedule
+
+    @frontend
+    Example: 完整排程頁顯示距考日天數與推薦題數
+      Given 使用者 "proplus@example.com" 的 AWS SAA 考試日期為 2026-04-08
+      And 今日為 2026-04-01
+      When 使用者 "proplus@example.com" 進入 /schedule 完整排程頁
+      Then AWS SAA 卡片應顯示「距考日 7 天」
+      And AWS SAA 卡片應顯示推薦題數
+
+    @frontend
+    Example: 無備考科目時完整排程頁顯示空態引導
+      Given 使用者 "alice@example.com" 尚未設定任何備考科目
+      When 使用者 "alice@example.com" 進入 /schedule 完整排程頁
+      Then 頁面應顯示「尚無備考科目可排程」
+      And 頁面應提供「前往新增科目」按鈕，連結至 /onboarding

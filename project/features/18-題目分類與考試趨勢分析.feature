@@ -1,5 +1,9 @@
-@frontend
+@backend
 Feature: 題目分類與考試趨勢分析
+
+  # 注意：此 Feature 為後端 API 功能。Bloom 分佈統計由 GET /subjects/{id}/bloom-distribution 提供，
+  # 前端消費點為 /exam/results 頁的 Bloom 認知層次分析區塊（已實作）。
+  # 暫無獨立前端頁面規劃，改標記為 @backend。（2026-05-05 CEO 決議）
 
   Background:
     Given 系統中有以下使用者帳號：

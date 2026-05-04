@@ -184,6 +184,22 @@ export const documentService = {
 // Exam Service
 // ===========================
 
+interface ConfidenceQuadrant {
+  count: number;
+  label: string;
+  questions: Array<{ question_id: string; selected_answer: string; confidence: string; is_correct: boolean }>;
+  alert: string;
+  priority: string;
+}
+
+interface ConfidenceAnalysisResponse {
+  exam_id: string;
+  total_answers: number;
+  quadrants: Record<string, ConfidenceQuadrant>;
+  calibration_rate: number;
+  ai_coach_messages: Record<string, string>;
+}
+
 /**
  * 模擬考試服務：建立 / 恢復考試、提交作答、取得結果。
  *
@@ -317,6 +333,11 @@ export const examService = {
     learning_state: { streak_days: number; exams_taken_recent: number };
   }> {
     return apiClient.get(`/exams/${examId}/intro`);
+  },
+
+  /** 信心度四象限分析 */
+  async getConfidenceAnalysis(examId: string): Promise<ConfidenceAnalysisResponse> {
+    return apiClient.get(`/exams/${examId}/confidence-analysis`);
   },
 };
 

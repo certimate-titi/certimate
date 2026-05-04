@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-04 全部待辦清零 ✅。本日嚴格 TDD 九連發（L96/L99/L100/L57/L59/L62/L80/L81/L82 + GCP Billing IAM 收尾 + L51 假陽性清理）+ Frontend Playwright 補測標完成（9 tests passed）+ 雲端 QA 全綠（commits 9cbc510 → dcbfe17）
+**最後更新**：2026-05-05 TiTi Commander 排程巡檢全部清零 — 🔴0 🟠0 🟡0（原 🔴3 🟠2 🟡2 已全部修復）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -61,6 +61,9 @@
 - [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
 - [x] `/knowledge/mindmap` — ~~節點點擊互動僅 setSelectedNodeId 無任何視覺反饋~~ Schema Analysis 確認 `knowledgeService.getNodeDetail` 已存在；mindmap/page.tsx 整合：點擊節點後呼叫 getNodeDetail 載入詳情並顯示**側邊面板**（data-testid="mindmap-node-detail-panel"，固定右側 384px 寬）：節點名、來源資訊、citationText 摘要（最多 400 字）、「開始練習此節點」按鈕（連 /practice?nodeId=...）、「在學習庫查看詳情」按鈕（連 /knowledge?subjectId=...&nodeId=...）+ 關閉按鈕（X）；F03b BDD 9 scenarios 沒回歸（修復：2026-05-04）
 - [x] `/exam/results` — ~~Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符~~ Feature 06 L136-148 已更新：分享按鈕應開啟 LinkedIn 分享視窗、下載按鈕應觸發 PNG 下載（檔名 `CertiMate_Score_{score}_{YYYY-MM-DD}.png`）；spec 與實作對齊（修復：2026-05-03 TiTi Commander）
+- [x] `/exam/results` — ~~Feature 20 Rule「後置（回應）- 測驗結果頁應提供信心度四象限分析」含 3 個 active Scenario，但 `exam/results/page.tsx` 完全無 confidence/quadrant 相關程式碼~~ 前端已實作：examService.getConfidenceAnalysis 呼叫 GET /exams/{id}/confidence-analysis；results/page.tsx 新增「信心度四象限分析」區塊（data-testid="confidence-quadrant-analysis"）含 2x2 象限卡（真正掌握/危險盲點/幸運猜對/預期弱點）+ 校準率百分比條 + AI Coach 紅色警示（危險盲點）+ 黃色提醒（幸運猜對）；TypeScript 編譯零錯誤（修復：2026-05-05 TiTi Commander 排程巡檢）
+- [x] `/schedule` — ~~Feature 09 僅將 `/schedule` 作為連結目標，完整排程頁無獨立 Scenario 覆蓋~~ Feature 09 新增 Rule「完整排程頁展示各科學習建議與一鍵複習入口」+ 3 個 Example Scenario（各科排程卡片+模式 badge、距考日天數+推薦題數、空態引導 → /onboarding）；/schedule page.tsx 已完整實作對應 UI（修復：2026-05-05 TiTi Commander 排程巡檢）
+- [x] Feature 18（題目分類與考試趨勢分析）— ~~Bloom 分佈統計與年度考試趨勢分析無對應前端頁面~~ CEO 決議：Feature 18 為後端 API 功能（GET /subjects/{id}/bloom-distribution），前端消費點為 /exam/results 頁的 Bloom 認知層次分析區塊（已實作）；暫無獨立前端頁面規劃；Feature 標記從 @frontend 改為 @backend（修復：2026-05-05 TiTi Commander 排程巡檢）
 
 ---
 
@@ -102,8 +105,11 @@
 - [x] `/schedule` — ~~recs.length === 0 時 Layer 3 違規~~ Schema Analysis（2026-05-04）：排程建議為**同步計算**（基於 user_subjects 即時生成），無對應 async job 表可查；空態的唯一合理解釋即「用戶尚無備考科目」（onboarding 未完成或主動移除全部）；F09 L22-27 已有對應 Rule「使用者必須至少有一個備考科目才能使用排程」；**不適用 Layer 3**，現行訊息正確
 - [x] `/account/weekly-reports` — ~~reports.length === 0 時 Layer 3 違規~~ Schema Analysis（2026-05-04）：WeeklyReport model 無 status 欄位（成功生成才會建 row），cron 失敗不會留 FAILED row；查 job 失敗需另設監控基礎設施（MaintenanceTask 或 Cloud Logging）；**不適用前端 Layer 3**，cron 健康監控應由 cloud-engineer 在維運層處理（已記入「待部署」項目）
 - [x] `/knowledge/mindmap` — ~~mindMapNodes.length === 0 空態顯示「上傳教材後系統會自動生成」，未查詢 resource_parse_jobs~~ mindmap/page.tsx 已實作 Layer 3：mindMapNodes 為空且 loading 結束時 useEffect 查 documentService.list() 過濾 activeSubjectId + FAILED，呼叫 getStatus() 取 failure_reason；空態 UI 改為條件渲染：有失敗時顯示紅色警告塊，無失敗才顯示原「上傳教材後生成」提示（修復：2026-05-03）
+- [x] `/knowledge/wrong-answers` — ~~`nodes.length === 0` 空態直接顯示空畫面，未查詢 `resource_parse_jobs` 確認是否為解析失敗~~ Layer 3 已實作：nodes 為空時 useEffect 自動查 documentService.list() 過濾 FAILED 文件，逐個呼叫 resourceParseService.getStatus() 取得 failure_reason；UI 條件渲染：有失敗時顯示紅色警告塊（最多 3 個失敗原因）+ 引導訊息；無失敗時維持原「尚無熱力圖資料」提示；TypeScript 編譯零錯誤（修復：2026-05-05 TiTi Commander 排程巡檢）
 - [x] `/knowledge` — ~~documents 與 nodes 皆空時顯示靜態提示，未查詢 resource_parse_jobs~~ knowledge/page.tsx L243-251 已實作 Layer 3：useEffect 自動對 FAILED 文件呼叫 `resourceParseService.getStatus()` 並寫入 `parseJobFailures` state，UI 透過 tooltip 呈現 failure_reason（確認：2026-05-03 深度驗證）
 - [x] `/verify-email/sent` — ~~resend 重寄失敗時 `catch {}` block 為空（silent fail），使用者無任何錯誤提示~~ 已修復：新增 `resendError` state，catch block 顯示「驗證信寄送失敗，請稍後再試。」紅色提示框，同時重設 cooldown 讓使用者可立即重試（修復：2026-04-29 自動巡檢）
+- [x] `/exam/results` 信心度四象限 UI — ~~Feature 20 Rule (L59-83) 要求結果頁呈現四象限統計表但 page.tsx 完全缺此區塊~~ 已修復，同上（修復：2026-05-05 TiTi Commander 排程巡檢）
+- [x] `/knowledge/wrong-answers` 空態未查 Job 表 — ~~`nodes.length === 0` 時直接呈現空畫面~~ 已修復，同上 Layer 3 實作（修復：2026-05-05 TiTi Commander 排程巡檢）
 
 ---
 
