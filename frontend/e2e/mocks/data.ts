@@ -52,9 +52,21 @@ export function setUserOverride(email: string, overrides: Partial<MockUser>) {
   userOverrides.set(email, { ...userOverrides.get(email), ...overrides });
 }
 
+/**
+ * Resource mode override（L101 /knowledge/mindmap Layer 3 BDD 使用）：
+ * - 'all-completed'：強制 /resources 回 status 全為 COMPLETED 的清單
+ * - 'all-failed'：強制 /resources 回 status 全為 FAILED 的清單，並對 parse-status
+ *   query 回傳 failure_reason
+ * - null（預設）：使用 hard-coded 預設清單
+ */
+let resourceMode: 'all-completed' | 'all-failed' | null = null;
+export function setResourceMode(mode: 'all-completed' | 'all-failed' | null) { resourceMode = mode; }
+export function getResourceMode() { return resourceMode; }
+
 export function clearOverrides() {
   userOverrides.clear();
   resetExams();
+  resourceMode = null;
 }
 
 export function findUser(email: string): MockUser | undefined {
@@ -95,6 +107,8 @@ export const EXAMS: MockExam[] = [
   { id: 4, owner_email: 'alice@example.com', status: 'SUBMITTED', question_count: 20 },
   { id: 5, owner_email: 'bob@example.com', status: 'READY', question_count: 10 },
   { id: 10, owner_email: 'alice@example.com', status: 'IN_PROGRESS', question_count: 20 },
+  // F20 信心度校準 frontend BDD 用：pro@example.com 的 IN_PROGRESS 測驗
+  { id: 20, owner_email: 'pro@example.com', status: 'IN_PROGRESS', question_count: 5 },
 ];
 
 /** Override or add an exam entry at runtime (for Given steps) */

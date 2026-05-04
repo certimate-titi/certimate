@@ -228,6 +228,26 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       Then 中央空態應顯示 emoji "🌱" + 主標題「知識樹尚未生成」
       And 應提供主 CTA「🤖 萃取知識樹」按鈕（與 toolbar 重新分析按鈕功能等價）
 
+  @frontend
+  Rule: 後置（Layer 3）- 全螢幕 /knowledge/mindmap 空態應查 resource_parse_jobs 區分失敗
+
+    # 落地紀錄（2026-05-03）：mindmap/page.tsx mindMapNodes 為空時 useEffect
+    # 查 documentService.list() 過濾 FAILED → resourceParseService.getStatus()
+    # 取 failure_reason，UI 條件渲染：有失敗顯示紅色警告塊；無失敗顯示原提示。
+
+    Example: 全螢幕 mindmap 無節點且無 FAILED 文件 顯示原「上傳教材」提示
+      Given 使用者 "alice@example.com" 所有資源狀態皆為 COMPLETED
+      And 使用者所選科目的知識節點為空
+      When 使用者進入全螢幕知識地圖頁
+      Then 全螢幕地圖中央應顯示「尚無知識圖譜節點」
+      And 應顯示提示文字「上傳教材後系統會自動生成」
+
+    Example: 全螢幕 mindmap 無節點但有 FAILED 文件 顯示紅色警告塊
+      Given 使用者 "alice@example.com" 所有資源狀態皆為 FAILED
+      And 使用者所選科目的知識節點為空
+      When 使用者進入全螢幕知識地圖頁
+      Then 全螢幕地圖空態應顯示「資源解析失敗」紅色警告塊
+
   Rule: 後置（UI）- 知識地圖中央區應提供 ForceGraph / MindMapTree / Document 三視圖切換
 
     # 落地紀錄（自動巡檢 2026-04-28）：toolbar 提供「🌐 圖譜」「📋 列表」「📄 文件」三按鈕，

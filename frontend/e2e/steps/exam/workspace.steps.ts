@@ -49,19 +49,36 @@ When(
 
 // ── Answer selection ──
 
+async function loginAndGotoWorkspace(page: any, email: string, examId: number) {
+  // 直接呼叫 mock /auth/login 注入 token；避開 UI login 流程
+  await page.goto('/');
+  await page.evaluate(async ({ email }) => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'Password1!' }),
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('certimate_jwt_token', data.access_token);
+      localStorage.setItem('certimate_remember', 'true');
+    }
+  }, { email });
+  await page.goto(`/exam/workspace?examId=${examId}`);
+  await page.waitForLoadState('networkidle').catch(() => {});
+}
+
 Given(
   '使用者 {string} 已開始測驗 {int}',
-  async ({ page, loginAs }, email: string, examId: number) => {
-    await loginAs(email, 'Password1!');
-    await page.goto(`/exam/workspace?id=${examId}`);
+  async ({ page }, email: string, examId: number) => {
+    await loginAndGotoWorkspace(page, email, examId);
   },
 );
 
 Given(
   /使用者 "([^"]*)" 已開始測驗 (\d+)，剩餘時間為 .+/,
-  async ({ page, loginAs }, email: string, examId: number) => {
-    await loginAs(email, 'Password1!');
-    await page.goto(`/exam/workspace?id=${examId}`);
+  async ({ page }, email: string, examId: number) => {
+    await loginAndGotoWorkspace(page, email, examId);
   },
 );
 

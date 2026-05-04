@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
+import { setResourceMode } from '../../mocks/data';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -306,4 +307,60 @@ Then('面板應顯示升級提示，引導使用者升級至 {string} 方案以�
 
 Then('面板應顯示升級提示，引導使用者升級至 PRO_PLUS_399 方案以取得 100 次\\/月完整教練對話', async ({}) => {
   // No-op
+});
+
+// ── L101 /knowledge/mindmap Layer 3 空態 ──
+
+Given('使用者 {string} 所有資源狀態皆為 COMPLETED', async ({}, _email: string) => {
+  setResourceMode('all-completed');
+});
+
+Given('使用者 {string} 所有資源狀態皆為 FAILED', async ({}, _email: string) => {
+  setResourceMode('all-failed');
+});
+
+Given('使用者所選科目的知識節點為空', async ({}) => {
+  // mock /knowledge-map 預設回空
+});
+
+When('使用者進入全螢幕知識地圖頁', async ({ page }) => {
+  // 直接 mock /auth/login 注入 token（避開 UI login）
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'alice@example.com', password: 'Password1!' }),
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('certimate_jwt_token', data.access_token);
+      localStorage.setItem('certimate_remember', 'true');
+    }
+  });
+  await page.goto('/knowledge/mindmap');
+  await page.waitForLoadState('networkidle').catch(() => {});
+});
+
+Then('全螢幕地圖中央應顯示「尚無知識圖譜節點」', async ({ page }) => {
+  await expect(page.getByText('尚無知識圖譜節點')).toBeVisible({ timeout: 5000 });
+});
+
+Then('應顯示提示文字「上傳教材後系統會自動生成」', async ({ page }) => {
+  await expect(page.getByText('上傳教材後系統會自動生成')).toBeVisible();
+});
+
+Then('全螢幕地圖空態應顯示「資源解析失敗」紅色警告塊', async ({ page }) => {
+  // 警告塊文字「個資源解析失敗」
+  await expect(page.getByText('資源解析失敗', { exact: false })).toBeVisible({ timeout: 5000 });
+});
+
+// ── F03b Background steps（補齊以解 test.fixme）──
+
+Given('使用者 {string} 備考 {string} 與 {string}', async ({}, _email: string, _subj1: string, _subj2: string) => {
+  // No-op: backend seed
+});
+
+Given('科目 {string} 下有以下知識節點：', async ({}, _subject: string, _dataTable: any) => {
+  // No-op: backend seed
 });

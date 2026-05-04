@@ -89,3 +89,25 @@ Given('使用者在忘記密碼頁面已輸入 {string}', async ({ page }, email
   await page.goto('/forgot-password');
   await page.getByPlaceholder('you@example.com').fill(email);
 });
+
+Given('科目 {string} 有以下知識節點：', async ({}, _subject: string, _dataTable: any) => {
+  // No-op: backend seed
+});
+
+Given('知識節點 {string} 有以下練習題：', async ({}, _node: string, _dataTable: any) => {
+  // No-op: backend seed
+});
+
+// ── F12c Background Given steps ──
+
+Given('系統中有以下 AI 模型路由設定：', async ({}, _dataTable: any) => {
+  // No-op: backend seed
+});
+
+Given('系統中有以下方案限額設定：', async ({}, _dataTable: any) => {
+  // No-op: backend seed
+});
+
+Given('系統中有以下 Feature Flag：', async ({}, _dataTable: any) => {
+  // No-op: backend seed
+});

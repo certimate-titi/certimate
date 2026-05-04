@@ -1,4 +1,4 @@
-@frontend @command
+@frontend
 Feature: 平台管理後台 — 系統設定（僅 super_admin）
 
   Background:
@@ -283,3 +283,18 @@ Feature: 平台管理後台 — 系統設定（僅 super_admin）
       When admin 點擊「停用」按鈕並確認
       Then S1 狀態應更新為 inactive
       And 該科目下 5 份預載資源應對所有用戶呈現「不可見」
+
+  Rule: 前置（守衛）- 高等設定頁僅 SUPER_ADMIN 可進入
+
+    # 落地紀錄（2026-05-03）：settings/layout.tsx + cost-monitor + prompt-templates
+    # 加 isSuperAdmin guard，純 ADMIN 進入會 router.replace('/super-admin/dashboard')。
+
+    Example: SUPER_ADMIN 進入 /super-admin/settings 看見系統設定
+      Given 使用者 "super@certimate.com" 已登入為 SUPER_ADMIN
+      When 使用者進入系統設定頁
+      Then 頁面應顯示 "系統設定" 標題
+
+    Example: 純 ADMIN 進入高等設定被 redirect 至 dashboard
+      Given 使用者 "admin@example.com" 已登入為 ADMIN
+      When 使用者進入系統設定頁
+      Then 頁面應 redirect 至營運儀表板

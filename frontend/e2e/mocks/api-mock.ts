@@ -5,7 +5,7 @@
  * Usage: call `installApiMock(page)` before each test.
  */
 import type { Page, Route } from '@playwright/test';
-import { findUser, findUserByToken, EXAMS, SUBJECT_CATALOG, type MockUser } from './data';
+import { findUser, findUserByToken, EXAMS, SUBJECT_CATALOG, getResourceMode, type MockUser } from './data';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -310,6 +310,24 @@ const handlers: Handler[] = [
     if (method !== 'GET' || path !== '/resources') return;
     const user = currentUser(route);
     if (!user) return error(route, 401, '未授權');
+    // L101 BDD：依 resourceMode 切換清單型態
+    const mode = getResourceMode();
+    if (mode === 'all-completed') {
+      return json(route, {
+        resources: [
+          { id: 1, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'A.pdf', status: 'COMPLETED', file_size_mb: 1, created_at: '2026-03-01' },
+          { id: 2, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'B.pdf', status: 'COMPLETED', file_size_mb: 1, created_at: '2026-03-02' },
+        ],
+      });
+    }
+    if (mode === 'all-failed') {
+      return json(route, {
+        resources: [
+          { id: 901, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'broken-1.pdf', status: 'FAILED', file_size_mb: 1, created_at: '2026-03-01' },
+          { id: 902, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'broken-2.pdf', status: 'FAILED', file_size_mb: 1, created_at: '2026-03-02' },
+        ],
+      });
+    }
     return json(route, {
       resources: [
         { id: 1, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'PMP_Guide.pdf', status: 'COMPLETED', file_size_mb: 2.5, created_at: '2026-03-01' },
@@ -317,6 +335,18 @@ const handlers: Handler[] = [
         { id: 3, subject_id: 'subj_pmp', resource_type: 'pdf', filename: 'PMP_Practice.pdf', status: 'PROCESSING', file_size_mb: 1.2, created_at: '2026-03-03' },
       ],
     });
+  },
+
+  // L101: parse-status — FAILED 模式時回傳 failure_reason 給 Layer 3 警告塊使用
+  async (route, method, path) => {
+    const match = path.match(/^\/resources\/(\d+)\/parse-status$/);
+    if (method !== 'GET' || !match) return;
+    const resourceId = parseInt(match[1]);
+    const mode = getResourceMode();
+    if (mode === 'all-failed' || (resourceId >= 901 && resourceId <= 999)) {
+      return json(route, { status: 'failed', failure_reason: '解析超時（mock）：Gemini API 回應逾時', resource_id: resourceId });
+    }
+    return json(route, { status: 'completed', resource_id: resourceId });
   },
 
   async (route, method, path) => {
@@ -376,7 +406,11 @@ const handlers: Handler[] = [
   async (route, method, path) => {
     if (method !== 'GET' || path !== '/onboarding/summary') return;
     const user = currentUser(route);
-    return json(route, { subjects: [], user_id: user?.id ?? '0' });
+    // L101 BDD：用戶須有 user_subjects 才能進入 mindmap 頁面（否則 activeSubjectId 為空）
+    return json(route, {
+      subjects: [{ id: 'subj_pmp', subject_name: 'PMP', name: 'PMP', exam_date: null, result_date: null, self_assessed_level: 'beginner' }],
+      user_id: user?.id ?? '0',
+    });
   },
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -395,11 +429,41 @@ const handlers: Handler[] = [
     });
   },
 
+  // ── Practice (L95 BDD) ────────────────────────────────────────────────────
+
+  async (route, method, path) => {
+    const match = path.match(/^\/practice\/nodes\/([^/]+)\/questions$/);
+    if (method !== 'GET' || !match) return;
+    // 預設回空，觸發 no-questions phase
+    return json(route, { node_id: match[1], questions: [], total: 0 });
+  },
+
+  async (route, method, path) => {
+    if (method !== 'POST' || path !== '/practice/submit') return;
+    return json(route, {
+      ok: true,
+      is_correct: true,
+      correct_answer: 'A',
+      selected_answer: 'A',
+      explanation: 'mock',
+      question_id: 'mock',
+      mode: 'practice',
+      state_updated: true,
+      progress: null,
+      propagation: [],
+    });
+  },
+
   // ── Knowledge Map ─────────────────────────────────────────────────────────
 
   async (route, method, path) => {
     if (path.startsWith('/knowledge-map')) {
       if (method !== 'GET') return;
+      // L101 BDD：當 resourceMode 設定（無論 all-completed / all-failed）時，
+      // 表示 Scenario 模擬「知識節點為空」狀態
+      if (getResourceMode() !== null) {
+        return json(route, { nodes: [], edges: [] });
+      }
       return json(route, {
         nodes: [
           { id: 'n1', name: 'EC2 運算', color: 'green', mastery: 0.9 },

@@ -1,4 +1,4 @@
-@frontend @command
+@frontend
 Feature: 節點練習模式
 
   Background:
@@ -97,3 +97,21 @@ Feature: 節點練習模式
       Then 頁面應顯示「選擇知識節點開始練習」的葉節點列表
       And 每個節點卡片應顯示掌握度百分比徽章
       And 徽章顏色應依掌握度分級：綠色（已掌握）/ 黃色（待加強）/ 紅色（待努力）/ 灰色（未測）
+
+  Rule: 後置（Layer 3）- /practice no-questions 空態應查 resource_parse_jobs 提示失敗
+
+    # 落地紀錄（2026-05-03）：practice/page.tsx phase==='no-questions' 時 useEffect
+    # 查 documentService.list() 過濾 activeSubjectId + status==='FAILED'，
+    # 對每筆 FAILED 文件呼叫 resourceParseService.getStatus() 取 failure_reason，
+    # UI 條件渲染：有失敗 → 紅色警告塊；無失敗 → 原文字提示。
+
+    Example: practice no-questions 無 FAILED 文件 顯示原 hint
+      Given 使用者 "alice@example.com" 所有資源狀態皆為 COMPLETED
+      When 使用者進入練習頁面（無題目情境）
+      Then practice 空態應顯示「尚無練習題」
+      And practice 空態應提示「AI 出題任務尚未完成或已失敗」
+
+    Example: practice no-questions 有 FAILED 文件 顯示紅色警告塊
+      Given 使用者 "alice@example.com" 所有資源狀態皆為 FAILED
+      When 使用者進入練習頁面（無題目情境）
+      Then practice 空態應顯示「資源解析失敗」紅色警告塊
