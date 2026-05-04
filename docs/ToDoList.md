@@ -48,7 +48,7 @@
 - [x] `19-交錯練習.feature` + `32-節點練習模式.feature` — ~~Feature 檔案存在但 Scenario 數量為 0~~ **已有完整 Scenario**（19：8 Examples, 32：9 Examples）（確認：2026-04-24 自動巡檢；46-Canvas.feature + 46b-Analytics.feature 已於 2026-04-28 整檔刪除，CEO 簽核移除 PRD-046 Canvas 功能）
 - [x] `/dashboard` — ~~待辦提醒（activityItems）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒」(L59) 已 active（確認：2026-04-27 自動巡檢）
 - [x] `/dashboard` — ~~DomainRadarChart（領域雷達圖）缺 Feature Scenario（Feature 13 全 @ignore）~~ Feature 13 Rule「雷達圖應顯示各領域的強度資料」(L228) 含能力分布驗證（確認：2026-04-27 自動巡檢）
-- [ ] `/dashboard` — StudyBuddyBanner（ULTRA 共讀橫幅）無任何 Feature 覆蓋（首見：2026-04-27）
+- [ ] `/dashboard` — **【待 PRD】** StudyBuddyBanner（ULTRA 共讀橫幅）：元件不存在於 frontend/components/、無 Feature spec、無對應後端 endpoint（grep community/online-count 無 hit）；`frontend/CLAUDE.md` L118 僅列為「計畫元件」；屬未排程功能，需 CEO 召喚產品經理撰寫 PRD（What is 共讀？session 模型？線上計數來源？）後再進入技術派任。**禁止盲目實作未排程功能**（CLAUDE.md「不引入超出任務的抽象」原則）（評估：2026-05-04）
 - [x] `/super-admin/audit-logs` — ~~審計日誌無 active Feature Scenario（Feature 12 全 @ignore）~~ Feature 12 已有 35 個 active Example（0 @ignore），含 10 處審計日誌記錄驗證（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/retirement` — ~~Feature 25（AI 考題退場與放榜確認）全 @ignore，無 active Scenario~~ Feature 25 已有 36 個 active Example（0 @ignore），涵蓋來源標記、品質管理、退場流程（確認：2026-04-27 自動巡檢）
 - [x] `/super-admin/default-resources` — ~~預設資源 Fork 管理無 active Feature Scenario（Feature 34 無對應前端頁面 Scenario）~~ Feature 34 已有 9 個 active 場景，含 fork、冪等性、atomicity、rollback 等（確認：2026-04-27 自動巡檢）
