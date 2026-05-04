@@ -8,8 +8,10 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Network, ArrowLeft } from 'lucide-react';
+import { Network, ArrowLeft, X, BookOpen, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
+import type { GetNodeDetailResponse } from '@/types/api';
 import type { KnowledgeNode, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
@@ -41,6 +43,9 @@ function FullMindMapPageInner() {
   const [viewMode, setViewMode] = useState<'tree' | 'force'>('force');
   // Layer 3：mindMapNodes 為空時主動查 resource_parse_jobs，區分「尚未上傳」vs「parse job 失敗」
   const [parseJobFailures, setParseJobFailures] = useState<Array<{ title: string; reason: string }>>([]);
+  // L62：節點詳情面板
+  const [nodeDetail, setNodeDetail] = useState<GetNodeDetailResponse | null>(null);
+  const [loadingNodeDetail, setLoadingNodeDetail] = useState(false);
 
   // Flatten MindMapNode tree → GraphNode[] for ForceGraph
   const graphNodes: GraphNode[] = (() => {
@@ -114,6 +119,20 @@ function FullMindMapPageInner() {
 
   const handleNodeClick = (nodeId: string) => {
     setSelectedNodeId(nodeId);
+    // L62：載入節點詳情至側邊面板
+    setNodeDetail(null);
+    setLoadingNodeDetail(true);
+    knowledgeService.getNodeDetail(nodeId)
+      .then(detail => {
+        setNodeDetail(detail);
+      })
+      .catch(() => setNodeDetail(null))
+      .finally(() => setLoadingNodeDetail(false));
+  };
+
+  const closeNodeDetail = () => {
+    setSelectedNodeId(null);
+    setNodeDetail(null);
   };
 
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
@@ -215,6 +234,64 @@ function FullMindMapPageInner() {
           )}
         </div>
       </div>
+
+      {/* L62: 節點詳情側邊面板（點擊節點後顯示） */}
+      {selectedNodeId && (
+        <aside
+          data-testid="mindmap-node-detail-panel"
+          className="fixed right-0 top-0 h-full w-96 bg-white border-l border-slate-200 shadow-xl z-40 flex flex-col"
+        >
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h3 className="font-bold text-slate-900">節點詳情</h3>
+            <button onClick={closeNodeDetail} aria-label="關閉節點詳情" className="p-1 text-slate-500 hover:text-slate-900">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {loadingNodeDetail ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : nodeDetail ? (
+              <>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">{nodeDetail.node.label || '未命名節點'}</h4>
+                  {nodeDetail.citationSource && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      來源：{nodeDetail.citationSource.documentTitle}
+                      {nodeDetail.citationSource.page != null && ` · 第 ${nodeDetail.citationSource.page} 頁`}
+                    </p>
+                  )}
+                </div>
+                {nodeDetail.citationText && (
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs font-medium text-slate-600 mb-1">節點摘要</p>
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{nodeDetail.citationText.slice(0, 400)}</p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Link
+                    href={`/practice?nodeId=${selectedNodeId}`}
+                    className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    開始練習此節點
+                  </Link>
+                  <Link
+                    href={`/knowledge?subjectId=${activeSubjectId}&nodeId=${selectedNodeId}`}
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    在學習庫查看詳情
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8">無法載入節點詳情</p>
+            )}
+          </div>
+        </aside>
+      )}
     </>
   );
 }

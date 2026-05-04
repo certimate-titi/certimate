@@ -59,7 +59,7 @@
 - [x] `/practice` — ~~Feature 28（階層式難度遞進）回溯邏輯前端未整合~~ Schema Analysis 確認後端 difficultyProgressionService 完整 + frontend service client 已存在但未呼叫；practice/page.tsx 整合：答錯時呼叫 `nextStrategy(subjectId, {current_node_id, original_node_id, consecutive_wrong})`；若 `next_action === 'backtrack'` 顯示 banner（data-testid="backtrack-banner"）+「切換至父節點」按鈕；切換後 reload 該父節點題目；F28 BDD 13 scenarios / 98 steps 全綠（修復：2026-05-04）
 - [x] `/exam/setup` — ~~Feature 19（交錯練習）規定測驗設定頁可切換題目排列模式（interleaved / grouped / sequential），但頁面目前無此 UI 選項~~ `orderMode` state 及三按鈕 UI（🔀交錯/📦分組/📈依難度）已確認存在於 page.tsx，先前誤報（確認：2026-04-29 自動巡檢）
 - [x] `/pricing` — ~~PRO_PLUS_399 方案功能矩陣「進階 AI 教練」顯示 false~~ Feature 07 明確規定「進階 AI 教練為 ULTRA 方案專屬功能」（L151-153），PRO_PLUS_399 僅享基礎 AI 教練（100 次/月、max_tokens 2048）；定價頁顯示正確，先前誤報源於 Feature 03 與 Feature 07 混淆（確認：2026-05-01 TiTi Commander 巡檢）
-- [ ] `/knowledge/mindmap` — 全螢幕地圖頁節點點擊後的互動行為（詳情面板/跳轉邏輯）無任何 Feature Scenario 覆蓋；現行實作僅 setSelectedNodeId，無任何視覺反饋（首見：2026-05-01）
+- [x] `/knowledge/mindmap` — ~~節點點擊互動僅 setSelectedNodeId 無任何視覺反饋~~ Schema Analysis 確認 `knowledgeService.getNodeDetail` 已存在；mindmap/page.tsx 整合：點擊節點後呼叫 getNodeDetail 載入詳情並顯示**側邊面板**（data-testid="mindmap-node-detail-panel"，固定右側 384px 寬）：節點名、來源資訊、citationText 摘要（最多 400 字）、「開始練習此節點」按鈕（連 /practice?nodeId=...）、「在學習庫查看詳情」按鈕（連 /knowledge?subjectId=...&nodeId=...）+ 關閉按鈕（X）；F03b BDD 9 scenarios 沒回歸（修復：2026-05-04）
 - [x] `/exam/results` — ~~Feature 06 規格「LinkedIn 分享 / 下載成績卡片為 placeholder 即將推出」與現行實作不符~~ Feature 06 L136-148 已更新：分享按鈕應開啟 LinkedIn 分享視窗、下載按鈕應觸發 PNG 下載（檔名 `CertiMate_Score_{score}_{YYYY-MM-DD}.png`）；spec 與實作對齊（修復：2026-05-03 TiTi Commander）
 
 ---
