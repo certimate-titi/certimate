@@ -163,7 +163,7 @@
 - ✅ BDD 測試集成（test hooks）
 - ✅ 配置指南文檔（`GCP_BILLING_EXPORT_SETUP.md`）
 - ✅ 實現總結文檔（`BILLING_EXPORT_COMPLETION.md`）
-- [ ] **待部署**：Cloud Run 環境變數 + Service Account key 掛載
+- [ ] **GCP Billing IAM 權限收尾**（2026-05-04 重新驗證）：env + SA key 已掛載並可呼叫 BigQuery，但 SA 缺 `bigquery.jobs.create` 權限，呼叫 `/admin/cost/gcp/services` 回 `403 GCP_BILLING_TEMPORARILY_UNAVAILABLE`。需 GCP console 賦 SA `roles/bigquery.user` 或更精細的 `roles/bigquery.jobUser`（**僅最後一步 IAM 配置**，不需重新部署）
 - [x] **雲端驗證**（2026-05-04 commit `432ac91` 部署後完成端對端）：seed 7 測試帳號 → cloud Cloud Run 驗證 13 條守衛
   - ADMIN/FREE：cost-monitor/settings/prompt-templates 三頁皆 redirect→dashboard ✅；/exam/setup 進階配方+教育管理 nav 顯示 ✅
   - USER/ULTRA：/super-admin/dashboard redirect→/dashboard ✅；進階配方+教育管理 nav 顯示 ✅；平台管理 nav 隱藏 ✅
