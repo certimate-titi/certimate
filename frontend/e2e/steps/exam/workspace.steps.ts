@@ -52,7 +52,7 @@ When(
 async function loginAndGotoWorkspace(page: any, email: string, examId: number) {
   // 直接呼叫 mock /auth/login 注入 token；避開 UI login 流程
   await page.goto('/');
-  await page.evaluate(async ({ email }) => {
+  await page.evaluate(async ({ email }: { email: string }) => {
     const res = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
