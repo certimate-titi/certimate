@@ -85,6 +85,9 @@ function ExamSetupPage() {
     new Set(['MULTIPLE_CHOICE'])
   );
   const [isGenerating, setIsGenerating] = useState(false);
+  // L80：真實生成進度（取代假階段動畫）
+  const [livePercent, setLivePercent] = useState<number | null>(null);
+  const [liveStageLabel, setLiveStageLabel] = useState<string | null>(null);
   const [generatedExamId, setGeneratedExamId] = useState<string | null>(null);
   const generatedExamIdRef = useRef<string | null>(null);
 
@@ -339,6 +342,8 @@ function ExamSetupPage() {
     }
     setValidationError(null);
     setIsGenerating(true);
+    setLivePercent(0);
+    setLiveStageLabel('準備中…');
 
     try {
       const config: Record<string, unknown> = {
@@ -357,11 +362,33 @@ function ExamSetupPage() {
       if (showAdvancedRecipe && Object.keys(customBloomRatio).length > 0) {
         config.customBloomRatio = customBloomRatio;
       }
+      // 啟動 polling（每 2 秒查 generation-progress）
+      let pollTimer: ReturnType<typeof setInterval> | null = null;
+      const startPolling = (id: string) => {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(async () => {
+          try {
+            const p = await examService.getGenerationProgress(id);
+            setLivePercent(p.percent);
+            setLiveStageLabel(p.stage_label);
+            if (p.status === 'READY' || p.status === 'IN_PROGRESS' || p.status === 'SUBMITTED') {
+              if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            } else if (p.status === 'FAILED') {
+              if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            }
+          } catch { /* keep polling */ }
+        }, 2000);
+      };
+
       const result = await examService.create({ config: config as never });
       const examId = result.exam?.id || result.exam_id || result.examId || null;
       generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
-      // Navigate immediately after API completes
+      // 開始 polling（在等 create 期間若 examId 已落地，可在前置 step 啟動 — 但最簡 MVP 在這裡）
+      if (examId) startPolling(examId);
+      // examService.create 完成 = AI 已 generate 完，立即停止 polling 並導航
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      setLivePercent(100);
       router.push(`/exam/workspace?examId=${examId}`);
     } catch (e: unknown) {
       console.error('Exam generation failed:', e);
@@ -426,6 +453,8 @@ function ExamSetupPage() {
             stages={LOADING_STAGES}
             onComplete={handleLoadingComplete}
             isVisible={isGenerating}
+            livePercent={livePercent}
+            liveStageLabel={liveStageLabel}
           />
 
       <div className="text-center mb-10">

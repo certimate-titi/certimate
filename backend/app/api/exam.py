@@ -81,6 +81,47 @@ def get_exam_intro_encouragement(
     }
 
 
+@router.get("/{exam_id}/generation-progress")
+def get_generation_progress(
+    exam_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """測驗生成進度輪詢（前端 /exam/setup 動畫期間每 2 秒呼叫）。
+
+    回傳 status / percent / stage_label，前端依此更新進度條。
+    完成條件：status == READY；失敗條件：status == FAILED。
+    """
+    import uuid as uuid_mod
+    from app.models.exam import Exam, ExamStatus
+    from app.models.question import Question
+
+    try:
+        exam = db.query(Exam).filter(Exam.id == uuid_mod.UUID(exam_id)).first()
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail={"message": "測驗不存在"})
+    if not exam:
+        raise HTTPException(status_code=404, detail={"message": "測驗不存在"})
+    if str(exam.user_id) != user_id:
+        raise HTTPException(status_code=403, detail={"message": "無存取此測驗的權限"})
+
+    status = exam.status if isinstance(exam.status, str) else exam.status.value
+    total = exam.total_questions or 0
+    generated = db.query(Question).filter(Question.exam_id == exam.id).count()
+
+    if status == ExamStatus.FAILED.value:
+        return {"status": status, "percent": 0, "stage_label": "生成失敗", "generated": generated, "total": total}
+    if status == ExamStatus.READY.value or status == ExamStatus.IN_PROGRESS.value or status == ExamStatus.SUBMITTED.value:
+        return {"status": status, "percent": 100, "stage_label": "已完成", "generated": generated, "total": total}
+
+    # PENDING：依 questions 已生成數計算百分比
+    percent = int((generated / total) * 100) if total > 0 else 5
+    if percent >= 100:
+        percent = 99  # 留 1% 給最後 commit
+    stage_label = "AI 生成中…" if generated > 0 else "分析範圍中…"
+    return {"status": status, "percent": percent, "stage_label": stage_label, "generated": generated, "total": total}
+
+
 @router.get("/recent-failures")
 def get_recent_exam_failures(
     user_id: str = Depends(get_current_user_id),

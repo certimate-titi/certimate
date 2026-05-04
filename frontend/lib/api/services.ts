@@ -297,6 +297,17 @@ export const examService = {
     return apiClient.get('/exams/recent-failures');
   },
 
+  /** Feature 04：測驗生成進度輪詢（取代假動畫） */
+  async getGenerationProgress(examId: string): Promise<{
+    status: string;
+    percent: number;
+    stage_label: string;
+    generated: number;
+    total: number;
+  }> {
+    return apiClient.get(`/exams/${examId}/generation-progress`);
+  },
+
   /** Feature 05：取得測驗開始前的 Certi 打氣語句 */
   async getIntroEncouragement(examId: string): Promise<{
     exam_id: string;

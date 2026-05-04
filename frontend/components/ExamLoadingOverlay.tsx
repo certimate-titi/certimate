@@ -23,12 +23,16 @@ interface Stage {
  * ExamLoadingOverlay 的 props。
  */
 interface ExamLoadingOverlayProps {
-  /** 載入階段定義（依序播放） */
+  /** 載入階段定義（依序播放，當未提供 livePercent 時 fallback 用） */
   stages: Stage[];
   /** 全部階段播完且進度達 100% 後的回呼 */
   onComplete: () => void;
   /** 是否顯示遮罩 */
   isVisible: boolean;
+  /** L80 真實進度（由父層 polling 後端 /exams/{id}/generation-progress 注入；
+   *  提供時取代假階段動畫，顯示真實 percent + stage_label */
+  livePercent?: number | null;
+  liveStageLabel?: string | null;
 }
 
 /**
@@ -40,14 +44,23 @@ interface ExamLoadingOverlayProps {
  * @param props.onComplete - 完成回呼
  * @param props.isVisible - 顯示開關
  */
-export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: ExamLoadingOverlayProps) {
+export default function ExamLoadingOverlay({ stages, onComplete, isVisible, livePercent, liveStageLabel }: ExamLoadingOverlayProps) {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
+  const isLiveMode = typeof livePercent === 'number';
 
   useEffect(() => {
     if (!isVisible) {
       setCurrentStage(0);
       setProgress(0);
+      return;
+    }
+    // L80: live mode 由父層 livePercent 控制；不跑假階段動畫
+    if (isLiveMode) {
+      setProgress(livePercent ?? 0);
+      if ((livePercent ?? 0) >= 100) {
+        onComplete();
+      }
       return;
     }
 
@@ -91,7 +104,7 @@ export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: Ex
 
     runStages();
     return () => { cancelled = true; };
-  }, [isVisible, stages, onComplete]);
+  }, [isVisible, stages, onComplete, isLiveMode, livePercent]);
 
   return (
     <AnimatePresence>
@@ -117,7 +130,7 @@ export default function ExamLoadingOverlay({ stages, onComplete, isVisible }: Ex
               animate={{ opacity: 1, y: 0 }}
               className="text-xl font-bold text-white mb-2"
             >
-              {stages[currentStage]?.label ?? '準備中...'}
+              {isLiveMode ? (liveStageLabel || '生成中…') : (stages[currentStage]?.label ?? '準備中...')}
             </motion.p>
 
             <p className="text-sm text-slate-400 mb-8">AI 正在為你量身打造測驗</p>
