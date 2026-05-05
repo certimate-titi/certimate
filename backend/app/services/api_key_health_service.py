@@ -119,7 +119,7 @@ class ApiKeyHealthService:
         import anthropic
         client = anthropic.Anthropic(api_key=key)
         client.messages.create(
-            model="claude-3-5-haiku-latest",
+            model="claude-haiku-4-5",
             max_tokens=1,
             messages=[{"role": "user", "content": "hi"}],
         )

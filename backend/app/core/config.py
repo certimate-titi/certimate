@@ -88,9 +88,9 @@ class Settings:
         self.VOYAGE_API_KEY: str = os.environ.get("VOYAGE_API_KEY", "")
 
         # AI / RAG 設定 — 預設模型（可被 ai_model_routings 表覆蓋）
-        self.CLAUDE_MODEL: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
-        self.CLAUDE_PDF_MODEL: str = os.environ.get("CLAUDE_PDF_MODEL", "claude-sonnet-4-20250514")
-        self.CLAUDE_HAIKU_MODEL: str = os.environ.get("CLAUDE_HAIKU_MODEL", "claude-haiku-3-5-20241022")
+        self.CLAUDE_MODEL: str = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-5")
+        self.CLAUDE_PDF_MODEL: str = os.environ.get("CLAUDE_PDF_MODEL", "claude-sonnet-4-5")
+        self.CLAUDE_HAIKU_MODEL: str = os.environ.get("CLAUDE_HAIKU_MODEL", "claude-haiku-4-5")
         self.OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o")
         self.GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         self.VOYAGE_EMBED_MODEL: str = os.environ.get("VOYAGE_EMBED_MODEL", "voyage-3")

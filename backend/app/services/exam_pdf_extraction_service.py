@@ -38,7 +38,7 @@ class ExamPDFExtractionService(BaseService):
         """初始化實例。"""
         super().__init__(db)
         self.client = Anthropic()
-        self.model = "claude-3-5-sonnet-20241022"
+        self.model = "claude-sonnet-4-5"
 
     def extract_questions_from_pdf(
         self,
