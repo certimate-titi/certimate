@@ -397,7 +397,8 @@ function ExamSetupPage() {
       setLivePercent(100);
       router.push(`/exam/workspace?examId=${examId}`);
     } catch (e: unknown) {
-      console.error('Exam generation failed:', e);
+      // 用 warn 而不是 error，避免 Next.js dev overlay 把使用者輸入錯誤誤判為 unhandled exception
+      console.warn('Exam generation failed:', e);
       const msg = e instanceof Error ? e.message : '';
       // If we already have an exam_id from Step 1, navigate anyway (Step 2 might have failed but exam exists)
       if (generatedExamIdRef.current) {
