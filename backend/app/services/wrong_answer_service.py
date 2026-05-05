@@ -684,8 +684,14 @@ class WrongAnswerService:
             # _generate_coach_reply may return a dict with "rejected" or "error" flag
             if isinstance(result, dict):
                 if result.get("rejected"):
+                    from datetime import datetime, timezone
                     return {
-                        "reply": result["message"],
+                        "reply": {
+                            "id": f"msg_ai_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                            "role": "ai",
+                            "content": result["message"],
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
                         "content": result["message"],
                         "streaming": True,
                         "rejected": True,
@@ -724,9 +730,16 @@ class WrongAnswerService:
         session.message_count = (session.message_count or 0) + 2
         self.db.commit()
 
+        # Frontend ChatMessage 格式（types/models.ts）：{id, role: 'ai'|'user', content, timestamp}
+        from datetime import datetime, timezone
         return {
-            "reply": reply,
-            "content": reply,
+            "reply": {
+                "id": f"msg_ai_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                "role": "ai",
+                "content": reply,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            "content": reply,  # 保留向後相容
             "streaming": True,
         }
 
