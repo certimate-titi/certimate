@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, ArrowRight, Zap, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Zap, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
 import { scheduleService, type ScheduleRecommendation } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 
@@ -128,12 +128,8 @@ export default function ScheduleWeekCard({ isAuthenticated }: ScheduleWeekCardPr
           <Calendar className="h-5 w-5 text-emerald-500" />
           學習排程
         </h2>
-        <Link
-          href="/schedule"
-          className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
-        >
-          前往完整 <ArrowRight className="h-3 w-3" />
-        </Link>
+        {/* 「前往完整」連結已移除（2026-05）：本卡片資訊量已足夠，
+            另設 /schedule 頁不再需要從 dashboard 跳轉入口 */}
       </div>
 
       {/* Loading */}
