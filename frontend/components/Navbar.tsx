@@ -39,7 +39,7 @@ export default function Navbar() {
       <div className="flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
-            className="md:hidden text-slate-600 hover:text-emerald-600 transition-colors"
+            className="lg:hidden text-slate-600 hover:text-emerald-600 transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -50,14 +50,14 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-4 xl:gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-1"
+              className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-1 whitespace-nowrap"
             >
-              <link.icon className="h-4 w-4" /> {link.label}
+              <link.icon className="h-4 w-4 shrink-0" /> {link.label}
             </Link>
           ))}
         </div>
@@ -117,7 +117,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-slate-100 bg-white overflow-hidden"
+            className="lg:hidden border-t border-slate-100 bg-white overflow-hidden"
           >
             <div className="flex flex-col p-4 space-y-4">
               {navLinks.map((link) => (

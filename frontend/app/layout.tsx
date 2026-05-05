@@ -4,7 +4,7 @@
  * 套用全域字型（Inter）、全域樣式、Google OAuth Wrapper、
  * 認證狀態 Provider、全站 Navbar，並提供 `<main>` 容器給所有子路由。
  */
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css'; // Global styles
 import NavbarWrapper from '@/components/NavbarWrapper';
@@ -16,6 +16,14 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 export const metadata: Metadata = {
   title: 'TiTi | AI 賦能證照考試平台',
   description: 'AI 賦能證照考試平台，打破單向學習',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  // 不鎖縮放（accessibility 原則）；保留橋接讓 iOS 不會自動放大表單
+  themeColor: '#10b981',
 };
 
 /**

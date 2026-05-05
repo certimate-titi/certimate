@@ -256,41 +256,43 @@ function MockExamWorkspacePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-8">
-          <div className={`flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 ${isTimeLow ? 'animate-pulse' : ''}`}>
+        <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 flex-wrap justify-end">
+          <div className={`flex items-center gap-2 bg-slate-800 px-3 sm:px-4 py-1.5 rounded-full border border-slate-700 ${isTimeLow ? 'animate-pulse' : ''}`}>
             <Clock className={`h-4 w-4 ${isTimeLow ? 'text-rose-600' : 'text-emerald-400'}`} />
-            <span className={`font-mono font-bold tracking-wider ${isTimeLow ? 'text-rose-600' : 'text-emerald-400'}`}>
+            <span className={`font-mono font-bold tracking-wider text-sm sm:text-base ${isTimeLow ? 'text-rose-600' : 'text-emerald-400'}`}>
               {formatTime(timeRemaining)}
             </span>
           </div>
-          {/* Spec 21: 番茄鐘倒數（純前端、localStorage） */}
-          <PomodoroTimer examDurationSec={totalTimeLimit} paused={isPaused} />
+          {/* Spec 21: 番茄鐘倒數（mobile 隱藏，PC/tablet 顯示） */}
+          <div className="hidden md:block">
+            <PomodoroTimer examDurationSec={totalTimeLimit} paused={isPaused} />
+          </div>
 
           <button
             onClick={() => setShowGrid(!showGrid)}
-            className="text-sm font-medium hover:text-white transition-colors flex items-center gap-2"
+            className="text-sm font-medium hover:text-white transition-colors flex items-center gap-1 sm:gap-2"
           >
-            <LayoutGrid className="h-4 w-4" /> 總覽
+            <LayoutGrid className="h-4 w-4" /> <span className="hidden sm:inline">總覽</span>
           </button>
           <button
             onClick={() => setIsPaused(true)}
-            className="text-sm font-medium hover:text-white transition-colors flex items-center gap-2"
+            className="text-sm font-medium hover:text-white transition-colors hidden sm:flex items-center gap-2"
           >
-            <Pause className="h-4 w-4" /> 暫停測驗
+            <Pause className="h-4 w-4" /> 暫停
           </button>
           <button
             onClick={confirmSubmit}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-1.5 rounded-full text-sm font-bold transition-colors"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 sm:px-6 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-colors whitespace-nowrap"
           >
-            交卷 ({answeredCount}/{questions.length})
+            交卷 {answeredCount}/{questions.length}
           </button>
         </div>
       </header>
 
       {/* Main */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel: Question Navigation */}
-        <div className="w-64 border-r border-slate-200 bg-white flex flex-col shrink-0">
+        {/* Left Panel: Question Navigation — mobile 隱藏，可由頂部 hamburger 觸發為 drawer */}
+        <div className="hidden md:flex w-64 border-r border-slate-200 bg-white flex-col shrink-0">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50">
             <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">題號導覽</h2>
           </div>
@@ -332,7 +334,7 @@ function MockExamWorkspacePage() {
 
         {/* Center: Question Content */}
         <div className="flex-1 flex flex-col bg-white relative">
-          <div className="flex-1 overflow-y-auto p-8 md:p-12 lg:px-24">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12 lg:px-24">
             {/* Question Header */}
             <div className="flex items-start justify-between mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100">

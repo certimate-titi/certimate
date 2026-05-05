@@ -45,6 +45,8 @@ function ReviewBookPage() {
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
   const [showCitation, setShowCitation] = useState(false);
+  // 手機/平板版：底部 tab 切換 panel；desktop (lg+) 永遠三欄並排
+  const [mobileTab, setMobileTab] = useState<'list' | 'detail' | 'coach'>('detail');
 
   // 管理者帳號（ADMIN/SUPER_ADMIN）自動含所有 user-facing tier 功能
   const isFreeUser = subscriptionTier === 'FREE' && !isAdmin;
@@ -213,9 +215,9 @@ function ReviewBookPage() {
         )}
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden pb-14 lg:pb-0">
         {/* Left Sidebar: Wrong Questions List */}
-        <div className="w-56 border-r border-slate-200 bg-white flex flex-col shrink-0">
+        <div className={`${mobileTab === 'list' ? 'flex' : 'hidden'} lg:flex w-full lg:w-56 border-r border-slate-200 bg-white flex-col shrink-0`}>
           <div className="p-3 border-b border-slate-100 bg-slate-50/50">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">錯題列表</h2>
           </div>
@@ -223,7 +225,7 @@ function ReviewBookPage() {
             {data.wrongQuestions.map((wq, idx) => (
               <button
                 key={wq.question.id}
-                onClick={() => setCurrentIndex(idx)}
+                onClick={() => { setCurrentIndex(idx); setMobileTab('detail'); }}
                 className={`w-full text-left p-3 border-b border-slate-100 transition-colors ${
                   idx === currentIndex ? 'bg-emerald-50 border-l-2 border-l-emerald-500' : 'hover:bg-slate-50'
                 }`}
@@ -246,8 +248,8 @@ function ReviewBookPage() {
         </div>
 
         {/* Center Panel: Question & Answer */}
-        <div className="flex-1 overflow-y-auto p-8 border-r border-slate-200 bg-white">
-          <div className="max-w-3xl mx-auto">
+        <div className={`${mobileTab === 'detail' ? 'flex' : 'hidden'} lg:flex flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 border-r border-slate-200 bg-white flex-col`}>
+          <div className="max-w-3xl mx-auto w-full">
             {/* Question */}
             <div className="mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider border border-rose-100 mb-4">
@@ -369,7 +371,7 @@ function ReviewBookPage() {
         </div>
 
         {/* Right Panel: AI Tutor */}
-        <div className="w-[400px] bg-slate-50 flex flex-col shrink-0 relative">
+        <div className={`${mobileTab === 'coach' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[400px] bg-slate-50 flex-col shrink-0 relative`}>
           <div className="p-4 border-b border-slate-200 bg-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-emerald-500" />
             <h2 className="font-bold text-slate-900">AI 蘇格拉底教練</h2>
@@ -501,6 +503,26 @@ function ReviewBookPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile / Tablet bottom tab bar — only visible < lg */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-3 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+        {([
+          { id: 'list' as const, label: '錯題列表', icon: '📋', count: data.wrongQuestions.length as number | undefined },
+          { id: 'detail' as const, label: '題目解析', icon: '📝', count: undefined as number | undefined },
+          { id: 'coach' as const, label: 'AI 教練', icon: '✨', count: undefined as number | undefined },
+        ]).map(t => (
+          <button
+            key={t.id}
+            onClick={() => setMobileTab(t.id)}
+            className={`flex flex-col items-center justify-center py-2.5 gap-0.5 text-[11px] font-medium transition-colors min-h-[56px] ${
+              mobileTab === t.id ? 'text-emerald-600 bg-emerald-50' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span className="text-base leading-none">{t.icon}</span>
+            <span className="leading-tight">{t.label}{t.count !== undefined ? ` (${t.count})` : ''}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

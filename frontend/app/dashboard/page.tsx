@@ -318,7 +318,7 @@ export default function DashboardPage() {
 
   if (loading || !data) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-6xl">
         <div className="animate-pulse space-y-8">
           <div className="h-8 bg-slate-200 rounded w-48" />
           <div className="grid lg:grid-cols-3 gap-8">
@@ -351,7 +351,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-6xl">
         {/* Header — Row 1: Greeting + Mode Badge / StreakCounter */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <div className="min-w-0">
@@ -436,9 +436,9 @@ export default function DashboardPage() {
 
         {/* V3: 有機生長 — 無 decay 提醒，改用進度稀釋 Toast（由 WebSocket 觸發） */}
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 items-start">
           {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Upload Widget */}
             <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
               <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">

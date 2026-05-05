@@ -487,11 +487,11 @@ function KnowledgeBasePageInner() {
                 className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36 lg:w-48"
               />
             </div>
-            <Link href={`/knowledge/wrong-answers${activeSubjectId ? `?subjectId=${activeSubjectId}` : ''}`} className="bg-rose-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-rose-600 transition-colors whitespace-nowrap" data-testid="open-wrong-answer-heatmap">
-              🔥 錯題地圖
+            <Link href={`/knowledge/wrong-answers${activeSubjectId ? `?subjectId=${activeSubjectId}` : ''}`} className="bg-rose-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-rose-600 transition-colors whitespace-nowrap" data-testid="open-wrong-answer-heatmap" title="錯題地圖">
+              🔥<span className="hidden md:inline ml-1">錯題地圖</span>
             </Link>
-            <Link href="/dashboard" className="bg-emerald-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap">
-              + 新增資源
+            <Link href="/dashboard" className="bg-emerald-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap" title="新增資源">
+              +<span className="hidden md:inline ml-1">新增資源</span>
             </Link>
           </div>
         </header>

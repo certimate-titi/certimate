@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* iOS 防止表單 input focus 自動放大頁面（避免 16px 以下被觸發） */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* 響應式排版輔助：在小於 640px 時，所有寬度容器最多 100vw */
+body {
+  max-width: 100vw;
+  overflow-x: clip; /* 比 hidden 更安全，不破壞 sticky */
+}
