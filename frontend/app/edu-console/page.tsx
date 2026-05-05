@@ -825,10 +825,10 @@ export default function EduConsolePage() {
               </div>
               <button
                 className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-3 rounded-xl font-bold transition-colors text-sm"
-                onClick={() => setImportModalOpen(true)}
+                onClick={handleImportClick}
               >
                 <FileSpreadsheet className="h-4 w-4 inline-block mr-2" />
-                匯入學生名單
+                邀請第一位學員
               </button>
             </div>
           ) : (

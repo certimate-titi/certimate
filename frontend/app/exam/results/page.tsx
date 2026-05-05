@@ -31,7 +31,8 @@ function ExamResultsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId') || 'exam_001';
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, subscriptionTier, isAdmin } = useAuth();
+  const isFreeUser = subscriptionTier === 'FREE' && !isAdmin;
 
   const [data, setData] = useState<GetExamResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -227,15 +228,31 @@ function ExamResultsPage() {
             </div>
           </div>
 
-          {/* AI Summary */}
-          <div className="bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-3xl p-6 shadow-sm border border-indigo-100">
-            <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-indigo-500" />
-              <BrainCircuit className="h-5 w-5 text-emerald-500" />
-              AI 分析摘要
-            </h3>
-            <p className="text-sm text-slate-700 leading-relaxed">{aiSummary}</p>
-          </div>
+          {/* AI Summary — Feature 06: FREE 用戶不顯示 AI 考後總評，改顯示升級提示 */}
+          {isFreeUser ? (
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl p-6 shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-slate-400" />
+                <BrainCircuit className="h-5 w-5 text-slate-400" />
+                AI 分析摘要
+              </h3>
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-500 mb-3">升級至 PRO_199 方案即可解鎖 AI 考後總評分析</p>
+                <Link href="/pricing" className="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors">
+                  <Sparkles className="h-4 w-4" /> 查看升級方案
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-3xl p-6 shadow-sm border border-indigo-100">
+              <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-indigo-500" />
+                <BrainCircuit className="h-5 w-5 text-emerald-500" />
+                AI 分析摘要
+              </h3>
+              <p className="text-sm text-slate-700 leading-relaxed">{aiSummary}</p>
+            </div>
+          )}
 
           {/* Action Card */}
           <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-lg shadow-slate-900/20 relative overflow-hidden group">

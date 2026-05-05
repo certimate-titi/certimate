@@ -616,7 +616,11 @@
       "Bash(open -a Docker)",
       "Bash(break)",
       "Bash(.venv/bin/python -m behave tests/features/13-個人儀表板與成就系統.feature --no-capture)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(rm -f /Users/simon/certimate/project/.git/index.lock)",
+      "Bash(git -C /Users/simon/certimate/project add backend/app/services/llm_service.py backend/app/services/wrong_answer_service.py backend/app/services/knowledge_nav_service.py)",
+      "Bash(git -C /Users/simon/certimate/project commit -m 'refactor\\(ai\\): Q&A 路徑改用 gemini-flash 取代 claude-3.5-sonnet *)",
+      "Bash(git -C /Users/simon/certimate/project push origin main)"
     ]
   }
 }

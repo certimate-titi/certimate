@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-05 TiTi Commander 排程巡檢全部清零 — 🔴0 🟠0 🟡0（原 🔴3 🟠2 🟡2 已全部修復）
+**最後更新**：2026-05-06 TiTi Commander 排程巡檢 — 修復 3 項（radar-demo 守衛、exam/results FREE tier check、edu-console 空態 CTA）+ 確認 1 項誤報（weekly-reports 空態）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -23,6 +23,32 @@
 - `isSuperAdmin` — 守高等設定（Prompt / 預算 / 系統設定 / Feature Flag 等）— 純 ADMIN 不可
 
 **待補稽核**（次要）：`/super-admin/settings/*`、`/super-admin/prompt-templates/`、`/super-admin/cost-monitor/`、`/super-admin/settings/flags`、`/super-admin/settings/plans` 等高等設定頁應改用 `isSuperAdmin` 守衛（目前皆用 `isAdmin`）。後端 `require_super_admin` 已存在，需 audit endpoint 一致性。
+
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-06 新增）
+
+- [ ] `/exam/workspace` — Feature 21（番茄鐘）有「啟用番茄鐘」、「設定時長」、「繼續作答/開始休息」三個 Scenario，但頁面缺啟用開關及設定 UI，導致這些 Scenario 無對應前端觸發路徑（首見：2026-05-06）
+- [ ] `/exam/workspace` + `/practice` — AI inference 判斷按鈕（EPIC-035：保留我的答案/採信AI/略過）已在兩頁實作，但無任何 Feature Scenario 覆蓋（Feature 32/04a 皆未涵蓋此 UI 互動）（首見：2026-05-06）
+- [ ] `/dashboard` — 模式 tooltip 說明按鈕（Sprint/Standard/Mastery 策略說明彈窗）無對應 Feature Scenario（Feature 09/13 皆未覆蓋此互動）（首見：2026-05-06）
+- [ ] `/dashboard` — 儀表板無科目時「開始選擇科目」dashboard-level modal 路徑，Feature 15 只覆蓋 /onboarding 流程，未涵蓋此行內加科目路徑（首見：2026-05-06）
+- [ ] `/knowledge` — 「分享知識節點」Feature 03 提及節點分享，但無對應 Scenario 且前端未實作按鈕（首見：2026-05-06）
+- [x] `/radar-demo` — ~~開發沙盒頁無 Feature Spec、無 @ignore 標記、無 auth/feature-flag 守衛，生產環境可直接訪問~~ 已新增 `isSuperAdmin` 守衛：未認證或非 SUPER_ADMIN 自動 redirect → /dashboard；載入中顯示 spinner（修復：2026-05-06 TiTi Commander 排程巡檢）
+- [ ] `/account/weekly-reports` — Feature 14 未覆蓋「reports 為空」時應顯示的 UI 說明情境（首見：2026-05-06）
+
+## 🟠 實作缺失 — 需補前端功能（2026-05-06 新增）
+
+- [ ] `/exam/workspace` — Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失：(1) 啟用/停用開關、(2) 專注/休息時長設定輸入、(3) 計時結束後「繼續作答」或「開始休息」選擇按鈕（首見：2026-05-06）
+- [ ] `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI（首見：2026-05-06）
+- [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06）
+- [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）
+
+## 🟡 空態補強 — 需查 Job 表（2026-05-06 新增）
+
+- [ ] `/dashboard` — 上傳後異步 parse 失敗僅顯示例外訊息，未查 `resource_parse_jobs.failure_reason`；需在 `uploadStatus === 'failed'` 後主動查 job 表取得具體失敗原因（首見：2026-05-06）
+- [ ] `/knowledge` — PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分「正在解析中」vs「解析失敗」vs「從未上傳」三種情境；需補 PROCESSING 狀態的進度說明 UI（首見：2026-05-06）
+- [x] `/account/weekly-reports` — ~~`reports.length === 0` 時靜默空白，無「尚無週報」說明文字~~ 空態 UI 已存在：Calendar icon + 「尚無週報」標題 + 「活躍用戶（每週至少做 1 份測驗）會在週日自動收到報告」說明文字；TODO 首見時為誤報（確認：2026-05-06 TiTi Commander 排程巡檢）
+- [x] `/edu-console` — ~~DPA 已簽署但學員清單空時，缺明確「邀請第一位學員」CTA 或引導訊息~~ 已修復：空態匯入按鈕改用 `handleImportClick`（未簽 DPA 先攔截至 DPA modal）；按鈕文字改為「邀請第一位學員」更明確（修復：2026-05-06 TiTi Commander 排程巡檢）
+
+---
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario
 

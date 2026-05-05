@@ -5,12 +5,14 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts';
+import { useAuth } from '@/lib/auth-context';
 
 // 模擬 5 個概念（少量）
 const fewDomains = [
@@ -75,7 +77,23 @@ const EMERALD = '#10b981';
 const EMERALD_LIGHT = 'rgba(16, 185, 129, 0.2)';
 
 export default function RadarDemoPage() {
+  const router = useRouter();
+  const { isSuperAdmin, loading: authLoading, isAuthenticated } = useAuth();
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !isSuperAdmin)) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, isAuthenticated, isSuperAdmin, router]);
+
+  if (authLoading || !isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
