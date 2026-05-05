@@ -245,6 +245,36 @@ export interface GetAchievementsResponse {
   milestones: GrowthMilestone[];
 }
 
+/** L-quota: 單項配額狀態 */
+export interface QuotaItem {
+  label: string;
+  used: number;
+  limit: number;          // -1 = 無上限（管理員 / EDU 等）
+  remaining: number;       // -1 = 無上限
+  percentage: number;      // 0-100；無上限時 0
+  is_warning: boolean;     // ≥ 80%
+  is_blocked: boolean;     // used ≥ limit
+  period: 'daily' | 'monthly' | 'constant';
+  action_hint: string;
+}
+
+/** L-quota: 5 維度配額狀態回傳 */
+export interface QuotaStatusResponse {
+  ok: boolean;
+  plan: string;
+  is_unlimited: boolean;
+  period: string;          // YYYY-MM
+  quotas: {
+    monthly_uploads: QuotaItem;
+    monthly_exams: QuotaItem;
+    daily_ai_chats: QuotaItem;
+    monthly_vision_pages: QuotaItem;
+    max_file_size_mb: QuotaItem;
+  };
+  upgrade_url: string;
+  pricing_url: string;
+}
+
 export interface GetBillingHistoryResponse {
   invoices: Array<{
     id: string;

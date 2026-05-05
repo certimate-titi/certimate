@@ -17,6 +17,7 @@ import { apiClient } from '@/lib/api/client';
 import type { GetUserUsageResponse, GetAchievementsResponse, GetBillingHistoryResponse } from '@/types';
 import AchievementGrid from '@/components/AchievementGrid';
 import GrowthTimeline from '@/components/GrowthTimeline';
+import QuotaPanel from '@/components/QuotaPanel';
 
 type TabId = 'profile' | 'billing' | 'security' | 'preferences' | 'achievements';
 
@@ -242,6 +243,9 @@ export default function AccountPage() {
 
         {/* Main Content */}
         <div className="md:col-span-2 space-y-8">
+          {/* L-quota: 5 維度配額面板（永遠顯示在 main content 最上方） */}
+          <QuotaPanel />
+
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <>

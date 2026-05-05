@@ -252,3 +252,52 @@ Feature: 訂閱管理與多階層控制
       When 系統執行每日 FUP 檢查排程
       Then 系統應發送告警通知至管理員 Email
       And 告警內容應包含使用者 Email 與連續觸發天數
+
+  # ========== L-quota：5 維度配額狀態提示（2026-05 新增）==========
+
+  Rule: 後置（回應）- 配額狀態 API 必須回傳 5 維度現況
+
+    Example: 已登入用戶查詢配額狀態回傳 5 維度
+      Given 使用者 "pro@example.com" 已登入
+      When 使用者 "pro@example.com" 查詢 GET /api/v1/account/quota-status
+      Then 操作成功
+      And 回應應包含：
+        | 欄位                              | 預期           |
+        | plan                              | PRO            |
+        | is_unlimited                      | false          |
+        | quotas.monthly_uploads.label      | 資源上傳        |
+        | quotas.monthly_exams.label        | 模擬測驗        |
+        | quotas.daily_ai_chats.label       | AI 教練對話    |
+        | quotas.monthly_vision_pages.label | PDF / 圖像解析  |
+        | quotas.max_file_size_mb.label     | 單檔大小        |
+
+    Example: ADMIN 帳號為無限制
+      Given 使用者 "admin@certimate.com" 為 SUPER_ADMIN 角色
+      When 使用者 "admin@certimate.com" 查詢 GET /api/v1/account/quota-status
+      Then 操作成功
+      And 回應的 is_unlimited 應為 true
+      And 所有配額項目的 limit 應為 -1
+
+  Rule: 後置（顯示）- 配額使用率達 80% 應觸發警告 toast，達 100% 應 disabled 按鈕並顯示升級 CTA
+
+    Example: 上傳次數達 80% 顯示警告
+      Given 使用者 "free@example.com" 本月已上傳 4 / 5 個資源
+      When 使用者 "free@example.com" 查看 /knowledge 頁
+      Then 「+ 新增資源」按鈕旁應顯示計數 "4/5"
+      And 應顯示警告 toast 提示剩餘 1 次
+
+    Example: 上傳次數達 100% 按鈕停用
+      Given 使用者 "free@example.com" 本月已上傳 5 / 5 個資源
+      When 使用者 "free@example.com" 查看 /knowledge 頁
+      Then 「+ 新增資源」按鈕應為 disabled
+      And 按鈕旁應顯示「升級」連結導向 /account
+      And 點擊按鈕不應觸發上傳對話框
+
+  Rule: 後置（顯示）- 帳號頁應集中顯示 5 維度配額面板
+
+    Example: PRO 用戶帳號頁顯示 5 維度配額
+      Given 使用者 "pro@example.com" 已登入
+      When 使用者 "pro@example.com" 進入 /account
+      Then 頁面應顯示「配額狀態」面板
+      And 面板應包含 5 個項目：資源上傳 / 模擬測驗 / AI 教練對話 / PDF 圖像解析 / 單檔大小
+      And 每個項目應顯示「已用 / 上限」與進度條

@@ -18,6 +18,8 @@ import StreakCounter from '@/components/StreakCounter';
 import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
+import QuotaBadge from '@/components/QuotaBadge';
+import { invalidateQuotaCache, useQuotaGuard } from '@/hooks/use-quota';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import PendingJourneysBanner from '@/components/PendingJourneysBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
@@ -48,6 +50,8 @@ export default function DashboardPage() {
   const [subjectsLoaded, setSubjectsLoaded] = useState(false);
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
   const [showAddSubject, setShowAddSubject] = useState(false);
+  // L-quota: 上傳配額守門（disable button when blocked）
+  const uploadGuard = useQuotaGuard('monthly_uploads');
 
   // Onboarding guard
   useEffect(() => {
@@ -180,6 +184,7 @@ export default function DashboardPage() {
       setUploadProgress(100);
       setUploadStatus('completed');
       setData(await loadDashboardData(activeSubjectId));
+      invalidateQuotaCache(); // L-quota: 上傳成功後刷新配額計數
       // EPIC-035：上傳成功後自動觸發 LLM 解析（非阻塞）
       const resourceId = uploadRes?.document?.id;
       if (resourceId) {
@@ -219,6 +224,7 @@ export default function DashboardPage() {
       setUploadStatus('completed');
       setYoutubeUrl('');
       setData(await loadDashboardData(activeSubjectId));
+      invalidateQuotaCache(); // L-quota
       const resourceId = uploadRes?.document?.id;
       if (resourceId) {
         try { await resourceParseService.triggerParse(resourceId); } catch { /* noop */ }
@@ -395,9 +401,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Header — Row 2: Subject Switcher (full width tab bar) */}
-        {subjects.length > 0 && (
-          <div className="mb-6">
+        {/* Header — Row 2: Subject Switcher
+            已隱藏：右側「學習排程」卡片已顯示當前科目與倒數天數，避免重複資訊。
+            多科目切換可從 /knowledge 學習庫頁或 /onboarding 進行。
+            （SubjectSwitcher 元件保留供其他頁面使用） */}
+        {subjects.length > 1 && (
+          <div className="mb-4 sm:mb-6">
             <SubjectSwitcher
               subjects={subjects}
               activeSubjectId={activeSubjectId}
@@ -441,9 +450,11 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Upload Widget */}
             <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
                 <Upload className="h-5 w-5 text-emerald-500" /> 快速匯入學習資源
+                <span className="ml-auto"><QuotaBadge quotaKey="monthly_uploads" variant="pill" /></span>
               </h2>
+              <p className="text-xs text-slate-500 mb-4">本月可上傳資源檔案數，超過上限請升級方案。</p>
 
               {subjectsLoaded && !activeSubjectId && (
                 <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
@@ -508,12 +519,14 @@ export default function DashboardPage() {
               )}
 
               <div className="grid sm:grid-cols-2 gap-4">
-                {/* File Upload */}
+                {/* File Upload — 加 L-quota 守門 */}
                 <div className="space-y-2">
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group ${
-                      uploading ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50'
+                    onClick={() => { if (!uploadGuard.is_blocked) fileInputRef.current?.click(); }}
+                    className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-colors group ${
+                      uploadGuard.is_blocked ? 'border-rose-200 bg-rose-50/40 cursor-not-allowed opacity-60' :
+                      uploading ? 'border-emerald-400 bg-emerald-50/50 cursor-pointer' :
+                      'border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 cursor-pointer'
                     }`}
                   >
                     <input
@@ -522,13 +535,19 @@ export default function DashboardPage() {
                       accept=".pdf,.md,.txt,.docx,.pptx,.xlsx,.doc,.ppt,.xls,.mp3,.wav,.m4a,.flac,.ogg,.wma,.aac,.mp4,.mov,.avi,.mkv,.webm,.jpg,.jpeg,.png,.gif,.webp"
                       className="hidden"
                       onChange={e => handleFileUpload(e.target.files)}
-                      disabled={uploading}
+                      disabled={uploading || uploadGuard.is_blocked}
                     />
                     {uploading && (uploadStatus === 'pending' || uploadStatus === 'processing') ? (
                       <div className="flex flex-col items-center">
                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
                         <p className="font-medium text-emerald-700">上傳中...</p>
                       </div>
+                    ) : uploadGuard.is_blocked ? (
+                      <>
+                        <FileText className="h-8 w-8 text-rose-400 mb-3" />
+                        <p className="font-bold text-rose-700 mb-1">本月上傳次數已用完</p>
+                        <Link href="/account" className="text-xs text-emerald-600 underline font-medium" onClick={e => e.stopPropagation()}>升級方案解鎖更多 →</Link>
+                      </>
                     ) : (
                       <>
                         <FileText className="h-8 w-8 text-slate-400 group-hover:text-emerald-500 transition-colors mb-3" />

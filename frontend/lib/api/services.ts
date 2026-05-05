@@ -40,6 +40,7 @@ import type {
   GetNodeDetailResponse,
   UpdateProfileRequest,
   GetUserUsageResponse,
+  QuotaStatusResponse,
   GetAchievementsResponse,
   GetBillingHistoryResponse,
   GetStudentListResponse,
@@ -548,6 +549,11 @@ export const accountService = {
 
   async getUsage(): Promise<GetUserUsageResponse> {
     return apiClient.get<GetUserUsageResponse>('/dashboard/usage');
+  },
+
+  /** L-quota: 5 維度配額狀態（uploads / exams / ai_chats / vision_pages / file_size） */
+  async getQuotaStatus(): Promise<QuotaStatusResponse> {
+    return apiClient.get<QuotaStatusResponse>('/account/quota-status');
   },
 
   async getAchievements(): Promise<GetAchievementsResponse> {
