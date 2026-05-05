@@ -16,7 +16,6 @@ import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import StreakCounter from '@/components/StreakCounter';
 import DailyQuestCard from '@/components/DailyQuestCard';
-import SubjectSwitcher from '@/components/SubjectSwitcher';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import QuotaBadge from '@/components/QuotaBadge';
 import { invalidateQuotaCache, useQuotaGuard } from '@/hooks/use-quota';
@@ -401,21 +400,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Header — Row 2: Subject Switcher
-            已隱藏：右側「學習排程」卡片已顯示當前科目與倒數天數，避免重複資訊。
-            多科目切換可從 /knowledge 學習庫頁或 /onboarding 進行。
-            （SubjectSwitcher 元件保留供其他頁面使用） */}
-        {subjects.length > 1 && (
-          <div className="mb-4 sm:mb-6">
-            <SubjectSwitcher
-              subjects={subjects}
-              activeSubjectId={activeSubjectId}
-              onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-              onAddSubject={() => setShowAddSubject(true)}
-              variant="compact"
-            />
-          </div>
-        )}
+        {/* SubjectSwitcher 已從 dashboard 完全移除（2026-05）。
+            原因：右側「學習排程」卡片已列出全部科目 + 倒數天數 + 開始今日複習按鈕，
+            上方再放 pill 屬於資訊重複，造成版面雜亂。
+            多科目切換改至 /knowledge 學習庫頁、/onboarding 加科目頁進行。
+            SubjectSwitcher 元件本身保留，其他頁面（如 /review）仍在使用。 */}
 
         {/* Ultra: Co-study counter — requires backend /community/online-count API */}
 
