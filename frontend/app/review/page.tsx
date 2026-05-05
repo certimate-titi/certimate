@@ -16,6 +16,8 @@ import { reviewService, subjectService, examService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { GetReviewQuestionsResponse, ChatMessage, UserSubject } from '@/types';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import QuotaBadge from '@/components/QuotaBadge';
+import { useQuotaGuard, invalidateQuotaCache } from '@/hooks/use-quota';
 import { useRouter } from 'next/navigation';
 
 export default function ReviewBookPageWrapper() {
@@ -133,8 +135,12 @@ function ReviewBookPage() {
     reviewService.getChatHistory(questionId).then(setMessages).catch(() => {});
   }, [data, currentIndex]);
 
+  // L-quota: AI 教練配額守門
+  const aiChatGuard = useQuotaGuard('daily_ai_chats');
+
   const handleSendMessage = useCallback(async () => {
     if (!chatInput.trim() || !data || sending) return;
+    if (aiChatGuard.is_blocked) return; // 達上限不送
     const questionId = data.wrongQuestions[currentIndex].question.id;
 
     const userMsg: ChatMessage = {
@@ -154,10 +160,11 @@ function ReviewBookPage() {
         conversationHistory: [...messages, userMsg],
       });
       setMessages(prev => [...prev, res.reply]);
+      invalidateQuotaCache(); // L-quota: AI 對話 +1
     } finally {
       setSending(false);
     }
-  }, [chatInput, data, currentIndex, messages, sending]);
+  }, [chatInput, data, currentIndex, messages, sending, aiChatGuard.is_blocked]);
 
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
     return (
@@ -403,6 +410,7 @@ function ReviewBookPage() {
           <div className="p-4 border-b border-slate-200 bg-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-emerald-500" />
             <h2 className="font-bold text-slate-900">AI 蘇格拉底教練</h2>
+            <span className="ml-auto"><QuotaBadge quotaKey="daily_ai_chats" variant="pill" /></span>
           </div>
 
           {/* Chat History */}
@@ -496,19 +504,25 @@ function ReviewBookPage() {
             {/* Functional chat input for PRO_PLUS / ULTRA */}
             {canChat && (
               <>
+                {aiChatGuard.is_blocked && !aiChatGuard.isUnlimited && (
+                  <div className="mb-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center justify-between gap-2">
+                    <span>今日 AI 教練對話已達上限</span>
+                    <Link href="/account" className="text-emerald-600 hover:text-emerald-700 underline font-medium shrink-0">升級解鎖</Link>
+                  </div>
+                )}
                 <div className="relative">
                   <input
                     type="text"
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="向 AI 教練追問..."
-                    className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
-                    disabled={sending}
+                    placeholder={aiChatGuard.is_blocked && !aiChatGuard.isUnlimited ? '今日已達上限...' : '向 AI 教練追問...'}
+                    className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    disabled={sending || (aiChatGuard.is_blocked && !aiChatGuard.isUnlimited)}
                   />
                   <button
                     onClick={handleSendMessage}
-                    disabled={sending || !chatInput.trim()}
+                    disabled={sending || !chatInput.trim() || (aiChatGuard.is_blocked && !aiChatGuard.isUnlimited)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
                   >
                     <Send className="h-4 w-4" />

@@ -10,9 +10,12 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 import { documentService, examService, subjectService, knowledgeService, resourceParseService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
 import type { Document, QuestionType, UserSubject, SubscriptionTier } from '@/types';
+import QuotaBadge from '@/components/QuotaBadge';
+import { useQuotaGuard, invalidateQuotaCache } from '@/hooks/use-quota';
 
 interface SystemNode {
   id: string;
@@ -85,6 +88,8 @@ function ExamSetupPage() {
     new Set(['MULTIPLE_CHOICE'])
   );
   const [isGenerating, setIsGenerating] = useState(false);
+  // L-quota: 模擬測驗配額守門
+  const examGuard = useQuotaGuard('monthly_exams');
   // L80：真實生成進度（取代假階段動畫）
   const [livePercent, setLivePercent] = useState<number | null>(null);
   const [liveStageLabel, setLiveStageLabel] = useState<string | null>(null);
@@ -384,6 +389,7 @@ function ExamSetupPage() {
       const examId = result.exam?.id || result.exam_id || result.examId || null;
       generatedExamIdRef.current = examId;
       setGeneratedExamId(examId);
+      invalidateQuotaCache(); // L-quota: 模擬測驗 +1，重整計數
       // 開始 polling（在等 create 期間若 examId 已落地，可在前置 step 啟動 — 但最簡 MVP 在這裡）
       if (examId) startPolling(examId);
       // examService.create 完成 = AI 已 generate 完，立即停止 polling 並導航
@@ -839,13 +845,27 @@ function ExamSetupPage() {
               <>已選 <span className="text-white font-medium">{selectedDocIds.size}</span> 份資源 • 預計生成時間：<span className="text-white font-medium">約 15 秒</span></>
             )}
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Play className="h-5 w-5 fill-current" /> 生成專屬模擬考
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={examGuard.is_blocked ? undefined : handleGenerate}
+              disabled={isGenerating || examGuard.is_blocked}
+              className={`px-6 sm:px-8 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                examGuard.is_blocked
+                  ? 'bg-rose-500 hover:bg-rose-500 text-white shadow-rose-500/20'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20'
+              }`}
+            >
+              <Play className="h-5 w-5 fill-current" />
+              {examGuard.is_blocked ? '本月測驗額度已用完' : '生成專屬模擬考'}
+            </button>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-500">本月模擬測驗：</span>
+              <QuotaBadge quotaKey="monthly_exams" variant="pill" />
+              {examGuard.is_blocked && (
+                <Link href="/account" className="text-emerald-600 hover:text-emerald-700 underline font-medium">升級解鎖 →</Link>
+              )}
+            </div>
+          </div>
         </div>
         </div>
       </div>
