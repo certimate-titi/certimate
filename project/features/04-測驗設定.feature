@@ -39,12 +39,29 @@ Feature: 測驗設定
       Then 操作失敗
       And 錯誤訊息應為 "請至少選擇一個知識範圍"
 
-  Rule: 前置（參數）- 題目數量不得超過所選範圍的可出題總數
+  Rule: 前置（參數）- 考古題模擬考模式下，題目數量不得超過所選範圍的可出題總數
 
-    Example: 要求的題數超過所選節點可出題數時失敗
+    Example: historical_only 模式要求題數超過 capacity 時失敗
+      Given 使用者 "free@example.com" 選擇 exam_mode = "historical_only"
       When 使用者 "free@example.com" 提交測驗設定，選擇節點 1，題數為 30
       Then 操作失敗
       And 錯誤訊息應為 "所選範圍最多可出 20 題，請調整題數"
+
+  @backend
+  Rule: 前置（參數）- AI 混合 / AI 生成模式不受所選範圍 capacity 限制
+
+    Example: AI 混合模式選 50 題即使所選節點 capacity 僅 10 題仍可生成
+      Given 使用者 "ultra@example.com" 選擇 exam_mode = "ai_hybrid"
+      And 所選節點的 capacity 總和為 10 題
+      When 使用者 "ultra@example.com" 提交測驗設定，題數為 50
+      Then 操作成功
+      And 系統應從 chunks 動態生成題目補足，不回 capacity 錯誤
+
+    Example: 預設模式（未指定 exam_mode）視為 AI 模式，亦不受 capacity 限制
+      Given 使用者 "ultra@example.com" 未指定 exam_mode
+      And 所選節點的 capacity 總和為 5 題
+      When 使用者 "ultra@example.com" 提交測驗設定，題數為 30
+      Then 操作成功
 
   Rule: 前置（參數）- FREE 方案每次測驗題數上限為 10 題
 
