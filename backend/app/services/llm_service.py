@@ -307,6 +307,7 @@ class LLMService:
         system_prompt: str,
         user_prompt: str,
         context: str,
+        model: str | None = None,
         plan: str = "FREE",
         task_type: str = "basic",
         max_tokens: int = 4096,
@@ -317,7 +318,10 @@ class LLMService:
             f"---\n{context}\n---\n\n"
             f"{user_prompt}"
         )
-        return self.generate(system_prompt, full_prompt, plan=plan, task_type=task_type, max_tokens=max_tokens)
+        return self.generate(
+            system_prompt, full_prompt, model=model,
+            plan=plan, task_type=task_type, max_tokens=max_tokens,
+        )
 
     def generate_json(
         self,

@@ -343,7 +343,7 @@ class WrongAnswerService:
                     f"學生提問：{message}"
                 )
 
-                result = llm.generate(system_prompt, user_prompt, max_tokens=16)
+                result = llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=16)
                 return "RELEVANT" in result.upper()
             except Exception as e:
                 logger.warning("Relevance check LLM call failed, allowing by default: %s", e)
@@ -473,10 +473,11 @@ class WrongAnswerService:
                 if context.strip():
                     system_prompt += "\n如果需要引用教材，可以提到「根據你的教材...」但仍以提問引導為主。"
                     return llm.generate_with_context(
-                        system_prompt, user_prompt, context, max_tokens=1024
+                        system_prompt, user_prompt, context,
+                        model="gemini-flash", max_tokens=1024,
                     )
 
-            return llm.generate(system_prompt, user_prompt, max_tokens=1024)
+            return llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=1024)
 
         except Exception as e:
             logger.warning("AI Coach LLM call failed: %s", e)
@@ -705,7 +706,7 @@ class WrongAnswerService:
                 user_id=user_uuid,
                 context_type="error_review",
                 context_id=context_id,
-                model_used="claude-3.5-sonnet",
+                model_used="gemini-2.5-flash",
                 message_count=0,
             )
             self.db.add(session)
@@ -733,5 +734,5 @@ class WrongAnswerService:
         """取得 AI 教練對話視窗資訊（含免責聲明）。"""
         return {
             "disclaimer": "AI 生成內容僅供參考，請隨時自行查證重要資訊。",
-            "model": "claude-3.5-sonnet",
+            "model": "gemini-2.5-flash",
         }

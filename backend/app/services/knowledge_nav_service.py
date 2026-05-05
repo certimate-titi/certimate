@@ -543,11 +543,11 @@ class KnowledgeNavService:
                 "error": True,
                 "status_code": 403,
                 "paywall": True,
-                "upgrade_prompt": "🌟 解鎖 Claude 3.5 終極教練專為您梳理盲區漏洞，立刻升級 PRO_PLUS 取得解答",
+                "upgrade_prompt": "🌟 解鎖 Gemini AI 終極教練專為您梳理盲區漏洞，立刻升級 PRO_PLUS 取得解答",
                 "message": "AI 教練深度對話為 PRO_PLUS 專屬功能",
                 "upgrade": {
                     "target_plan": "PRO_PLUS_399",
-                    "message": "解鎖 Claude 3.5 終極教練",
+                    "message": "解鎖 Gemini AI 終極教練",
                 },
             }
 
@@ -561,7 +561,7 @@ class KnowledgeNavService:
                 user_id=uid,
                 context_type="knowledge_node",
                 context_id=context_id,
-                model_used="claude-3.5-sonnet",
+                model_used="gemini-2.5-flash",
                 message_count=0,
             )
             self.db.add(session)
@@ -580,7 +580,7 @@ class KnowledgeNavService:
             "streaming": True,
             "reply": "AI 教練為您解析：" + message[:50],
             "content": "AI 教練為您解析：" + message[:50],
-            "model_used": "claude-3.5-sonnet",
+            "model_used": "gemini-2.5-flash",
             "quota_used": 1,
             "remaining_quota": 49,
         }
