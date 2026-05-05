@@ -296,17 +296,25 @@ class UnifiedKnowledgeExtractionService:
             f"舊節點={len(old_node_names)}"
         )
 
-        # 4. 嘗試從 DB 載入 E-05 模板，fallback 到 hardcoded prompt builder
+        # 4. 優先用 DB 模板（E-05 syllabus_reverse_engineering）；模板異常或停用時 fallback hardcoded
         try:
             db_prompt = self._load_prompt("syllabus_reverse_engineering", {
                 "subject_name": subject_name,
                 "question_count": str(len(exam_summaries)),
+                "exam_summaries": json.dumps(exam_summaries, ensure_ascii=False)[:8000],
+                "chunk_summaries": json.dumps(chunk_summaries, ensure_ascii=False)[:8000],
+                "old_node_names": json.dumps(old_node_names, ensure_ascii=False)[:2000],
+                "syllabus_anchors": json.dumps(syllabus_anchors, ensure_ascii=False) if syllabus_anchors else "[]",
             })
-            # DB 模板目前為簡易版，統一萃取需要完整 prompt，仍用 hardcoded builder
-            prompt = _build_unified_prompt(
-                subject_name, exam_summaries, chunk_summaries, old_node_names,
-                syllabus_anchors=syllabus_anchors,
-            )
+            if db_prompt and db_prompt.get("system_prompt") and db_prompt.get("user_prompt"):
+                prompt = db_prompt["system_prompt"] + "\n\n" + db_prompt["user_prompt"]
+                log.info("[統一萃取] 使用 DB 模板 E-05 syllabus_reverse_engineering")
+            else:
+                prompt = _build_unified_prompt(
+                    subject_name, exam_summaries, chunk_summaries, old_node_names,
+                    syllabus_anchors=syllabus_anchors,
+                )
+                log.info("[統一萃取] DB 模板不可用，fallback 到 hardcoded prompt builder")
             result = self._call_gemini(prompt)
         except Exception as e:
             log.error(f"[統一萃取] Gemini 呼叫失敗: {e}")
