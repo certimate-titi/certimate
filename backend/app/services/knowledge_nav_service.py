@@ -21,6 +21,33 @@ class KnowledgeNavService:
     def __init__(self, db: Session):
         """初始化實例。"""
         self.db = db
+        from app.services.prompt_template_service import PromptTemplateService
+        self._prompt_svc = PromptTemplateService(db)
+        self._llm = None
+
+    def _load_prompt(self, name: str, variables: dict | None = None) -> dict | None:
+        """從 DB 載入 prompt 模板（render 變數），失敗回 None 由呼叫端 fallback hardcoded。"""
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            result = self._prompt_svc.get_prompt_for_ai(name)
+            if result.get("error"):
+                return None
+            if variables:
+                render = self._prompt_svc.render_prompt
+                result["system_prompt"] = render(result["system_prompt"], variables)
+                result["user_prompt"] = render(result["user_prompt"], variables)
+            return result
+        except Exception as e:
+            logger.warning("Failed to load prompt template '%s': %s", name, e)
+            return None
+
+    def _get_llm(self):
+        """Lazy-load LLMService."""
+        if self._llm is None:
+            from app.services.llm_service import LLMService
+            self._llm = LLMService(self.db)
+        return self._llm
 
     def _ensure_exam_bank_resource(self, subject_id: uuid.UUID) -> None:
         """若科目有考古題但無 Resource，觸發自動建立。
@@ -575,15 +602,105 @@ class KnowledgeNavService:
         session.message_count = (session.message_count or 0) + 1
         self.db.commit()
 
+        # ── 真正呼叫 LLM 產生回覆（T-02 coach_advanced 模板，fallback hardcoded） ──
+        reply_text = self._generate_coach_reply(nid, message, plan_val)
+
+        # 存 assistant 訊息
+        assistant_msg = AiChatMessage(
+            session_id=session.id, role="assistant", content=reply_text,
+        )
+        self.db.add(assistant_msg)
+        session.message_count = (session.message_count or 0) + 1
+        self.db.commit()
+
+        from datetime import datetime, timezone
         return {
             "error": False,
             "streaming": True,
-            "reply": "AI 教練為您解析：" + message[:50],
-            "content": "AI 教練為您解析：" + message[:50],
+            # 三種欄位都帶，相容前端各種讀取方式
+            "message": reply_text,                # frontend knowledge/page.tsx 讀此欄
+            "content": reply_text,
+            "reply": {                            # frontend review/page.tsx 期待的 ChatMessage shape
+                "id": f"msg_ai_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                "role": "ai",
+                "content": reply_text,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
             "model_used": "gemini-2.5-flash",
             "quota_used": 1,
             "remaining_quota": 49,
         }
+
+    def _generate_coach_reply(self, node_id: uuid.UUID | None, message: str, plan_val: str) -> str:
+        """產生 AI 教練回覆。優先用 T-02 coach_advanced 模板 + RAG 上下文，
+        模板異常或 LLM 不可用時 fallback 到內建蘇格拉底教練人格。"""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # 1. 收集節點上下文
+        subject_name = "備考科目"
+        node_name = "此概念"
+        mastery_rate = "0"
+        source_content = ""
+        if node_id:
+            node = self.db.query(KnowledgeNode).filter_by(id=node_id).first()
+            if node:
+                node_name = node.name or "此概念"
+                subj = self.db.query(Subject).filter_by(id=node.subject_id).first()
+                if subj:
+                    subject_name = subj.name
+                # 取掌握度（無 user_id 跳過）
+                # mastery_rate 留空字串避免 prompt 出現 "0%" 誤導
+                # RAG：抓節點所在資源最多 3 chunks 當溯源內容
+                if node.resource_id:
+                    chunks = self.db.query(ResourceChunk).filter_by(
+                        resource_id=node.resource_id
+                    ).limit(3).all()
+                    if chunks:
+                        source_content = "\n\n".join(
+                            f"## {c.section_title or '段落'}\n{c.content[:500]}"
+                            for c in chunks
+                        )
+
+        # 2. 嘗試 DB 模板
+        db_prompt = self._load_prompt("coach_advanced", {
+            "subject_name": subject_name,
+            "node_name": node_name,
+            "mastery_rate": mastery_rate,
+            "user_background_instruction": "",
+            "source_content": source_content or "（無溯源內容）",
+            "user_input": message,
+        })
+
+        # 3. fallback hardcoded prompt
+        if db_prompt and db_prompt.get("system_prompt") and db_prompt.get("user_prompt"):
+            system_prompt = db_prompt["system_prompt"]
+            user_prompt = db_prompt["user_prompt"]
+        else:
+            system_prompt = (
+                f"你是 TiTi 平台 AI 教練 Certi，正在協助學習「{subject_name}」中的「{node_name}」。\n"
+                "用蘇格拉底式提問引導學生思考；不直接給答案，而是用 1-2 個引導問題。\n"
+                "語氣溫暖、簡潔（200 字內），可引用教材內容。"
+            )
+            user_prompt = (
+                f"知識節點：{node_name}\n"
+                f"科目：{subject_name}\n\n"
+                f"教材參考：\n{source_content or '（無）'}\n\n"
+                f"學生提問：{message}"
+            )
+
+        # 4. 呼叫 LLM
+        try:
+            llm = self._get_llm()
+            reply = llm.generate(
+                system_prompt, user_prompt,
+                plan=plan_val if plan_val in ("PRO_PLUS", "ULTRA") else "PRO_PLUS",
+                task_type="advanced", max_tokens=1024,
+            )
+            return reply.strip() if reply else "抱歉，目前無法產生回覆，請稍後再試。"
+        except Exception as e:
+            logger.warning("knowledge_nav coach LLM call failed: %s", e)
+            return "抱歉，AI 教練暫時無法回覆。請稍後再試。"
 
     def submit_answers(self, node_id: str, user_id: str, correct_count: int, total_count: int) -> dict:
         """提交答案並更新節點掌握度。"""
