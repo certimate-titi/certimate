@@ -78,6 +78,34 @@ function ReviewBookPage() {
   useEffect(() => {
     if (!activeSubjectId) return;
 
+    // Dev-only mock mode：?mock=1 注入假資料以驗證 UI 排版
+    // production build 時 NODE_ENV !== 'development'，此分支會被 Next.js 在 build 時 dead-code-eliminated
+    if (
+      process.env.NODE_ENV === 'development' &&
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('mock') === '1'
+    ) {
+      setData({
+        examTitle: 'Mock 測驗 — 防制洗錢與打擊資恐',
+        wrongQuestions: [
+          { question: { id:'mock-q1', contentText:'某航空公司導入生成式 AI 聲控客服，提供航班與票務查詢。有人員透過惡意提示，試圖讓系統洩漏內部安檢流程。在此情境中，下列何者為降低提示攻擊(Prompt Injection)風險的最佳策略？',
+            options:[{label:'A',text:'導入輸入檢測與回應審核流程，防止敏感指令被執行'},{label:'B',text:'限制 AI 可回應的主題範圍'},{label:'C',text:'每次提問前確認密碼'},{label:'D',text:'移除生成式 AI 改用傳統聊天機器人'}],
+            correctAnswer:'A', explanationMarkdown:'本題考核 LLM 安全治理。Prompt Injection 是當前生成式 AI 主要攻擊向量。輸入檢測搭配 RAI 政策可有效阻斷。', tags:['AI 安全'],
+            citationChunkId:null, citationDocTitle:null, citationPage:null }, userAnswer:{userChoice:'B'} },
+          { question: { id:'mock-q2', contentText:'金融科技公司在信貸決策系統導入反事實解釋(Counterfactual)，主要好處？',
+            options:[{label:'A',text:'加快模型訓練速度'},{label:'B',text:'讓被拒客戶知道需要做什麼改變才能核准'},{label:'C',text:'降低運算資源消耗'},{label:'D',text:'自動推薦商品'}],
+            correctAnswer:'B', explanationMarkdown:'反事實解釋符合 GDPR 第 22 條對於可解釋性的要求。', tags:['可解釋 AI'],
+            citationChunkId:null, citationDocTitle:null, citationPage:null }, userAnswer:{userChoice:'A'} },
+          { question: { id:'mock-q3', contentText:'某零售業專案在收集訓練資料時，發現原始客戶分布有性別不平衡，下列何者為合理的偏誤緩解策略？',
+            options:[{label:'A',text:'忽略不處理，假設模型會自動修正'},{label:'B',text:'使用 SMOTE 等 oversampling 技術平衡少數類別'},{label:'C',text:'丟棄少數類別資料'},{label:'D',text:'改用更大的模型'}],
+            correctAnswer:'B', explanationMarkdown:'資料不平衡是 ML 公平性的關鍵議題。', tags:['ML 公平性'],
+            citationChunkId:null, citationDocTitle:null, citationPage:null }, userAnswer:{userChoice:'D'} },
+        ],
+      } as unknown as GetReviewQuestionsResponse);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const activeSubject = subjects.find(s => s.id === activeSubjectId);
     const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
@@ -191,14 +219,14 @@ function ReviewBookPage() {
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 gap-3">
-        <div className="flex items-center gap-4 min-w-0">
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between shrink-0 gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
             <ChevronLeft className="h-5 w-5" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-slate-900 truncate">錯題本與 AI 教練</h1>
-            <p className="text-sm text-slate-500 truncate">{data.examTitle} • 第 {currentIndex + 1}/{data.wrongQuestions.length} 題</p>
+            <h1 className="text-base sm:text-xl font-bold text-slate-900 truncate">錯題本與 AI 教練</h1>
+            <p className="text-xs sm:text-sm text-slate-500 truncate">{data.examTitle} • 第 {currentIndex + 1}/{data.wrongQuestions.length} 題</p>
           </div>
         </div>
         {subjects.length > 0 && (
