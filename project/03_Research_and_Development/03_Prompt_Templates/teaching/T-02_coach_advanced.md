@@ -3,10 +3,10 @@ id: "T-02"
 name: "coach_advanced"
 display_name: "PRO_PLUS_399 完整教練（Certi 人格）"
 category: "teaching"
-model: "claude-3.5-sonnet"
+model: "claude-sonnet-4-5"
 max_tokens: 2048
 temperature: 0.7
-version: 1
+version: 2
 feature_refs:
   - "07-錯題複習與AI教練"
   - "03-知識心智圖"
