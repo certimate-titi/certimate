@@ -479,7 +479,7 @@ class AiGenerationService:
 
         try:
             if self._llm:
-                raw = self._llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=2048)
+                raw = self._llm.generate(system_prompt, user_prompt, task_type="basic", max_tokens=2048)
                 parsed = self._parse_json_response(raw)
                 if parsed and parsed.get("exam_points"):
                     # Map node_id back

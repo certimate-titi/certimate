@@ -1,8 +1,8 @@
 /**
  * @file 路由 `/super-admin/settings` — AI 模型路由設定頁。
  *
- * Super Admin 專屬：設定不同訂閱方案使用的 AI 模型（基本 + 備援），
- * 例如 FREE 用 gemini-1.5-flash，PRO 用 claude-3.5-sonnet。
+ * Super Admin 專屬：設定不同訂閱方案使用的 AI 模型（基本 + 備援）。
+ * 影響後端 LLMService.resolve_model(plan, task_type)。
  */
 'use client';
 
@@ -11,14 +11,26 @@ import { Info, Save, RefreshCw } from 'lucide-react';
 import { logAdminAction, AdminAction } from '@/firebase';
 import { superAdminService } from '@/lib/api/services';
 
+// 現役模型（2026-05 已驗證 API 可用）
+const BASIC_MODELS = [
+  'gemini-2.5-flash',
+  'claude-haiku-4-5',
+  'gpt-4o-mini',
+] as const;
+const ADVANCED_MODELS = [
+  'gemini-2.5-pro',
+  'claude-sonnet-4-5',
+  'gpt-4o',
+] as const;
+
 /**
  * AI 模型路由設定頁（settings 預設子頁）。
  */
 export default function AiRoutingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [aiRouting, setAiRouting] = useState({
-    freeBasic: 'gemini-1.5-flash', freeFallback: 'llama-3-8b',
-    proBasic: 'claude-3.5-sonnet', proFallback: 'gpt-4o',
+    freeBasic: 'gemini-2.5-flash', freeFallback: 'gpt-4o-mini',
+    proBasic: 'claude-sonnet-4-5', proFallback: 'gemini-2.5-pro',
   });
 
   useEffect(() => {
@@ -83,15 +95,13 @@ export default function AiRoutingPage() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">基本任務模型</label>
               <select value={aiRouting.freeBasic} onChange={e => setAiRouting(p => ({ ...p, freeBasic: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
-                <option>gemini-1.5-flash</option>
-                <option>llama-3-8b</option>
+                {BASIC_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">備援模型 (Fallback)</label>
               <select value={aiRouting.freeFallback} onChange={e => setAiRouting(p => ({ ...p, freeFallback: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
-                <option>llama-3-8b</option>
-                <option>gemini-1.5-flash</option>
+                {BASIC_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
           </div>
@@ -103,16 +113,13 @@ export default function AiRoutingPage() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">進階任務模型</label>
               <select value={aiRouting.proBasic} onChange={e => setAiRouting(p => ({ ...p, proBasic: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
-                <option>claude-3.5-sonnet</option>
-                <option>gpt-4o</option>
-                <option>gemini-1.5-pro</option>
+                {ADVANCED_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">備援模型 (Fallback)</label>
               <select value={aiRouting.proFallback} onChange={e => setAiRouting(p => ({ ...p, proFallback: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 transition-all">
-                <option>gpt-4o</option>
-                <option>claude-3.5-sonnet</option>
+                {ADVANCED_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
           </div>

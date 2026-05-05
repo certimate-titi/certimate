@@ -7,7 +7,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -39,10 +39,23 @@ const AVAILABLE_MODELS = [
   { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
 ] as const;
 
+/**
+ * 從 window.location.pathname 解析真實 templateId。
+ * 靜態匯出 + Firebase rewrite 下 useParams() 只會讀到 stub 字面值「detail」，
+ * 必須走 pathname regex 拿到真 ID。
+ */
+function useTemplateIdFromPath(): string {
+  const [id, setId] = useState('');
+  useEffect(() => {
+    const m = window.location.pathname.match(/\/super-admin\/prompt-templates\/([^/]+)/);
+    if (m && m[1] && m[1] !== 'detail') setId(m[1]);
+  }, []);
+  return id;
+}
+
 export default function PromptTemplateDetailPage() {
-  const params = useParams();
   const router = useRouter();
-  const templateId = params.templateId as string;
+  const templateId = useTemplateIdFromPath();
   const { loading: authLoading, isAuthenticated, isSuperAdmin } = useAuth();
   // SUPER_ADMIN-only：高等設定（Prompt 模板）
   useEffect(() => {
@@ -76,6 +89,7 @@ export default function PromptTemplateDetailPage() {
   const [abMetric, setAbMetric] = useState('accuracy');
 
   const fetchAll = useCallback(async () => {
+    if (!templateId) return;  // 等 pathname regex 解析完畢
     setLoading(true);
     try {
       const [tpl, ver] = await Promise.all([

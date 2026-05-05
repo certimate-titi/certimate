@@ -267,7 +267,7 @@ class WrongAnswerService:
             max_tokens_map = {"PRO": 1024, "PRO_PLUS": 2048, "ULTRA": 4096}
             max_tokens = max_tokens_map.get(plan, 1024)
 
-            result = llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=max_tokens)
+            result = llm.generate(system_prompt, user_prompt, task_type="basic", max_tokens=max_tokens)
             return result if result and len(result.strip()) > 20 else None
         except Exception as e:
             import logging
@@ -343,7 +343,7 @@ class WrongAnswerService:
                     f"學生提問：{message}"
                 )
 
-                result = llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=16)
+                result = llm.generate(system_prompt, user_prompt, task_type="basic", max_tokens=16)
                 return "RELEVANT" in result.upper()
             except Exception as e:
                 logger.warning("Relevance check LLM call failed, allowing by default: %s", e)
@@ -474,10 +474,10 @@ class WrongAnswerService:
                     system_prompt += "\n如果需要引用教材，可以提到「根據你的教材...」但仍以提問引導為主。"
                     return llm.generate_with_context(
                         system_prompt, user_prompt, context,
-                        model="gemini-flash", max_tokens=1024,
+                        task_type="advanced", max_tokens=1024,
                     )
 
-            return llm.generate(system_prompt, user_prompt, model="gemini-flash", max_tokens=1024)
+            return llm.generate(system_prompt, user_prompt, task_type="advanced", max_tokens=1024)
 
         except Exception as e:
             logger.warning("AI Coach LLM call failed: %s", e)
