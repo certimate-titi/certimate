@@ -26,7 +26,7 @@ export default function Navbar() {
     { href: '/knowledge', label: '學習庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/practice', label: '練習', icon: Dumbbell },
-    { href: '/schedule', label: '排程', icon: Calendar },
+    // 排程已移至 /dashboard 右側「學習排程」卡片，避免重複入口
     { href: '/review', label: 'AI 教練', icon: BrainCircuit },
     // 教育管理：ULTRA tier 用戶；管理者帳號（ADMIN/SUPER_ADMIN）亦自動含
     ...(isUltra || isAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
