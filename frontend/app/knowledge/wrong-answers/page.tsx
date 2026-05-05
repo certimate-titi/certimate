@@ -179,29 +179,35 @@ function Inner() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link href="/knowledge" className="p-2 rounded-lg hover:bg-slate-100 text-slate-600">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-slate-900">個人錯題地圖</h1>
-            <p className="text-xs text-slate-500">紅 = 需加強、橘 = 部分掌握、綠 = 已掌握、灰 = 未測；點擊節點展開錯題明細</p>
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-3 sm:py-4">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <Link href="/knowledge" className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 shrink-0">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-slate-900 truncate">個人錯題地圖</h1>
+              <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block">紅 = 需加強、橘 = 部分掌握、綠 = 已掌握、灰 = 未測；點擊節點展開錯題明細</p>
+              <p className="text-[10px] text-slate-500 sm:hidden">🔴需加強 🟠部分 🟢已掌握 ⚪未測</p>
+            </div>
           </div>
           {subjects.length > 0 && (
-            <SubjectSwitcher
-              subjects={subjects}
-              activeSubjectId={activeSubjectId}
-              onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
-              onAddSubject={() => router.push('/onboarding')}
-              allowAdd={false}
-            />
+            <div className="sm:ml-auto">
+              <SubjectSwitcher
+                subjects={subjects}
+                activeSubjectId={activeSubjectId}
+                onSwitch={(id) => { setActiveSubjectId(id); localStorage.setItem('certimate_active_subject_id', id); }}
+                onAddSubject={() => router.push('/onboarding')}
+                allowAdd={false}
+                variant="compact"
+              />
+            </div>
           )}
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto py-8" data-testid="wrong-answer-heatmap">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
