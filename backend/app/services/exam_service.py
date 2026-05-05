@@ -255,7 +255,10 @@ class ExamService:
             return response
 
         # --- Question count validation ---
-        if question_count > total_capacity:
+        # AI 模式（hybrid / ai_only）不受節點 capacity 限制——AI 可從 chunks 動態生成題目；
+        # 只有純 historical_only 模式才需要檢查既有題目數量。
+        # exam_mode 為 None 或非 historical_only 時，視為 AI 模式 → 跳過 capacity 檢查。
+        if exam_mode == "historical_only" and question_count > total_capacity:
             return {
                 "error": True, "status_code": 400,
                 "message": f"所選範圍最多可出 {total_capacity} 題，請調整題數",
