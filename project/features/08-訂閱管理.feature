@@ -255,6 +255,7 @@ Feature: 訂閱管理與多階層控制
 
   # ========== L-quota：5 維度配額狀態提示（2026-05 新增）==========
 
+  @frontend @fullstack
   Rule: 後置（回應）- 配額狀態 API 必須回傳 5 維度現況
 
     Example: 已登入用戶查詢配額狀態回傳 5 維度
@@ -278,6 +279,7 @@ Feature: 訂閱管理與多階層控制
       And 回應的 is_unlimited 應為 true
       And 所有配額項目的 limit 應為 -1
 
+  @frontend
   Rule: 後置（顯示）- 配額使用率達 80% 應觸發警告 toast，達 100% 應 disabled 按鈕並顯示升級 CTA
 
     Example: 上傳次數達 80% 顯示警告
@@ -293,6 +295,7 @@ Feature: 訂閱管理與多階層控制
       And 按鈕旁應顯示「升級」連結導向 /account
       And 點擊按鈕不應觸發上傳對話框
 
+  @frontend
   Rule: 後置（顯示）- 帳號頁應集中顯示 5 維度配額面板
 
     Example: PRO 用戶帳號頁顯示 5 維度配額
