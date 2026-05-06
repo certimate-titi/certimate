@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth-context';
 import type { GetReviewQuestionsResponse, ChatMessage, UserSubject } from '@/types';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import QuotaBadge from '@/components/QuotaBadge';
+import WrongAnswerExamModal from '@/components/WrongAnswerExamModal';
 import { useQuotaGuard, invalidateQuotaCache } from '@/hooks/use-quota';
 import { useRouter } from 'next/navigation';
 
@@ -49,6 +50,8 @@ function ReviewBookPage() {
   const [showCitation, setShowCitation] = useState(false);
   // 手機/平板版：底部 tab 切換 panel；desktop (lg+) 永遠三欄並排
   const [mobileTab, setMobileTab] = useState<'list' | 'detail' | 'coach'>('detail');
+  // 錯題考試 modal
+  const [showWrongAnswerExam, setShowWrongAnswerExam] = useState(false);
 
   // 管理者帳號（ADMIN/SUPER_ADMIN）自動含所有 user-facing tier 功能
   const isFreeUser = subscriptionTier === 'FREE' && !isAdmin;
@@ -236,8 +239,17 @@ function ReviewBookPage() {
             <p className="text-xs sm:text-sm text-slate-500 truncate">{data.examTitle} • 第 {currentIndex + 1}/{data.wrongQuestions.length} 題</p>
           </div>
         </div>
-        {subjects.length > 0 && (
-          <div className="shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* 錯題考試入口（4 階段智能挑題） */}
+          <button
+            onClick={() => setShowWrongAnswerExam(true)}
+            disabled={data.wrongQuestions.length === 0}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-sm flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            title="從錯題本智能挑題進行考試"
+          >
+            🎯<span className="hidden sm:inline">考錯題</span>
+          </button>
+          {subjects.length > 0 && (
             <SubjectSwitcher
               subjects={subjects}
               activeSubjectId={activeSubjectId}
@@ -246,9 +258,17 @@ function ReviewBookPage() {
               allowAdd={false}
               variant="compact"
             />
-          </div>
-        )}
+          )}
+        </div>
       </header>
+
+      {/* 錯題考試 Modal */}
+      {showWrongAnswerExam && (
+        <WrongAnswerExamModal
+          subjectId={subjects.find(s => s.id === activeSubjectId)?.subjectId || activeSubjectId}
+          onClose={() => setShowWrongAnswerExam(false)}
+        />
+      )}
 
       <div className="flex-1 flex overflow-hidden pb-14 lg:pb-0">
         {/* Left Sidebar: Wrong Questions List */}

@@ -406,6 +406,21 @@ export const reviewService = {
     );
   },
 
+  /** 錯題考試：智能挑題（4 階段時程感知） */
+  async pickWrongAnswerExam(req: { subjectId?: string; questionCount: number }) {
+    return apiClient.post<{
+      questions: { question_id: string }[];
+      phase: 'final' | 'sprint' | 'standard' | 'mastery';
+      phase_reason: string;
+      buckets: Record<string, number>;
+      total_candidates: number;
+      message?: string;
+    }>('/wrong-answers/exam/pick', {
+      subject_id: req.subjectId,
+      question_count: req.questionCount,
+    });
+  },
+
   async getAdvancedCoach(subjectId?: string) {
     const params = subjectId ? `?subject_id=${subjectId}` : '';
     return apiClient.get(`/wrong-answers/advanced-coach${params}`);
