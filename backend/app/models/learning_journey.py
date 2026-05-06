@@ -21,8 +21,16 @@ from app.models import Base
 
 
 class LearningMode(str, enum.Enum):
-    """學習節奏列舉（衝刺 / 標準 / 精熟）。"""
+    """學習節奏列舉（最後衝刺 / 衝刺 / 標準 / 廣讀）— 4 階段時程自動推導。
 
+    閾值（依 exam_date - today 計算）：
+    - FINAL:    ≤ 7 天
+    - SPRINT:   8-30 天
+    - STANDARD: 31-180 天
+    - MASTERY:  > 180 天
+    """
+
+    FINAL = "final"
     SPRINT = "sprint"
     STANDARD = "standard"
     MASTERY = "mastery"

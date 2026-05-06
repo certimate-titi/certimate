@@ -22,6 +22,36 @@ def _handle_result(result: dict):
     return result
 
 
+class PickRequest(BaseModel):
+    """錯題考試挑題請求。"""
+    subject_id: str | None = None
+    question_count: int = 20  # 用戶選的題數，受 plan_limit 限制
+
+
+class MarkMasteredRequest(BaseModel):
+    """手動標記錯題已掌握。"""
+    question_id: str
+
+
+@router.post("/exam/pick")
+def pick_wrong_answer_exam(
+    body: PickRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """智能挑錯題考試（4 階段時程感知 + 多桶配額）。"""
+    import uuid as _uuid
+    from app.services.wrong_answer_picker import WrongAnswerPicker
+    try:
+        uid = _uuid.UUID(user_id)
+        sid = _uuid.UUID(body.subject_id) if body.subject_id else None
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail={"message": "ID 格式錯誤"})
+    picker = WrongAnswerPicker(db)
+    result = picker.pick(user_id=uid, subject_id=sid, target_count=max(1, body.question_count))
+    return result
+
+
 # ========== Advanced AI Coach (ULTRA only) ==========
 
 @router.get("/advanced-coach")

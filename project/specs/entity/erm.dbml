@@ -82,9 +82,10 @@ Enum bloom_category {
 }
 
 Enum learning_mode {
-  sprint      // <14 天，短期衝刺
-  standard    // 1-3 個月，正常準備
-  mastery     // >6 個月，長久學習
+  final       // ≤7 天，最後衝刺（純鞏固已遇過題目）
+  sprint      // 8-30 天，短期衝刺（重複錯題鞏固為主）
+  standard    // 31-180 天，標準節奏（探索與複習平衡）
+  mastery     // >180 天，廣讀探索（多新題覆蓋）
 }
 
 Enum self_assessed_level {

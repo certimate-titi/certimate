@@ -365,9 +365,11 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-500">今天想從哪裡開始複習？</p>
               {data.stats.examCountdown && (() => {
                 const days = data.stats.examCountdown.daysRemaining;
-                const mode = days < 14 ? { icon: '🔥', label: 'Sprint 衝刺', color: 'bg-rose-50 text-rose-700 border-rose-200', desc: '距離考試不到 14 天，系統已自動切換至衝刺狀態。', strategy: '重點加強曾答錯的高頻題目與未觸及的盲點。', weights: '未考知識 40% / 曾錯盲點 50% / 其他 10%' }
-                  : days <= 90 ? { icon: '🏃', label: 'Standard 正常', color: 'bg-blue-50 text-blue-700 border-blue-200', desc: '1~3 個月備考期，開拓與鞏固並行。', strategy: '兼顧新知識點探索與已有觀念的深化鞏固。', weights: '新知識 40% / 鞏固複習 40% / 弱點 20%' }
-                  : { icon: '🌳', label: 'Mastery 長期', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', desc: '超過 3 個月的長久學習，追求抗遺忘與跨域關聯。', strategy: '建立深層記憶與概念串聯，低壓穩步推進。', weights: '跨域關聯 30% / 新知識 40% / 鞏固 30%' };
+                // 4 階段時程（與 backend schedule_service._calculate_mode 對齊）
+                const mode = days <= 7 ? { icon: '🚨', label: 'Final 最後衝刺', color: 'bg-red-50 text-red-700 border-red-200', desc: '距考 ≤ 7 天，純鞏固已遇過題目，停止探索新題。', strategy: '反覆刷錯題本與弱點節點，不再嘗試新內容。', weights: '過複習日 70% / 新錯題 10% / 弱點 20%' }
+                  : days <= 30 ? { icon: '🔥', label: 'Sprint 衝刺', color: 'bg-rose-50 text-rose-700 border-rose-200', desc: '距考 8-30 天，重複錯題鞏固為主。', strategy: '重點加強曾答錯的高頻題目與未觸及的盲點。', weights: '過複習日 60% / 新錯題 15% / 弱點 20% / 隨機 5%' }
+                  : days <= 180 ? { icon: '🏃', label: 'Standard 穩紮', color: 'bg-blue-50 text-blue-700 border-blue-200', desc: '1-6 月備考期，開拓與鞏固並行。', strategy: '兼顧新知識點探索與已有觀念的深化鞏固。', weights: '過複習日 40% / 新錯題 30% / 弱點 20% / 隨機 10%' }
+                  : { icon: '🌳', label: 'Mastery 廣讀', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', desc: '> 6 月長期備考，追求抗遺忘與跨域關聯。', strategy: '建立深層記憶與概念串聯，低壓穩步推進。', weights: '過複習日 25% / 新錯題 45% / 弱點 20% / 隨機 10%' };
                 return (
                   <div className="relative">
                     <button

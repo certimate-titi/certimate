@@ -35,22 +35,30 @@ Feature: 動態大腦精力調度排程
 
   # ========== 模式自動推導 ==========
 
-  Rule: 後置（狀態）- 系統應根據距考日天數自動推導學習模式
+  Rule: 後置（狀態）- 系統應根據距考日天數自動推導學習模式（4 階段）
 
-    Example: 距考日 14 天內自動推導為 Sprint 模式
-      Given 今日為 2026-04-01
+    Example: 距考日 ≤ 7 天自動推導為 Final 模式（最後衝刺）
+      Given 使用者 "proplus@example.com" 的 AWS SAA 考試日期為 2026-04-05
+      And 今日為 2026-04-01
+      When 系統為使用者 "proplus@example.com" 的 AWS SAA 科目計算學習模式
+      Then 學習模式應為 "final"
+      And 模式推導依據應為「距考日 4 天（≤ 7 天），最後衝刺」
+
+    Example: 距考日 8-30 天自動推導為 Sprint 模式
+      Given 使用者 "proplus@example.com" 的 AWS SAA 考試日期為 2026-04-21
+      And 今日為 2026-04-01
       When 系統為使用者 "proplus@example.com" 的 AWS SAA 科目計算學習模式
       Then 學習模式應為 "sprint"
-      And 模式推導依據應為「距考日 7 天，< 14 天」
+      And 模式推導依據應為「距考日 20 天（8-30 天），短期衝刺」
 
-    Example: 距考日 1 至 6 個月自動推導為 Standard 模式
+    Example: 距考日 31 至 180 天自動推導為 Standard 模式
       Given 使用者 "proplus@example.com" 的 PMP 考試日期為 2026-09-15
       And 今日為 2026-04-01
       When 系統為使用者 "proplus@example.com" 的 PMP 科目計算學習模式
       Then 學習模式應為 "standard"
-      And 模式推導依據應為「距考日 167 天，介於 1-6 個月」
+      And 模式推導依據應為「距考日 167 天（31-180 天），標準節奏」
 
-    Example: 距考日超過 6 個月自動推導為 Mastery 模式
+    Example: 距考日 > 180 天自動推導為 Mastery 模式
       Given 使用者 "proplus@example.com" 的 PMP 考試日期為 2027-06-01
       And 今日為 2026-04-01
       When 系統為使用者 "proplus@example.com" 的 PMP 科目計算學習模式

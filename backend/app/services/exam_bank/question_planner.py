@@ -216,14 +216,15 @@ class QuestionPlanner:
 
     def _determine_mode(self, exam_date: Optional[date]) -> tuple[str, str]:
         if exam_date is None:
-            return "mastery", "無考試日期，使用精熟模式"
+            return "mastery", "無考試日期，使用廣讀模式"
         days_left = (exam_date - date.today()).days
-        if days_left <= 14:
-            return "sprint", f"距考 {days_left} 天，自動使用衝刺模式"
-        elif days_left <= 180:
-            return "standard", f"距考 {days_left} 天，自動使用標準模式"
-        else:
-            return "mastery", f"距考 {days_left} 天（> 6 月），使用精熟模式"
+        if days_left <= 7:
+            return "final", f"距考 {days_left} 天（≤ 7 天），自動使用最後衝刺模式"
+        if days_left <= 30:
+            return "sprint", f"距考 {days_left} 天（8-30 天），自動使用衝刺模式"
+        if days_left <= 180:
+            return "standard", f"距考 {days_left} 天（31-180 天），自動使用標準模式"
+        return "mastery", f"距考 {days_left} 天（> 6 月），使用廣讀模式"
 
     # ── Layer 0: 弱點 + 記憶 + 信心度 ──
 

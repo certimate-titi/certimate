@@ -17,9 +17,10 @@ import { scheduleService, type ScheduleRecommendation } from '@/lib/api/services
 import { useAuth } from '@/lib/auth-context';
 
 const MODE_META: Record<string, { label: string; emoji: string; color: string; desc: string }> = {
-  sprint: { label: 'Sprint 衝刺', emoji: '⚡', color: 'bg-rose-50 text-rose-700 border-rose-200', desc: '距考日 < 14 天，錯題與 AI 生題優先' },
-  standard: { label: 'Standard 穩紮', emoji: '📚', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', desc: '距考日 1-6 月，SuperMemo-2 遺忘曲線排程' },
-  mastery: { label: 'Mastery 廣讀', emoji: '🧭', color: 'bg-blue-50 text-blue-700 border-blue-200', desc: '距考日 > 6 月，隨機探索 + 盲區補強' },
+  final:    { label: 'Final 最後衝刺', emoji: '🚨', color: 'bg-red-50 text-red-700 border-red-200',         desc: '距考日 ≤ 7 天，純鞏固已遇過題目，停止探索新題' },
+  sprint:   { label: 'Sprint 衝刺',    emoji: '⚡', color: 'bg-rose-50 text-rose-700 border-rose-200',     desc: '距考日 8-30 天，重複錯題鞏固為主' },
+  standard: { label: 'Standard 穩紮',  emoji: '📚', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', desc: '距考日 1-6 月，SuperMemo-2 遺忘曲線排程' },
+  mastery:  { label: 'Mastery 廣讀',   emoji: '🧭', color: 'bg-blue-50 text-blue-700 border-blue-200',     desc: '距考日 > 6 月，多新題覆蓋 + 盲區補強' },
 };
 
 export default function SchedulePage() {

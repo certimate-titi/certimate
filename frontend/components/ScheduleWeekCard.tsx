@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 
 /** 模式 meta（與 /schedule/page.tsx 共用定義，不另開 shared util 以避免跨層衝突）。 */
 const MODE_META: Record<string, { label: string; emoji: string; color: string }> = {
+  final:    { label: 'Final',    emoji: '🚨', color: 'bg-red-50 text-red-700 border-red-200' },
   sprint:   { label: 'Sprint',   emoji: '⚡', color: 'bg-rose-50 text-rose-700 border-rose-200' },
   standard: { label: 'Standard', emoji: '📚', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   mastery:  { label: 'Mastery',  emoji: '🧭', color: 'bg-blue-50 text-blue-700 border-blue-200' },

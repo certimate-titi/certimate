@@ -476,3 +476,81 @@ Feature: 錯題複習與 AI 教練
     Example: 輸入框下方應顯示「支援 KaTeX 數學公式渲染」提示
       When 使用者 "pro@example.com" 進入錯題複習頁面 AI 教練聊天區
       Then 輸入框下方應顯示提示文字「支援 KaTeX 數學公式渲染（行內 $x^2$、區塊 $$...$$）」
+
+  # ========== 錯題消除規則（2026-05 新增）==========
+
+  @backend
+  Rule: 後置（狀態）- 錯題連續答對 2 次自動消除（不再出現於錯題本與錯題考試）
+
+    Example: 連續答對 2 次後該題從錯題本消除
+      Given 使用者 "alice@example.com" 對題目 Q1 的答題歷史為：
+        | 順序 | is_correct |
+        | 1    | false      |
+        | 2    | true       |
+        | 3    | true       |
+      When 系統計算 Q1 的 correct_streak
+      Then correct_streak 應為 2
+      And Q1 不應出現在錯題本與錯題考試候選池
+
+    Example: 答對後再答錯則重置 streak
+      Given 使用者 "alice@example.com" 對題目 Q2 的答題歷史為：
+        | 順序 | is_correct |
+        | 1    | false      |
+        | 2    | true       |
+        | 3    | false      |
+      Then Q2 的 correct_streak 應為 0
+      And Q2 應出現在錯題本
+
+    Example: 用戶手動標記「已掌握」應從錯題本消除
+      When 使用者 "alice@example.com" 對題目 Q3 點擊「已掌握」按鈕
+      Then Q3 的 user_marked_mastered 應設為 true
+      And Q3 不應出現在錯題本與錯題考試候選池
+
+  # ========== 錯題考試（2026-05 新增）==========
+
+  @fullstack
+  Rule: 後置（回應）- 錯題考試應依 4 階段時程動態挑題（多桶配額）
+
+    Example: Final 階段（≤ 7 天）配比 70/10/20/0
+      Given 使用者 "alice@example.com" 的科目距考 5 天
+      And 使用者選擇「錯題考試」題數 10 題
+      When 系統呼叫 POST /api/v1/wrong-answers/exam/pick
+      Then 回應的 phase 應為 "final"
+      And 回應的 buckets 應為：overdue=7, fresh=1, weak=2, random=0
+
+    Example: Sprint 階段（8-30 天）配比 60/15/20/5
+      Given 使用者 "alice@example.com" 的科目距考 20 天
+      When 系統呼叫 POST /api/v1/wrong-answers/exam/pick，題數 10
+      Then 回應的 phase 應為 "sprint"
+      And 回應的 buckets 應為：overdue=6, fresh=2, weak=2, random=0
+
+    Example: Standard 階段（31-180 天）配比 40/30/20/10
+      Given 使用者 "alice@example.com" 的科目距考 90 天
+      When 系統呼叫 POST /api/v1/wrong-answers/exam/pick，題數 10
+      Then 回應的 phase 應為 "standard"
+      And 回應的 buckets 應為：overdue=4, fresh=3, weak=2, random=1
+
+    Example: Mastery 階段（> 180 天）配比 25/45/20/10
+      Given 使用者 "alice@example.com" 的科目距考 365 天
+      When 系統呼叫 POST /api/v1/wrong-answers/exam/pick，題數 10
+      Then 回應的 phase 應為 "mastery"
+      And 回應的 buckets 應為：overdue=3, fresh=4, weak=2, random=1
+
+  @backend
+  Rule: 後置（狀態）- 錯題考試挑題候選池為空時應回友善訊息
+
+    Example: 候選池為空
+      Given 使用者 "alice@example.com" 沒有未消除的錯題
+      When 系統呼叫 POST /api/v1/wrong-answers/exam/pick
+      Then 回應的 questions 應為空陣列
+      And 回應應包含 message 字串「目前無錯題可考」
+
+  @backend
+  Rule: 後置（狀態）- 桶不足時應從其他桶補足，不從已消除題庫補
+
+    Example: fresh 桶為空時自動往下一桶補
+      Given 使用者 "alice@example.com" 的科目距考 90 天（standard）
+      And 候選池：overdue=10、fresh=0、weak=5、random=0
+      When 系統呼叫挑題，題數 10
+      Then 應從 weak / random 桶補足缺額
+      And 不應從已消除（streak ≥ 2 或 user_marked_mastered）的題庫抽題

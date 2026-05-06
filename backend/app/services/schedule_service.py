@@ -58,15 +58,17 @@ class ScheduleService:
         return {"subjects": subjects}
 
     def _mode_reason(self, mode: str, exam_date) -> str:
-        """產生模式推導原因說明。"""
+        """產生模式推導原因說明（4 階段）。"""
         if not exam_date:
             return "尚未設定考試日期，預設 Standard 模式"
         days = (exam_date - date.today()).days
+        if mode == "final":
+            return f"距考日 {days} 天（≤ 7 天），最後衝刺：純鞏固已遇過題目"
         if mode == "sprint":
-            return f"距考日 {days} 天（< 14 天），優先錯題與 AI 生題"
+            return f"距考日 {days} 天（8-30 天），短期衝刺：優先錯題與弱點"
         if mode == "mastery":
             return f"距考日 {days} 天（> 6 個月），廣讀探索盲區"
-        return f"距考日 {days} 天，遵循 SuperMemo-2 遺忘曲線"
+        return f"距考日 {days} 天（31-180 天），標準節奏：SuperMemo-2 遺忘曲線"
 
     def init_schedule(self, user_id: str, subject_id: str):
         """初始化排程。"""
@@ -161,18 +163,26 @@ class ScheduleService:
             return {"error": True, "status_code": 500, "message": str(e)}
 
     def _calculate_mode(self, exam_date: date | None, today: date) -> str:
-        """根據距考日天數計算學習模式。"""
+        """根據距考日天數計算學習模式（4 階段）。
+
+        閾值：
+          ≤ 7 天   → final     最後衝刺，純鞏固
+          8-30 天 → sprint    短期衝刺
+          31-180 天 → standard 標準節奏
+          > 180 天 → mastery  廣讀探索
+        """
         if not exam_date:
             return "standard"
 
         days_until = (exam_date - today).days
 
-        if days_until <= 14:
+        if days_until <= 7:
+            return "final"
+        if days_until <= 30:
             return "sprint"
-        elif days_until <= 180:  # ~6 months
+        if days_until <= 180:
             return "standard"
-        else:
-            return "mastery"
+        return "mastery"
 
     def _get_recommended_questions_fallback(self, user_id: str, count: int) -> dict:
         """當 MCP Recommendation Server 不可用時的降級方法。"""
