@@ -69,16 +69,29 @@ class ExamService:
         if not questions:
             return {"error": True, "status_code": 404, "message": "找不到題目"}
 
-        # 從第一題推導 subject_id
-        subject_id = questions[0].subject_id
-        if not subject_id:
-            # fallback：從 node → resource → subject
-            for q in questions:
-                if q.node_id:
-                    n = self.db.query(KnowledgeNode).filter_by(id=q.node_id).first()
-                    if n and n.subject_id:
-                        subject_id = n.subject_id
-                        break
+        # 推導 subject_id（Question 沒有 subject_id 欄位，需走 exam → subject 或 node → subject）
+        subject_id = None
+        from app.models.exam import Exam
+        from app.models.historical_exam import HistoricalExam
+        for q in questions:
+            # 1. 透過 exam_id
+            if q.exam_id:
+                ex = self.db.query(Exam).filter_by(id=q.exam_id).first()
+                if ex and ex.subject_id:
+                    subject_id = ex.subject_id
+                    break
+            # 2. 透過 historical_exam_id
+            if q.historical_exam_id:
+                he = self.db.query(HistoricalExam).filter_by(id=q.historical_exam_id).first()
+                if he and he.subject_id:
+                    subject_id = he.subject_id
+                    break
+            # 3. 透過 node_id
+            if q.node_id:
+                n = self.db.query(KnowledgeNode).filter_by(id=q.node_id).first()
+                if n and n.subject_id:
+                    subject_id = n.subject_id
+                    break
         if not subject_id:
             return {"error": True, "status_code": 400, "message": "無法判斷考試科目"}
 
@@ -93,7 +106,6 @@ class ExamService:
             difficulty_distribution=None,
             historical_priority=False,
             question_order_mode="random",
-            title="錯題考試",
         )
         self.db.add(exam)
         self.db.flush()
@@ -138,7 +150,7 @@ class ExamService:
             "exam_id": str(exam.id),
             "total_questions": actual_count,
             "status": "READY",
-            "title": "錯題考試",
+            "title": "錯題考試",  # 用於前端顯示，不寫入 DB
         }
 
     def submit_config(self, node_ids: list[str], question_count: int,
