@@ -269,3 +269,55 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       When 使用者點擊 toolbar「📄 文件」按鈕
       Then centerView 應為 document
       And 中央區應顯示完整文件 Markdown 原文
+
+  # ========== AI 教練 quickChips 動態前文感知（2026-05 新增）==========
+
+  @frontend
+  Rule: 後置（顯示）- 學習庫 AI 教練的快捷提示應依節點掌握度與對話前文動態變更
+
+    Example: 首次提問且節點掌握度 < 40% 顯示入門 chips
+      Given 使用者 "alice@example.com" 點擊掌握度為 30% 的節點 "EC2 運算服務"
+      And AI 教練對話列表為空
+      Then AI 教練面板應顯示三個快捷 chip
+      And chip 應包含 "「EC2 運算服務」是什麼？" / "用最簡單的話解釋" / "常見迷思有哪些？"
+
+    Example: 首次提問且節點掌握度 ≥ 70% 顯示進階 chips
+      Given 使用者 "alice@example.com" 點擊掌握度為 75% 的節點 "EC2 運算服務"
+      And AI 教練對話列表為空
+      Then chip 應包含 "「EC2 運算服務」進階觀點" / "常考考點與陷阱" / "相關延伸知識"
+
+    Example: AI 已給範例後 chips 引導應用驗證
+      Given 使用者已與 AI 教練對話
+      And 最後一則 AI 回覆包含關鍵字 "例如" 或 "舉例"
+      Then chip 應變為 "再深入一點" / "出 1 題小測驗驗證" / "與其他概念有何不同？"
+
+    Example: AI 已給定義後 chips 引導實作
+      Given 最後一則 AI 回覆包含關鍵字 "定義" 或 "是指"
+      Then chip 應變為 "給我一個例子" / "常見錯誤是什麼？" / "考試常考方向"
+
+    Example: AI 已出題後 chips 引導反思
+      Given 最後一則 AI 回覆包含關鍵字 "題目" 或 "選項"
+      Then chip 應變為 "解析答案" / "為什麼其他選項不對？" / "相關考點"
+
+  @frontend
+  Rule: 後置（顯示）- AI 教練回覆訊息應支援 Markdown 渲染（粗體 / 列表 / 數學公式 / 代碼）
+
+    Example: AI 回覆包含 Markdown 標記應正確渲染
+      When AI 教練回覆內容為 "**重點**：使用 `IAM` 控管權限"
+      Then 對話氣泡應渲染粗體 "重點" 為 bold 字體
+      And `IAM` 應渲染為 inline code 樣式
+      And 不應出現原始 Markdown 字元如 ** 或 反引號
+
+    Example: AI 回覆包含 KaTeX 數學公式應渲染
+      When AI 回覆內容為 "答案是 $\\sqrt{16} = 4$"
+      Then 對話氣泡應渲染為數學公式
+      And 不應出現原始 LaTeX 字串如 \sqrt
+
+    Example: AI 回覆包含項目列表應渲染為 ul / ol
+      When AI 回覆包含 "- 第一點\n- 第二點\n- 第三點"
+      Then 對話氣泡應渲染為無序列表 ul
+
+    Example: 使用者輸入訊息維持純文字（避免 markdown 解析誤差）
+      When 使用者輸入 "**這不是粗體**"
+      Then 使用者氣泡應直接顯示原始字元 "**這不是粗體**"
+      And 不應將其渲染為粗體
