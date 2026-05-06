@@ -81,6 +81,20 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+/**
+ * 在考試頁時被踢登入應保留答題進度（localStorage 已由 exam workspace 寫入）。
+ * 回傳「目標登入頁 URL」含 next 參數讓登入後可回到原頁。
+ */
+function buildLoginRedirect(): string {
+  if (typeof window === 'undefined') return '/login?expired=1';
+  const path = window.location.pathname + window.location.search;
+  // 考試頁特殊：完整保留 query 讓登入後可帶回 examId
+  if (path.startsWith('/exam/workspace')) {
+    return `/login?expired=1&next=${encodeURIComponent(path)}`;
+  }
+  return '/login?expired=1';
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '');
@@ -89,7 +103,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     if (response.status === 401) {
       clearStoredToken();
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login?expired=1';
+        window.location.href = buildLoginRedirect();
       }
       throw new Error('登入已過期，請重新登入');
     }
@@ -106,6 +120,57 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw new Error(message);
   }
   return response.json() as Promise<T>;
+}
+
+/**
+ * 靜默 refresh token —— 在 token 還有效但快過期時呼叫。
+ * 失敗（如 token 已過期）回傳 false，呼叫端應走正常 401 流程。
+ */
+let _refreshInflight: Promise<boolean> | null = null;
+export async function refreshTokenSilently(): Promise<boolean> {
+  if (_refreshInflight) return _refreshInflight;
+  const tok = getStoredToken();
+  if (!tok) return false;
+  _refreshInflight = (async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+      const r = await fetch(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${tok}`, 'Content-Type': 'application/json' },
+      });
+      if (!r.ok) return false;
+      const data = await r.json() as { access_token?: string };
+      if (!data.access_token) return false;
+      setStoredToken(data.access_token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      _refreshInflight = null;
+    }
+  })();
+  return _refreshInflight;
+}
+
+/**
+ * 啟動 token 自動延期：每 30 分鐘呼叫一次 /auth/refresh。
+ * 由 AuthProvider 在初次登入後啟動，登出時清除。
+ */
+let _refreshTimer: ReturnType<typeof setInterval> | null = null;
+export function startTokenAutoRefresh() {
+  if (typeof window === 'undefined') return;
+  if (_refreshTimer) return; // 已啟動
+  // 30 分鐘間隔（JWT 8h TTL 內滑動續期，遠早於過期）
+  _refreshTimer = setInterval(() => {
+    void refreshTokenSilently();
+  }, 30 * 60 * 1000);
+}
+
+export function stopTokenAutoRefresh() {
+  if (_refreshTimer) {
+    clearInterval(_refreshTimer);
+    _refreshTimer = null;
+  }
 }
 
 async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Promise<Response> {

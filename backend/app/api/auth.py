@@ -194,6 +194,31 @@ def get_current_user(
     }
 
 
+@router.post("/auth/refresh")
+def refresh_token(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """以現有有效 JWT 換發新 JWT（重設 8 小時 TTL）。
+
+    用途：前端在 token 快過期前靜默呼叫，避免長時間考試中斷。
+    安全原則：
+    - 必須帶有效 token（過期則無法 refresh，須重登）
+    - 不重設 user 狀態檢查（user.status != active 仍拒絕）
+    - 不引入 refresh token 概念，沿用單 token 滑動續期
+    """
+    repo = UserRepository(db)
+    user = repo.find_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail={"message": "使用者不存在"})
+    if hasattr(user.status, 'value') and user.status.value != "active":
+        raise HTTPException(status_code=403, detail={"message": "帳號狀態異常，無法續期"})
+
+    from app.services.auth_service import _generate_token
+    new_token = _generate_token(str(user.id))
+    return {"access_token": new_token, "token_type": "bearer"}
+
+
 @router.post("/auth/seed-demo")
 def seed_demo_account(db: Session = Depends(get_db)):
     """建立 demo 帳號（已驗證 + SUPER_ADMIN），供 smoke test 與開發快速登入使用。"""

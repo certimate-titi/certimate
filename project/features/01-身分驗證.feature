@@ -421,3 +421,50 @@ Feature: 身分驗證
       When 使用者再次以同一邀請 token 訪問密碼設定頁
       Then 系統應顯示提示「您的帳號已完成啟用，請直接登入」
       And 頁面應提供「前往登入」連結
+
+  # ========== JWT 滑動續期與考試中斷恢復（2026-05 新增）==========
+
+  @backend
+  Rule: 後置（回應）- JWT TTL 8 小時並提供 /auth/refresh 端點滑動續期
+
+    Example: JWT 預設 TTL 為 8 小時
+      When 使用者 "alice@example.com" 成功登入取得 JWT
+      Then JWT payload 的 exp 應為登入時刻 + 8 小時
+
+    Example: 用有效 JWT 呼叫 /auth/refresh 應換發新 token
+      Given 使用者 "alice@example.com" 持有有效 JWT
+      When 使用者呼叫 POST /api/v1/auth/refresh
+      Then 操作成功
+      And 回應應包含新的 access_token，TTL 重設為 8 小時
+
+    Example: 已過期 JWT 呼叫 /auth/refresh 應失敗
+      Given 使用者持有已過期的 JWT
+      When 呼叫 POST /api/v1/auth/refresh
+      Then 操作應失敗 401
+      And 使用者必須重新走登入流程
+
+    Example: 帳號狀態異常時 refresh 應拒絕
+      Given 使用者 "suspended@example.com" 的帳號狀態被改為 suspended
+      When 以仍有效的 JWT 呼叫 POST /api/v1/auth/refresh
+      Then 操作應失敗 403
+
+  @frontend
+  Rule: 後置（回應）- 前端應每 30 分鐘靜默 refresh token，考試中斷被踢登入時保留進度
+
+    Example: 登入後啟動 token auto-refresh
+      Given 使用者 "alice@example.com" 成功登入
+      Then 前端應每 30 分鐘呼叫 /auth/refresh
+      And 登出時應停止 refresh
+
+    Example: 考試進行中被踢登入應保留答題進度與目標 URL
+      Given 使用者正在 /exam/workspace?examId=E1 作答
+      And localStorage 的 certimate_exam_E1 已記錄答題進度
+      When 系統收到 401 回應
+      Then 前端應導向 "/login?expired=1&next=%2Fexam%2Fworkspace%3FexamId%3DE1"
+      And localStorage 的考試進度不應被清除
+
+    Example: 重新登入成功後依 next 參數回到原頁
+      Given 使用者在 "/login?expired=1&next=/exam/workspace?examId=E1"
+      When 輸入正確帳密登入成功
+      Then 應導向 /exam/workspace?examId=E1
+      And 答題進度應從 localStorage 還原

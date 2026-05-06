@@ -56,7 +56,10 @@ class Settings:
         self.JWT_ALGORITHM: str = "HS256"  # 安全限制：僅允許 HS256/RS256/ES256
         assert self.JWT_ALGORITHM in ("HS256", "RS256", "ES256"), \
             f"Unsafe JWT algorithm: {self.JWT_ALGORITHM}"
-        self.JWT_EXPIRE_HOURS: int = 1
+        # JWT TTL：8 小時涵蓋長時間測驗（最長模擬考 4-5 小時 + 考後分析）
+        # 可由環境變數覆寫；若 < 4 視為設定錯誤強制改 4
+        _ttl = int(os.environ.get("JWT_EXPIRE_HOURS", "8"))
+        self.JWT_EXPIRE_HOURS: int = max(_ttl, 4)
 
         # API 設定
         self.API_V1_PREFIX: str = "/api/v1"

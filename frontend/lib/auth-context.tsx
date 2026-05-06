@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, SubscriptionTier, SubscriptionStatus, UserRole } from '@/types';
-import { apiClient, getStoredToken, setStoredToken, clearStoredToken } from '@/lib/api/client';
+import { apiClient, getStoredToken, setStoredToken, clearStoredToken, startTokenAutoRefresh, stopTokenAutoRefresh } from '@/lib/api/client';
 import { authService } from '@/lib/api/services';
 
 /** Backend plan → frontend tier mapping */
@@ -128,12 +128,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // On mount: validate stored token
+  // On mount: validate stored token + 啟動 token auto-refresh（30 分鐘間隔）
   useEffect(() => {
     fetchMe().then((u) => {
       setUser(u);
       setLoading(false);
+      if (u) startTokenAutoRefresh();
     });
+    return () => stopTokenAutoRefresh();
   }, [fetchMe]);
 
   // 註：先前的前端事件 flusher 於 2026-04-28 已移除（spec drift cleanup）
@@ -144,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const me = await apiClient.get<BackendMeResponse>('/auth/me');
     const u = backendMeToUser(me);
     setUser(u);
+    startTokenAutoRefresh();
     return { redirect_to: res.redirect_to };
   }, []);
 
@@ -155,10 +158,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const me = await apiClient.get<BackendMeResponse>('/auth/me');
     const u = backendMeToUser(me);
     setUser(u);
+    startTokenAutoRefresh();
     return { redirect_to: (res as any).redirect_to || '/dashboard' };
   }, []);
 
   const signOut = useCallback(async () => {
+    stopTokenAutoRefresh();
     clearStoredToken();
     setUser(null);
     window.location.href = '/login';

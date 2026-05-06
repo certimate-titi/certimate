@@ -34,7 +34,9 @@ export default function LoginPage() {
     setRememberMePref(rememberMe);
     try {
       const { redirect_to } = await loginWithCredentials(loginEmail, loginPassword);
-      router.push(redirect_to || '/dashboard');
+      // 優先使用 ?next= 參數（被踢登入時帶回的考試頁等深連結）
+      const nextParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') : null;
+      router.push(nextParam || redirect_to || '/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '登入失敗';
       try {
@@ -70,7 +72,8 @@ export default function LoginPage() {
         const userInfo = await res.json();
         // Use the access_token for backend verification
         const { redirect_to } = await loginWithGoogle(tokenResponse.access_token);
-        router.push(redirect_to || '/dashboard');
+        const nextParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') : null;
+        router.push(nextParam || redirect_to || '/dashboard');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Google 登入失敗';
         setError(msg);
