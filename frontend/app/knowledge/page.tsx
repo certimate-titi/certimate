@@ -1025,7 +1025,7 @@ function KnowledgeBasePageInner() {
             const materialSlot = (
               <ScaffoldMaterial
                 nodeId={nodeId}
-                fallbackResourceId={focusResourceId || selectedNodeDetail?.node?.documentId || null}
+                fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
               />
@@ -1034,7 +1034,7 @@ function KnowledgeBasePageInner() {
             const notebookSlot = (
               <ScaffoldNotebook
                 nodeId={nodeId}
-                fallbackResourceId={focusResourceId || selectedNodeDetail?.node?.documentId || null}
+                fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
                 nodeLabel={nodeLabel}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
