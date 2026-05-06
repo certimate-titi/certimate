@@ -217,18 +217,12 @@ class WrongAnswerService:
                     related_content += f"> {chunk.content[:300]}\n\n"
 
         # User background instruction
-        tone = self._get_user_tone_context(user)
-        bg_instructions = {
-            "simple": "使用者為高中生，請使用生活化比喻和簡單詞彙",
-            "technical": "使用者有技術背景，可使用專業術語",
-            "advanced": "使用者有碩博士學歷，可深入分析",
-            "general": "",
-        }
-        user_bg = bg_instructions.get(tone, "")
+        from app.services._user_profile_hint import build_profile_vars
+        profile = build_profile_vars(user)
 
-        # Load prompt from DB
+        # Load prompt from DB（age / education / career / user_background_instruction 全部注入）
         db_prompt = self._load_prompt("wrong_answer_analysis", {
-            "user_background_instruction": user_bg,
+            **profile,
             "question_text": question.content,
             "options": options,
             "user_answer": answer.selected_answer if answer else "未作答",
@@ -419,7 +413,11 @@ class WrongAnswerService:
                 )
 
             # Try loading prompt from DB (T-02: coach_advanced)
-            db_prompt = self._load_prompt("coach_advanced")
+            from app.services._user_profile_hint import build_profile_vars
+            user_obj = None
+            if user_id:
+                user_obj = self.db.query(User).filter_by(id=user_id).first()
+            db_prompt = self._load_prompt("coach_advanced", build_profile_vars(user_obj))
             system_prompt = (
                 db_prompt["system_prompt"] if db_prompt else
                 "你是 Certi，TiTi 平台的 AI 蘇格拉底教練。\n\n"

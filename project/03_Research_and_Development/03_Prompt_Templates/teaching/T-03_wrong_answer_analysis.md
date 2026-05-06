@@ -9,13 +9,22 @@ max_tokens_by_plan:
   PRO_PLUS_399: 2048
   ULTRA_1599: 4096
 temperature: 0.5
-version: 1
+version: 2
 feature_refs:
   - "07-錯題複習與AI教練"
 variables:
   - name: "user_background_instruction"
-    description: "個人化背景指令（可為空）"
-    example: "使用者為高中生，請使用生活化比喻"
+    description: "已合成的個人化背景提示（綜合 age + education + career）"
+    example: "使用者背景：32 歲、碩士學歷、軟體工程師。請依此調整講解深度與用詞。"
+  - name: "age"
+    description: "使用者年齡（可為空）"
+    example: "32"
+  - name: "education"
+    description: "使用者學歷（可為空）"
+    example: "碩士"
+  - name: "career"
+    description: "使用者職業（可為空）"
+    example: "軟體工程師"
   - name: "question_text"
     description: "題目題幹"
     example: "AWS S3 的儲存類型何者最便宜？"

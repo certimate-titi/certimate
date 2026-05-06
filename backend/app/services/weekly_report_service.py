@@ -99,7 +99,9 @@ class WeeklyReportService:
         display_name = user.display_name or user.email.split("@")[0]
         week_str = f"{week_start.strftime('%m/%d')} ~ {week_end.strftime('%m/%d')}"
 
+        from app.services._user_profile_hint import build_profile_vars
         db_prompt = self._load_prompt("weekly_report", {
+            **build_profile_vars(user),
             "display_name": display_name,
             "week_range": week_str,
             "weekly_stats": stats_json,

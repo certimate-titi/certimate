@@ -71,7 +71,7 @@ def get_exam_intro_encouragement(
         ).count(),
     }
     svc = EncouragementService(db)
-    message = svc.generate("pre_exam_cheer", learning_state)
+    message = svc.generate("pre_exam_cheer", learning_state, user_id=user_id)
     return {
         "exam_id": exam_id,
         "trigger_type": "pre_exam_cheer",

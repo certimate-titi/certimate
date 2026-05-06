@@ -9,13 +9,25 @@ max_tokens_by_plan:
   PRO_PLUS_399: 768
   ULTRA_1599: 1024
 temperature: 0.4
-version: 2
+version: 3
 feature_refs:
   - "06-測驗結果"
 variables:
   - name: "summary_level_instruction"
     description: "總評深度指令（依方案注入）"
     example: "僅列出前 3 個弱點考點，每個考點一句話點評"
+  - name: "user_background_instruction"
+    description: "已合成的個人化背景提示（綜合 age + education + career）"
+    example: "使用者背景：32 歲、碩士學歷、軟體工程師。請依此調整講解深度與用詞。"
+  - name: "age"
+    description: "使用者年齡（可為空）"
+    example: "32"
+  - name: "education"
+    description: "使用者學歷（可為空）"
+    example: "碩士"
+  - name: "career"
+    description: "使用者職業（可為空）"
+    example: "軟體工程師"
   - name: "subject_name"
     description: "科目名稱"
     example: "AWS SAA"
@@ -40,6 +52,8 @@ variables:
 
 ```
 你是學習成效分析師，為考生撰寫精簡的考後總評。
+
+{user_background_instruction}
 
 {summary_level_instruction}
 

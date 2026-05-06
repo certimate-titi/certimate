@@ -63,7 +63,7 @@ class EncouragementService:
         except Exception:
             return None
 
-    def generate(self, trigger_type: str, learning_state: dict) -> str:
+    def generate(self, trigger_type: str, learning_state: dict, user_id: str | None = None) -> str:
         """生成鼓勵語句。
 
         Args:
@@ -81,7 +81,19 @@ class EncouragementService:
 
         state_json = json.dumps(learning_state, ensure_ascii=False)
 
+        # 個人化：注入 age / education / career
+        from app.services._user_profile_hint import build_profile_vars
+        from app.models.user import User
+        import uuid as _uuid
+        user_obj = None
+        if user_id:
+            try:
+                user_obj = self.db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+            except Exception:
+                user_obj = None
+
         db_prompt = self._load_prompt("encouragement", {
+            **build_profile_vars(user_obj),
             "trigger_type": trigger_type,
             "learning_state": state_json,
         })

@@ -335,7 +335,9 @@ class ExamResultService:
         }
         summary_instruction = level_instructions.get(plan, level_instructions["FREE"])
 
+        from app.services._user_profile_hint import build_profile_vars
         db_prompt = self._load_prompt("post_exam_summary", {
+            **build_profile_vars(user),
             "summary_level_instruction": summary_instruction,
             "subject_name": subject_name,
             "total_questions": str(total),

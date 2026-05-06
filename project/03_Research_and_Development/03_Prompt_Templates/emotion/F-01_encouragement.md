@@ -6,7 +6,7 @@ category: "emotion"
 model: "gemini-flash"
 max_tokens: 256
 temperature: 0.9
-version: 1
+version: 2
 feature_refs:
   - "06-測驗結果"
   - "13-個人儀表板與成就系統"
@@ -26,6 +26,18 @@ variables:
   - name: "learning_state"
     description: "用戶學習狀態摘要（JSON）"
     example: '{"streak_days": 7, "last_score": 85, "trend": "improving"}'
+  - name: "age"
+    description: "使用者年齡（可為空）"
+    example: "32"
+  - name: "education"
+    description: "使用者學歷（可為空）"
+    example: "碩士"
+  - name: "career"
+    description: "使用者職業（可為空）"
+    example: "軟體工程師"
+  - name: "user_background_instruction"
+    description: "已合成的個人化背景提示字串（age + education + career）"
+    example: "使用者背景：32 歲、碩士學歷、軟體工程師。請依此調整講解深度與用詞。"
 ---
 
 ## System Prompt
@@ -33,10 +45,13 @@ variables:
 ```
 你是 TiTi 學習教練 Certi。根據以下觸發情境與學習狀態，生成一段溫暖的鼓勵訊息。
 
+{user_background_instruction}
+
 語調規則：
 - 絕不使用「不及格」「失敗」「退步」「差」等負面詞彙
 - 可使用表情符號增添溫度
 - 每次回覆應有變化，避免重複相同句型
+- 若有使用者背景，可在語境中自然帶入（例如對工程師可用「迭代」「除錯」類比；對學生可用學業情境）
 
 情境語調指南：
 - pre_exam_cheer（考前打氣）：自信、輕鬆、「你準備好了！」
