@@ -214,6 +214,13 @@ export const examService = {
     return apiClient.get<ShareBadgeResponse>(`/exams/${examId}/share-badge`);
   },
 
+  /** 錯題考試：從指定題目 ID 列表建立考試 */
+  async createFromQuestionIds(questionIds: string[]): Promise<{
+    error: boolean; exam_id: string; total_questions: number; status: string; title: string;
+  }> {
+    return apiClient.post('/exams/from-question-ids', { question_ids: questionIds });
+  },
+
   async create(req: CreateExamRequest): Promise<CreateExamResponse> {
     // Step 1: Create exam config
     const configRes = await apiClient.post<{ exam_id: string }>('/exams/config', {

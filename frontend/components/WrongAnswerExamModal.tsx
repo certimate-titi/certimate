@@ -71,20 +71,10 @@ export default function WrongAnswerExamModal({ subjectId, onClose }: Props) {
     if (!picked || picked.questions.length === 0) return;
     setStarting(true);
     try {
-      // 用挑出的題目建立一份 ad-hoc 考試
-      const res = await examService.create({
-        config: {
-          questionCount: picked.questions.length,
-          difficulty: 2,
-          examMode: 'historical_only', // 用既有題目，不再生成
-          selectedNodeIds: [],
-          selectedDocumentIds: [],
-          // 後端可能需要支援 question_ids 直接傳入，先用 historical_only 模擬
-        } as never,
-      });
-      const examId = res.exam?.id || res.exam_id || res.examId;
-      if (examId) {
-        router.push(`/exam/workspace?examId=${examId}`);
+      // 直接用 picker 挑出的精確題目 ID 建立考試（status=READY，無需 AI 生成）
+      const res = await examService.createFromQuestionIds(picked.questions.map(q => q.question_id));
+      if (res.exam_id) {
+        router.push(`/exam/workspace?examId=${res.exam_id}`);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : '建立考試失敗');

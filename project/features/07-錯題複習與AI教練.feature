@@ -554,3 +554,45 @@ Feature: 錯題複習與 AI 教練
       When 系統呼叫挑題，題數 10
       Then 應從 weak / random 桶補足缺額
       And 不應從已消除（streak ≥ 2 或 user_marked_mastered）的題庫抽題
+
+  @fullstack
+  Rule: 後置（狀態）- 從挑題結果建立考試應 status=READY 並可立即作答
+
+    Example: 從錯題挑題建立 ad-hoc 考試
+      Given 使用者 "alice@example.com" 已從 /wrong-answers/exam/pick 取得 10 題 question_id 列表
+      When 使用者呼叫 POST /api/v1/exams/from-question-ids body { question_ids: [...] }
+      Then 操作成功
+      And 回應的 status 應為 "READY"
+      And 回應的 title 應為 "錯題考試"
+      And 後端應複製這些 questions 為新 exam 子題（不修改原題）
+      And source_type 應記為 "wrong_answer_pick"
+
+    Example: 題目列表為空應拒絕
+      When 使用者呼叫 POST /api/v1/exams/from-question-ids body { question_ids: [] }
+      Then 操作失敗 400
+      And 錯誤訊息應為 "題目列表為空"
+
+    Example: 包含無權限題目（user 沒答過）應過濾
+      Given 使用者 "alice@example.com" 沒有對題目 Q9 的 answer 紀錄
+      When 使用者呼叫 POST /api/v1/exams/from-question-ids body { question_ids: ["Q9"] }
+      Then 操作失敗 403
+      And 錯誤訊息應為 "無權考此題目集"
+
+  @frontend
+  Rule: 後置（顯示）- /review 頁應提供「考錯題」入口按鈕觸發智能挑題 Modal
+
+    Example: 有錯題時顯示綠色「🎯 考錯題」按鈕
+      Given 使用者 "alice@example.com" 進入 /review 頁且有錯題
+      Then 頁面 header 應顯示「🎯 考錯題」按鈕
+      And 按鈕應為可點擊狀態
+
+    Example: 無錯題時按鈕 disabled
+      Given 使用者 "alice@example.com" 進入 /review 頁但目前科目無錯題
+      Then 「🎯 考錯題」按鈕應為 disabled
+
+    Example: 點擊按鈕開啟 Modal 並能完成挑題流程
+      When 使用者點擊「🎯 考錯題」
+      Then 應彈出 WrongAnswerExamModal
+      And Modal 應顯示題數選項（10/20/50/100）
+      And 點擊「智能挑題預覽」應顯示 phase 標籤 + 桶配比明細
+      And 點擊「開始考試」應導向 /exam/workspace?examId=...

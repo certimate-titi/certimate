@@ -295,6 +295,28 @@ def save_answer(
     return _handle_result(result)
 
 
+class FromQuestionIdsRequest(BaseModel):
+    """從題目 ID 列表建立考試（用於錯題考試）。"""
+    question_ids: list[str]
+
+
+@router.post("/from-question-ids")
+def create_exam_from_question_ids(
+    body: FromQuestionIdsRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """從指定題目 ID 列表建立一份考試（供錯題考試使用）。"""
+    service = ExamService(db)
+    result = service.create_from_question_ids(user_id=user_id, question_ids=body.question_ids)
+    if result.get("error"):
+        raise HTTPException(
+            status_code=result.get("status_code", 400),
+            detail={"message": result.get("message", "建立失敗")},
+        )
+    return result
+
+
 @router.get("/{exam_id}/share-badge")
 def get_share_badge(
     exam_id: str,

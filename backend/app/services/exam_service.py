@@ -29,6 +29,118 @@ class ExamService:
         """初始化實例。"""
         self.db = db
 
+    def create_from_question_ids(
+        self,
+        user_id: str,
+        question_ids: list[str],
+    ) -> dict:
+        """從指定的題目 ID 列表建立一份考試（用於錯題考試）。
+
+        - 驗證 user 對所有題目都有歷史 answer（否則無權考）
+        - 從第一題的 subject_id 推導 exam.subject_id
+        - 複製題目（新 exam_id），原 question 不動
+        - 直接設 status = READY（無需 AI 生成）
+        """
+        from app.models.question import Question as QuestionModel
+        from app.models.answer import Answer
+        from app.models.exam import Exam, ExamStatus
+        from app.models.knowledge_node import KnowledgeNode
+
+        if not question_ids:
+            return {"error": True, "status_code": 400, "message": "題目列表為空"}
+
+        try:
+            uid = uuid.UUID(user_id)
+            qids = [uuid.UUID(q) for q in question_ids]
+        except (ValueError, TypeError):
+            return {"error": True, "status_code": 400, "message": "ID 格式錯誤"}
+
+        # 撈題目（只能用使用者答過的）
+        owned_qids = {
+            r[0] for r in self.db.query(Answer.question_id)
+            .filter(Answer.user_id == uid, Answer.question_id.in_(qids))
+            .distinct().all()
+        }
+        valid_qids = [q for q in qids if q in owned_qids]
+        if not valid_qids:
+            return {"error": True, "status_code": 403, "message": "無權考此題目集"}
+
+        questions = self.db.query(QuestionModel).filter(QuestionModel.id.in_(valid_qids)).all()
+        if not questions:
+            return {"error": True, "status_code": 404, "message": "找不到題目"}
+
+        # 從第一題推導 subject_id
+        subject_id = questions[0].subject_id
+        if not subject_id:
+            # fallback：從 node → resource → subject
+            for q in questions:
+                if q.node_id:
+                    n = self.db.query(KnowledgeNode).filter_by(id=q.node_id).first()
+                    if n and n.subject_id:
+                        subject_id = n.subject_id
+                        break
+        if not subject_id:
+            return {"error": True, "status_code": 400, "message": "無法判斷考試科目"}
+
+        # 建 Exam
+        actual_count = len(questions)
+        exam = Exam(
+            user_id=uid,
+            subject_id=subject_id,
+            status=ExamStatus.READY,
+            total_questions=actual_count,
+            duration_minutes=max(15, int(actual_count * 1.5)),
+            difficulty_distribution=None,
+            historical_priority=False,
+            question_order_mode="random",
+            title="錯題考試",
+        )
+        self.db.add(exam)
+        self.db.flush()
+
+        # 複製題目到新 exam（保留科目隔離）
+        exam_node_ids = {
+            str(kn.id) for kn in
+            self.db.query(KnowledgeNode).filter(KnowledgeNode.subject_id == subject_id).all()
+        }
+        for i, q in enumerate(questions):
+            safe_node_id = q.node_id if (q.node_id and str(q.node_id) in exam_node_ids) else None
+            new_q = QuestionModel(
+                id=uuid.uuid4(),
+                exam_id=exam.id,
+                historical_exam_id=None,
+                node_id=safe_node_id,
+                question_number=i + 1,
+                type=q.type,
+                difficulty=q.difficulty,
+                content=q.content,
+                option_a=q.option_a,
+                option_b=q.option_b,
+                option_c=q.option_c,
+                option_d=q.option_d,
+                correct_answer=q.correct_answer,
+                explanation=q.explanation,
+                figure_urls=list(q.figure_urls or []),
+                figure_description=q.figure_description,
+                bloom_category=q.bloom_category,
+                historical_source=q.historical_source,
+                source_type="wrong_answer_pick",
+                quality_flag="ok",
+                tenant_id=q.tenant_id,
+            )
+            self.db.add(new_q)
+
+        self.db.commit()
+        self.db.refresh(exam)
+
+        return {
+            "error": False,
+            "exam_id": str(exam.id),
+            "total_questions": actual_count,
+            "status": "READY",
+            "title": "錯題考試",
+        }
+
     def submit_config(self, node_ids: list[str], question_count: int,
                       user_id: str, difficulty_distribution: dict | None = None,
                       custom_bloom_ratio: dict | None = None,
