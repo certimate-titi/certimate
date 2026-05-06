@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ChevronRight, ChevronDown, FileText, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, BookOpen, Search } from 'lucide-react';
 
 /**
  * 心智圖節點的領域模型。
@@ -42,6 +42,8 @@ interface MindMapTreeProps {
   selectedNodeId: string | null;
   /** 點擊節點時觸發 */
   onNodeClick: (nodeId: string) => void;
+  /** 搜尋關鍵字——僅顯示名稱包含關鍵字的節點（含祖先路徑） */
+  searchQuery?: string;
 }
 
 const MASTERY_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
@@ -200,7 +202,7 @@ function TreeNode({
  * @param props.selectedNodeId - 當前選取節點 ID
  * @param props.onNodeClick - 節點點擊回呼
  */
-export default function MindMapTree({ nodes, selectedNodeId, onNodeClick }: MindMapTreeProps) {
+export default function MindMapTree({ nodes, selectedNodeId, onNodeClick, searchQuery }: MindMapTreeProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     // Auto-expand root and depth-1 nodes
     const initial = new Set<string>();
@@ -225,6 +227,38 @@ export default function MindMapTree({ nodes, selectedNodeId, onNodeClick }: Mind
     });
   }, []);
 
+  // Search filtering — keep nodes whose name matches + their ancestor path
+  const filteredNodes = (() => {
+    if (!searchQuery || !searchQuery.trim()) return nodes;
+    const q = searchQuery.trim().toLowerCase();
+    const filterTree = (nodeList: MindMapNode[]): MindMapNode[] => {
+      const result: MindMapNode[] = [];
+      for (const n of nodeList) {
+        const childMatches = filterTree(n.children);
+        const selfMatches = n.name.toLowerCase().includes(q);
+        if (selfMatches || childMatches.length > 0) {
+          result.push({ ...n, children: selfMatches ? n.children : childMatches });
+        }
+      }
+      return result;
+    };
+    return filterTree(nodes);
+  })();
+
+  // Auto-expand all nodes when search is active
+  const effectiveExpandedIds = (() => {
+    if (!searchQuery || !searchQuery.trim()) return expandedIds;
+    const allIds = new Set<string>();
+    const collect = (nodeList: MindMapNode[]) => {
+      for (const n of nodeList) {
+        allIds.add(n.id);
+        collect(n.children);
+      }
+    };
+    collect(filteredNodes);
+    return allIds;
+  })();
+
   if (nodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-slate-400">
@@ -235,17 +269,26 @@ export default function MindMapTree({ nodes, selectedNodeId, onNodeClick }: Mind
     );
   }
 
+  if (filteredNodes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+        <Search className="h-8 w-8 mb-2 text-slate-300" />
+        <p className="text-sm font-medium">無符合「{searchQuery}」的知識節點</p>
+      </div>
+    );
+  }
+
   return (
     <div className="py-2 px-1">
-      {nodes.map((root, idx) => (
+      {filteredNodes.map((root, idx) => (
         <TreeNode
           key={root.id}
           node={root}
           selectedNodeId={selectedNodeId}
           onNodeClick={onNodeClick}
-          expandedIds={expandedIds}
+          expandedIds={effectiveExpandedIds}
           toggleExpand={toggleExpand}
-          isLast={idx === nodes.length - 1}
+          isLast={idx === filteredNodes.length - 1}
         />
       ))}
 

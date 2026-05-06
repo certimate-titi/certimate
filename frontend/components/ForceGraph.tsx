@@ -42,6 +42,8 @@ interface ForceGraphProps {
   width?: number;
   /** SVG 高度（預設 600） */
   height?: number;
+  /** 搜尋關鍵字——匹配的節點高亮，不匹配的節點淡化 */
+  searchQuery?: string;
 }
 
 // TiTi 品牌色系（淺色背景版）
@@ -76,6 +78,7 @@ export default function ForceGraph({
   selectedNodeId,
   width = 800,
   height = 600,
+  searchQuery,
 }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{
@@ -225,6 +228,15 @@ export default function ForceGraph({
       .attr('font-size', (d: any) => d.depth === 0 ? '11px' : '9px')
       .attr('font-weight', (d: any) => d.depth === 0 ? '600' : '400');
 
+    // Search query highlight — dim non-matching nodes
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      nodeGroup.attr('opacity', (d: any) =>
+        d.name.toLowerCase().includes(q) ? 1 : 0.2
+      );
+      link.attr('stroke-opacity', 0.08);
+    }
+
     // Tick
     simulation.on('tick', () => {
       link
@@ -237,7 +249,7 @@ export default function ForceGraph({
     });
 
     return () => { simulation.stop(); };
-  }, [nodes, selectedNodeId, width, height, onNodeClick]);
+  }, [nodes, selectedNodeId, width, height, onNodeClick, searchQuery]);
 
   return (
     <div className="relative bg-slate-50 rounded-2xl overflow-hidden border border-slate-200">

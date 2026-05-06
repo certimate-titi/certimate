@@ -962,12 +962,12 @@ function KnowledgeBasePageInner() {
                 ) : graphView === 'force' ? (
                   <ForceGraph nodes={graphNodes} onNodeClick={handleNodeClick}
                     selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
-                    width={800} height={500} />
+                    width={800} height={500} searchQuery={searchQuery} />
                 ) : (
                   <div className="h-full overflow-y-auto p-3">
                     <MindMapTree nodes={mindMapNodes}
                       selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
-                      onNodeClick={handleNodeClick} />
+                      onNodeClick={handleNodeClick} searchQuery={searchQuery} />
                   </div>
                 )}
               </div>
