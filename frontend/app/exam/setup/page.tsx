@@ -344,29 +344,25 @@ function ExamSetupPage() {
     if (examMode === 'wrong_answer') {
       setValidationError(null);
       setIsGenerating(true);
-      setLivePercent(50);
+      setLivePercent(60);
       setLiveStageLabel('智能挑題中…');
       try {
         const { reviewService } = await import('@/lib/api/services');
         const subjectIdRaw = activeSubjectId ? subjects.find(s => s.id === activeSubjectId)?.subjectId || activeSubjectId : undefined;
-        const picked = await reviewService.pickWrongAnswerExam({ subjectId: subjectIdRaw, questionCount });
-        if (!picked.questions || picked.questions.length === 0) {
-          setValidationError(picked.message || '目前無錯題可考，請先完成測驗累積錯題');
+        // 單次 round-trip：挑題 + 建 exam（避免 cold start 雙 fetch 都失敗）
+        const result = await reviewService.startWrongAnswerExam({ subjectId: subjectIdRaw, questionCount });
+        if (!result.ok || !result.exam_id) {
+          setValidationError(result.message || '目前無錯題可考，請先完成測驗累積錯題');
           setIsGenerating(false);
           return;
         }
-        setLiveStageLabel('建立考試中…');
-        setLivePercent(80);
-        const created = await examService.createFromQuestionIds(picked.questions.map(q => q.question_id));
         invalidateQuotaCache();
-        if (created.exam_id) {
-          generatedExamIdRef.current = created.exam_id;
-          setLivePercent(100);
-          router.push(`/exam/workspace?examId=${created.exam_id}`);
-        }
+        generatedExamIdRef.current = result.exam_id;
+        setLivePercent(100);
+        router.push(`/exam/workspace?examId=${result.exam_id}`);
       } catch (e: unknown) {
         console.warn('Wrong answer exam failed:', e);
-        setValidationError(e instanceof Error ? e.message : '錯題考試建立失敗');
+        setValidationError(e instanceof Error ? e.message : '錯題考試建立失敗，請稍後再試');
         setIsGenerating(false);
       }
       return;

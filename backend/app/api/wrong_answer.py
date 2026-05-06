@@ -52,6 +52,55 @@ def pick_wrong_answer_exam(
     return result
 
 
+@router.post("/exam/start")
+def start_wrong_answer_exam(
+    body: PickRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """錯題考試一站式：picker 挑題 + from-question-ids 建 exam，一次往返。
+
+    避免前端 cold start 期間 2 次 fetch 都失敗。
+    """
+    import uuid as _uuid
+    from app.services.wrong_answer_picker import WrongAnswerPicker
+    from app.services.exam_service import ExamService
+    try:
+        uid = _uuid.UUID(user_id)
+        sid = _uuid.UUID(body.subject_id) if body.subject_id else None
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail={"message": "ID 格式錯誤"})
+
+    picker = WrongAnswerPicker(db)
+    pick_result = picker.pick(user_id=uid, subject_id=sid, target_count=max(1, body.question_count))
+    if not pick_result.get("questions"):
+        return {
+            "ok": False,
+            "exam_id": None,
+            "message": pick_result.get("message", "目前無錯題可考"),
+            "phase": pick_result.get("phase"),
+            "buckets": pick_result.get("buckets"),
+        }
+    qids = [q["question_id"] for q in pick_result["questions"]]
+    exam_svc = ExamService(db)
+    create_result = exam_svc.create_from_question_ids(user_id=user_id, question_ids=qids)
+    if create_result.get("error"):
+        raise HTTPException(
+            status_code=create_result.get("status_code", 500),
+            detail={"message": create_result.get("message", "建立考試失敗")},
+        )
+    return {
+        "ok": True,
+        "exam_id": create_result["exam_id"],
+        "total_questions": create_result["total_questions"],
+        "status": create_result["status"],
+        "phase": pick_result.get("phase"),
+        "phase_reason": pick_result.get("phase_reason"),
+        "buckets": pick_result.get("buckets"),
+        "title": create_result.get("title"),
+    }
+
+
 @router.post("/questions/{question_id}/mark-mastered")
 def mark_question_mastered(
     question_id: str,

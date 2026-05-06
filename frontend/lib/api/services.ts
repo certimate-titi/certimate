@@ -459,6 +459,24 @@ export const reviewService = {
     });
   },
 
+  /** 錯題考試一站式：挑題 + 建 exam（單次往返，避免 cold start 雙重失敗） */
+  async startWrongAnswerExam(req: { subjectId?: string; questionCount: number }) {
+    return apiClient.post<{
+      ok: boolean;
+      exam_id: string | null;
+      total_questions?: number;
+      status?: string;
+      message?: string;
+      phase?: string;
+      phase_reason?: string;
+      buckets?: Record<string, number>;
+      title?: string;
+    }>('/wrong-answers/exam/start', {
+      subject_id: req.subjectId,
+      question_count: req.questionCount,
+    });
+  },
+
   async getAdvancedCoach(subjectId?: string) {
     const params = subjectId ? `?subject_id=${subjectId}` : '';
     return apiClient.get(`/wrong-answers/advanced-coach${params}`);
