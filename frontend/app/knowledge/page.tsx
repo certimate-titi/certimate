@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import MathContent from '@/components/MathContent';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
@@ -423,7 +424,44 @@ function KnowledgeBasePageInner() {
     historical_exam: { icon: ClipboardList, color: 'text-emerald-600' },
   };
 
-  const quickChips = ['用簡單的話解釋', '給我一個例子', '轉成 1 題小測驗'];
+  // 根據節點上下文與最近對話動態生成 quickChips（前文感知）
+  const quickChips = (() => {
+    const node = selectedNodeDetail?.node as { label?: string; name?: string; mastery_rate?: number } | undefined;
+    const nodeName = node?.name || node?.label || '此概念';
+    const mastery = node?.mastery_rate ?? 0;
+    const lastUserMsg = [...chatMessages].reverse().find(m => m.role === 'user')?.content || '';
+    const lastAiMsg = [...chatMessages].reverse().find(m => m.role === 'ai')?.content || '';
+
+    // 第一次提問 — 基礎切入
+    if (chatMessages.length === 0) {
+      if (mastery < 40) {
+        return [`「${nodeName}」是什麼？`, '用最簡單的話解釋', '常見迷思有哪些？'];
+      }
+      if (mastery >= 70) {
+        return [`「${nodeName}」進階觀點`, '常考考點與陷阱', '相關延伸知識'];
+      }
+      return [`解釋「${nodeName}」`, '給我一個例子', '幫我出 1 題練習'];
+    }
+
+    // 已有對話 — 依最後 AI 回覆延伸
+    if (lastAiMsg.length > 0) {
+      // 例子已給 → 引導應用
+      if (/例如|例子|舉例/.test(lastAiMsg) || /例|範例/.test(lastUserMsg)) {
+        return ['再深入一點', '出 1 題小測驗驗證', '與其他概念有何不同？'];
+      }
+      // 解釋給了 → 引導實作
+      if (/定義|是指|意思是/.test(lastAiMsg)) {
+        return ['給我一個例子', '常見錯誤是什麼？', '考試常考方向'];
+      }
+      // 出題後 → 引導反思
+      if (/題目|選項|請選擇/.test(lastAiMsg)) {
+        return ['解析答案', '為什麼其他選項不對？', '相關考點'];
+      }
+    }
+
+    // fallback — 通用 chip
+    return ['再深入一點', '給我一個例子', '常見錯誤是什麼？'];
+  })();
 
   const showSubjectSwitcher = subjects.length > 0;
   const containerHeightClass = 'h-[calc(100dvh-64px)]';
@@ -1023,7 +1061,13 @@ function KnowledgeBasePageInner() {
                       <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-[9px] ${msg.role === 'ai' ? 'bg-emerald-100' : 'bg-slate-200'}`}>
                         {msg.role === 'ai' ? <MessageCircle className="h-3 w-3 text-emerald-600" /> : <span className="font-bold text-slate-600">U</span>}
                       </div>
-                      <div className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed whitespace-pre-line ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' : 'bg-emerald-500 text-white rounded-tr-none'}`}>{msg.content}</div>
+                      <div className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}>
+                        {msg.role === 'ai' ? (
+                          <div className="prose prose-xs max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:text-slate-900 prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                            <MathContent>{msg.content}</MathContent>
+                          </div>
+                        ) : msg.content}
+                      </div>
                     </div>
                   ))}
                   {chatLoading && (<div className="flex gap-1.5"><div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><MessageCircle className="h-3 w-3 text-emerald-600" /></div><div className="bg-white border border-slate-200 p-2 rounded-xl rounded-tl-none"><div className="flex gap-1"><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" /><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.1s]" /><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]" /></div></div></div>)}
