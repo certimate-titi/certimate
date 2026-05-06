@@ -258,6 +258,36 @@ export interface QuotaItem {
   action_hint: string;
 }
 
+/** L-share-badge: 考後分享徽章 */
+export interface ShareBadgeResponse {
+  ok: boolean;
+  exam_id: string;
+  exam_meta: {
+    subject_name: string;
+    title: string;
+    completed_at: string | null;
+  };
+  user: {
+    display_name: string;
+  };
+  improvement: {
+    is_first: boolean;
+    message: string;     // 「比上次提升 18 個百分點」「首次完成」「持續穩定發揮 💪」
+    delta_pp: number;
+  };
+  cumulative: {
+    total_exams: number;
+    total_questions: number;
+    streak_days: number;
+  };
+  learning_style: {
+    type_id: 'tactical' | 'socratic' | 'sprint' | 'marathon' | 'steady' | 'reflective' | 'explorer';
+    label: string;       // 「戰術型考生」
+    emoji: string;       // 「🎯」
+    description: string;
+  };
+}
+
 /** L-quota: 5 維度配額狀態回傳 */
 export interface QuotaStatusResponse {
   ok: boolean;

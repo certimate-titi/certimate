@@ -118,36 +118,48 @@ Feature: 測驗結果
       And 結果應包含基礎版 AI 考後總評（僅列出前 3 大弱點知識節點摘要）
       And 結果應包含升級至 PRO_PLUS_399 的提示：「升級取得完整考後總評（含趨勢圖與學習建議）」
 
-  Rule: 後置（回應）- 支援產生與分享個人化成績卡片 (Score Card)
+  # ========== L-share-badge：考後分享徽章（2026-05 改版，不揭分數）==========
+  # 設計原則：絕對分數會給使用者分享壓力 → 改用 A 進步幅度 + B 累積里程 + D 學習風格徽章
 
-    Example: 測驗結果可產生包含品牌浮水印與鼓勵文案的個人成績卡片
+  @fullstack
+  Rule: 後置（回應）- 支援產生與分享個人化學習徽章（不含絕對分數）
+
+    Example: 測驗結果頁應提供分享徽章按鈕
       When 使用者 "alice@example.com" 查看測驗 2 的結果
-      Then 系統應提供「產生與分享成績卡片」的功能按鈕
-      And 產生的卡片應包含使用者暱稱、考試名稱、得分、品牌浮水印與專屬鼓勵文案
+      Then 系統應提供「分享徽章」按鈕
+      And 徽章應包含：A 進步幅度（與上次比較）+ B 累積里程（測驗數/答題數/連續天數）+ D 學習風格徽章
+      And 徽章不應顯示絕對分數
+
+    Example: 首考使用者徽章呈現「首次完成」正向訊息
+      Given 使用者 "alice@example.com" 為首次完成此科目測驗
+      When 使用者 "alice@example.com" 查看測驗 2 的結果
+      Then 徽章的「進步幅度」區塊應顯示「首次完成此科目測驗 🎉」
+      And 不應呈現負向比較資訊
+
+  @backend
+  Rule: 後置（回應）- 配發徽章 API 應回傳七種學習風格之一
+
+    Example: 取得徽章資料含學習風格分型
+      When 使用者 "alice@example.com" 呼叫 GET /api/v1/exams/{exam_id}/share-badge
+      Then 操作成功
+      And 回應的 learning_style.type_id 應為下列之一：tactical / socratic / sprint / marathon / steady / reflective / explorer
+      And 回應應包含 emoji、label、description 三欄
+
+  @frontend
+  Rule: 後置（顯示）- 分享徽章 Modal 應提供四平台分享 + 兩尺寸切換
+
+    Example: 點擊分享徽章開啟 Modal 並提供四平台按鈕
+      When 使用者 "alice@example.com" 點擊「分享徽章」按鈕
+      Then 畫面應彈出 Modal 含徽章預覽
+      And Modal 應提供四個分享按鈕：LinkedIn、Instagram、LINE、Facebook
+      And Modal 應提供兩種尺寸切換：1:1 方形（1080×1080）/ 9:16 直式（1080×1920）
+      And Modal 應提供「下載 PNG」與「手機原生分享」備援按鈕
 
   Rule: 後置（狀態）- 測驗結果頁面應顯示免責聲明
 
     Example: 確保使用者了解成績不保證真實考試通過率
       When 使用者 "alice@example.com" 查看測驗 2 的結果
       Then 畫面底部應顯示提示文字 "本模擬考試結果僅反映當前熟悉度，並不保證實測通過率及 AI 解析結果的絕對正確性"
-
-  # ========== UI 元件補充場景 ==========
-
-  Rule: 後置（回應）- 分享到 LinkedIn 按鈕應開啟 LinkedIn 分享視窗
-
-    Example: 點擊分享到 LinkedIn 按鈕開啟 LinkedIn 分享頁
-      When 使用者 "alice@example.com" 查看測驗 2 的結果
-      And 使用者 "alice@example.com" 點擊分享到 LinkedIn 按鈕
-      Then 畫面應於新視窗開啟 LinkedIn 分享 URL "https://www.linkedin.com/sharing/share-offsite/"
-      And 分享 URL 的 title 參數應包含使用者測驗分數
-
-  Rule: 後置（回應）- 下載成績卡片按鈕應產生 PNG 圖檔下載
-
-    Example: 點擊下載成績卡片按鈕觸發 PNG 下載
-      When 使用者 "alice@example.com" 查看測驗 2 的結果
-      And 使用者 "alice@example.com" 點擊下載成績卡片按鈕
-      Then 瀏覽器應觸發下載 PNG 檔案，檔名格式為 "CertiMate_Score_{score}_{YYYY-MM-DD}.png"
-      And 圖檔內容應為成績卡片快照（透過 html2canvas 擷取 #score-card-snapshot 元素）
 
   Rule: 後置（回應）- AI 教練介入卡片應可導航至錯題複習頁面
 

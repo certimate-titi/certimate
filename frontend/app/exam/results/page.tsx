@@ -15,6 +15,8 @@ import { useAuth } from '@/lib/auth-context';
 import type { GetExamResultsResponse } from '@/types';
 import Confetti from '@/components/Confetti';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
+import ShareBadgeModal from '@/components/ShareBadgeModal';
+import type { ShareBadgeResponse } from '@/types/api';
 
 /**
  * 考試結果頁外層 Suspense 包裝（`useSearchParams` 需在 Suspense 內使用）。
@@ -45,12 +47,17 @@ function ExamResultsPage() {
     }
   }, [authLoading, isAuthenticated, router]);
   const [showConfetti, setShowConfetti] = useState(false);
+  // L-share-badge: 徽章資料 + 分享 modal
+  const [badgeData, setBadgeData] = useState<ShareBadgeResponse | null>(null);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
 
   useEffect(() => {
     examService.getResults(examId).then(async (res) => {
       setData(res);
       setLoading(false);
       examService.getConfidenceAnalysis(examId).then(setConfidenceData).catch(() => {});
+      // L-share-badge: 預載徽章資料（成功則在頁面下方顯示徽章 + 分享按鈕）
+      examService.getShareBadge(examId).then(setBadgeData).catch(() => setBadgeData(null));
       if (res.exam.score !== null && res.exam.score >= 80) {
         setTimeout(() => setShowConfetti(true), 300);
       }
@@ -495,61 +502,49 @@ function ExamResultsPage() {
         </div>
       </div>
 
-      {/* Score Card Sharing */}
-      <div className="mt-10 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute -right-16 -top-16 h-48 w-48 bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute -left-12 -bottom-12 h-36 w-36 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="relative z-10">
-          <h3 className="text-lg font-bold mb-2">分享你的成績卡</h3>
-          <p className="text-sm text-slate-400 mb-6">生成精美的個人化成績圖卡，與朋友分享你的備考成果！</p>
-          <div id="score-card-snapshot" className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 mb-6 border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">CertiMate Score Card</span>
-              <span className="text-xs text-slate-400">{new Date().toLocaleDateString('zh-TW')}</span>
+      {/* L-share-badge: 學習徽章區（不顯示絕對分數，A+B+D 三種正向指標） */}
+      {badgeData && (
+        <div className="mt-10 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-500" />
+                你的學習徽章
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">展現成長與堅持，不揭露分數，分享無壓力</p>
             </div>
-            <div className="text-center">
-              <p className="text-sm text-slate-300 mb-1">{user?.displayName || '考生'}</p>
-              <p className="text-xl font-bold text-white mb-2">{exam.title}</p>
-              <p className="text-4xl font-extrabold text-emerald-400">{score} 分</p>
-              <p className="text-sm text-slate-400 mt-2 italic">&ldquo;{scoreMessage}&rdquo;</p>
-            </div>
+            <button
+              onClick={() => setShowBadgeModal(true)}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 shadow-sm shadow-emerald-500/30"
+            >
+              <Share2 className="h-4 w-4" /> 分享徽章
+            </button>
           </div>
-          <div className="flex gap-3">
-            <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
-              onClick={() => {
-                const shareUrl = encodeURIComponent(window.location.href);
-                const title = encodeURIComponent(`我在 CertiMate 模擬考取得了 ${score} 分！`);
-                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}&title=${title}`, '_blank', 'width=600,height=400');
-              }}>
-              <Share2 className="h-4 w-4" /> 分享至 LinkedIn
-            </button>
-            <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 border border-white/10"
-              onClick={async () => {
-                // Spec 06 §「成績卡片下載」— 用 html2canvas 截 #score-card-snapshot 為 PNG
-                const target = document.getElementById('score-card-snapshot');
-                if (!target) return;
-                try {
-                  const html2canvas = (await import('html2canvas')).default;
-                  const canvas = await html2canvas(target, {
-                    backgroundColor: '#0f172a',
-                    scale: 2,
-                    logging: false,
-                  });
-                  const dataUrl = canvas.toDataURL('image/png');
-                  const a = document.createElement('a');
-                  a.href = dataUrl;
-                  a.download = `CertiMate_Score_${score}_${new Date().toISOString().slice(0, 10)}.png`;
-                  a.click();
-                } catch (e) {
-                  console.error('Download failed:', e);
-                  alert('下載失敗：' + (e instanceof Error ? e.message : String(e)));
-                }
-              }}>
-              <Download className="h-4 w-4" /> 下載圖卡
-            </button>
+          {/* 簡略預覽：三項正向指標一行 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold mb-1">本次表現</p>
+              <p className="text-sm font-bold text-slate-900">{badgeData.improvement.message}</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-amber-700 font-bold mb-1">累積里程</p>
+              <p className="text-sm font-bold text-slate-900">
+                {badgeData.cumulative.total_exams} 測驗 · {badgeData.cumulative.total_questions} 題 · 連 {badgeData.cumulative.streak_days} 天
+              </p>
+            </div>
+            <div className="bg-indigo-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-indigo-700 font-bold mb-1">學習風格</p>
+              <p className="text-sm font-bold text-slate-900">
+                {badgeData.learning_style.emoji} {badgeData.learning_style.label}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {showBadgeModal && badgeData && (
+        <ShareBadgeModal data={badgeData} onClose={() => setShowBadgeModal(false)} />
+      )}
 
       {/* Legal Disclaimer */}
       <p className="text-xs text-slate-400 italic text-center mt-6">

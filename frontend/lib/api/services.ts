@@ -41,6 +41,7 @@ import type {
   UpdateProfileRequest,
   GetUserUsageResponse,
   QuotaStatusResponse,
+  ShareBadgeResponse,
   GetAchievementsResponse,
   GetBillingHistoryResponse,
   GetStudentListResponse,
@@ -208,6 +209,11 @@ interface ConfidenceAnalysisResponse {
  * 直接回傳，否則再呼叫 `/exams/{id}/generate` 觸發 AI 生題。
  */
 export const examService = {
+  /** L-share-badge: 取得考後分享徽章資料（不含絕對分數） */
+  async getShareBadge(examId: string): Promise<ShareBadgeResponse> {
+    return apiClient.get<ShareBadgeResponse>(`/exams/${examId}/share-badge`);
+  },
+
   async create(req: CreateExamRequest): Promise<CreateExamResponse> {
     // Step 1: Create exam config
     const configRes = await apiClient.post<{ exam_id: string }>('/exams/config', {

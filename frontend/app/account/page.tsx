@@ -243,9 +243,6 @@ export default function AccountPage() {
 
         {/* Main Content */}
         <div className="md:col-span-2 space-y-8">
-          {/* L-quota: 5 維度配額面板（永遠顯示在 main content 最上方） */}
-          <QuotaPanel />
-
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <>
@@ -454,6 +451,9 @@ export default function AccountPage() {
           {/* Billing Tab */}
           {activeTab === 'billing' && (
             <>
+              {/* L-quota: 5 維度配額面板（僅在訂閱與帳單分頁顯示） */}
+              <QuotaPanel />
+
               <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-slate-900">目前方案</h2>

@@ -295,6 +295,32 @@ def save_answer(
     return _handle_result(result)
 
 
+@router.get("/{exam_id}/share-badge")
+def get_share_badge(
+    exam_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取得考試結束後的分享徽章資料（不含絕對分數）。
+
+    回傳：
+    - improvement: 與上次同科目測驗比，答對率變化（百分點）
+    - mastery_delta: 本次對知識節點 mastery 的累積增量
+    - cumulative: total_exams / total_questions / streak_days
+    - learning_style: {type_id, label, description, emoji}
+    - exam_meta: subject_name / date / exam_id
+    """
+    from app.services.share_badge_service import ShareBadgeService
+    service = ShareBadgeService(db)
+    result = service.build_badge(exam_id=exam_id, user_id=user_id)
+    if result.get("error"):
+        raise HTTPException(
+            status_code=result.get("status_code", 400),
+            detail={"message": result.get("message", "無法產生徽章")},
+        )
+    return result
+
+
 @router.post("/{exam_id}/submit")
 def submit_exam(
     exam_id: str,
