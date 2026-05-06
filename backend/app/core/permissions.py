@@ -110,6 +110,10 @@ class AuditAction:
     BUDGET_OVERRIDE = "BUDGET_OVERRIDE"
     BUDGET_RECOVERY_TRIGGERED = "BUDGET_RECOVERY_TRIGGERED"
 
+    # 硬刪除（P0 — 不可逆操作）
+    SUBJECT_HARD_DELETED = "SUBJECT_HARD_DELETED"
+    RESOURCE_HARD_DELETED = "RESOURCE_HARD_DELETED"
+
 
 # ---------------------------------------------------------------------------
 # Feature 33 — Budget gate dependency

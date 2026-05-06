@@ -7,13 +7,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Rocket, Undo2, RefreshCw } from 'lucide-react';
+import { Save, Rocket, Undo2, RefreshCw, Trash2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import {
   platformSubjectAdminService,
+  subjectService,
   type PlatformSubjectVersionInfo,
 } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
+import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 
 interface Subject {
   id: string;
@@ -38,6 +40,12 @@ export default function PlatformSubjectsAdminPage() {
   const [versionInfo, setVersionInfo] = useState<PlatformSubjectVersionInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // 科目硬刪除 Modal state
+  const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
+  const [hardDeleteCascade, setHardDeleteCascade] = useState<CascadeCount>({});
+  const [hardDeletePreviewLoading, setHardDeletePreviewLoading] = useState(false);
+  const [hardDeleteLoading, setHardDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading || !isAdmin) return;
@@ -118,6 +126,40 @@ export default function PlatformSubjectsAdminPage() {
       setMsg(e instanceof Error ? e.message : '發布失敗');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleOpenHardDelete = async () => {
+    if (!selectedId) return;
+    setHardDeleteCascade({});
+    setHardDeletePreviewLoading(true);
+    setHardDeleteModalOpen(true);
+    try {
+      const res = await subjectService.getDeletePreview(selectedId);
+      setHardDeleteCascade(res.cascade_count ?? {});
+    } catch {
+      // preview 失敗仍允許繼續
+    } finally {
+      setHardDeletePreviewLoading(false);
+    }
+  };
+
+  const handleConfirmSubjectHardDelete = async () => {
+    if (!selectedId) return;
+    setHardDeleteLoading(true);
+    try {
+      await subjectService.hardDelete(selectedId);
+      setMsg(`科目已永久刪除`);
+      setHardDeleteModalOpen(false);
+      setSelectedId('');
+      setCheckedIds(new Set());
+      setVersionInfo(null);
+      await loadSubjects();
+    } catch (e: unknown) {
+      setMsg(e instanceof Error ? e.message : '硬刪除失敗');
+      setHardDeleteModalOpen(false);
+    } finally {
+      setHardDeleteLoading(false);
     }
   };
 
@@ -231,6 +273,18 @@ export default function PlatformSubjectsAdminPage() {
             {msg && <div className="mt-3 text-sm text-slate-600">{msg}</div>}
           </div>
 
+          <div className="bg-white rounded-2xl border border-rose-200 p-5 mb-6">
+            <h2 className="font-semibold text-rose-700 mb-1">危險操作</h2>
+            <p className="text-xs text-slate-500 mb-3">硬刪除後無法復原，連帶刪除所有題目、節點、歷程等資料。</p>
+            <button
+              onClick={() => void handleOpenHardDelete()}
+              disabled={busy || hardDeletePreviewLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" /> 硬刪除此科目
+            </button>
+          </div>
+
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <h2 className="font-semibold text-slate-900 mb-3">目前版本</h2>
             {!versionInfo ? (
@@ -248,6 +302,16 @@ export default function PlatformSubjectsAdminPage() {
           </div>
         </>
       )}
+
+      <HardDeleteConfirmModal
+        open={hardDeleteModalOpen}
+        onClose={() => { setHardDeleteModalOpen(false); }}
+        onConfirm={handleConfirmSubjectHardDelete}
+        title="永久刪除此平台科目"
+        entityName={subjects.find(s => s.id === selectedId)?.name ?? selectedId}
+        cascadeCount={hardDeletePreviewLoading ? {} : hardDeleteCascade}
+        loading={hardDeletePreviewLoading || hardDeleteLoading}
+      />
     </div>
   );
 }

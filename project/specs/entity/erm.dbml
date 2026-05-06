@@ -334,7 +334,7 @@ Table learning_journeys {
 }
 
 Ref: learning_journeys.user_id > users.id [delete: cascade]
-Ref: learning_journeys.subject_id > subjects.id
+Ref: learning_journeys.subject_id > subjects.id [delete: cascade]
 
 // ============================================================
 // Resources & Knowledge Map
@@ -366,7 +366,7 @@ Table resources {
 }
 
 Ref: resources.user_id > users.id [delete: cascade]
-Ref: resources.subject_id > subjects.id
+Ref: resources.subject_id > subjects.id [delete: cascade]
 Ref: resources.institution_id > institutions.id
 
 Table knowledge_nodes {
@@ -388,7 +388,7 @@ Table knowledge_nodes {
 }
 
 Ref: knowledge_nodes.resource_id > resources.id [delete: cascade]
-Ref: knowledge_nodes.subject_id > subjects.id
+Ref: knowledge_nodes.subject_id > subjects.id [delete: cascade]
 Ref: knowledge_nodes.parent_id > knowledge_nodes.id
 
 Table resource_chunks {
@@ -444,7 +444,7 @@ Table reverse_engineering_tasks {
   created_at timestamptz [default: `now()`]
 }
 
-Ref: reverse_engineering_tasks.subject_id > subjects.id
+Ref: reverse_engineering_tasks.subject_id > subjects.id [delete: cascade]
 Ref: reverse_engineering_tasks.triggered_by > users.id
 
 Table node_mastery {
@@ -492,7 +492,7 @@ Table exams {
 }
 
 Ref: exams.user_id > users.id [delete: cascade]
-Ref: exams.subject_id > subjects.id
+Ref: exams.subject_id > subjects.id [delete: cascade]
 
 Table questions {
   id uuid [pk, default: `gen_random_uuid()`]

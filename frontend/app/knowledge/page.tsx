@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen } from 'lucide-react';
 import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
+import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
@@ -66,6 +67,10 @@ function KnowledgeBasePageInner() {
   const [loadingChunks, setLoadingChunks] = useState<string | null>(null);
   const [chunkErrors, setChunkErrors] = useState<Record<string, string>>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletePreviewCascade, setDeletePreviewCascade] = useState<CascadeCount>({});
+  const [deletePreviewLoading, setDeletePreviewLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<string | null>(null);
   const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
@@ -363,6 +368,44 @@ function KnowledgeBasePageInner() {
         return;
       }
       setDeleteError(msg);
+    }
+  };
+
+  // 開啟硬刪除 Modal（先取得 preview）
+  const handleOpenDeleteModal = async (docId: string) => {
+    setDeleteConfirmId(docId);
+    setDeletePreviewCascade({});
+    setDeletePreviewLoading(true);
+    setDeleteModalOpen(true);
+    try {
+      const res = await documentService.getDeletePreview(docId);
+      setDeletePreviewCascade(res.cascade_count ?? {});
+    } catch {
+      // preview 失敗仍允許繼續，cascade 顯示空
+    } finally {
+      setDeletePreviewLoading(false);
+    }
+  };
+
+  // Modal 確認後執行真正刪除
+  const handleConfirmHardDelete = async () => {
+    if (!deleteConfirmId) return;
+    setDeleteConfirmLoading(true);
+    try {
+      await documentService.delete(deleteConfirmId);
+      removeDocLocally(deleteConfirmId);
+      setDeleteModalOpen(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '刪除失敗，請稍後再試';
+      if (/不存在|not found|404/i.test(msg)) {
+        removeDocLocally(deleteConfirmId);
+        setDeleteModalOpen(false);
+        return;
+      }
+      setDeleteError(msg);
+      setDeleteModalOpen(false);
+    } finally {
+      setDeleteConfirmLoading(false);
     }
   };
 
@@ -673,7 +716,7 @@ function KnowledgeBasePageInner() {
                                 📖 原文
                               </button>
                               {!doc.id.startsWith('hist:') && (
-                                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
+                                <button onClick={(e) => { e.stopPropagation(); void handleOpenDeleteModal(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
                               )}
                             </div>
                           </div>
@@ -1108,31 +1151,22 @@ function KnowledgeBasePageInner() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl border border-rose-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-rose-600" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">確定刪除此教材？</h3>
-            </div>
-            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-              刪除此教材將同步移除心智圖上的關聯節點。<strong className="text-rose-700">此動作無法復原。</strong>
-            </p>
-            {deleteError && (
-              <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
-                ❌ {deleteError}
-              </div>
-            )}
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => { setDeleteConfirmId(null); setDeleteError(null); }} className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-50">取消</button>
-              <button onClick={() => handleDeleteDocument(deleteConfirmId)} className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700">確定刪除</button>
-            </div>
-          </div>
+      {/* Hard Delete Confirmation Modal */}
+      {deleteError && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-rose-50 border border-rose-200 rounded-xl px-4 py-2 text-sm text-rose-700 shadow-lg">
+          刪除失敗：{deleteError}
+          <button onClick={() => setDeleteError(null)} className="ml-3 text-rose-400 hover:text-rose-600">x</button>
         </div>
       )}
+      <HardDeleteConfirmModal
+        open={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setDeleteConfirmId(null); setDeleteError(null); }}
+        onConfirm={handleConfirmHardDelete}
+        title="永久刪除此教材"
+        entityName={documents.find(d => d.id === deleteConfirmId)?.title ?? deleteConfirmId ?? ''}
+        cascadeCount={deletePreviewLoading ? {} : deletePreviewCascade}
+        loading={deletePreviewLoading || deleteConfirmLoading}
+      />
     </>
   );
 }

@@ -1442,3 +1442,12 @@ from .interleaved.readmodel_then import interleaved_assertions as _il_assertions
 
 # F23 考古題題庫管理
 from .exam_bank import exam_bank_steps as _f23_exam_bank  # noqa: F401
+
+# F35/F36 — Subject & Resource Hard Delete (P0)
+from .subject.aggregate_given import subject_with_children as _f35_subj_given  # noqa: F401
+from .subject.commands import hard_delete_api as _f35_subj_cmd  # noqa: F401
+from .subject.aggregate_then import db_assertions as _f35_subj_then  # noqa: F401
+from .subject.readmodel_then import preview_response as _f35_subj_readmodel  # noqa: F401
+from .resource.aggregate_given import owned_resource_with_chunks as _f36_res_given  # noqa: F401
+from .resource.commands import hard_delete_api as _f36_res_cmd  # noqa: F401
+from .resource.aggregate_then import hard_delete_db as _f36_res_then  # noqa: F401

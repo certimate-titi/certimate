@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
+from app.core.permissions import require_super_admin
+from app.models.user import User
 from app.services.retirement_service import RetirementService
 from app.services.result_notification_service import ResultNotificationService
 
@@ -22,7 +24,10 @@ def _handle_result(result: dict):
 # ── Retirement Scan ─────────────────────────────────────────────────────────
 
 @router.post("/admin/retirement/scan")
-def retirement_scan(db: Session = Depends(get_db)):
+def retirement_scan(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_super_admin),
+):
     """retirement scan。
 
     此 endpoint 對應 `retirement_scan` 操作。
@@ -36,7 +41,10 @@ def retirement_scan(db: Session = Depends(get_db)):
 
 
 @router.post("/admin/retirement/hard-delete")
-def hard_delete_scan(db: Session = Depends(get_db)):
+def hard_delete_scan(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_super_admin),
+):
     """hard delete scan。
 
     此 endpoint 對應 `hard_delete_scan` 操作。
@@ -50,7 +58,10 @@ def hard_delete_scan(db: Session = Depends(get_db)):
 
 
 @router.post("/admin/retirement/post-result")
-def post_result_scan(db: Session = Depends(get_db)):
+def post_result_scan(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_super_admin),
+):
     """post result scan。
 
     此 endpoint 對應 `post_result_scan` 操作。

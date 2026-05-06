@@ -156,6 +156,18 @@ export const documentService = {
     await apiClient.delete(`/resources/${documentId}`);
   },
 
+  // 硬刪除前預覽連帶筆數（owner only）
+  async getDeletePreview(documentId: string): Promise<{
+    cascade_count: {
+      resource_chunks: number;
+      resource_scaffolds: number;
+      resource_parse_jobs: number;
+      question_candidates: number;
+    };
+  }> {
+    return apiClient.get(`/resources/${documentId}/delete-preview`);
+  },
+
   async getHistoricalMarkdown(historicalExamId: string): Promise<{ historical_exam_id: string; name: string; content: string; question_count: number }> {
     return apiClient.get(`/resources/historical/${historicalExamId}/markdown`);
   },
@@ -1472,6 +1484,29 @@ export const subjectService = {
 
   async deleteSubject(subjectId: string): Promise<{ ok?: boolean }> {
     return apiClient.delete(`/subjects/${subjectId}`);
+  },
+
+  // 硬刪除前預覽連帶筆數（super-admin only）
+  async getDeletePreview(subjectId: string): Promise<{
+    cascade_count: {
+      knowledge_nodes: number;
+      exams: number;
+      questions: number;
+      answers: number;
+      wrong_answers: number;
+      resources: number;
+      resource_chunks: number;
+      resource_scaffolds: number;
+      node_mastery: number;
+      learning_journeys: number;
+    };
+  }> {
+    return apiClient.get(`/subjects/${subjectId}/delete-preview`);
+  },
+
+  // 硬刪除（super-admin only）
+  async hardDelete(subjectId: string): Promise<{ ok?: boolean }> {
+    return apiClient.delete(`/subjects/${subjectId}/hard`);
   },
 };
 

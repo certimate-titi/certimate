@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.deps import get_db, get_current_user_id
+from app.core.permissions import require_super_admin
+from app.models.user import User
 from app.services.onboarding_service import OnboardingService
 from app.services.bloom_analytics_service import BloomAnalyticsService
 
@@ -159,6 +161,66 @@ def confirm_remove_subject(
     service = OnboardingService(db)
     result = service.confirm_remove_subject(user_id=user_id, subject_id=subject_id)
     return _handle_result(result)
+
+
+@router.get("/{subject_id}/delete-preview")
+def get_subject_delete_preview(
+    subject_id: str,
+    super_admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """取得刪除 subject 的連帶影響筆數（SUPER_ADMIN only）。
+
+    刪除前呼叫，回傳各子表將連帶刪除的筆數，供前端 modal 顯示警告。
+
+    Returns:
+        {
+            "subject_id": str,
+            "subject_name": str,
+            "cascade_count": {
+                "exams": int,
+                "questions": int,
+                "answers": int,
+                "resources": int,
+                "knowledge_nodes": int,
+                "learning_journeys": int,
+                ...
+            }
+        }
+
+    Raises:
+        HTTPException 401: JWT 無效
+        HTTPException 403: 非 SUPER_ADMIN
+        HTTPException 404: subject 不存在
+    """
+    from app.services.subject_service import SubjectDeleteService
+    svc = SubjectDeleteService(db)
+    return svc.get_delete_preview(subject_id=subject_id, super_admin=super_admin)
+
+
+@router.delete("/{subject_id}/hard")
+def hard_delete_subject(
+    subject_id: str,
+    super_admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """硬刪 subject 及所有連帶資料（SUPER_ADMIN only）。
+
+    此操作不可逆：subject 及其所有 exams、resources、knowledge_nodes、
+    learning_journeys、questions、answers 等資料將被永久刪除。
+
+    Returns:
+        {"deleted": True, "subject_id": str, "cascade_count": {...}}
+
+    Raises:
+        HTTPException 401: JWT 無效
+        HTTPException 403: 非 SUPER_ADMIN
+        HTTPException 404: subject 不存在
+        HTTPException 500: 刪除失敗
+    """
+    from app.services.subject_service import SubjectDeleteService
+    svc = SubjectDeleteService(db)
+    return svc.hard_delete_subject(subject_id=subject_id, super_admin=super_admin)
 
 
 @router.get("/{subject_id}/bloom-distribution")
