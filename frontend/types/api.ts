@@ -126,6 +126,13 @@ export interface GetReviewQuestionsResponse {
   wrongQuestions: Array<{
     question: Question;
     userAnswer: UserAnswer;
+    /** 連續答對次數（自動消除門檻 2） */
+    correctStreak?: number;
+    streakTarget?: number;
+    /** 用戶手動標記為已掌握 */
+    isMastered?: boolean;
+    /** streak 已達標但用戶尚未從清單看見（保留給 UI 顯示「已自動消除」） */
+    autoEliminated?: boolean;
   }>;
 }
 

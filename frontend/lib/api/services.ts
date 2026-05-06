@@ -393,6 +393,11 @@ export const reviewService = {
           userChoice: (wa.selected_answer as string) || '',
           isCorrect: false,
         },
+        // 錯題消除追蹤
+        correctStreak: (wa.correct_streak as number | undefined) ?? 0,
+        streakTarget: (wa.streak_target as number | undefined) ?? 2,
+        isMastered: (wa.is_mastered as boolean | undefined) ?? false,
+        autoEliminated: (wa.auto_eliminated as boolean | undefined) ?? false,
       })),
     } as unknown as GetReviewQuestionsResponse;
   },
@@ -411,6 +416,32 @@ export const reviewService = {
       `/wrong-answers/questions/${req.questionId}/coach`,
       { message: req.message },
     );
+  },
+
+  /** 手動標記題目為已掌握（從錯題本與錯題考試移除） */
+  async markMastered(questionId: string) {
+    return apiClient.post<{ ok: boolean; question_id: string; is_mastered: boolean }>(
+      `/wrong-answers/questions/${questionId}/mark-mastered`,
+      {},
+    );
+  },
+
+  /** 取消已掌握標記 */
+  async unmarkMastered(questionId: string) {
+    return apiClient.delete<{ ok: boolean; question_id: string; is_mastered: boolean }>(
+      `/wrong-answers/questions/${questionId}/mark-mastered`,
+    );
+  },
+
+  /** 取得該複習錯題數量（給 /schedule 提醒用） */
+  async getDueWrongCount(subjectId?: string) {
+    const qs = subjectId ? `?subject_id=${subjectId}` : '';
+    return apiClient.get<{
+      due_count: number;
+      fresh_count: number;
+      weak_count: number;
+      total_candidates: number;
+    }>(`/wrong-answers/due-count${qs}`);
   },
 
   /** 錯題考試：智能挑題（4 階段時程感知） */

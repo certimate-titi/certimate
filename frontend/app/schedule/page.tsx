@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Zap, BookOpen, Compass, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { scheduleService, type ScheduleRecommendation } from '@/lib/api/services';
+import { scheduleService, reviewService, type ScheduleRecommendation } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 
 const MODE_META: Record<string, { label: string; emoji: string; color: string; desc: string }> = {
@@ -29,6 +29,7 @@ export default function SchedulePage() {
   const [recs, setRecs] = useState<ScheduleRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dueCount, setDueCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -40,6 +41,9 @@ export default function SchedulePage() {
         setError(err?.message || '載入排程失敗');
       })
       .finally(() => setLoading(false));
+    reviewService.getDueWrongCount()
+      .then((d) => setDueCount(d.due_count + d.fresh_count))
+      .catch(() => setDueCount(null));
   }, [authLoading, isAuthenticated, router]);
 
   if (authLoading || loading) {
@@ -59,6 +63,21 @@ export default function SchedulePage() {
       <p className="text-sm text-slate-500 mb-6 leading-relaxed">
         系統依各科目「距考日天數」自動推導學習模式，並用 SuperMemo-2 遺忘曲線排程複習題目。
       </p>
+
+      {/* 錯題提醒 banner */}
+      {dueCount !== null && dueCount > 0 && (
+        <Link href="/review" className="mb-4 block px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl">🎯</span>
+              <p className="text-sm font-medium text-rose-700">
+                你有 <span className="font-bold text-base">{dueCount}</span> 題錯題該複習了 — 立即進行錯題考試強化記憶
+              </p>
+            </div>
+            <span className="text-sm text-rose-600 font-bold whitespace-nowrap">立即考 →</span>
+          </div>
+        </Link>
+      )}
 
       {error && (
         <div className="mb-4 flex items-start gap-2 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-sm">

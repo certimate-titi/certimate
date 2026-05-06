@@ -292,11 +292,23 @@ function ReviewBookPage() {
                     Q{idx + 1}
                   </span>
                   <span className="text-[10px] text-slate-400">選了 {wq.userAnswer.userChoice}</span>
+                  {wq.isMastered && (
+                    <span className="ml-auto text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">✓ 已掌握</span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-600 line-clamp-2">{wq.question.contentText.slice(0, 50)}...</p>
-                {wq.question.tags[0] && (
-                  <span className="text-[10px] text-slate-400 mt-1 block">{wq.question.tags[0]}</span>
-                )}
+                <div className="flex items-center justify-between mt-1">
+                  {wq.question.tags[0] && (
+                    <span className="text-[10px] text-slate-400">{wq.question.tags[0]}</span>
+                  )}
+                  {/* Streak 進度小圓點 */}
+                  {!wq.isMastered && typeof wq.correctStreak === 'number' && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-slate-400" title={`連續答對 ${wq.correctStreak}/${wq.streakTarget ?? 2} 次後自動消除`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${(wq.correctStreak ?? 0) >= 1 ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${(wq.correctStreak ?? 0) >= 2 ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -307,9 +319,46 @@ function ReviewBookPage() {
           <div className="max-w-3xl mx-auto w-full">
             {/* Question */}
             <div className="mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider border border-rose-100 mb-4">
-                答錯
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider border border-rose-100">
+                  答錯
+                </div>
+                {/* 已掌握 toggle 按鈕 */}
+                <button
+                  onClick={async () => {
+                    try {
+                      if (current.isMastered) {
+                        await reviewService.unmarkMastered(question.id);
+                      } else {
+                        await reviewService.markMastered(question.id);
+                      }
+                      // 更新本地 state
+                      setData(prev => prev ? {
+                        ...prev,
+                        wrongQuestions: prev.wrongQuestions.map((wq, i) => i === currentIndex
+                          ? { ...wq, isMastered: !wq.isMastered }
+                          : wq),
+                      } : prev);
+                    } catch (e) {
+                      console.warn('Mark mastered failed:', e);
+                    }
+                  }}
+                  className={`text-xs font-bold px-3 py-1 rounded-full border transition-colors ${
+                    current.isMastered
+                      ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400 hover:text-emerald-600'
+                  }`}
+                  title={current.isMastered ? '取消已掌握標記' : '標記為已掌握，從錯題本移除'}
+                >
+                  {current.isMastered ? '✓ 已掌握（取消）' : '☐ 標記已掌握'}
+                </button>
               </div>
+              {/* Streak 進度提示 */}
+              {!current.isMastered && (current.correctStreak ?? 0) < (current.streakTarget ?? 2) && (
+                <p className="text-xs text-slate-500 mb-3 italic">
+                  💪 再連續答對 {(current.streakTarget ?? 2) - (current.correctStreak ?? 0)} 次此題就會自動從錯題本消除
+                </p>
+              )}
               <MathContent className="text-lg text-slate-900 leading-relaxed font-medium">
                 {question.contentText}
               </MathContent>

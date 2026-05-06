@@ -61,6 +61,14 @@ class WrongAnswerService:
 
         rows = query.all()
 
+        # 預載手動標記掌握集合
+        from app.models.user_question_override import UserQuestionOverride
+        mastered_qids = {
+            r[0] for r in self.db.query(UserQuestionOverride.question_id)
+            .filter(UserQuestionOverride.user_id == user_uuid, UserQuestionOverride.is_mastered == True)  # noqa: E712
+            .all()
+        }
+
         wrong_answers = []
         for q, a, exam, subj in rows:
             # Build options from question fields
@@ -69,6 +77,23 @@ class WrongAnswerService:
                 text = getattr(q, attr, None) or ""
                 if text:
                     options.append({"label": label, "text": text})
+
+            # 計算 correct_streak
+            streak_rows = (
+                self.db.query(Answer.is_correct)
+                .filter(Answer.user_id == user_uuid, Answer.question_id == q.id)
+                .order_by(Answer.answered_at.desc())
+                .all()
+            )
+            streak = 0
+            for r in streak_rows:
+                if r[0]:
+                    streak += 1
+                else:
+                    break
+            is_mastered = q.id in mastered_qids
+            # streak 已 ≥ 2 但仍出現在錯題本（例如最近被 unmark），標記
+            auto_eliminated = streak >= 2 and not is_mastered
 
             wrong_answers.append({
                 "question_id": str(q.id),
@@ -79,6 +104,10 @@ class WrongAnswerService:
                 "subject_name": subj.name,
                 "explanation": q.explanation or "",
                 "options": options,
+                "correct_streak": streak,
+                "streak_target": 2,
+                "is_mastered": is_mastered,
+                "auto_eliminated": auto_eliminated,
             })
 
         return {"wrong_answers": wrong_answers}

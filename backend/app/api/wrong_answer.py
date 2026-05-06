@@ -52,6 +52,85 @@ def pick_wrong_answer_exam(
     return result
 
 
+@router.post("/questions/{question_id}/mark-mastered")
+def mark_question_mastered(
+    question_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """手動標記題目為已掌握（從錯題本與錯題考試移除）。"""
+    import uuid as _uuid
+    from datetime import datetime, timezone
+    from app.models.user_question_override import UserQuestionOverride
+    from app.models.answer import Answer
+    try:
+        uid = _uuid.UUID(user_id)
+        qid = _uuid.UUID(question_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail={"message": "ID 格式錯誤"})
+    # 必須先有 answer 紀錄才能標記
+    has_answer = db.query(Answer).filter_by(user_id=uid, question_id=qid).first()
+    if not has_answer:
+        raise HTTPException(status_code=403, detail={"message": "尚未對此題作答，無法標記"})
+    existing = db.query(UserQuestionOverride).filter_by(user_id=uid, question_id=qid).first()
+    if existing:
+        existing.is_mastered = True
+        existing.marked_at = datetime.now(timezone.utc)
+    else:
+        db.add(UserQuestionOverride(
+            user_id=uid, question_id=qid, is_mastered=True,
+            marked_at=datetime.now(timezone.utc),
+        ))
+    db.commit()
+    return {"ok": True, "question_id": question_id, "is_mastered": True}
+
+
+@router.delete("/questions/{question_id}/mark-mastered")
+def unmark_question_mastered(
+    question_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """取消已掌握標記（重新出現於錯題本）。"""
+    import uuid as _uuid
+    from app.models.user_question_override import UserQuestionOverride
+    try:
+        uid = _uuid.UUID(user_id)
+        qid = _uuid.UUID(question_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail={"message": "ID 格式錯誤"})
+    db.query(UserQuestionOverride).filter_by(user_id=uid, question_id=qid).delete()
+    db.commit()
+    return {"ok": True, "question_id": question_id, "is_mastered": False}
+
+
+@router.get("/due-count")
+def get_due_wrong_answer_count(
+    subject_id: str | None = None,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """回傳該複習的錯題數量（過複習日的桶）— 給 /schedule 提醒用。"""
+    import uuid as _uuid
+    from app.services.wrong_answer_picker import WrongAnswerPicker
+    from datetime import datetime, timezone
+    try:
+        uid = _uuid.UUID(user_id)
+        sid = _uuid.UUID(subject_id) if subject_id else None
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail={"message": "ID 格式錯誤"})
+    picker = WrongAnswerPicker(db)
+    today = datetime.now(timezone.utc).date()
+    candidates = picker._collect_candidates(uid, sid, today)
+    buckets = picker._classify_to_buckets(candidates, today)
+    return {
+        "due_count": len(buckets["overdue"]),
+        "fresh_count": len(buckets["fresh"]),
+        "weak_count": len(buckets["weak"]),
+        "total_candidates": len(candidates),
+    }
+
+
 # ========== Advanced AI Coach (ULTRA only) ==========
 
 @router.get("/advanced-coach")

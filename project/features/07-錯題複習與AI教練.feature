@@ -596,3 +596,67 @@ Feature: 錯題複習與 AI 教練
       And Modal 應顯示題數選項（10/20/50/100）
       And 點擊「智能挑題預覽」應顯示 phase 標籤 + 桶配比明細
       And 點擊「開始考試」應導向 /exam/workspace?examId=...
+
+  # ========== 手動已掌握標記（2026-05 新增）==========
+
+  @backend
+  Rule: 後置（狀態）- 手動標記/取消已掌握 endpoint 與資料表
+
+    Example: 標記題目為已掌握
+      Given 使用者 "alice@example.com" 已對題目 Q1 作答（無論對錯）
+      When 使用者呼叫 POST /api/v1/wrong-answers/questions/Q1/mark-mastered
+      Then 操作成功
+      And user_question_overrides 應有 (alice, Q1, is_mastered=true) 紀錄
+      And 後續挑題時 Q1 應從候選池排除
+
+    Example: 取消已掌握標記
+      Given 使用者 "alice@example.com" 已標記 Q1 為已掌握
+      When 使用者呼叫 DELETE /api/v1/wrong-answers/questions/Q1/mark-mastered
+      Then 操作成功
+      And user_question_overrides 應移除該紀錄
+      And Q1 應重新出現於錯題本
+
+    Example: 未作答題目不可標記
+      Given 使用者 "alice@example.com" 從未對題目 Q9 作答
+      When 使用者呼叫 POST /api/v1/wrong-answers/questions/Q9/mark-mastered
+      Then 操作失敗 403
+      And 錯誤訊息應為 "尚未對此題作答，無法標記"
+
+  @frontend
+  Rule: 後置（顯示）- /review 頁每題應顯示 streak 進度與「已掌握」按鈕
+
+    Example: 錯題列表項顯示 streak 兩格圓點
+      When 使用者進入 /review 頁
+      Then 每個錯題列表項應顯示連續答對進度（兩格圓點）
+      And 答對 1 次填一格、達 2 次自動消除（不顯示在清單）
+
+    Example: 已標記掌握的題目顯示「✓ 已掌握」標籤
+      Given 題目 Q1 已被標記為已掌握
+      Then /review 列表項應顯示「✓ 已掌握」綠底標籤
+      And 詳情頁按鈕應顯示「✓ 已掌握（取消）」
+
+    Example: 未掌握題目可手動標記
+      When 使用者點擊「☐ 標記已掌握」按鈕
+      Then 應呼叫 POST /api/v1/wrong-answers/questions/{id}/mark-mastered
+      And UI 立即更新為「✓ 已掌握（取消）」
+      And 該題下次挑題時應從錯題考試候選池移除
+
+  # ========== 錯題該複習提醒（2026-05 新增）==========
+
+  @fullstack
+  Rule: 後置（顯示）- /schedule 與 dashboard ScheduleWeekCard 應顯示「該複習錯題數」提醒
+
+    Example: 後端 /due-count 回傳該複習的桶數量
+      Given 使用者 "alice@example.com" 有 12 題過複習日的錯題與 5 題新錯題
+      When 使用者呼叫 GET /api/v1/wrong-answers/due-count
+      Then 回應應包含：
+        | 欄位             | 預期 |
+        | due_count        | 12   |
+        | fresh_count      | 5    |
+        | total_candidates | ≥ 17 |
+
+    Example: 前端排程頁顯示提醒 banner
+      Given 使用者 "alice@example.com" 的 due_count + fresh_count ≥ 1
+      When 使用者進入 /schedule 或 dashboard
+      Then 頁面應顯示「🎯 你有 N 題該複習了 — 立即考 →」rose 色 banner
+      And 點擊 banner 應導向 /review 頁

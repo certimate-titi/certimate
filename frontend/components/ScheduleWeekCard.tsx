@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Zap, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
-import { scheduleService, type ScheduleRecommendation } from '@/lib/api/services';
+import { scheduleService, reviewService, type ScheduleRecommendation } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 
 /** 模式 meta（與 /schedule/page.tsx 共用定義，不另開 shared util 以避免跨層衝突）。 */
@@ -104,6 +104,8 @@ export default function ScheduleWeekCard({ isAuthenticated }: ScheduleWeekCardPr
   const [subjects, setSubjects] = useState<ScheduleRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 錯題提醒
+  const [dueCount, setDueCount] = useState<number | null>(null);
 
   const weekDays = buildWeekLabels();
 
@@ -116,6 +118,10 @@ export default function ScheduleWeekCard({ isAuthenticated }: ScheduleWeekCardPr
         setError(err?.message || '載入排程失敗');
       })
       .finally(() => setLoading(false));
+    // 錯題提醒
+    reviewService.getDueWrongCount()
+      .then((d) => setDueCount(d.due_count + d.fresh_count))
+      .catch(() => setDueCount(null));
   }, [isAuthenticated]);
 
   const heatmap = buildWeekHeatmap(subjects, weekDays);
@@ -132,6 +138,24 @@ export default function ScheduleWeekCard({ isAuthenticated }: ScheduleWeekCardPr
         {/* 「前往完整」連結已移除（2026-05）：本卡片資訊量已足夠，
             另設 /schedule 頁不再需要從 dashboard 跳轉入口 */}
       </div>
+
+      {/* 錯題提醒 banner */}
+      {dueCount !== null && dueCount > 0 && (
+        <Link
+          href="/review"
+          className="block mb-4 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">🎯</span>
+              <p className="text-xs sm:text-sm font-medium text-rose-700 truncate">
+                你有 <span className="font-bold">{dueCount}</span> 題該複習了
+              </p>
+            </div>
+            <span className="text-xs text-rose-600 font-bold shrink-0">立即考 →</span>
+          </div>
+        </Link>
+      )}
 
       {/* Loading */}
       {loading && (

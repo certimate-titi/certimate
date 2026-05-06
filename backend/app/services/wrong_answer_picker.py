@@ -151,7 +151,14 @@ class WrongAnswerPicker:
         subject_id: uuid.UUID | None,
         today: date,
     ) -> list[dict[str, Any]]:
-        """蒐集候選錯題：is_correct=FALSE 且未消除（streak < 2）。"""
+        """蒐集候選錯題：is_correct=FALSE 且未消除（streak < 2 且未手動標記掌握）。"""
+        # 預載手動標記掌握的題目集
+        from app.models.user_question_override import UserQuestionOverride
+        mastered_qids = {
+            r[0] for r in self.db.query(UserQuestionOverride.question_id)
+            .filter(UserQuestionOverride.user_id == user_id, UserQuestionOverride.is_mastered == True)  # noqa: E712
+            .all()
+        }
         # 取每個 question 的最新 answer
         latest = (
             self.db.query(
@@ -190,10 +197,13 @@ class WrongAnswerPicker:
         for r in rows:
             qid = r[0]
             answered_at = r[2]
+            # 手動標記掌握的題目跳過
+            if qid in mastered_qids:
+                continue
             # 計算這題的 correct_streak（從最新一次往前數連續答對）
             streak = self._compute_correct_streak(user_id, qid)
             if streak >= 2:
-                continue  # 已消除
+                continue  # 自動消除
             candidates.append({
                 "question_id": qid,
                 "answered_at": answered_at,
