@@ -81,7 +81,7 @@ function ExamSetupPage() {
   const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState<typeof QUESTION_COUNTS[number]>(20);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
-  const [examMode, setExamMode] = useState<'hybrid' | 'historical_only'>('hybrid');
+  const [examMode, setExamMode] = useState<'hybrid' | 'historical_only' | 'wrong_answer'>('hybrid');
   // Spec 19 §「題目排列模式」— interleaved（預設、跨節點交錯）/ grouped（同節點集中）/ sequential（按難度）
   const [orderMode, setOrderMode] = useState<'interleaved' | 'grouped' | 'sequential'>('interleaved');
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(
@@ -340,6 +340,38 @@ function ExamSetupPage() {
   };
 
   const handleGenerate = useCallback(async () => {
+    // 錯題複習模式：picker 挑題 → from-question-ids 建 exam，跳過節點選擇驗證
+    if (examMode === 'wrong_answer') {
+      setValidationError(null);
+      setIsGenerating(true);
+      setLivePercent(50);
+      setLiveStageLabel('智能挑題中…');
+      try {
+        const { reviewService } = await import('@/lib/api/services');
+        const subjectIdRaw = activeSubjectId ? subjects.find(s => s.id === activeSubjectId)?.subjectId || activeSubjectId : undefined;
+        const picked = await reviewService.pickWrongAnswerExam({ subjectId: subjectIdRaw, questionCount });
+        if (!picked.questions || picked.questions.length === 0) {
+          setValidationError(picked.message || '目前無錯題可考，請先完成測驗累積錯題');
+          setIsGenerating(false);
+          return;
+        }
+        setLiveStageLabel('建立考試中…');
+        setLivePercent(80);
+        const created = await examService.createFromQuestionIds(picked.questions.map(q => q.question_id));
+        invalidateQuotaCache();
+        if (created.exam_id) {
+          generatedExamIdRef.current = created.exam_id;
+          setLivePercent(100);
+          router.push(`/exam/workspace?examId=${created.exam_id}`);
+        }
+      } catch (e: unknown) {
+        console.warn('Wrong answer exam failed:', e);
+        setValidationError(e instanceof Error ? e.message : '錯題考試建立失敗');
+        setIsGenerating(false);
+      }
+      return;
+    }
+
     const hasSelection = selectedDocIds.size > 0 || selectedNodeIds.size > 0;
     if (!hasSelection) {
       setValidationError('請至少選擇一個知識範圍');
@@ -408,7 +440,7 @@ function ExamSetupPage() {
       setValidationError(msg || '測驗生成失敗，請稍後再試');
       setIsGenerating(false);
     }
-  }, [selectedDocIds, selectedNodeIds, questionCount, difficulty, questionTypes, examMode, router]);
+  }, [selectedDocIds, selectedNodeIds, questionCount, difficulty, questionTypes, examMode, router, activeSubjectId, subjects]);
 
   // Backup: navigate when loading animation completes
   const handleLoadingComplete = useCallback(() => {
@@ -600,7 +632,7 @@ function ExamSetupPage() {
               <div>
                 {/* 出題模式切換 */}
                 <label className="block text-sm font-medium text-slate-700 mb-3">出題模式</label>
-                <div className="grid grid-cols-2 gap-2 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
                   <button
                     onClick={() => {
                       setExamMode('hybrid');
@@ -618,7 +650,6 @@ function ExamSetupPage() {
                   <button
                     onClick={() => {
                       setExamMode('historical_only');
-                      // Auto-select all historical nodes, deselect documents
                       setSelectedDocIds(new Set());
                       if (systemNodes.length > 0) {
                         setSelectedNodeIds(new Set(systemNodes.map(n => n.id)));
@@ -632,6 +663,22 @@ function ExamSetupPage() {
                   >
                     <span className="block font-bold">考古題模擬考</span>
                     <span className="text-xs opacity-75">100% 歷年真題</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setExamMode('wrong_answer');
+                      // 錯題複習模式：清空節點/文件選擇（picker 自動挑題）
+                      setSelectedDocIds(new Set());
+                      setSelectedNodeIds(new Set());
+                    }}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors border-2 ${
+                      examMode === 'wrong_answer'
+                        ? 'border-rose-500 bg-rose-50 text-rose-700'
+                        : 'border-slate-200 text-slate-600 hover:border-rose-300'
+                    }`}
+                  >
+                    <span className="block font-bold">🎯 錯題複習</span>
+                    <span className="text-xs opacity-75">智能挑錯題（4 階段）</span>
                   </button>
                 </div>
 
@@ -838,6 +885,8 @@ function ExamSetupPage() {
           <div className="text-slate-300 text-sm">
             {validationError ? (
               <span className="text-red-400">{validationError}</span>
+            ) : examMode === 'wrong_answer' ? (
+              <>🎯 錯題複習模式 • 系統將從錯題本智能挑題（依距考時程動態配比）</>
             ) : selectedDocIds.size === 0 && selectedNodeIds.size === 0 ? (
               <span className="text-amber-400">請先選擇至少一份學習資源</span>
             ) : selectedNodeIds.size > 0 && selectedDocIds.size === 0 ? (

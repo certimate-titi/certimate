@@ -177,7 +177,7 @@ class WrongAnswerPicker:
                 Answer.question_id,
                 Answer.is_correct,
                 Answer.answered_at,
-                Answer.user_confidence,
+                Answer.confidence,
             )
             .join(latest, and_(
                 Answer.question_id == latest.c.question_id,
