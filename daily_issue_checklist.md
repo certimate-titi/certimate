@@ -1,129 +1,65 @@
 # CertiMate Daily QA Issue Checklist
-**產出時間**：2026-05-06 09:00 (Asia/Taipei)
+**產出時間**：2026-05-07 01:14 (Asia/Taipei)
 **審查頁面數**：50 頁
 **Feature File 數**：44 個
-**發現問題總計**：🔴 8 + 🟠 5 + 🟡 5
+**發現問題總計**：🔴 2 + 🟠 1 + 🟡 1（今日新增；既有追蹤問題詳見 ToDoList.md）
 
 ---
 
-## 頁面審查清單
+## 頁面審查清單（核心頁面優先）
 
-### / — 首頁 (Landing Page)
+### /dashboard — 主控台首頁
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 立即免費註冊按鈕 | 按鈕 | ✅ 18-定價與升級引導 | ✅ 實作 | →/signup |
-| 觀看展示連結 | 連結 | ✅ | ✅ | anchor scroll |
+| 歡迎標題 + 使用者名稱 | 顯示 | ✅ 13-個人儀表板 | ✅ 實作 | |
+| 學習模式標籤（Sprint/Standard/Mastery/Final）+ Tooltip | 按鈕 | 🔴 無 Feature Scenario | ✅ 實作 | 首見 2026-05-06，已追蹤於 ToDoList |
+| StreakCounter 連勝火焰 | 顯示 | ✅ 13 Rule「連勝天數」 | ✅ 實作 | |
+| 考試倒數天數卡片 | 顯示 | ✅ 13 Rule「考試倒數」 | ✅ 實作 | |
+| 累積答題數卡片 | 顯示 | ✅ 13 | ✅ 實作 | |
+| 整體答對率卡片 | 顯示 | ✅ 13 | ✅ 實作 | |
+| 預測及格率卡片 | 顯示 | ✅ 13 | ✅ 實作 | |
+| 快速匯入資源（上傳檔案 + YouTube） | 按鈕 | ✅ 02-資源上傳 | ✅ 實作 | |
+| QuotaBadge（月上傳配額顯示） | 顯示 | ✅ 08 | ✅ 實作 | |
+| 每日任務列表（DailyQuestCard） | 顯示 | ✅ 13 Rule「每日微任務」 | ✅ 實作 | |
+| 待辦提醒（activityItems） | 顯示 | ✅ 13 | ✅ 實作 | |
+| ScheduleWeekCard（學習排程） | 顯示 | ✅ 09 | ✅ 實作 | |
+| DomainRadarChart（雷達圖）| 顯示 | ✅ 13 | ✅ 實作 | |
+| AnnouncementBanner（公告橫幅） | 顯示 | ✅ 24 | ✅ 實作 | |
+| PendingJourneysBanner（待確認旅程） | 顯示 | ✅ 25 | ✅ 實作 | |
+| 科目切換器（SubjectSwitcher） | 按鈕 | 🔴 Feature 13 仍有 active Scenario | ⚠️ 已移除（2026-05）| **今日新問題**：Feature 未同步更新 |
+| 無科目時「開始選擇科目」modal | 按鈕 | 🔴 Feature 15 未覆蓋 | ✅ 實作 | 首見 2026-05-06，已追蹤 |
+| 意見反饋連結 | 連結 | ✅ 17 | ✅ 實作 | |
 
-**問題**：無
+**今日新問題**：
+- 🔴 Feature 13（L40-58）仍有 active Scenarios 要求 dashboard 顯示科目切換器（「備考多科時顯示科目切換器應包含 AWS SAA、TOEIC」、「切換科目後儀表板數據更新」），但 SubjectSwitcher 已於 2026-05 移除，Feature 13 Scenarios 未同步更新。
 
 ---
 
-### /login — 身分驗證
+### /knowledge — 知識地圖
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| Email/密碼輸入 | 表單 | ✅ 01-身分驗證 | ✅ 實作 | |
-| Google 登入按鈕 | 按鈕 | ✅ 01-身分驗證 | ✅ 實作 | |
-| 記住我 checkbox | 控件 | ✅ 01-身分驗證 | ✅ 實作 | |
-| 忘記密碼連結 | 連結 | ✅ 01-身分驗證 | ✅ 實作 | |
-| 登入失敗訊息 | 空態/錯誤 | ✅ | ✅ | |
+| SubjectSwitcher（科目切換） | 按鈕 | ✅ 03、11 | ✅ 實作 | |
+| 文件列表（左側面板） | 顯示 | ✅ 11 | ✅ 實作 | |
+| 搜尋框（文件過濾） | 輸入 | ✅ 03 Rule「搜尋知識點篩選」 | ⚠️ 只過濾文件列表 | **今日新問題** |
+| ForceGraph（圖譜視圖） | 互動 | ✅ 03b | ✅ 實作 | |
+| MindMapTree（列表視圖） | 互動 | ✅ 03b | ✅ 實作 | |
+| 文件視圖切換 | 按鈕 | ✅ 03b | ✅ 實作 | |
+| NodeDetailPanel（節點詳情） | 顯示 | ✅ 03、03b | ✅ 實作 | |
+| AI 教練對話框 | 互動 | ✅ 03b Rule「付費牆」 | ✅ 實作 | |
+| 升級提示（PRO 配額用盡鎖屏） | 顯示 | ✅ 03b | ✅ 實作 | |
+| 節點練習按鈕 | 按鈕 | ✅ 32 | ✅ 實作 | |
+| 節點測驗按鈕 | 按鈕 | ✅ 04 | ✅ 實作 | |
+| 資源刪除按鈕（HardDeleteConfirmModal） | 按鈕 | ✅ 36 | ✅ 實作 | |
+| 解析失敗 badge + failure_reason（Layer 3） | 顯示 | ✅ 11 | ✅ 實作 | |
+| 全部重新解析按鈕（空圖譜/全失敗時） | 按鈕 | ✅ 11 | ✅ 實作 | |
+| 知識樹萃取按鈕 | 按鈕 | ✅ 03a | ✅ 實作 | |
+| 「錯題地圖」連結按鈕 | 連結 | ✅ 27 | ✅ 實作 | |
+| 空態多情境區分（Layer 3）| 顯示 | ✅ 03b | ✅ 實作 | 4 種情境已完整 |
 
-**問題**：無
-
----
-
-### /signup — 註冊
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| 姓名/Email/密碼輸入 | 表單 | ✅ 01-身分驗證 | ✅ 實作 | |
-| 密碼強度指示條 | 顯示 | ✅ | ✅ | |
-| 服務條款 modal | 互動 | ✅ | ✅ | |
-| Google 註冊按鈕 | 按鈕 | ✅ | ✅ | |
-| 免費註冊提交按鈕 | 按鈕 | ✅ | ✅ | |
-
-**問題**：無
-
----
-
-### /onboarding — 首次引導
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| 4 步驟進度條 | 顯示 | ✅ 15-首次登入引導 | ✅ 實作 | |
-| 科目選擇器 | 互動 | ✅ | ✅ | |
-| 偏好設定表單 | 表單 | ✅ | ✅ | |
-| 上一步/下一步按鈕 | 按鈕 | ✅ | ✅ | |
-| 未選科目驗證訊息 | 空態 | ✅ | ✅ | |
-
-**問題**：無
-
----
-
-### /dashboard — 個人儀表板 ⭐核心
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| Streak 計數器 | 顯示 | ✅ 13-儀表板 | ✅ 實作 | |
-| Sprint/Standard/Mastery 模式 badge | 顯示 | ✅ 13-儀表板 | ✅ 實作 | |
-| 4 核心指標卡 | 顯示 | ✅ 13-儀表板 | ✅ 實作 | 考試倒數/答題數/答對率/及格率 |
-| 每日任務卡 | 顯示 | ✅ 13-儀表板 | ✅ 實作 | |
-| 模式 tooltip 說明按鈕 | 互動 | 🔴 無 Scenario | ✅ 實作 | Feature 09/13 皆未覆蓋此互動 |
-| 檔案上傳 (drag-drop) | 互動 | ✅ 02-資源上傳 | ✅ 實作 | |
-| YouTube URL 解析按鈕 | 按鈕 | ✅ 02-資源上傳 | ✅ 實作 | |
-| 儀表板無科目 CTA 卡 | 空態 | 🔴 無 Scenario | ✅ 實作 | 模態選科，非 /onboarding 流程，Feature 15 未涵蓋 |
-| SubjectPickerModal (新增科目) | 互動 | ✅ 13-儀表板 | ✅ 實作 | |
-| DomainRadarChart | 顯示 | ✅ 13-儀表板 | ✅ 實作 | |
-| AnnouncementBanner | 顯示 | ✅ 24-公告管理 | ✅ 實作 | |
-| 上傳失敗錯誤訊息 | 空態/錯誤 | 🟡 | ⚠️ 不足 | 僅顯示 exception 訊息，未查 resource_parse_jobs.failure_reason |
-
-**問題**：
-- 🔴 模式 tooltip 按鈕無對應 Feature Scenario
-- 🔴 儀表板無科目時「開始選擇科目」CTA Modal 路徑，Feature 15 未覆蓋此 dashboard-level 行內加科目流程
-- 🟡 上傳失敗狀態僅顯示例外訊息，未查 resource_parse_jobs 確認 failure_reason
-
----
-
-### /knowledge — 知識庫主頁 ⭐核心
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| SubjectSwitcher | 互動 | ✅ 03-知識心智圖 | ✅ 實作 | |
-| 資源清單 (左側面板) | 顯示 | ✅ 11-資源庫管理 | ✅ 實作 | |
-| ForceGraph 知識圖譜 | 顯示 | ✅ 03-知識心智圖 | ✅ 實作 | |
-| MindMapTree 列表視圖 | 互動 | ✅ 03b | ✅ 實作 | |
-| 節點詳情面板 | 互動 | ✅ 03-知識心智圖 | ✅ 實作 | |
-| AI 教練對話面板 | 互動 | ✅ 03-知識心智圖 | ✅ 實作 | |
-| 搜尋知識節點輸入 | 互動 | ✅ | ✅ | |
-| 觸發解析按鈕 | 按鈕 | ✅ 02-資源上傳 | ✅ 實作 | |
-| 刪除資源按鈕 | 按鈕 | ✅ 11-資源庫管理 | ✅ 實作 | |
-| 全螢幕心智圖連結 | 連結 | ✅ 03b | ✅ 實作 | →/knowledge/mindmap |
-| 個人錯題地圖連結 | 連結 | ✅ 27-錯題地圖 | ✅ 實作 | →/knowledge/wrong-answers |
-| 資源面板摺疊按鈕 | 按鈕 | ✅ 03b Scenario | 🟠 缺失 | Feature 03b 有此 Scenario 但頁面無摺疊按鈕 |
-| 節點掌握時灑花動畫 | 互動 | ✅ 03 spec | 🟠 缺失 | AI 教練送恭喜獎章動畫，頁面缺此實作 |
-| 分享知識節點按鈕 | 按鈕 | 🔴 無 Scenario | ❌ 未實作 | Feature 03 提及分享，但無對應 UI 及 Scenario |
-| PROCESSING 狀態解析說明 | 空態 | ✅ | 🟡 不足 | FAILED 有查 job，但 PROCESSING 中時空地圖僅顯示空畫面，無進度說明 |
-| 空態查 resource_parse_jobs | 空態 | ✅ Layer 3 | ✅ 實作 | FAILED 已查詢 |
-
-**問題**：
-- 🔴 「分享知識節點」按鈕無 Feature Scenario 且未實作
-- 🟠 Feature 03b 規格「資源面板摺疊按鈕」有 Scenario 但頁面缺對應 UI
-- 🟠 Feature 03 規格「節點掌握時 AI 教練灑花動畫」有說明但頁面無 Confetti 實作
-- 🟡 `/knowledge` 解析中 (PROCESSING) 狀態未向使用者說明進度，空圖譜時無法區分「PROCESSING 中」vs「FAILED」vs「從未上傳」
-
----
-
-### /knowledge/mindmap — 全螢幕心智圖
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| ForceGraph/MindMapTree 切換 | 互動 | ✅ 03b | ✅ 實作 | |
-| 節點點擊側邊面板 | 互動 | ✅ 03b | ✅ 實作 | |
-| 開始練習此節點按鈕 | 按鈕 | ✅ 03b | ✅ 實作 | |
-| 空態查 resource_parse_jobs | 空態 | ✅ Layer 3 | ✅ 實作 | |
-
-**問題**：無
+**今日新問題**：
+- 🟠 Feature 03 Rule「搜尋知識點可即時篩選心智圖導覽區的節點」Scenario 描述「右側心智圖導覽區應僅顯示包含 'S3' 關鍵字的知識節點」。但 knowledge/page.tsx 的 `searchQuery` 只用於過濾左側文件列表（L614），未傳入 MindMapTree 或 ForceGraph 元件進行節點過濾。
 
 ---
 
@@ -131,191 +67,230 @@
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 熱力圖節點 (顏色分級) | 顯示 | ✅ 27-錯題地圖 | ✅ 實作 | |
-| 節點展開/收合 | 互動 | ✅ 27-錯題地圖 | ✅ 實作 | |
-| 空態查 resource_parse_jobs | 空態 | ✅ Layer 3 | ✅ 實作 | |
-
-**問題**：無
-
----
-
-### /exam/setup — 測驗設定 ⭐核心
-
-| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
-|------|------|-------------|---------|------|
-| SubjectSwitcher | 互動 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 文件/節點選擇清單 | 互動 | ✅ 04-測驗設定 | ✅ 實作 | |
-| AI 混合/考古題模式切換 | 按鈕 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 題目排列模式 (交錯/分組/依難度) | 按鈕 | ✅ 19-交錯練習 | ✅ 實作 | |
-| 題目數量選擇 (tier 鎖定) | 按鈕 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 難度範圍滑桿 | 互動 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 題型切換按鈕 | 按鈕 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 進階出題配方面板 (ULTRA) | 互動 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 套用考古題分佈按鈕 | 按鈕 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 生成專屬模擬考按鈕 | 按鈕 | ✅ 04-測驗設定 | ✅ 實作 | |
-| 空題庫提示文字 | 空態 | ✅ | 🟡 不足 | 靜態提示，未查 resourceParseService 取得 failure_reason |
-
-**問題**：
-- 🟡 `/exam/setup` 空題庫提示為靜態文字，未主動查 `resourceParseService.getStatus` 取得 failure_reason（此項為「已知改善中」，非新增問題）
+| 錯題節點熱力圖（紅/橘/綠/灰） | 顯示 | ✅ 27 | ✅ 實作 | |
+| 節點展開錯題明細 | 互動 | ✅ 27 | ✅ 實作 | |
+| 空態 Layer 3（查 parse jobs） | 顯示 | ✅ CLAUDE.md Layer 3 | ✅ 實作 | |
+| 返回知識庫按鈕 | 連結 | ✅ | ✅ 實作 | |
 
 ---
 
-### /exam/workspace — 模擬機考 ⭐核心
+### /knowledge/mindmap — 心智圖
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 題目導覽格子 | 顯示 | ✅ 05-模擬機考 | ✅ 實作 | |
-| 答案選項按鈕 | 按鈕 | ✅ 05-模擬機考 | ✅ 實作 | |
-| 信心度選擇器 (😰😐😎) | 互動 | ✅ 20-信心度校準 | ✅ 實作 | |
-| 標記複習按鈕 | 按鈕 | ✅ 05-模擬機考 | ✅ 實作 | |
-| 計時器 | 顯示 | ✅ 05-模擬機考 | ✅ 實作 | |
-| PomodoroTimer 元件 (read-only) | 顯示 | ✅ 21-番茄鐘 | ✅ 渲染 | 元件有渲染，但缺啟用/設定互動 UI |
-| 番茄鐘啟用開關 | 按鈕 | ✅ 21-番茄鐘 Scenario | 🟠 缺失 | Feature 21 明確要求「啟用番茄鐘」按鈕 |
-| 番茄鐘時長設定 | 互動 | ✅ 21-番茄鐘 Scenario | 🟠 缺失 | Feature 21 明確要求可設定專注/休息分鐘 |
-| 繼續作答/開始休息按鈕 | 按鈕 | ✅ 21-番茄鐘 Scenario | 🟠 缺失 | Feature 21 Scenario「點擊繼續作答/開始休息」 |
-| Certi 打氣語句 banner | 顯示 | ✅ 05-模擬機考 | ✅ 實作 | |
-| 暫停/交卷 modal | 互動 | ✅ 05-模擬機考 | ✅ 實作 | |
-| AI inference 判斷按鈕 | 按鈕 | 🔴 無 Scenario | ✅ 實作 | 保留我的答案/採信AI/略過；Feature 32/04a 未覆蓋此 UI |
-
-**問題**：
-- 🟠 Feature 21（番茄鐘）：workspace 頁缺番茄鐘啟用開關、時長設定 UI、「繼續作答/開始休息」選擇按鈕（PomodoroTimer 元件有渲染但上述互動 UI 缺失）
-- 🔴 AI inference 判斷按鈕（`ai_inferred` 答案判斷，EPIC-035）無 Feature Scenario
+| ForceGraph / MindMapTree 切換 | 按鈕 | ✅ 03b | ✅ 實作 | |
+| 節點點擊詳情側邊面板 | 互動 | ✅ 03b | ✅ 實作 | |
+| 「開始練習此節點」按鈕 | 連結 | ✅ 32 | ✅ 實作 | |
+| 空態 Layer 3（查 parse jobs） | 顯示 | ✅ CLAUDE.md | ✅ 實作 | |
 
 ---
 
-### /exam/results — 測驗結果 ⭐核心
+### /exam/setup — 測驗設定
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 分數卡/及格指示 | 顯示 | ✅ 06-測驗結果 | ✅ 實作 | |
-| AI 總評摘要 | 顯示 | ✅ 06-測驗結果 | 🟠 部分 | Feature 06 規定 FREE 用戶不應看到 AI 總評，但前端無 tier check |
-| 信心度四象限分析 | 顯示 | ✅ 20-信心度校準 | ✅ 實作 | |
-| Bloom 認知層次分析 | 顯示 | ✅ 18-題目分類 | ✅ 實作 | |
-| 進入錯題本按鈕 | 按鈕 | ✅ 07-錯題複習 | ✅ 實作 | |
-| 逐題解析連結 | 連結 | ✅ 06-測驗結果 | ✅ 實作 | |
-| LinkedIn 分享按鈕 | 按鈕 | ✅ 06-測驗結果 | ✅ 實作 | |
-| 下載成績圖卡按鈕 | 按鈕 | ✅ 06-測驗結果 | ✅ 實作 | html2canvas |
-| 交錯練習模式標籤 | 顯示 | ✅ 19-交錯練習 | ✅ 實作 | |
-
-**問題**：
-- 🟠 Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 渲染 `aiSummary` 無 tier check
+| SubjectSwitcher | 按鈕 | ✅ 04 | ✅ 實作 | |
+| 文件選擇（範圍勾選） | 互動 | ✅ 04 | ✅ 實作 | |
+| 系統知識節點選擇 | 互動 | ✅ 04 | ✅ 實作 | |
+| 出題模式（AI混合/純考古/錯題） | 按鈕 | ✅ 04 | ✅ 實作 | |
+| 題目排列模式（交錯/分組/依難度） | 按鈕 | ✅ 19 | ✅ 實作 | |
+| 題數選擇（10/20/50/100，tier 限制） | 按鈕 | ✅ 04 | ✅ 實作 | |
+| 難度選擇（1/2/3） | 按鈕 | ✅ 04 | ✅ 實作 | |
+| 進階配方（ULTRA+SUPER_ADMIN，Bloom 比例） | 互動 | ✅ 04 | ✅ 實作 | |
+| QuotaBadge（月測驗配額） | 顯示 | ✅ 08 | ✅ 實作 | |
+| 真實進度條動畫（輪詢後端） | 顯示 | ✅ 04 | ✅ 實作 | |
+| 空文件態提示（靜態文字） | 顯示 | 🟡 未查 job 表 | ⚠️ 提示存在但不夠深入 | **今日新問題** |
 
 ---
 
-### /practice — 節點練習 ⭐核心
+### /exam/workspace — 模擬機考
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| SubjectSwitcher | 互動 | ✅ 32-節點練習 | ✅ 實作 | |
-| 節點選擇清單 | 互動 | ✅ 32-節點練習 | ✅ 實作 | |
-| 答案選項按鈕 | 按鈕 | ✅ 32-節點練習 | ✅ 實作 | |
-| 信心度選擇器 | 互動 | ✅ 20-信心度校準 | ✅ 實作 | |
-| 確認作答按鈕 | 按鈕 | ✅ 32-節點練習 | ✅ 實作 | |
-| 回溯建議 banner | 顯示 | ✅ 28-難度遞進 | ✅ 實作 | |
-| AI inference 判斷按鈕 | 按鈕 | 🔴 無 Scenario | ✅ 實作 | 保留/採信AI/略過；Feature 32 未覆蓋 |
-| 空態查 resource_parse_jobs | 空態 | ✅ Layer 3 | ✅ 實作 | |
-| 選擇其他節點/回知識圖譜 | 按鈕 | ✅ 32-節點練習 | ✅ 實作 | |
-
-**問題**：
-- 🔴 AI inference 判斷按鈕（EPIC-035）無 Feature Scenario
+| 題目顯示 + 選項 | 顯示 | ✅ 05 | ✅ 實作 | |
+| 答案選擇 | 互動 | ✅ 05 | ✅ 實作 | |
+| 信心度校準（😰😐😎） | 按鈕 | ✅ 20 | ✅ 實作 | |
+| PomodoroTimer（番茄鐘倒數顯示） | 顯示 | ✅ 21 | ✅ 實作 | |
+| 番茄鐘啟用開關 + 設定 UI | 按鈕 | 🔴 Feature 21 | ❌ 缺失 | 首見 2026-05-06，已追蹤 |
+| 計時器倒數 | 顯示 | ✅ 05 | ✅ 實作 | |
+| 標記複習 | 按鈕 | ✅ 05 | ✅ 實作 | |
+| 題目導航格 | 互動 | ✅ 05 | ✅ 實作 | |
+| 提交按鈕 | 按鈕 | ✅ 05 | ✅ 實作 | |
+| Certi 打氣 Banner | 顯示 | ✅ 05 | ✅ 實作 | |
+| AI Inference 判斷（保留/採信/略過） | 按鈕 | 🔴 無 Feature Scenario | ✅ 實作 | 首見 2026-05-06，已追蹤 |
 
 ---
 
-### /review — 錯題複習 ⭐核心
+### /exam/results — 測驗結果
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 錯題清單側邊欄 | 顯示 | ✅ 07-錯題複習 | ✅ 實作 | |
-| 題目+答案詳情面板 | 顯示 | ✅ 07-錯題複習 | ✅ 實作 | |
-| AI Socratic 教練對話 | 互動 | ✅ 07-錯題複習 | ✅ 實作 | |
-| 查看來源按鈕 | 按鈕 | ✅ | ✅ | |
-| 空態查 examService.getRecentFailures | 空態 | ✅ Layer 3 | ✅ 實作 | |
-
-**問題**：無
+| 成績卡（分數、合格與否、Confetti） | 顯示 | ✅ 06 | ✅ 實作 | |
+| 知識節點答對率（三色標示） | 顯示 | ✅ 06、27 | ✅ 實作 | |
+| AI 考後總評（FREE tier 付費牆） | 顯示 | ✅ 06 | ✅ 實作 | |
+| 信心度四象限分析 | 顯示 | ✅ 20 | ✅ 實作 | |
+| 交錯練習模式標籤 | 顯示 | ✅ 19 | ✅ 實作 | |
+| 進入錯題本（AI 解析）按鈕 | 連結 | ✅ 07 | ✅ 實作 | |
+| 逐題解析（含答對題）按鈕 | 連結 | ✅ 06 | ✅ 實作 | |
+| 徽章分享（ShareBadgeModal）按鈕 | 按鈕 | ✅ 06 | ✅ 實作 | |
+| ForceGraph 知識圖譜 | 顯示 | ✅ 03 | ✅ 實作 | |
 
 ---
 
-### /schedule — 學習排程 ⭐核心
+### /practice — 自由練習
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 科目排程卡片 | 顯示 | ✅ 09-學習排程 | ✅ 實作 | |
-| 開始今日複習連結 | 連結 | ✅ 09-學習排程 | ✅ 實作 | |
-| 空態「前往新增科目」連結 | 空態 | ✅ 09-學習排程 | ✅ 實作 | |
+| 知識節點選擇列表 | 互動 | ✅ 32 | ✅ 實作 | |
+| 答題區（選項、提交） | 互動 | ✅ 32 | ✅ 實作 | |
+| 信心度校準 | 按鈕 | ✅ 20 | ✅ 實作 | |
+| 即時回饋（正確/錯誤 + 詳解） | 顯示 | ✅ 32 | ✅ 實作 | |
+| 階層回溯建議 banner（Feature 28） | 顯示 | ✅ 28 | ✅ 實作 | |
+| 切換至父節點按鈕 | 按鈕 | ✅ 28 | ✅ 實作 | |
+| 無題目空態 + Layer 3 job 查詢 | 顯示 | ✅ CLAUDE.md | ✅ 實作 | |
+| 「選擇其他節點」+ 「回知識圖譜」按鈕 | 按鈕 | ✅ 32 | ✅ 實作 | |
 
-**問題**：無（排程為同步計算，Layer 3 不適用已確認）
+---
+
+### /review — 錯題複習與 AI 教練
+
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 錯題列表（側欄） | 顯示 | ✅ 07 | ✅ 實作 | |
+| 逐題詳解（含 AI 解析） | 顯示 | ✅ 07 | ✅ 實作 | |
+| AI 教練對話 | 互動 | ✅ 07 | ✅ 實作 | |
+| 引用來源展開 | 按鈕 | ✅ 07 | ✅ 實作 | |
+| 創建錯題專項測驗按鈕 | 按鈕 | ✅ 07 | ✅ 實作 | |
+| FREE 毛玻璃升級攔截 | 顯示 | ✅ 07 | ✅ 實作 | |
+| 空態 Layer 3（查最近失敗測驗） | 顯示 | ✅ CLAUDE.md | ✅ 實作 | |
+| KaTeX 數學公式渲染 | 顯示 | ✅ 07 | ✅ 實作 | |
+
+---
+
+### /schedule — 學習排程
+
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 各科排程卡片（含模式 badge） | 顯示 | ✅ 09 | ✅ 實作 | |
+| 距考日天數 + 推薦題數 | 顯示 | ✅ 09 | ✅ 實作 | |
+| 「一鍵複習」按鈕（→ /exam/setup） | 連結 | ✅ 09 | ✅ 實作 | |
+| 無科目空態引導（→ /onboarding） | 顯示 | ✅ 09 | ✅ 實作 | |
+| 到期複習提醒連結（→ /review） | 連結 | ✅ 09 | ✅ 實作 | |
+
+---
+
+### /login — 身分驗證
+
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| Email 輸入 | 輸入 | ✅ 01 | ✅ 實作 | |
+| 密碼輸入（顯示/隱藏） | 輸入 | ✅ 01 | ✅ 實作 | |
+| Remember Me 勾選 | 互動 | ✅ 01 | ✅ 實作 | |
+| Email 登入按鈕 | 按鈕 | ✅ 01 | ✅ 實作 | |
+| Google SSO 按鈕 | 按鈕 | ✅ 01 | ✅ 實作 | |
+| 忘記密碼連結 | 連結 | ✅ 01 | ✅ 實作 | |
+| 前往註冊連結 | 連結 | ✅ 01 | ✅ 實作 | |
+| 錯誤訊息顯示 | 顯示 | ✅ 01 | ✅ 實作 | |
+
+---
+
+### /signup — 註冊
+
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 名稱/Email/密碼輸入 | 輸入 | ✅ 01 | ✅ 實作 | |
+| 同意條款勾選 | 互動 | ✅ 01 | ✅ 實作 | |
+| 服務條款 modal | 按鈕 | ✅ 01 | ✅ 實作 | |
+| 隱私政策 modal | 按鈕 | ✅ 01 | ✅ 實作 | |
+| 密碼強度指示條 | 顯示 | ✅ 01 | ✅ 實作 | |
+| 提交按鈕 | 按鈕 | ✅ 01 | ✅ 實作 | |
+| 錯誤訊息顯示 | 顯示 | ✅ 01 | ✅ 實作 | |
+
+---
+
+### /onboarding — 首次引導
+
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 多步驟引導流程 | 互動 | ✅ 15 | ✅ 實作 | |
+| 上一步/下一步按鈕 | 按鈕 | ✅ 15 | ✅ 實作 | |
+| 驗證錯誤提示 | 顯示 | ✅ 15 | ✅ 實作 | |
 
 ---
 
 ### /account — 帳號設定
 
-**問題**：無
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 個人資料 Tab（姓名/年齡/職業/學歷） | 互動 | ✅ 22 | ✅ 實作 | |
+| 訂閱與帳單 Tab | 顯示 | ✅ 08 | ✅ 實作 | |
+| 安全 Tab（密碼變更/刪除帳號） | 互動 | ✅ 22 | ✅ 實作 | |
+| 偏好設定 Tab（通知/深色模式/語言） | 互動 | ✅ 22 | ✅ 實作 | |
+| 番茄鐘偏好設定 | 互動 | 🔴 Feature 21 有 Scenario | ❌ 缺失 | 首見 2026-05-06，已追蹤 |
+| 成就系統 Tab | 顯示 | ✅ 13 | ✅ 實作 | |
 
 ---
 
 ### /account/my-subjects — 我的科目
 
-**問題**：無
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 科目列表 | 顯示 | ✅ 13 | ✅ 實作 | |
+| 刪除科目按鈕（含確認） | 按鈕 | ✅ 13、35 | ✅ 實作 | |
+| 錯誤態顯示 | 顯示 | ✅ | ✅ 實作 | |
 
 ---
 
-### /account/weekly-reports — 每週報告
+### /account/weekly-reports — 歷史週報
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 週報清單 | 顯示 | ✅ 14-社群關懷 | ✅ 實作 | |
-| 產生本週報告按鈕 | 按鈕 | ✅ 14-社群關懷 | ✅ 實作 | |
-| 空週報清單狀態 | 空態 | ✅ | 🟡 不足 | reports 為空時無「尚無週報」提示訊息，靜默空白 |
-
-**問題**：
-- 🟡 `/account/weekly-reports` 報告清單為空時無明確說明文字（Layer 3 不適用；但缺少基本空態 UX 訊息）
+| 週報列表 | 顯示 | ✅ 14 | ✅ 實作 | |
+| 手動觸發週報按鈕 | 按鈕 | ✅ 14 | ✅ 實作 | |
+| 空態說明文字（尚無週報） | 顯示 | 🔴 Feature 14 未覆蓋 | ✅ 有文字 | 首見 2026-05-06，已追蹤 |
 
 ---
 
-### /pricing — 定價比較頁
+### /pricing — 定價頁
 
-**問題**：無
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 方案卡片（FREE/PRO/PRO_PLUS/ULTRA） | 顯示 | ✅ 18 | ✅ 實作 | |
+| 方案選擇按鈕 | 按鈕 | ✅ 18 | ✅ 實作 | |
+| 試用期按鈕 | 按鈕 | ✅ 18 | ✅ 實作 | |
 
 ---
 
 ### /feedback — 意見反饋
 
-**問題**：無
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 反饋類型選擇 | 按鈕 | ✅ 17 | ✅ 實作 | |
+| 標題/內容輸入 | 輸入 | ✅ 17 | ✅ 實作 | |
+| 附件上傳 | 互動 | ✅ 17 | ✅ 實作 | |
+| 提交按鈕 | 按鈕 | ✅ 17 | ✅ 實作 | |
+| 我的反饋列表 | 顯示 | ✅ 17 | ✅ 實作 | |
+| 提交成功狀態 + 重新填寫 | 顯示 | ✅ 17 | ✅ 實作 | |
 
 ---
 
-### /forgot-password、/reset-password — 密碼重設
-
-**問題**：無（流程完整）
-
----
-
-### /verify-email、/verify-email/sent — Email 驗證
-
-**問題**：無（resend 失敗錯誤提示已修復於 2026-04-29）
-
----
-
-### /invite/setup-password — 邀請密碼設定
-
-**問題**：無
-
----
-
-### /radar-demo — 開發展示頁
+### /forgot-password / /reset-password — 密碼重設流程
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| 靜態雷達圖/長條圖展示 | 顯示 | 🔴 無 Feature 覆蓋 | N/A | 生產環境可訪問，無 auth guard |
-
-**問題**：
-- 🔴 `/radar-demo` 為開發沙盒頁，無任何 Feature Spec、無 @ignore 標記、無 auth/feature-flag 守衛，可在生產環境直接訪問
+| Email 輸入 + 發送按鈕 | 互動 | ✅ 01 | ✅ 實作 | |
+| 發送成功狀態 | 顯示 | ✅ 01 | ✅ 實作 | |
+| 新密碼 + 確認密碼輸入 | 輸入 | ✅ 01 | ✅ 實作 | |
+| 錯誤顯示（token 過期等） | 顯示 | ✅ 01 | ✅ 實作 | |
 
 ---
 
-### /resources/[id]/candidates — 候選題目審核
+### /verify-email / /verify-email/sent — 信箱驗證
 
-**問題**：無（Feature 23 覆蓋確認，頁面已建立）
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 驗證狀態（loading/success/error） | 顯示 | ✅ 01 | ✅ 實作 | |
+| 重新寄送按鈕（cooldown + 錯誤提示） | 按鈕 | ✅ 01 | ✅ 實作 | |
 
 ---
 
@@ -323,140 +298,157 @@
 
 | 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
 |------|------|-------------|---------|------|
-| DPA 簽署 modal | 互動 | ✅ 10-B2B機構 | ✅ 實作 | |
-| 學員清單表格 | 顯示 | ✅ 10-B2B機構 | ✅ 實作 | |
-| CSV 批量邀請 | 互動 | ✅ 10-B2B機構 | ✅ 實作 | |
-| 單個邀請表單 | 表單 | ✅ 10-B2B機構 | ✅ 實作 | |
-| 學員清單空態說明 | 空態 | 🟡 | ⚠️ 不足 | 學員清單空時無明確說明或「邀請第一位學員」CTA |
-
-**問題**：
-- 🟡 `/edu-console` DPA 已簽署但學員清單為空時，缺明確的「下一步邀請學員」引導訊息
+| DPA 簽署 Modal | 互動 | ✅ 10 | ✅ 實作 | |
+| DPA 未簽置頂 Banner | 顯示 | ✅ 10 | ✅ 實作 | |
+| CSV 匯入學員按鈕 | 按鈕 | ✅ 10 | ✅ 實作 | |
+| 學員列表 | 顯示 | ✅ 10 | ✅ 實作 | |
+| 空態「邀請第一位學員」CTA | 按鈕 | ✅ 10 | ✅ 實作 | |
+| 資源管理（上傳/分享） | 互動 | ✅ 10 | ✅ 實作 | |
 
 ---
 
-### /edu-console/student/[id] — 學員詳情
+### /resources/[id]/candidates — 題目候選審核
 
-**問題**：無
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| 候選題目列表 + 勾選 | 互動 | ✅ 23 | ✅ 實作 | stub → client.tsx |
+| 批量核准/拒絕按鈕 | 按鈕 | ✅ 23 | ✅ 實作 | |
 
 ---
 
-### /super-admin/* — 平台管理後台 (各頁)
+### /invite/setup-password — 邀請設密碼
 
-所有 super-admin 子頁面整體狀態良好。主要確認事項：
+| 元素 | 類型 | Feature 覆蓋 | 實作狀態 | 備註 |
+|------|------|-------------|---------|------|
+| invite token 狀態（有效/過期/已用） | 顯示 | ✅ 10 | ✅ 實作 | |
+| 密碼輸入 + 提交 | 互動 | ✅ 10 | ✅ 實作 | |
+| 過期/錯誤引導（聯繫管理員） | 顯示 | ✅ 10 | ✅ 實作 | |
 
-| 頁面 | Feature 覆蓋 | 狀態 |
-|------|-------------|------|
-| /super-admin/dashboard | ✅ 12-平台管理後台 | ✅ |
-| /super-admin/users | ✅ 12 | ✅ |
-| /super-admin/users/[id] | ✅ 12 | ✅ |
-| /super-admin/platform-subjects | ✅ 12c + 34 | ✅ |
-| /super-admin/default-resources | ✅ 34 | ✅ |
-| /super-admin/exam-import | ✅ 32-考古題現代化匯入 | ✅ |
-| /super-admin/finance | ✅ 12a | ✅ |
-| /super-admin/moderation | ✅ 12b | ✅ |
-| /super-admin/anomaly | ✅ 16-異常維修管理 | ✅ |
-| /super-admin/audit-logs | ✅ 12 | ✅ |
-| /super-admin/cost-monitor | ✅ 33-成本監控 | ✅ |
-| /super-admin/retirement | ✅ 25-AI考題退場 | ✅ |
-| /super-admin/prompt-templates | ✅ 30-Prompt模板 | ✅ |
-| /super-admin/settings/* | ✅ 12c | ✅ (isSuperAdmin 守衛 audit 待補—已知) |
+---
 
-**問題**：無新增（super-admin 守衛改 isSuperAdmin 稽核為已知待辦）
+### /super-admin/* — 平台管理後台（彙整）
+
+| 頁面 | 核心元素 | Feature 覆蓋 | 狀態 | 備註 |
+|------|---------|-------------|------|------|
+| /super-admin/dashboard | 系統 KPI、Alert 列表、刷新 | ✅ 12 | ✅ | |
+| /super-admin/users | 使用者列表、搜尋過濾、分頁、停權 | ✅ 12 | ✅ | |
+| /super-admin/users/[userId] | 詳情（stub → client.tsx） | ✅ 12 | ✅ | |
+| /super-admin/finance | MRR 趨勢、退款、優惠碼 | ✅ 12a | ✅ | |
+| /super-admin/moderation | 審核佇列、意見反饋、AI 濫用 | ✅ 12b | ✅ | |
+| /super-admin/cost-monitor | GCP 成本、預算上限 | ✅ 33 | ✅ | `isAdmin` 守衛，應改 `isSuperAdmin` |
+| /super-admin/audit-logs | 日誌列表、Export | ✅ 12 | ✅ | |
+| /super-admin/anomaly | 異常清單、批次修復 | ✅ 16 | ✅ | |
+| /super-admin/exam-import | 考古題匯入監控 | ✅ 23、32b | ✅ | |
+| /super-admin/default-resources | 預設資源綁定 | ✅ 34 | ✅ | |
+| /super-admin/platform-subjects | 平台科目管理、Fork | ✅ 12c、26、29、34 | ✅ | |
+| /super-admin/prompt-templates | Prompt 模板列表 | ✅ 30 | ✅ | `isAdmin` 守衛，應改 `isSuperAdmin` |
+| /super-admin/prompt-templates/new | 新增 Prompt 模板 | ✅ 30 | ✅ | |
+| /super-admin/prompt-templates/[id] | 編輯（stub → client.tsx） | ✅ 30 | ✅ | |
+| /super-admin/retirement | 退役題庫批次任務 | ✅ 25 | ✅ | |
+| /super-admin/settings | AI 模型路由 | ✅ 12c | ✅ | `isAdmin` 守衛，應改 `isSuperAdmin` |
+| /super-admin/settings/admins | 管理員帳號 | ✅ 12c | ✅ | |
+| /super-admin/settings/announcements | 公告管理 | ✅ 24 | ✅ | |
+| /super-admin/settings/flags | Feature Flags | ✅ 12c | ✅ | `isAdmin` 守衛，應改 `isSuperAdmin` |
+| /super-admin/settings/plans | 方案配額 | ✅ 12c | ✅ | `isAdmin` 守衛，應改 `isSuperAdmin` |
+| /super-admin/settings/api-keys | API Key 監控 | ✅ 12c | ✅ | |
+| /super-admin/settings/version | 版本資訊 | ✅ 12c | ✅ | |
+
+---
+
+### 其他頁面
+
+| 頁面 | 狀態 | 備註 |
+|------|------|------|
+| / (landing) | ✅ 正常 | 行銷頁，無 BDD 對應 |
+| /radar-demo | ✅ isSuperAdmin 守衛已加 | 修復：2026-05-06 |
+| /edu-console/student/[id] | ✅ stub 正常 | Firebase rewrite 處理 |
 
 ---
 
 ## Feature File 覆蓋摘要
 
-| Feature File | Scenario 數 (約) | @ignore/@wip 數 | 備註 |
-|-------------|----------------|----------------|------|
-| 01-身分驗證.feature | ~15 | 3 @manual | 完整 |
-| 02-資源上傳.feature | ~11 | 2 @wip | |
-| 03-知識心智圖.feature | ~10 | 0 | 分享節點 UI 缺 |
-| 03a-知識心智圖生成.feature | ~4 | 0 | |
-| 03b-知識心智圖導航.feature | ~12 | 0 | 資源面板摺疊按鈕缺實作 |
-| 04-測驗設定.feature | ~10 | 0 | |
-| 04a-AI考題生成服務.feature | ~10 | 0 | |
-| 05-模擬機考.feature | ~8 | 0 | |
-| 06-測驗結果.feature | ~10 | 0 | FREE tier AI 總評 paywall 缺 |
-| 07-錯題複習與AI教練.feature | ~13 | 2 @playwright-e2e | |
-| 08-訂閱管理.feature | ~13 | 0 | |
-| 08a/08b | ~5 each | 0 | |
-| 09-學習記憶排程.feature | ~10 | 0 | |
-| 10-B2B機構管理後台.feature | ~55 | 0 | |
-| 11-資源庫管理.feature | ~6 | 0 | |
-| 12/12a/12b/12c | ~10 each | 0 | |
-| 13-個人儀表板.feature | ~36 | 0 | 模式 tooltip 未覆蓋 |
-| 14-社群歸屬.feature | ~6 | 0 | |
-| 15-首次登入引導.feature | ~8 | 1 @wip | 儀表板無科目 CTA 路徑未覆蓋 |
-| 16-異常維修管理.feature | ~7 | 0 | |
-| 17-意見反饋.feature | ~7 | 0 | |
-| 18-定價.feature | ~4 | 0 | |
-| 18-題目分類.feature | ~6 | 0 | |
-| 19-交錯練習.feature | ~8 | 0 | |
-| 20-信心度校準.feature | ~10 | 0 | |
-| 21-番茄鐘學習節奏.feature | ~6 | 0 | 番茄鐘啟用/設定 UI 缺 |
-| 22-帳號設定.feature | ~6 | 0 | |
-| 23-考古題題庫管理.feature | ~4 | 1 @wip | |
-| 24-系統公告管理.feature | ~4 | 0 | |
-| 25-AI考題退場.feature | ~36 | 0 | |
-| 26-考綱逆向工程.feature | ~6 | 0 | |
-| 27-個人化錯題地圖.feature | ~8 | 0 | |
-| 28-階層式難度遞進.feature | ~8 | 0 | |
-| 29-知識樹合併對齊.feature | ~6 | 0 | |
-| 30-Prompt模板管理.feature | ~8 | 0 | |
-| 31-多租戶安全.feature | 3 | 2 @wip | |
-| 32-節點練習模式.feature | ~9 | 0 | AI inference 判斷按鈕未覆蓋 |
-| 32-考古題現代化匯入.feature | ~6 | 0 | |
-| 33-成本監控中心.feature | ~8 | 0 | |
-| 34-預載科目Fork.feature | 9 | 0 | |
+| Feature File | 對應頁面 | @wip 數 | 備註 |
+|-------------|---------|--------|------|
+| 01-身分驗證 | /login, /signup | 0 | |
+| 02-資源上傳 | /dashboard | 2 | GCS 前綴、BackgroundTasks RLS（@wip） |
+| 03-知識心智圖 | /knowledge | 0 | 🔴 搜尋節點篩選 Scenario 實作不符 |
+| 03a-知識心智圖生成 | /knowledge | 0 | |
+| 03b-知識心智圖導航 | /knowledge, /knowledge/mindmap | 0 | |
+| 04-測驗設定 | /exam/setup | 0 | |
+| 04a-AI考題生成服務 | /exam/setup | 0 | |
+| 05-模擬機考 | /exam/workspace | 0 | |
+| 06-測驗結果 | /exam/results | 0 | |
+| 07-錯題複習與AI教練 | /review | 0 | |
+| 08-訂閱管理 | /account | 0 | |
+| 08a-綠界金流串接 | /account | 0 | |
+| 08b-付款後權限更新 | /account | 0 | |
+| 09-學習記憶排程 | /schedule | 0 | |
+| 10-B2B機構管理後台 | /edu-console | 0 | |
+| 11-資源庫管理 | /knowledge | 0 | |
+| 12-平台管理後台 | /super-admin/* | 0 | |
+| 12a-財務管理 | /super-admin/finance | 0 | |
+| 12b-內容審核 | /super-admin/moderation | 0 | |
+| 12c-系統設定 | /super-admin/settings/* | 0 | |
+| 13-個人儀表板與成就系統 | /dashboard | 0 | 🔴 科目切換器 Scenario 未同步移除 |
+| 14-社群歸屬與主動關懷 | /account/weekly-reports | 0 | |
+| 15-首次登入引導 | /onboarding | 1 | BackgroundTasks RLS @wip |
+| 16-異常維修管理 | /super-admin/anomaly | 0 | |
+| 17-意見反饋 | /feedback | 0 | |
+| 18-定價與升級引導 | /pricing | 0 | |
+| 18-題目分類與考試趨勢分析 | /exam/results（Bloom） | 0 | @backend only |
+| 19-交錯練習 | /exam/setup | 0 | |
+| 20-信心度校準 | /exam/workspace, /exam/results | 0 | |
+| 21-番茄鐘學習節奏 | /exam/workspace | 0 | 設定 UI 缺失已追蹤 |
+| 22-帳號設定與個人偏好 | /account | 0 | |
+| 23-考古題題庫管理 | /super-admin/exam-import, /resources/[id]/candidates | 1 | scope=personal @wip |
+| 24-系統公告管理 | /super-admin/settings/announcements | 0 | |
+| 25-AI考題退場與放榜確認 | /super-admin/retirement, /dashboard | 0 | |
+| 26-考綱逆向工程 | 後端自動觸發（UI 已移除） | 0 | 設計決策，非問題 |
+| 27-個人化錯題地圖 | /knowledge/wrong-answers | 0 | |
+| 28-階層式難度遞進 | /practice | 0 | |
+| 29-知識樹合併對齊 | /super-admin/platform-subjects | 0 | |
+| 30-Prompt模板管理 | /super-admin/prompt-templates/* | 0 | |
+| 31-多租戶安全與資料隔離 | 後端+DB | 2 | NULL tenant_id @wip |
+| 32-節點練習模式 | /practice | 0 | |
+| 32-考古題現代化匯入 | /super-admin/exam-import | 0 | |
+| 33-成本監控中心 | /super-admin/cost-monitor | 0 | |
+| 34-預載科目Fork | /super-admin/platform-subjects | 0 | |
+| 35-科目硬刪除 | /account/my-subjects | 0 | |
+| 36-資源硬刪除 | /knowledge | 0 | |
 
 ---
 
-## 問題彙整
+## 問題彙整（今日新增）
 
-### 🔴 Feature 缺失（需新增 Scenario）
+### 🔴 Feature 缺失（需同步更新 Feature Spec）
 
-1. `/dashboard` — [模式 tooltip 按鈕] Sprint/Standard/Mastery 模式說明 tooltip 互動無對應 Feature Scenario（Feature 09/13 皆未覆蓋）
-2. `/dashboard` — [空科目 CTA modal] 儀表板無科目時「開始選擇科目」dashboard-level modal 路徑，Feature 15 只覆蓋 /onboarding 流程，未涵蓋此行內加科目路徑
-3. `/knowledge` — [分享知識節點按鈕] Feature 03 提及節點分享，但無對應 Scenario 且前端未實作此按鈕
-4. `/exam/workspace` — [AI inference 判斷按鈕] 保留我的答案/採信AI/略過（EPIC-035）有 UI 實作但無 Feature Scenario（Feature 32/04a 皆未覆蓋）
-5. `/practice` — [AI inference 判斷按鈕] 同上，練習頁的 AI 推斷答案判斷按鈕（EPIC-035）無 Feature Scenario
-6. `/radar-demo` — [整頁] 開發沙盒頁無 Feature Spec、無 @ignore 標記、無 auth/flag 守衛，生產環境可訪問
-7. `/account/weekly-reports` — [空態說明] Feature 14 未覆蓋「reports 為空」時應顯示的 UI 說明情境
-8. `/exam/workspace` — [番茄鐘啟用入口] Feature 21 有「啟用番茄鐘」Scenario，但頁面缺此互動入口，使 Feature 21 scenario 無對應前端觸發路徑
+1. `/dashboard` — Feature 13（L40-58）仍保有 2 個 active Example Scenario 要求 dashboard 顯示科目切換器（「備考多科時顯示科目切換器應包含 AWS SAA、TOEIC」、「切換科目後儀表板數據更新」）。但 SubjectSwitcher 已於 2026-05 從 dashboard 移除（多科切換改至 /knowledge 和 /onboarding）。Feature 13 相關 Scenario 未同步移除或改寫，若跑前端 BDD 必然失敗。需在 Feature 13 中將科目切換器 Rule 改寫為描述 ScheduleWeekCard 替代行為，或新增「@removed 2026-05」標記。
+
+2. `/knowledge` — Feature 03 Rule「搜尋知識點可即時篩選心智圖導覽區的節點」Example「右側心智圖導覽區應僅顯示包含 'S3' 關鍵字的知識節點」。目前前端搜尋框只過濾左側文件列表，ForceGraph/MindMapTree 節點不受搜尋詞影響。需補前端實作（將 searchQuery 傳入 MindMapTree/ForceGraph）或更新 Feature 03 Scenario 範圍。
 
 ### 🟠 實作缺失（Feature 存在但頁面缺功能）
 
-1. `/exam/workspace` — Feature 21（番茄鐘）規定「啟用番茄鐘模式」、「設定專注/休息時長」、「點擊繼續作答/開始休息」三個 Scenario，頁面僅渲染 `PomodoroTimer` read-only 元件，缺啟用開關、時長設定 UI、休息/繼續選擇按鈕
-2. `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確摺疊/展開按鈕
-3. `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫
-4. `/exam/results` — Feature 06 規格 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 提示資訊」，前端無 tier check 直接渲染 `aiSummary`
-5. `/exam/workspace` — Feature 21 Scenario「番茄鐘計時結束 → 顯示休息/繼續選擇畫面」，頁面缺此選擇 UI（詳見 1 號）
+1. `/knowledge` — 搜尋框（searchQuery state，knowledge/page.tsx L614）只用於過濾文件列表，未將搜尋詞傳遞給 MindMapTree 或 ForceGraph 元件進行節點過濾。Feature 03 Scenario 期待「心智圖導覽區節點可依關鍵字即時篩選」，實際行為不符。
 
-### 🟡 空態需補強
+### 🟡 空態補強（前次修復未達完整 Layer 3 標準）
 
-1. `/dashboard` — 上傳後異步 parse 失敗僅顯示 exception 訊息，未查 `resource_parse_jobs.failure_reason`；用戶看不到實際失敗原因
-2. `/knowledge` — PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分「PROCESSING 中」vs「FAILED」vs「從未上傳」三種情境（FAILED 已處理，PROCESSING 情境缺說明）
-3. `/account/weekly-reports` — `reports.length === 0` 時靜默空白，無「尚無週報」說明文字（cron 健康監控為維運層問題，但基本空態 UX 訊息應補）
-4. `/edu-console` — DPA 已簽署但學員清單空時，缺明確「邀請第一位學員」引導訊息或 CTA
-5. `/exam/setup` — 空題庫提示為靜態文字，未主動呼叫 `resourceParseService.getStatus()` 顯示 failure_reason（持續追蹤）
+1. `/exam/setup` — documents.length === 0（COMPLETED 文件為空）時顯示靜態文字「若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態」（L609-615）。未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason，用戶須手動跳轉至 /knowledge 才能看到具體失敗原因。依 CLAUDE.md Layer 3 標準，空態應直接查 job 表呈現具體失敗原因於當頁。前次（2026-04-24）標記為已修復，但實際只達到「靜態提示」層級，未達 Layer 3 主動查 job 表標準。
 
 ---
 
-## Layer 3 空態查詢合規狀態摘要
+## 既有追蹤問題確認（詳見 ToDoList.md 2026-05-06 條目）
 
-| 頁面 | Layer 3 合規 | 查詢方法 |
-|------|-------------|---------|
-| /knowledge | ✅ 合規 | documentService.list + resourceParseService.getStatus（FAILED）；⚠️ PROCESSING 情境缺 |
-| /knowledge/mindmap | ✅ 合規 | 同上 |
-| /knowledge/wrong-answers | ✅ 合規 | 同上 |
-| /practice | ✅ 合規 | 同上 |
-| /review | ✅ 合規 | examService.getRecentFailures |
-| /dashboard (上傳失敗) | ❌ 不合規 | 僅 exception 訊息 |
-| /exam/setup (空題庫) | ❌ 不合規 | 靜態提示文字 |
-| /schedule | ✅ 不適用 | 同步計算，無 async job 表 |
-| /account/weekly-reports | ✅ 不適用 | WeeklyReport 無 status 欄位 |
+以下問題已於 2026-05-06 首見並追蹤，本次審查確認仍未修復：
+
+- 🔴 `/exam/workspace` + `/practice` — AI inference 判斷按鈕無 Feature Scenario
+- 🔴 `/dashboard` — 模式 tooltip 說明按鈕無 Feature Scenario  
+- 🔴 `/dashboard` — 無科目時 dashboard-level modal 路徑無 Feature Scenario
+- 🔴 `/account/weekly-reports` — Feature 14 未覆蓋空態 UI 情境
+- 🟠 `/exam/workspace` — Feature 21 番茄鐘啟用開關、時長設定、繼續作答/開始休息 UI 缺失
+- 🟠 `/knowledge` — Feature 03 節點掌握時 Confetti/獎章動畫缺實作
+- 🟡 `/dashboard` — 上傳失敗後未查 resource_parse_jobs.failure_reason
+- 🟡 `/knowledge` — PROCESSING 狀態資源未向用戶顯示進度說明
 
 ---
 
-*本報告由 CertiMate QA 自動稽核排程產出，每日覆蓋所有 50 個前端頁面與 44 個 Feature File。*
+*本報告由 TiTi QA 架構師排程任務自動產出，每日覆蓋寫入。*

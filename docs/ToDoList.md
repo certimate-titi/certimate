@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-06 TiTi Commander 排程巡檢 — 修復 3 項（radar-demo 守衛、exam/results FREE tier check、edu-console 空態 CTA）+ 確認 1 項誤報（weekly-reports 空態）
+**最後更新**：2026-05-08 Daily QA Audit 排程巡檢 — 新增 3 🔴 + 1 🟠（exam/results Certi 安撫表情、dashboard 信心度趨勢、workspace 題號網格信心度底色、account dark mode 全站效果）
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -24,6 +24,21 @@
 
 **待補稽核**（次要）：`/super-admin/settings/*`、`/super-admin/prompt-templates/`、`/super-admin/cost-monitor/`、`/super-admin/settings/flags`、`/super-admin/settings/plans` 等高等設定頁應改用 `isSuperAdmin` 守衛（目前皆用 `isAdmin`）。後端 `require_super_admin` 已存在，需 audit endpoint 一致性。
 
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-08 新增）
+
+- [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08）
+- [ ] `/dashboard` — Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊（首見：2026-05-08）
+- [x] `/exam/workspace` — ~~Feature 20 Rule「後置（回應）- 題號導覽網格應以不同底色標示信心度」要求網格底色差異，目前網格格子無信心度底色~~ 已修復：題號網格依 `confidences[q.id]` 信心度值上色（😎 confident → 綠色 / 😐 somewhat → 琥珀色 / 😰 guessing → 玫瑰色），圖例同步更新；TypeScript 編譯零錯誤（修復：2026-05-08 TiTi Commander 排程巡檢）
+
+## 🟠 實作缺失 — 需補前端功能（2026-05-08 新增）
+
+- [x] `/account` — ~~Feature 22 Rule「帳戶頁面通知偏好與深色模式切換」— `darkMode` state 已存在且 UI 切換按鈕已顯示，但未實作全站 CSS 暗色主題套用~~ 已修復：globals.css 新增 `:root` / `.dark` CSS 變數（16 組色彩定義）+ 全局覆寫規則（bg-white/bg-slate-*/text-slate-*/border-slate-*/input/nav/dialog/hover/scrollbar 共 15 類）；layout.tsx 新增 FOUC 防護 inline script（hydration 前讀取 localStorage 套用 .dark class）；TypeScript 編譯零錯誤（修復：2026-05-08 TiTi Commander 排程巡檢）
+
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-07 新增）
+
+- [x] `/dashboard` — ~~Feature 13（L40-58）的科目切換器 Scenarios 未同步~~ 已改寫為 ScheduleWeekCard 替代行為描述（列出全部科目+倒數+今日複習入口），標記 @removed 並加歷史註解（修復：2026-05-07 TiTi Commander 排程巡檢）
+- [x] `/knowledge` — ~~Feature 03 搜尋知識點篩選心智圖導覽區節點 Scenario 存在但前端未實作~~ 已修復：searchQuery 透過 props 傳入 ForceGraph（不匹配節點淡化）及 MindMapTree（遞迴過濾+自動展開），TypeScript 編譯零錯誤（修復：2026-05-07 TiTi Commander 排程巡檢）
+
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-06 新增）
 
 - [ ] `/exam/workspace` — Feature 21（番茄鐘）有「啟用番茄鐘」、「設定時長」、「繼續作答/開始休息」三個 Scenario，但頁面缺啟用開關及設定 UI，導致這些 Scenario 無對應前端觸發路徑（首見：2026-05-06）
@@ -34,12 +49,20 @@
 - [x] `/radar-demo` — ~~開發沙盒頁無 Feature Spec、無 @ignore 標記、無 auth/feature-flag 守衛，生產環境可直接訪問~~ 已新增 `isSuperAdmin` 守衛：未認證或非 SUPER_ADMIN 自動 redirect → /dashboard；載入中顯示 spinner（修復：2026-05-06 TiTi Commander 排程巡檢）
 - [ ] `/account/weekly-reports` — Feature 14 未覆蓋「reports 為空」時應顯示的 UI 說明情境（首見：2026-05-06）
 
+## 🟠 實作缺失 — 需補前端功能（2026-05-07 新增）
+
+- [x] `/knowledge` — ~~searchQuery 只過濾左側文件列表，未傳遞給 MindMapTree/ForceGraph~~ 已修復：ForceGraph 新增 searchQuery prop（不匹配節點 opacity 0.2）、MindMapTree 新增 searchQuery prop（遞迴過濾+祖先保留+自動展開+空態提示）；knowledge/page.tsx 傳入 searchQuery（修復：2026-05-07 TiTi Commander 排程巡檢）
+
 ## 🟠 實作缺失 — 需補前端功能（2026-05-06 新增）
 
 - [ ] `/exam/workspace` — Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失：(1) 啟用/停用開關、(2) 專注/休息時長設定輸入、(3) 計時結束後「繼續作答」或「開始休息」選擇按鈕（首見：2026-05-06）
 - [ ] `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI（首見：2026-05-06）
 - [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06）
 - [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）
+
+## 🟡 空態補強 — 需查 Job 表（2026-05-07 新增）
+
+- [ ] `/exam/setup` — 空文件態（documents.length === 0，COMPLETED 過濾後）顯示靜態提示文字（L609-615）「若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態」，未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason。依 CLAUDE.md Layer 3 標準需直接於當頁查 job 表並顯示具體失敗原因（前次 2026-04-24 修復僅達靜態提示層級，未達 Layer 3）（首見重新標記：2026-05-07）
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-06 新增）
 
