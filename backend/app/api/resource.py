@@ -55,6 +55,7 @@ def list_resources(
             "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 1) if r.file_size_bytes else None,
             "youtube_url": r.youtube_url or "",
             "created_at": r.created_at.isoformat() if r.created_at else None,
+            "error_message": getattr(r, "error_message", None),
         }
         for r in resources
     ]
@@ -280,60 +281,6 @@ def _process_in_background(resource_id: str, db_url: str):
     t.start()
 
 
-@router.post("/resources/first-upload")
-def first_upload(
-    body: dict,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    """首次上傳資源 — 觸發播種者成就徽章。"""
-    from app.models.resource import Resource
-    resource_id = str(uuid.uuid4())
-    return {
-        "ok": True,
-        "id": resource_id,
-        "resource_id": resource_id,
-        "status": "completed",
-        "achievement": {"key": "first_upload", "name": "播種者"},
-    }
-
-
-@router.post("/resources/{resource_id}/retry")
-def retry_upload(
-    resource_id: str,
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    """重試失敗的資源上傳。"""
-    return {
-        "ok": True,
-        "resource_id": resource_id,
-        "status": "completed",
-        "upload_status": "completed",
-    }
-
-
-@router.post("/resources/upload")
-def upload_resource(
-    request: UploadResourceRequest,
-    user_id: str = Depends(get_current_user_id),
-    tenant_id: str = Depends(get_tenant_id),
-    service: ResourceService = Depends(_get_resource_service),
-):
-    """上傳資源（JSON metadata）。"""
-    result = service.upload(
-        user_id=user_id,
-        filename=request.filename,
-        subject_id=request.subject_id,
-        file_size_mb=request.file_size_mb,
-        resource_type=request.type,
-        tenant_id=tenant_id,
-    )
-    if result.get("error"):
-        raise HTTPException(status_code=result["status_code"], detail=result["message"])
-    return result
-
-
 @router.post("/resources/upload-file", status_code=202)
 async def upload_resource_file(
     file: UploadFile = File(...),
@@ -356,6 +303,22 @@ async def upload_resource_file(
     actual_filename = filename or file.filename or "unnamed"
     file_data = await file.read()
     file_size_mb = len(file_data) / (1024 * 1024)
+
+    # ────────────────────────────────────────────────────────────────
+    # 同步預檢（PDF magic bytes + 版權關鍵字）— 失敗則完全不建 Resource row
+    # 對應 Feature 02 Rule「上傳時同步預檢 PDF」。
+    # ────────────────────────────────────────────────────────────────
+    if (resource_type or "").lower() == "pdf":
+        if not file_data.startswith(b"%PDF"):
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "PDF 檔案損毀或無法解析"},
+            )
+        try:
+            from app.services.document_processing_service import DocumentProcessingService
+            DocumentProcessingService(db)._check_copyright(file_data)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail={"message": str(exc)})
 
     # 先做驗證（用原有 service）
     result = service.upload(

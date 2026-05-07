@@ -38,19 +38,20 @@ def step_impl(context, resource_name):
         subject_id = str(subject.id)
         context.ids["subject_default"] = subject_id
 
+    payload = b"%PDF-1.4\n" + b"\x00" * 1023
     response = context.api_client.post(
-        "/api/v1/resources/upload",
+        "/api/v1/resources/upload-file",
         headers={"Authorization": f"Bearer {token}"},
-        json={
-            "filename": resource_name,
-            "type": "pdf",
+        files={"file": (resource_name, payload, "application/pdf")},
+        data={
             "subject_id": subject_id,
-            "file_size_mb": 1.0,
+            "filename": resource_name,
+            "resource_type": "pdf",
         },
     )
     context.last_response = response
     context.memo["uploaded_resource_name"] = resource_name
-    if response.status_code in (200, 201):
+    if response.status_code in (200, 201, 202):
         data = response.json()
         resource_id = data.get("id", "")
         context.ids["uploaded_resource"] = resource_id

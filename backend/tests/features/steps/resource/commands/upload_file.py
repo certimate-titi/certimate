@@ -1,3 +1,5 @@
+"""When 上傳檔案（缺欄位驗證主用 — multipart）。"""
+
 from behave import when
 
 
@@ -10,11 +12,13 @@ def step_impl(context, email, filename, subject_id):
     subject_uuid = context.ids.get(f"subject_{subject_id}")
 
     response = context.api_client.post(
-        "/api/v1/resources/upload",
+        "/api/v1/resources/upload-file",
         headers={"Authorization": f"Bearer {token}"},
-        json={
-            "filename": filename if filename.strip() else None,
-            "subject_id": subject_uuid if subject_uuid else None,
+        files={"file": (filename or "", b"%PDF-1.4\n" + b"\x00" * 1023, "application/pdf")},
+        data={
+            "subject_id": subject_uuid or "",
+            "filename": filename,
+            "resource_type": "pdf",
         },
     )
     context.last_response = response

@@ -37,12 +37,33 @@ def step_impl_first_login_today(context, email):
 
 @when('使用者 "{email}" 首次成功上傳一份資源')
 def step_impl_first_upload(context, email):
-    """呼叫 API 觸發首次上傳（成就徽章）。"""
+    """呼叫真實上傳 API；成就徽章由 pipeline 完成階段 side-effect 觸發。
+
+    legacy /resources/first-upload 已下架（純 mock，無 DB 寫入）。
+    走 /resources/upload-file 確保 Resource row 真實建立。
+    """
+    import uuid
     token = _get_token(context, email)
+    # 找一個 subject（測試環境通常有 seed）
+    subject_id = next(
+        (v for k, v in context.ids.items() if k.startswith("subject_")),
+        None,
+    )
+    if not subject_id:
+        from app.models.subject import Subject
+        subj = context.db_session.query(Subject).first()
+        subject_id = str(subj.id) if subj else str(uuid.uuid4())
+
+    payload = b"%PDF-1.4\n" + b"\x00" * 1023
     response = context.api_client.post(
-        "/api/v1/resources/first-upload",
-        json={"filename": "test.pdf", "type": "pdf"},
+        "/api/v1/resources/upload-file",
         headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("test.pdf", payload, "application/pdf")},
+        data={
+            "subject_id": subject_id,
+            "filename": "test.pdf",
+            "resource_type": "pdf",
+        },
     )
     context.last_response = response
     context.memo["dashboard_token"] = token

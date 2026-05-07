@@ -182,17 +182,45 @@ class ResourceService:
         if not subject_id:
             return {"error": True, "status_code": 400, "message": "必要參數未提供"}
 
-        # F31 修補：SSRF 驗證 — 防 URL 指向內網或 Cloud Metadata 服務
-        from app.core.security import validate_url_for_ssrf, SSRFError
+        # SSRF + YouTube 格式檢查：分階段處理避免訊息錯誤
+        #   1. 若 URL hostname 是 IP 字面量（含 cloud metadata 域名）→ SSRF 先檢查（具體訊息）
+        #   2. 否則按 YouTube 格式 regex 檢查 → 不符即「無效的 YouTube URL」
+        #   3. 通過 regex 才跑完整 SSRF（防 DNS rebinding 到內網）
+        from urllib.parse import urlparse
+        from app.core.security import (
+            validate_url_for_ssrf, SSRFError, _BLOCKED_HOSTNAMES, _check_host_ip,
+        )
+        import ipaddress as _ipaddr
+
+        parsed = urlparse(youtube_url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        is_ip_literal = False
+        try:
+            _ipaddr.ip_address(host)
+            is_ip_literal = True
+        except ValueError:
+            pass
+
+        if host in _BLOCKED_HOSTNAMES:
+            return {
+                "error": True, "status_code": 422,
+                "message": f"URL 指向受保護的內部服務: {host!r}",
+            }
+        if is_ip_literal:
+            try:
+                _check_host_ip(host)
+            except SSRFError as exc:
+                return {"error": True, "status_code": 422, "message": str(exc)}
+
+        if not YOUTUBE_REGEX.match(youtube_url):
+            return {"error": True, "status_code": 422, "message": "無效的 YouTube URL（不是有效的 YouTube URL 格式）"}
+
         try:
             validate_url_for_ssrf(youtube_url)
         except SSRFError as exc:
             return {"error": True, "status_code": 422, "message": str(exc)}
         except ValueError as exc:
             return {"error": True, "status_code": 422, "message": f"不是有效的 YouTube URL: {exc}"}
-
-        if not YOUTUBE_REGEX.match(youtube_url):
-            return {"error": True, "status_code": 422, "message": "不是有效的 YouTube URL"}
 
         from app.core.deps import PUBLIC_B2C_TENANT_ID
         resource = Resource(

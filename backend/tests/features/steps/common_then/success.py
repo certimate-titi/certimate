@@ -12,7 +12,7 @@ def step_impl(context):
     # E2E 模式：檢查 HTTP response
     if hasattr(context, 'last_response') and context.last_response is not None:
         response = context.last_response
-        assert response.status_code in [200, 201, 204], \
+        assert response.status_code in [200, 201, 202, 204], \
             f"預期成功（2XX），實際 {response.status_code}: {response.text}"
     # Unit Test 模式：檢查 last_error
     else:
