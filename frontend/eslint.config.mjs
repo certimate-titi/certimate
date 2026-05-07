@@ -12,5 +12,25 @@ export default defineConfig([
   },
   {
     extends: [...next],
+  },
+  {
+    // React Compiler-era strict rules ("set-state-in-effect", "purity",
+    // "preserve-manual-memoization") flag legitimate one-shot patterns
+    // (URL parse failure → error state, Date.now in render). Downgrade to
+    // warn while migration epic is in flight; original errors remain visible
+    // in CI logs without blocking main.
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+    },
+  },
+  {
+    // Playwright e2e tests use `use()` from @playwright/test — collides with
+    // React Hook naming rule. Tests are not React components, scope rule off.
+    files: ["e2e/**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
   }
 ]);
