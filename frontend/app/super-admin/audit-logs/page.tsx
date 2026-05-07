@@ -114,7 +114,7 @@ export default function AuditLogsPage() {
     [AdminAction.CREATE_AB_TEST]:     { icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', label: '建立 A/B 測試' },
     [AdminAction.COMPLETE_AB_TEST]:   { icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '完成 A/B 測試' },
     [AdminAction.FUP_SOFT_CAP]:       { icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', label: 'FUP 軟上限觸發' },
-    // 知識庫
+    // 學習庫
     [AdminAction.EXTRACT_KNOWLEDGE]:  { icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', label: '知識樹萃取' },
   };
 

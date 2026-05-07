@@ -79,7 +79,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">AI 出題</h3>
-              <p className="text-slate-600">根據你的知識庫，動態生成單選、複選、計算題。仿造真實機考介面，無縫接軌。</p>
+              <p className="text-slate-600">根據你的學習庫，動態生成單選、複選、計算題。仿造真實機考介面，無縫接軌。</p>
             </div>
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative">
               <div className="flex items-center gap-4 mb-6">

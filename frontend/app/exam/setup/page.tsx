@@ -610,7 +610,7 @@ function ExamSetupPage() {
               <div className="text-center text-slate-400 py-8">
                 <p className="text-sm">尚無可用的測驗範圍</p>
                 <p className="text-xs mt-1">上傳文件後即可生成考題</p>
-                <p className="text-xs mt-2 text-slate-300">若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態</p>
+                <p className="text-xs mt-2 text-slate-300">若已上傳資源但此處為空，可能資源解析失敗，請至學習庫頁面查看狀態</p>
               </div>
             ) : null}
             </div>

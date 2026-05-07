@@ -402,7 +402,7 @@ function PracticePage() {
                   href="/knowledge"
                   className="mt-4 inline-block text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                 >
-                  前往知識庫 <ChevronRight className="inline h-4 w-4" />
+                  前往學習庫 <ChevronRight className="inline h-4 w-4" />
                 </Link>
               </div>
             ) : (

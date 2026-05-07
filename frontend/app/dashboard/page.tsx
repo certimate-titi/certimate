@@ -187,7 +187,7 @@ export default function DashboardPage() {
       // EPIC-035：上傳成功後自動觸發 LLM 解析（非阻塞）
       const resourceId = uploadRes?.document?.id;
       if (resourceId) {
-        try { await resourceParseService.triggerParse(resourceId); } catch { /* 忽略配額錯誤，使用者可在資源庫手動觸發 */ }
+        try { await resourceParseService.triggerParse(resourceId); } catch { /* 忽略配額錯誤，使用者可在學習庫手動觸發 */ }
       }
     } catch (err) {
       clearInterval(progressInterval);

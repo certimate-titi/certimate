@@ -524,7 +524,7 @@ function KnowledgeBasePageInner() {
         <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
           {!embedded && (
             <div className="min-w-0">
-              <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">知識庫</h1>
+              <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">學習庫</h1>
               <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
             </div>
           )}
