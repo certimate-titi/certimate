@@ -857,8 +857,8 @@ function KnowledgeBasePageInner() {
                 {centerView === 'document' ? (
                   <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                      {docFullText}
+                    <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700 [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_img]:max-w-full">
+                      <MathContent>{docFullText}</MathContent>
                     </div>
                   </div>
                 ) : !loadingDocs && mindMapNodes.length === 0 ? (

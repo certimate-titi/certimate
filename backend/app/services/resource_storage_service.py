@@ -112,6 +112,16 @@ def render_pdf_to_webp(
                         data=raw,
                     )
                     figure_paths.append(fig_path)
+                    # 圖檔走 GCS public URL（uuid 路徑不可猜測，可接受風險）
+                    # 用於前端 markdown <img> 直接渲染原文圖片
+                    if hasattr(storage, "make_public"):
+                        try:
+                            storage.make_public(fig_path)
+                        except Exception:
+                            logger.warning(
+                                "make_public failed resource=%s page=%d idx=%d",
+                                resource_id, page_no, img_idx, exc_info=True,
+                            )
                 except Exception:
                     logger.warning(
                         "figure extract failed resource=%s page=%d idx=%d",

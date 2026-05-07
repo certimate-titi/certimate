@@ -48,6 +48,14 @@ class BaseStorageService(ABC):
     ) -> str:
         """將 src_path 複製到新的 (user_id, resource_id, filename)，回傳新路徑。"""
 
+    def make_public(self, storage_path: str) -> None:
+        """設定 storage object 為 public-read。Local 預設 noop。"""
+        return
+
+    def to_public_url(self, storage_path: str) -> str:
+        """回 public URL（呼叫前需先 make_public）。"""
+        return storage_path
+
 
 class LocalStorageService(BaseStorageService):
     """本地檔案系統儲存（開發環境）。"""
@@ -108,6 +116,14 @@ class LocalStorageService(BaseStorageService):
         shutil.copy2(src, dst_path)
         logger.info("Local storage: copied %s -> %s", src_path, dst_path)
         return str(dst_path)
+
+    def make_public(self, storage_path: str) -> None:
+        """Local storage: noop（本地無 ACL 概念）。"""
+        return
+
+    def to_public_url(self, storage_path: str) -> str:
+        """Local storage: 回相對路徑供 dev 開發用。"""
+        return f"/local-storage/{Path(storage_path).name}"
 
 
 class GCSStorageService(BaseStorageService):
@@ -194,6 +210,19 @@ class GCSStorageService(BaseStorageService):
         dst_path = f"gs://{self.bucket_name}/{dst_key}"
         logger.info("GCS storage: copied %s -> %s", src_path, dst_path)
         return dst_path
+
+    def make_public(self, storage_path: str) -> None:
+        """設定 blob 為 public-read（給原文 markdown 中的圖片用）。"""
+        bucket = self._get_bucket()
+        key = self._parse_gcs_path(storage_path)
+        blob = bucket.blob(key)
+        blob.make_public()
+
+    def to_public_url(self, storage_path: str) -> str:
+        """回 public URL（呼叫前需先 make_public）。"""
+        bucket = self._get_bucket()
+        key = self._parse_gcs_path(storage_path)
+        return bucket.blob(key).public_url
 
     def _parse_gcs_path(self, gcs_path: str) -> str:
         """將 gs://bucket/key 轉為 key。"""

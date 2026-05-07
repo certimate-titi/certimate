@@ -354,12 +354,12 @@ def _persist_parsed(
 ) -> ParseOutcome:
     # 1) resources.* fields
     """儲存 parsed。"""
-    resource.parsed_markdown = parsed.get("markdown")
-    resource.parsed_text = _extract_plain_text(parsed.get("markdown") or "")
+    raw_markdown = parsed.get("markdown") or ""
     resource.detected_content_type = parsed.get("detected_content_type")
 
     # 2) WebP + figures — dispatch to resource_storage_service（critical pages aware）
     pages_rendered = 0
+    figure_url_map: dict[str, str] = {}  # "p3_i0" → public URL
     try:
         from app.services.resource_storage_service import render_pdf_to_webp
         from app.services.storage_service import get_storage_service
@@ -375,8 +375,29 @@ def _persist_parsed(
                 critical_pages=critical,
             )
             pages_rendered = len(results)
+            # 建立 figure_id → public URL 對照表（替換 markdown 佔位符用）
+            for page_result in results:
+                for fig_path in (page_result.figures or []):
+                    fname = fig_path.rsplit("/", 1)[-1]  # e.g. "p3_i0.png"
+                    fig_id = fname.rsplit(".", 1)[0]      # e.g. "p3_i0"
+                    try:
+                        figure_url_map[fig_id] = storage.to_public_url(fig_path)
+                    except Exception:
+                        logger.warning(
+                            "to_public_url failed resource=%s fig=%s",
+                            resource.id, fig_id, exc_info=True,
+                        )
     except Exception:
         logger.warning("webp render failed resource=%s", resource.id, exc_info=True)
+
+    # 3) 替換 markdown 中圖片佔位符 ![圖](FIGURE:p3_i0) → ![圖](https://gcs/...)
+    import re as _re
+    def _sub(m):
+        fid = m.group(1)
+        return f"![圖]({figure_url_map.get(fid, '')})" if figure_url_map.get(fid) else ""
+    final_markdown = _re.sub(r"!\[圖\]\(FIGURE:(p\d+_i\d+)\)", _sub, raw_markdown)
+    resource.parsed_markdown = final_markdown
+    resource.parsed_text = _extract_plain_text(final_markdown)
 
     # 3) questions / candidates / scaffolds
     q_created = 0

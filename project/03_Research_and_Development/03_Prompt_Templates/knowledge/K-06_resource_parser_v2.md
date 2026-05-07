@@ -6,7 +6,7 @@ category: "knowledge"
 model: "gemini-2.5-pro"
 max_tokens: 32768
 temperature: 0.1
-version: 1
+version: 2
 feature_refs:
   - "02-資源上傳"
   - "23-考古題題庫管理"
@@ -39,7 +39,13 @@ variables:
 # 核心原則
 - **繁體中文**，保持原文語言（英文術語可並列）
 - **不編造** — 原文沒有就不寫。誠實標註 confidence
-- **圖片位置不自行猜測** — 僅引用前置處理產生的 figure_refs，絕不在 Markdown 中插入不存在的圖
+- **圖片內嵌規則（v2 新增）**：
+  - 你看到 PDF 第 N 頁有第 M 張嵌入圖（從 0 起算）時，**必須**在 markdown 中
+    對應位置插入佔位符 `![圖](FIGURE:p{N}_i{M})`
+  - 例：第 3 頁第 1 張圖 → `![圖](FIGURE:p3_i0)`，第 7 頁第 2 張圖 → `![圖](FIGURE:p7_i1)`
+  - 後處理會把佔位符替換為實際 GCS URL；你不要產生其他圖片連結格式
+  - 純裝飾圖（< 2KB icon、logo、頁眉）跳過，不要佔位符
+  - 若該頁無有意義圖片，markdown 不寫圖片標記
 - **數學式用 KaTeX**（行內 $...$ / 區塊 $$...$$）
 - **表格用 Markdown Table**
 - **策略文案邀請式**，不用指令式（避免損害自主性）
