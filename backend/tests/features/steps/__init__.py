@@ -1451,3 +1451,4 @@ from .subject.readmodel_then import preview_response as _f35_subj_readmodel  # n
 from .resource.aggregate_given import owned_resource_with_chunks as _f36_res_given  # noqa: F401
 from .resource.commands import hard_delete_api as _f36_res_cmd  # noqa: F401
 from .resource.aggregate_then import hard_delete_db as _f36_res_then  # noqa: F401
+from .resource.aggregate_then import hidden_resource_db as _f36_hidden_then  # noqa: F401

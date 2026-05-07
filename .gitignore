@@ -29,8 +29,11 @@ pretty.output
 *.tsbuildinfo
 next-env.d.ts
 
-# Coverage
+# Coverage (Python coverage tool output)
 coverage/
+# Allow BDD step package named "coverage" (Feature 35 / ISS-015)
+!backend/tests/features/steps/coverage/
+!backend/tests/features/steps/coverage/**
 
 # Firebase
 .firebase/

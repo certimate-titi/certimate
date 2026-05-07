@@ -1,0 +1,64 @@
+name: BDD Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  step-import-lint:
+    name: Step Import Sanity (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Lint steps/__init__.py imports
+        working-directory: backend
+        run: python ../scripts/lint_step_imports.py
+
+  behave:
+    name: behave (Feature 35 + Feature 36)
+    runs-on: ubuntu-latest
+    needs: step-import-lint
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: certimate_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+      - name: Apply migrations + seed
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/certimate_test
+          JWT_SECRET_KEY: ci-secret
+        run: .venv/bin/alembic upgrade head
+      - name: Run regression-critical features
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/certimate_test
+          JWT_SECRET_KEY: ci-secret
+        run: |
+          .venv/bin/python -m behave \
+            tests/features/35-API覆蓋補齊.feature \
+            tests/features/36-資源硬刪除.feature \
+            --no-capture

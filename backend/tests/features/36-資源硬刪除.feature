@@ -36,9 +36,13 @@ Feature: 資源硬刪除（Backend API）
       And 資料庫中 admin_audit_logs 應有一筆 action 為 "RESOURCE_HARD_DELETED" 且 target_id 為 res_001 的紀錄
 
     @fullstack
-    Example: 非擁有者嘗試刪除他人資源 → 404（不洩露存在性）
+    Example: 非擁有者嘗試刪除他人資源 → 200 + 寫入 UserHiddenResource（軟隱藏）
+      # 設計變更（2026-05-07）：知識庫頁本就將同 subject 全部 resources 顯示給訂閱者，
+      # 「不洩露存在性」invariant 不成立。改為非擁有者刪除即軟隱藏，
+      # 解決「看得到刪不掉」的 UX bug（Cloud Logging 9 筆 404）。
       When 使用者 "alice@example.com" 呼叫 DELETE /api/v1/resources/res_002
-      Then 系統應回傳 404
+      Then 系統應回傳 200
+      And 資料庫中 user_hidden_resources 應有 user_id 為 "alice@example.com" 且 resource_id 為 res_002 的 row
 
     @fullstack
     Example: 未認證使用者刪除資源 → 401 或 403
