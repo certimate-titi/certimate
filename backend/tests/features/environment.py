@@ -143,11 +143,14 @@ def _seed_base_data(session):
     from app.models.plan_quota import PlanQuota
 
     defaults = [
-        {"plan": "FREE", "daily_ai_chats": 3, "monthly_uploads": 5, "monthly_exams": 10, "monthly_vision_pages": 0, "max_file_size_mb": 10},
-        {"plan": "PRO_199", "daily_ai_chats": 30, "monthly_uploads": 50, "monthly_exams": 100, "monthly_vision_pages": 0, "max_file_size_mb": 100},
-        {"plan": "PRO_PLUS_399", "daily_ai_chats": 200, "monthly_uploads": 200, "monthly_exams": 500, "monthly_vision_pages": 50, "max_file_size_mb": 100},
-        {"plan": "ULTRA_1599", "daily_ai_chats": None, "monthly_uploads": None, "monthly_exams": None, "monthly_vision_pages": 500, "max_file_size_mb": 500},
-        {"plan": "EDU", "daily_ai_chats": 5, "monthly_uploads": 0, "monthly_exams": None, "monthly_vision_pages": 0, "max_file_size_mb": 0},
+        {"plan": "FREE", "daily_ai_chats": 3, "monthly_uploads": 5, "monthly_exams": 10, "monthly_vision_pages": 0, "max_file_size_mb": 10, "monthly_resource_parse_limit": 5},
+        {"plan": "PRO_199", "daily_ai_chats": 30, "monthly_uploads": 50, "monthly_exams": 100, "monthly_vision_pages": 0, "max_file_size_mb": 100, "monthly_resource_parse_limit": 50},
+        {"plan": "PRO", "daily_ai_chats": 30, "monthly_uploads": 50, "monthly_exams": 100, "monthly_vision_pages": 0, "max_file_size_mb": 100, "monthly_resource_parse_limit": 50},
+        {"plan": "PRO_PLUS_399", "daily_ai_chats": 200, "monthly_uploads": 200, "monthly_exams": 500, "monthly_vision_pages": 50, "max_file_size_mb": 100, "monthly_resource_parse_limit": 200},
+        {"plan": "PRO_PLUS", "daily_ai_chats": 200, "monthly_uploads": 200, "monthly_exams": 500, "monthly_vision_pages": 50, "max_file_size_mb": 100, "monthly_resource_parse_limit": 200},
+        {"plan": "ULTRA_1599", "daily_ai_chats": None, "monthly_uploads": None, "monthly_exams": None, "monthly_vision_pages": 500, "max_file_size_mb": 500, "monthly_resource_parse_limit": -1},
+        {"plan": "ULTRA", "daily_ai_chats": None, "monthly_uploads": None, "monthly_exams": None, "monthly_vision_pages": 500, "max_file_size_mb": 500, "monthly_resource_parse_limit": -1},
+        {"plan": "EDU", "daily_ai_chats": 5, "monthly_uploads": 0, "monthly_exams": None, "monthly_vision_pages": 0, "max_file_size_mb": 0, "monthly_resource_parse_limit": 0},
     ]
     for row in defaults:
         existing = session.query(PlanQuota).filter_by(plan=row["plan"]).first()

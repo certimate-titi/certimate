@@ -71,7 +71,10 @@ def check_and_consume(db: Session, user: User) -> None:
 
     解析 job 的 row 本身就是計量單位；此函式只做檢查，不扣配額。
     """
-    plan = getattr(user, "subscription_plan", None) or "FREE"
+    raw_plan = getattr(user, "subscription_plan", None)
+    # subscription_plan 可能是 SubscriptionPlan enum；DB 存字串。
+    # 解 enum.value，否則 SQL filter 會 mismatch（產生 limit=0 假錯）。
+    plan = getattr(raw_plan, "value", raw_plan) or "FREE"
     limit = get_quota_limit(db, plan)
 
     if limit == UNLIMITED:

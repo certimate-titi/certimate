@@ -305,6 +305,32 @@ async def upload_resource_file(
     file_size_mb = len(file_data) / (1024 * 1024)
 
     # ────────────────────────────────────────────────────────────────
+    # 月度上傳配額檢查（FREE 5/月、PRO 50/月、PRO_PLUS 200/月、ULTRA 無限）
+    # 配額消耗=每次上傳成功（會跑 multimodal Pro 解析）。
+    # 2026-05-08：reparse 端點下架後，此處變成唯一觸發點。
+    # ────────────────────────────────────────────────────────────────
+    from app.services.resource_parse_quota_service import (
+        check_and_consume, QuotaExceededError,
+    )
+    from app.models.user import User
+    user_obj = db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+    if user_obj is None:
+        raise HTTPException(status_code=401, detail={"message": "未授權"})
+    try:
+        check_and_consume(db, user_obj)
+    except QuotaExceededError as exc:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "message": str(exc),
+                "limit": exc.limit,
+                "used": exc.used,
+                "plan": exc.plan,
+                "upgrade_hint": "升級 PRO 可用 50 份 / 月",
+            },
+        )
+
+    # ────────────────────────────────────────────────────────────────
     # 同步預檢（PDF magic bytes + 版權關鍵字）— 失敗則完全不建 Resource row
     # 對應 Feature 02 Rule「上傳時同步預檢 PDF」。
     # ────────────────────────────────────────────────────────────────

@@ -673,30 +673,34 @@ function KnowledgeBasePageInner() {
                                     setCenterView('document');
                                     return;
                                   }
-                                  // Fetch chunks if not cached
+                                  // 主流：讀 multimodal Pro 解析的 markdown（含圖片引用）
                                   let fullText = '';
-                                  if (!docChunks[doc.id]) {
-                                    setLoadingChunks(doc.id);
-                                    try {
-                                      const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
-                                      const chunks = res.chunks || [];
-                                      setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
-                                      const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+                                  setLoadingChunks(doc.id);
+                                  try {
+                                    const md = await resourceParseService.getMarkdown(doc.id);
+                                    fullText = md.markdown || '';
+                                  } catch { /* fallback to chunks below */ }
+                                  finally { setLoadingChunks(null); }
+
+                                  // Fallback 1：parsed_markdown 為空（舊資源或 parse 未完成）→ 拼 chunks
+                                  if (!fullText || fullText.length < 20) {
+                                    if (!docChunks[doc.id]) {
+                                      setLoadingChunks(doc.id);
+                                      try {
+                                        const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
+                                        const chunks = res.chunks || [];
+                                        setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
+                                        const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+                                        fullText = sorted.map(c => c.content).join('\n\n');
+                                      } catch { /* silent */ }
+                                      finally { setLoadingChunks(null); }
+                                    } else {
+                                      const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
                                       fullText = sorted.map(c => c.content).join('\n\n');
-                                    } catch {
-                                      fullText = '';
-                                    } finally {
-                                      setLoadingChunks(null);
                                     }
-                                  } else {
-                                    const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
-                                    fullText = sorted.map(c => c.content).join('\n\n');
                                   }
 
-                                  // Fallback: system-generated resources (e.g. 考古題題庫) have no
-                                  // chunks but the backend exposes a rolled-up summary via
-                                  // /knowledge-map/resources/{id}/summary that walks the
-                                  // synthetic knowledge_nodes subtree and returns a readable doc.
+                                  // Fallback 2：仍空 → 系統資源走 summary
                                   if (!fullText || fullText.length < 20) {
                                     try {
                                       const summary = await knowledgeService.getResourceSummary(doc.id);

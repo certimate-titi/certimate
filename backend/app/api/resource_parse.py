@@ -166,67 +166,9 @@ def _get_question_owned(db: Session, question_id: UUID, user_id: UUID | str) -> 
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/resources/{resource_id}/parse", response_model=ParseJobResponse)
-def trigger_parse(
-    resource_id: UUID,
-    background: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user_id: UUID = Depends(get_current_user_id),
-) -> ParseJobResponse:
-    """trigger parse。
-
-    此 endpoint 對應 `trigger_parse` 操作。
-
-    Args:
-        resource_id: 參數。
-        background: 參數。
-        current_user_id: 參數。
-
-    Returns:
-        回應內容（依 response_model 定義）。
-    """
-    user = _get_user_or_404(db, current_user_id)
-    resource = _get_resource_owned(db, resource_id, current_user_id)
-
-    try:
-        check_and_consume(db, user)
-    except QuotaExceededError as exc:
-        raise HTTPException(
-            status_code=402,
-            detail={
-                "message": str(exc),
-                "limit": exc.limit,
-                "used": exc.used,
-                "plan": exc.plan,
-                "upgrade_hint": "升級 PRO 可用 50 份 / 月",
-            },
-        )
-
-    job = create_parse_job(db, resource)
-    db.commit()
-    # run_parse_job 在背景跑；測試可直接同步呼叫
-    background.add_task(_run_in_background, job.id)
-
-    return ParseJobResponse(
-        job_id=job.id, resource_id=resource.id, status=job.status
-    )
-
-
-def _run_in_background(job_id: UUID) -> None:
-    """BackgroundTasks wrapper — 建新 session 避免共用 request-scoped."""
-    from app.core.deps import _SessionLocal
-
-    if _SessionLocal is None:
-        raise RuntimeError("Database session factory not initialized")
-    db = _SessionLocal()
-    try:
-        run_parse_job(db, job_id)
-        db.commit()
-    except Exception:  # noqa: BLE001
-        db.rollback()
-        raise
-    finally:
-        db.close()
+# NOTE: POST /resources/{id}/parse endpoint removed (2026-05-08).
+# Reparse 功能下架原因：prompt 由 super_admin 統一管理，相同 prompt × 相同 PDF
+# 重跑只是燒 LLM 成本，無產品價值。配額觸發點移到 /upload-file。
 
 
 @router.get(
@@ -266,6 +208,26 @@ def get_parse_status(
         detected_content_type=job.detected_content_type,
         critical_pages=list(job.critical_pages or []),
     )
+
+
+@router.get("/resources/{resource_id}/markdown")
+def get_markdown(
+    resource_id: UUID,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> dict:
+    """取得 multimodal Pro 解析後的完整 markdown（含圖片引用）。
+
+    所有 plan（含 FREE）皆可讀；scaffolds / 題目等付費功能走 /parsed。
+    對應「原文閱讀」UI — 點擊資源即可看到含圖排版 markdown。
+    """
+    res = _get_resource_owned(db, resource_id, current_user_id)
+    return {
+        "resource_id": str(res.id),
+        "filename": res.name,
+        "markdown": res.parsed_markdown or "",
+        "status": (res.status.value if hasattr(res.status, "value") else res.status),
+    }
 
 
 @router.get("/resources/{resource_id}/parsed", response_model=ParsedResourceResponse)

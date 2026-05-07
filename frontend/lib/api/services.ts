@@ -2148,17 +2148,28 @@ import type {
 } from '@/types/api';
 
 /**
- * 資源 LLM 解析服務（EPIC-035）：觸發解析、查狀態、取得解析結果。
+ * 資源 LLM 解析服務（EPIC-035）：查狀態、取得解析結果。
+ *
+ * 2026-05-08 重構：
+ *   - triggerParse() 已移除（reparse 端點下架）
+ *   - 上傳時自動跑 multimodal Pro 解析，不再支援用戶主動 reparse
+ *   - prompt 由 super_admin 統一管理，重跑無產品價值
  */
 export const resourceParseService = {
-  async triggerParse(resourceId: string): Promise<ParseJobResponse> {
-    return apiClient.post(`/resources/${resourceId}/parse`, {});
-  },
   async getStatus(resourceId: string): Promise<ParseStatusResponse> {
     return apiClient.get(`/resources/${resourceId}/parse-status`);
   },
   async getParsed(resourceId: string): Promise<ParsedResourceResponse> {
     return apiClient.get(`/resources/${resourceId}/parsed`);
+  },
+  /**
+   * 取得 multimodal Pro 解析後的完整 markdown（含圖片引用）。
+   * 所有 plan 皆可讀，對應「原文」UI。
+   */
+  async getMarkdown(
+    resourceId: string,
+  ): Promise<{ resource_id: string; filename: string; markdown: string; status: string }> {
+    return apiClient.get(`/resources/${resourceId}/markdown`);
   },
 };
 

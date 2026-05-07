@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Youtube, FileText, Clock, TrendingUp, BookOpen, AlertCircle, Sparkles, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
-import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
+import { dashboardService, documentService, subjectService } from '@/lib/api/services';
 import ScheduleWeekCard from '@/components/ScheduleWeekCard';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -184,11 +184,8 @@ export default function DashboardPage() {
       setUploadStatus('completed');
       setData(await loadDashboardData(activeSubjectId));
       invalidateQuotaCache(); // L-quota: 上傳成功後刷新配額計數
-      // EPIC-035：上傳成功後自動觸發 LLM 解析（非阻塞）
-      const resourceId = uploadRes?.document?.id;
-      if (resourceId) {
-        try { await resourceParseService.triggerParse(resourceId); } catch { /* 忽略配額錯誤，使用者可在學習庫手動觸發 */ }
-      }
+      // 解析在後端自動串接（/upload-file → enqueue → process_resource → run_parse_job）
+      // 不需要前端再 trigger；reparse 端點已下架（2026-05-08）。
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));
@@ -224,10 +221,7 @@ export default function DashboardPage() {
       setYoutubeUrl('');
       setData(await loadDashboardData(activeSubjectId));
       invalidateQuotaCache(); // L-quota
-      const resourceId = uploadRes?.document?.id;
-      if (resourceId) {
-        try { await resourceParseService.triggerParse(resourceId); } catch { /* noop */ }
-      }
+      // 解析自動串接（同 PDF upload 路徑）
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));

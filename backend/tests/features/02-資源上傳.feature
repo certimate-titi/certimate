@@ -371,12 +371,14 @@ Feature: 資源上傳與隱性版權約定
       And 該 2 筆 questions 的 owner_user_id 應等於 "pro@example.com" 的 user_id
 
   @epic-035
-  Rule: 前置（配額）- 超過月度 LLM 解析配額觸發 402 附升級引導
+  Rule: 前置（配額）- 超過月度上傳配額觸發 402 附升級引導
+  # 2026-05-08：reparse 端點下架，配額觸發點移到 upload-file。
+  # prompt 由 super_admin 統一管理，重跑 reparse 無產品價值；
+  # 上傳即跑 multimodal Pro 解析，配額 = 月度上傳次數上限。
 
-    Example: FREE 方案當月已用完 5 次解析，第 6 次觸發回 402
-      Given 使用者 "free@example.com" 已上傳資源 "第六份.pdf"（科目 ID: 1）且有 0 個分塊
-      And 使用者 "free@example.com" 本月已完成 5 次 LLM 資源解析
-      When 使用者 "free@example.com" 觸發該資源的 LLM 解析
+    Example: FREE 方案當月已上傳 5 份，第 6 次上傳回 402
+      Given 使用者 "free@example.com" 本月已完成 5 次 LLM 資源解析
+      When 使用者 "free@example.com" 上傳大小為 1MB 的 PDF 檔案 "第六份.pdf"，科目為 1
       Then 操作失敗狀態碼為 402
       And 錯誤訊息應包含「本月解析配額已用完」
       And 回應應包含升級引導欄位 "upgrade_hint"
