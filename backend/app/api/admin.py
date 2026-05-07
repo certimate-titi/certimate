@@ -817,6 +817,26 @@ DEFAULT_EXAM_SUBJECTS = [
 ]
 
 
+@router.post("/sync-prompts", include_in_schema=False)
+def sync_prompts():
+    """從 GCS 同步 prompt templates 到 DB（CI 部署後觸發）。
+
+    上傳 K-06 v2（含圖片內嵌）等更新到 prod DB。
+    對應 .github/workflows/deploy-gcp.yml 部署後的 curl POST 步驟。
+    """
+    from app.scripts.sync_prompts_from_gcs import sync_and_seed_prompts
+    try:
+        result = sync_and_seed_prompts()
+        return {"ok": True, "result": result}
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).exception("sync_prompts failed: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail={"message": f"sync failed: {type(exc).__name__}: {exc}"},
+        )
+
+
 @router.post("/seed-subjects")
 def seed_subjects(
     body: Optional[SeedSubjectsRequest] = None,

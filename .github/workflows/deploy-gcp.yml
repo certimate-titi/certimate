@@ -151,11 +151,16 @@ jobs:
           echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
 
       # ========================================
-      # 7. Seed demo account
+      # 7. Seed demo account + sync prompts
       # ========================================
       - name: Seed demo account
         run: |
           curl -X POST "${{ steps.backend.outputs.url }}/api/v1/auth/seed-demo" -H "Content-Type: application/json" || echo "Demo account seeding failed (non-blocking)"
+
+      - name: Sync prompt templates from GCS to DB
+        run: |
+          # K-06 v2 等 prompt 更新需要從 GCS 同步到 DB；新 deploy 後執行
+          curl -X POST "${{ steps.backend.outputs.url }}/api/v1/admin/sync-prompts" -H "Content-Type: application/json" -m 60 || echo "Prompt sync failed (non-blocking)"
 
       # ========================================
       # 8. Deploy Frontend to Firebase
