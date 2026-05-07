@@ -3,11 +3,9 @@
 /**
  * @file HardDeleteConfirmModal — 硬刪除二次確認 Modal。
  *
- * 用戶必須在輸入框鍵入「確認刪除」四字才能啟用「永久刪除」按鈕。
- * 顯示連帶刪除筆數預覽，強化不可逆警示。
+ * 顯示連帶刪除筆數預覽，按下「永久刪除」即執行；不再要求輸入確認字串。
  */
 
-import { useState } from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 export interface CascadeCount {
@@ -52,8 +50,6 @@ const CASCADE_LABELS: { key: keyof CascadeCount; label: string }[] = [
   { key: 'learning_journeys',  label: '學習旅程' },
 ];
 
-const CONFIRM_PHRASE = '確認刪除';
-
 export default function HardDeleteConfirmModal({
   open,
   onClose,
@@ -63,25 +59,19 @@ export default function HardDeleteConfirmModal({
   cascadeCount,
   loading = false,
 }: HardDeleteConfirmModalProps) {
-  const [inputValue, setInputValue] = useState('');
-
   if (!open) return null;
-
-  const canDelete = inputValue === CONFIRM_PHRASE;
 
   const relevantItems = CASCADE_LABELS.filter(
     ({ key }) => (cascadeCount[key] ?? 0) > 0
   );
 
   const handleClose = () => {
-    setInputValue('');
     onClose();
   };
 
   const handleConfirm = async () => {
-    if (!canDelete || loading) return;
+    if (loading) return;
     await onConfirm();
-    setInputValue('');
   };
 
   return (
@@ -131,22 +121,6 @@ export default function HardDeleteConfirmModal({
           ) : (
             <p className="text-sm text-slate-500 px-1">（無連帶資料，僅刪除主體本身）</p>
           )}
-
-          {/* Confirmation input */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-700">
-              請輸入「<span className="font-bold text-rose-700">{CONFIRM_PHRASE}</span>」以確認操作
-            </label>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onPaste={(e) => e.preventDefault()}
-              placeholder="請手動輸入確認文字"
-              disabled={loading}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent disabled:opacity-50"
-            />
-          </div>
         </div>
 
         {/* Footer */}
@@ -160,7 +134,7 @@ export default function HardDeleteConfirmModal({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!canDelete || loading}
+            disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Trash2 className="h-4 w-4" />

@@ -329,6 +329,10 @@ class AuthService:
         if not _verify_password(password, user.password_hash or ""):
             return {"error": True, "status_code": 400, "message": "帳號或密碼錯誤"}
 
+        from datetime import timezone as _tz
+        user.last_login_at = datetime.now(_tz.utc)
+        self.repo.save(user)
+
         token = _generate_token(str(user.id))
         redirect_to = _build_redirect(user)
         nav_items = _build_nav_items(user)
@@ -350,9 +354,13 @@ class AuthService:
     def google_sso(self, google_id_token: str, email_hint: str | None = None) -> dict:
         # Verify the Google ID token
         """google sso。"""
+        from app.core.config import get_settings as _get_settings
+        _settings = _get_settings()
         claims = _verify_google_id_token(google_id_token)
-        if claims is None and email_hint:
-            # Fallback: use email_hint when token verification fails (e.g. test mode)
+        # SECURITY: email_hint fallback ONLY allowed when DEBUG=true (dev/test).
+        # In production (DEBUG=false) it would allow account takeover — anyone
+        # who knows an email could mint a valid JWT for that account.
+        if claims is None and email_hint and getattr(_settings, "DEBUG", False):
             claims = {"email": email_hint, "name": "", "picture": "", "email_verified": True}
         if claims is None:
             return {"error": True, "status_code": 400, "message": "Google 驗證失敗，請重試"}
@@ -381,6 +389,10 @@ class AuthService:
             if claims.get("picture") and not user.avatar_url:
                 user.avatar_url = claims["picture"]
             self.repo.save(user)
+
+        from datetime import timezone as _tz
+        user.last_login_at = datetime.now(_tz.utc)
+        self.repo.save(user)
 
         token = _generate_token(str(user.id))
         redirect_to = _build_redirect(user)

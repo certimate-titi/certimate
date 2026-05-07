@@ -309,18 +309,26 @@ class ResourceDeleteService:
         except ValueError:
             raise HTTPException(status_code=400, detail={"message": "resource_id 格式無效"})
 
-        resource = self.db.query(Resource).filter(
-            Resource.id == rid,
-            Resource.user_id == uuid.UUID(user_id),
-        ).first()
+        # 不過濾 user_id；非擁有者走 soft-hide preview（cascade 全 0，僅標示會隱藏）
+        resource = self.db.query(Resource).filter(Resource.id == rid).first()
         if resource is None:
-            raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
+            raise HTTPException(status_code=404, detail={"message": "資源不存在"})
+
+        is_owner = resource.user_id == uuid.UUID(user_id)
+        if not is_owner:
+            return {
+                "resource_id": resource_id,
+                "resource_name": resource.name,
+                "cascade_count": {"user_hidden_resources": 1},
+                "is_owner": False,
+            }
 
         cascade_count = _count_cascade_for_resource(self.db, rid)
         return {
             "resource_id": resource_id,
             "resource_name": resource.name,
             "cascade_count": cascade_count,
+            "is_owner": True,
         }
 
     def hard_delete_resource(
@@ -351,12 +359,32 @@ class ResourceDeleteService:
         except ValueError:
             raise HTTPException(status_code=400, detail={"message": "resource_id 格式無效"})
 
-        resource = self.db.query(Resource).filter(
-            Resource.id == rid,
-            Resource.user_id == uuid.UUID(user_id),
-        ).first()
+        # 先撈 resource（不過濾 user_id）；若非擁有者改走 soft-hide 路徑
+        resource = self.db.query(Resource).filter(Resource.id == rid).first()
         if resource is None:
-            raise HTTPException(status_code=404, detail={"message": "資源不存在或無權限"})
+            raise HTTPException(status_code=404, detail={"message": "資源不存在"})
+
+        actor_uuid = uuid.UUID(user_id)
+        if resource.user_id != actor_uuid:
+            # 非擁有者 → soft hide（避免知識庫列表混入別人的孤兒，但不真正刪資料）
+            from app.models.user_hidden_resource import UserHiddenResource
+            from datetime import datetime as _dt, timezone as _tz
+            existing = self.db.query(UserHiddenResource).filter_by(
+                user_id=actor_uuid, resource_id=rid,
+            ).first()
+            if existing is None:
+                self.db.add(UserHiddenResource(
+                    user_id=actor_uuid,
+                    resource_id=rid,
+                    hidden_at=_dt.now(_tz.utc),
+                ))
+                self.db.commit()
+            return {
+                "deleted": False,
+                "hidden": True,
+                "resource_id": resource_id,
+                "cascade_count": {"user_hidden_resources": 1},
+            }
 
         # 事前統計
         cascade_count = _count_cascade_for_resource(self.db, rid)
