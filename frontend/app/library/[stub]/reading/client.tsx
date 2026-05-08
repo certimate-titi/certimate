@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, ListTree, ChevronRight } from 'lucide-react';
 
+import AdvanceOrganizer from '@/components/AdvanceOrganizer';
 import InlinePractice from '@/components/InlinePractice';
 import MathContent from '@/components/MathContent';
 import PitfallAlert from '@/components/PitfallAlert';
@@ -227,7 +228,18 @@ export default function ReadingClient() {
               </p>
             ) : (
               <div className="space-y-2 -mx-2">
-                {/* P1 (Sprint 2 T15)：pitfall 警示放最上面，第一時間警告 */}
+                {/* P3 (Sprint 4 T35)：advance_organizer 讀前定錨，最上方 */}
+                {chapterScaffolds
+                  .filter((s) => s.type === 'advance_organizer')
+                  .map((s) => (
+                    <AdvanceOrganizer
+                      key={s.id}
+                      scaffoldId={s.id}
+                      chapterHeading={s.chapter_heading}
+                      content={s.content}
+                    />
+                  ))}
+                {/* P1 (Sprint 2 T15)：pitfall 警示放第二優先 */}
                 {chapterScaffolds
                   .filter((s) => s.type === 'pitfall')
                   .map((s) => (
