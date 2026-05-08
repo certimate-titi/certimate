@@ -204,11 +204,19 @@ class LLMService:
         plan: str = "FREE",
         task_type: str = "basic",
         max_tokens: int = 4096,
+        feature: str = "llm_generate",
     ) -> str:
         """Generate text using the appropriate LLM.
 
         If model is specified, uses it directly.
         Otherwise resolves from plan + task_type routing.
+
+        Args:
+            feature: Sprint 8 T70 — ai_usage_ledger.feature label，
+                供 /admin/cost/by-feature 拆解花費佔比。callsite 應傳入
+                具體業務功能（如 "ai_chat" / "ai_question_gen" / "encouragement"
+                / "weekly_report" / "wrong_answer_explain"），未傳入則回退
+                generic "llm_generate"（不利毛利分析）。
         """
         if model:
             # Resolve shorthand model names to full API model names
@@ -217,12 +225,12 @@ class LLMService:
         else:
             model, provider = self.resolve_model(plan, task_type)
 
-        logger.info("LLM generate: model=%s provider=%s", model, provider)
+        logger.info("LLM generate: model=%s provider=%s feature=%s", model, provider, feature)
 
         # TODO #4 — auto-track AI usage in ai_usage_ledger when db available
         if self.db is not None:
             return self._generate_with_tracking(
-                provider, model, system_prompt, user_prompt, max_tokens
+                provider, model, system_prompt, user_prompt, max_tokens, feature
             )
 
         if provider == "anthropic":
@@ -243,6 +251,7 @@ class LLMService:
         system_prompt: str,
         user_prompt: str,
         max_tokens: int,
+        feature: str = "llm_generate",
     ) -> str:
         """Wrap generate() in track_ai_usage for ai_usage_ledger.
 
@@ -254,8 +263,6 @@ class LLMService:
             estimate_gemini_cost,
             track_ai_usage,
         )
-
-        feature = "llm_generate"
         # Map provider name to tracker provider (excluding openai which is not budgeted)
         if provider == "anthropic":
             tracker_provider = "anthropic"
@@ -311,6 +318,7 @@ class LLMService:
         plan: str = "FREE",
         task_type: str = "basic",
         max_tokens: int = 4096,
+        feature: str = "rag_with_context",
     ) -> str:
         """Generate with RAG context prepended to user prompt."""
         full_prompt = (
@@ -320,7 +328,7 @@ class LLMService:
         )
         return self.generate(
             system_prompt, full_prompt, model=model,
-            plan=plan, task_type=task_type, max_tokens=max_tokens,
+            plan=plan, task_type=task_type, max_tokens=max_tokens, feature=feature,
         )
 
     def generate_json(
@@ -330,9 +338,10 @@ class LLMService:
         plan: str = "FREE",
         task_type: str = "basic",
         max_tokens: int = 4096,
+        feature: str = "json_generate",
     ) -> dict:
         """Generate and parse JSON response."""
-        raw = self.generate(system_prompt, user_prompt, plan=plan, task_type=task_type, max_tokens=max_tokens)
+        raw = self.generate(system_prompt, user_prompt, plan=plan, task_type=task_type, max_tokens=max_tokens, feature=feature)
         text = raw.strip()
         if text.startswith("```"):
             lines = text.split("\n")
