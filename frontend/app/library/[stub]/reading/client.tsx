@@ -20,6 +20,7 @@ import { ArrowLeft, BookOpen, ListTree, ChevronRight } from 'lucide-react';
 
 import InlinePractice from '@/components/InlinePractice';
 import MathContent from '@/components/MathContent';
+import PitfallAlert from '@/components/PitfallAlert';
 import RetrievalCard from '@/components/RetrievalCard';
 import { useReadingPageState } from '@/hooks/use-reading-page-state';
 import { useAuth } from '@/lib/auth-context';
@@ -226,6 +227,17 @@ export default function ReadingClient() {
               </p>
             ) : (
               <div className="space-y-2 -mx-2">
+                {/* P1 (Sprint 2 T15)：pitfall 警示放最上面，第一時間警告 */}
+                {chapterScaffolds
+                  .filter((s) => s.type === 'pitfall')
+                  .map((s) => (
+                    <PitfallAlert
+                      key={s.id}
+                      scaffoldId={s.id}
+                      chapterHeading={s.chapter_heading}
+                      content={s.content}
+                    />
+                  ))}
                 {chapterScaffolds
                   .filter((s) => s.type === 'takeaway' || s.type === 'elaborative')
                   .map((s) =>

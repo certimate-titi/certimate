@@ -32,7 +32,8 @@ export interface ChapterEntry {
 export interface ScaffoldEntry {
   id: string;
   chapter_heading: string | null;
-  type: 'takeaway' | 'elaborative' | 'strategy';
+  /** Sprint 2 P1 加 pitfall（迷思警示）*/
+  type: 'takeaway' | 'elaborative' | 'strategy' | 'pitfall';
   content: string;
   retrieval_prompt: string | null;
   template_code: string | null;
