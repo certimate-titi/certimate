@@ -542,6 +542,16 @@ export const dashboardService = {
     const q = qs.toString();
     return apiClient.get(`/dashboard/review-calendar${q ? '?' + q : ''}`);
   },
+
+  // T63 (Sprint 8 L30)：信心度校準趨勢（Feature 20）
+  async getConfidenceCalibration(): Promise<{
+    calibration_rate: number;
+    status: string;
+    trend: Array<{ exam_id: string; submitted_at: string | null; calibration_rate: number }>;
+    exam_count: number;
+  }> {
+    return apiClient.get('/dashboard/confidence-calibration');
+  },
 };
 
 // ===========================

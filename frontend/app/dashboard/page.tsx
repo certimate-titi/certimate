@@ -93,6 +93,18 @@ export default function DashboardPage() {
   // L-quota: 上傳配額守門（disable button when blocked）
   const uploadGuard = useQuotaGuard('monthly_uploads');
 
+  // T63 (Sprint 8 L30)：信心度校準趨勢（Feature 20）
+  const [calibration, setCalibration] = useState<{
+    calibration_rate: number;
+    status: string;
+    trend: Array<{ exam_id: string; submitted_at: string | null; calibration_rate: number }>;
+    exam_count: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    dashboardService.getConfidenceCalibration().then(setCalibration).catch(() => setCalibration(null));
+  }, [isAuthenticated]);
+
   // Onboarding guard
   useEffect(() => {
     if (authLoading) return;
@@ -726,6 +738,47 @@ export default function DashboardPage() {
                   window.location.href = `/knowledge${qs}`;
                 } : undefined}
               />
+
+              {/* T63 (Sprint 8 L30) — 信心度校準趨勢（Feature 20） */}
+              {calibration && calibration.exam_count > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-slate-800">信心度校準</h3>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      calibration.calibration_rate >= 0.8 ? 'bg-emerald-100 text-emerald-700' :
+                      calibration.calibration_rate >= 0.5 ? 'bg-amber-100 text-amber-700' :
+                      'bg-rose-100 text-rose-700'
+                    }`}>
+                      {calibration.status} {Math.round(calibration.calibration_rate * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">
+                    最近 {calibration.exam_count} 場測驗中，「自信」答對率
+                  </p>
+                  {/* 簡易 sparkline：每場一根長條，越高越藍 */}
+                  <div className="flex items-end gap-1 h-12">
+                    {calibration.trend.slice().reverse().map((t, idx) => (
+                      <div
+                        key={t.exam_id}
+                        className="flex-1 rounded-t transition-all"
+                        style={{
+                          height: `${Math.max(10, t.calibration_rate * 100)}%`,
+                          backgroundColor:
+                            t.calibration_rate >= 0.8 ? '#10b981' :
+                            t.calibration_rate >= 0.5 ? '#f59e0b' :
+                            '#f43f5e',
+                          opacity: 0.4 + (idx / calibration.trend.length) * 0.6,
+                        }}
+                        title={`${Math.round(t.calibration_rate * 100)}%${t.submitted_at ? ' · ' + new Date(t.submitted_at).toLocaleDateString() : ''}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                    <span>較舊</span>
+                    <span>最近</span>
+                  </div>
+                </div>
+              )}
 
               {activeSubjectId && (
                 <div className="mt-3 pt-3 border-t border-slate-100">

@@ -29,7 +29,7 @@
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-08 新增）
 
 - [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08）
-- [ ] `/dashboard` — Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊（首見：2026-05-08）
+- [x] `/dashboard` — ~~Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊~~ T63 已修正：dashboardService.getConfidenceCalibration() 對接後端 /dashboard/confidence-calibration（trend / rate / status），DomainRadarChart 下方加迷你 sparkline + 狀態 badge（emerald/amber/rose 三色）；Chrome Preview Layer 2 實測通過（修復：2026-05-08 Sprint 8 CTO quick wins）
 - [x] `/exam/workspace` — ~~Feature 20 Rule「後置（回應）- 題號導覽網格應以不同底色標示信心度」要求網格底色差異，目前網格格子無信心度底色~~ 已修復：題號網格依 `confidences[q.id]` 信心度值上色（😎 confident → 綠色 / 😐 somewhat → 琥珀色 / 😰 guessing → 玫瑰色），圖例同步更新；TypeScript 編譯零錯誤（修復：2026-05-08 TiTi Commander 排程巡檢）
 
 ## 🟠 實作缺失 — 需補前端功能（2026-05-08 新增）
@@ -58,7 +58,7 @@
 ## 🟠 實作缺失 — 需補前端功能（2026-05-06 新增）
 
 - [x] `/exam/workspace` — ~~Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失~~ 與上方 #21 同件事；[PomodoroTimer.tsx](frontend/components/PomodoroTimer.tsx) 已實作，巡檢誤報（移交 BDD 補測清單，2026-05-08 audit）
-- [ ] `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI（首見：2026-05-06）
+- [x] `/knowledge` — ~~Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI~~ 巡檢誤報：[knowledge/page.tsx:819 / 873](frontend/app/knowledge/page.tsx) 已實作左右兩面板各自 toggle 按鈕（「◀ 隱藏資料」/「▶ 資料列表」與右側對稱）；註解 L28 已標明 react-resizable-panels removed（確認：2026-05-08 Sprint 8 audit）
 - [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06）
 - [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）
 
