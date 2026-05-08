@@ -703,3 +703,122 @@ def get_chapter_practice(
             for q in questions
         ],
     )
+
+
+# ── Sprint 5 P4 T43：跨資源概念中心 endpoint ─────────────────────────────────
+
+
+class ConceptHit(BaseModel):
+    """單一概念命中項（用於 concept-center search）。"""
+
+    resource_id: UUID
+    resource_name: str
+    resource_type: str  # pdf | video | quiz | other
+    chapter_heading: str | None
+    scaffold_type: str
+    content: str
+
+
+class ConceptCenterResponse(BaseModel):
+    """跨資源概念中心搜尋結果。
+
+    依 scaffold_type 分組（前端展示用）：
+      - pitfall：跨資源迷思警示
+      - takeaway / advance_organizer：教材觀點
+      - elaborative：思考題引用
+    """
+
+    query: str
+    subject_id: UUID | None
+    total: int
+    hits: list[ConceptHit]
+
+
+@router.get(
+    "/concept-center", response_model=ConceptCenterResponse
+)
+def search_concept(
+    q: str,
+    subject_id: UUID | None = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> ConceptCenterResponse:
+    """跨資源搜尋概念。
+
+    Args:
+        q: 搜尋關鍵字（必填，最少 2 字）
+        subject_id: 限定科目（可選，預設搜全 user resources）
+        limit: 回傳上限（1-200，default 50）
+        current_user_id: JWT 解出
+
+    Returns:
+        ConceptCenterResponse — query / subject_id / total / hits[]
+
+    Sprint 5 簡化版：純 SQL ILIKE 搜 scaffold.content + chapter_heading。
+    Sprint 6 P5 評估：擴 voyage embedding 語意搜尋。
+
+    Raises:
+        422: q 長度不足
+    """
+    from app.models.resource import Resource as _Resource
+
+    if not q or len(q.strip()) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "q must be at least 2 characters"},
+        )
+    limit = max(1, min(limit, 200))
+
+    # SQL ILIKE search across user's scaffolds（owner-scoped）
+    user_uuid = _as_uuid(current_user_id)
+    query_pattern = f"%{q.strip()}%"
+
+    stmt = (
+        select(ResourceScaffold, _Resource)
+        .join(_Resource, ResourceScaffold.resource_id == _Resource.id)
+        .where(_Resource.user_id == user_uuid)
+        .where(
+            (ResourceScaffold.content.ilike(query_pattern))
+            | (ResourceScaffold.chapter_heading.ilike(query_pattern))
+        )
+        .order_by(
+            # pitfall 排最前（警示優先）
+            (ResourceScaffold.type == "pitfall").desc(),
+            ResourceScaffold.created_at.desc(),
+        )
+        .limit(limit)
+    )
+    if subject_id is not None:
+        stmt = stmt.where(_Resource.subject_id == subject_id)
+
+    rows = db.execute(stmt).all()
+
+    def _resource_type(r: _Resource) -> str:
+        ext = (r.gcs_path or "").lower().rsplit(".", 1)[-1] if r.gcs_path else ""
+        if ext in {"mp4", "mov", "avi", "mkv", "webm"} or getattr(r, "youtube_url", None):
+            return "video"
+        if r.detected_content_type == "practice_questions":
+            return "quiz"
+        if ext in {"ppt", "pptx"}:
+            return "slides"
+        return "pdf"
+
+    hits = [
+        ConceptHit(
+            resource_id=res.id,
+            resource_name=res.name or "(未命名)",
+            resource_type=_resource_type(res),
+            chapter_heading=sf.chapter_heading,
+            scaffold_type=sf.type if isinstance(sf.type, str) else sf.type.value,
+            content=sf.content or "",
+        )
+        for sf, res in rows
+    ]
+
+    return ConceptCenterResponse(
+        query=q.strip(),
+        subject_id=subject_id,
+        total=len(hits),
+        hits=hits,
+    )

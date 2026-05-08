@@ -21,7 +21,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Search, FileText, Film, HelpCircle, AlertTriangle } from 'lucide-react';
 
-import { resourceParseService, documentService } from '@/lib/api/services';
+// services removed in T43 — using /concept-center via apiClient
 import { useAuth } from '@/lib/auth-context';
 
 interface ConceptHit {
@@ -49,38 +49,36 @@ export default function ConceptClient() {
   }, [initialQ]);
 
   const runSearch = async (q: string) => {
-    if (!q.trim() || !subjectId) return;
+    if (!q.trim() || q.trim().length < 2) return;
     setLoading(true);
     setSearched(true);
     try {
-      // 取所有資源（簡化版：用全用戶清單，filter subject 在客戶端）
-      const docsResp = await documentService.list().catch(() => null);
-      const allDocs = (docsResp?.documents ?? []) as Array<{ id: string; title: string; sourceType?: string; subjectId?: string }>;
-      const docs = subjectId ? allDocs.filter((d) => d.subjectId === subjectId) : allDocs;
-      const hits: ConceptHit[] = [];
-      // 對每份資源 fetch /parsed 並 filter scaffolds
-      const limited = docs.slice(0, 20);
-      const parsedList = await Promise.all(
-        limited.map((d) =>
-          resourceParseService.getParsed(d.id).catch(() => null).then((p) => ({ d, p })),
-        ),
-      );
-      for (const { d, p } of parsedList) {
-        const scaffolds = (p as unknown as { scaffolds?: Array<{ chapter_heading: string|null; type: string; content: string }> })?.scaffolds ?? [];
-        for (const s of scaffolds) {
-          if (s.content.includes(q) || (s.chapter_heading || '').includes(q)) {
-            hits.push({
-              resourceId: d.id,
-              resourceName: d.title,
-              resourceType: resolveType(d.sourceType),
-              chapterHeading: s.chapter_heading,
-              scaffoldType: s.type,
-              content: s.content,
-            });
-          }
-        }
-      }
+      // P4 (Sprint 5 T43)：改用 backend /concept-center endpoint
+      const { apiClient } = await import('@/lib/api/client');
+      const url = `/concept-center?q=${encodeURIComponent(q)}${subjectId ? `&subject_id=${subjectId}` : ''}&limit=100`;
+      const resp = await apiClient.get(url) as {
+        query: string;
+        total: number;
+        hits: Array<{
+          resource_id: string;
+          resource_name: string;
+          resource_type: string;
+          chapter_heading: string | null;
+          scaffold_type: string;
+          content: string;
+        }>;
+      };
+      const hits: ConceptHit[] = (resp.hits || []).map((h) => ({
+        resourceId: h.resource_id,
+        resourceName: h.resource_name,
+        resourceType: (h.resource_type === 'video' || h.resource_type === 'quiz' || h.resource_type === 'pdf') ? h.resource_type : 'other',
+        chapterHeading: h.chapter_heading,
+        scaffoldType: h.scaffold_type,
+        content: h.content,
+      }));
       setResults(hits);
+    } catch {
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -247,10 +245,4 @@ function ConceptSection({
   );
 }
 
-function resolveType(sourceType?: string): ConceptHit['resourceType'] {
-  if (!sourceType) return 'pdf';
-  const t = sourceType.toLowerCase();
-  if (t.includes('video') || t.includes('youtube')) return 'video';
-  if (t.includes('quiz') || t.includes('historical_exam')) return 'quiz';
-  return 'pdf';
-}
+// resolveType helper removed in T43 — backend /concept-center 已直接回 resource_type
