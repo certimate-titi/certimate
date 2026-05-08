@@ -15,11 +15,19 @@ from app.models import Base
 
 
 class ResourceScaffoldType(str, enum.Enum):
-    """學習鷹架類型列舉（takeaway / elaborative / strategy）。"""
+    """學習鷹架類型列舉（takeaway / elaborative / strategy / pitfall）。
+
+    - takeaway：章節重點精煉（含 retrieval_prompt，UX 摺疊式檢索觸發）
+    - elaborative：延伸思考題
+    - strategy：學習策略建議
+    - pitfall：迷思警示（Sprint 2 P1 / migration 083）
+      → 教學原理 Misconception Correction、紅色警示卡預設展開
+    """
 
     TAKEAWAY = "takeaway"
     ELABORATIVE = "elaborative"
     STRATEGY = "strategy"
+    PITFALL = "pitfall"
 
 
 class ResourceScaffold(Base):
