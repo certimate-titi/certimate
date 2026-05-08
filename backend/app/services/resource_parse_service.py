@@ -136,8 +136,37 @@ def run_parse_job(db: Session, job_id: UUID) -> ParseOutcome:
 # Gemini integration
 # ---------------------------------------------------------------------------
 
+PAGE_THRESHOLD_FOR_BATCHING = 30
+BATCH_SIZE_PAGES = 25
+
+
 def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
-    """ call gemini with retry。"""
+    """智慧分流：≤30 頁直接 multimodal，>30 頁切批並行（D 方案）。
+
+    - 小 PDF 保留 multimodal Pro 對掃描型/特殊編碼 PDF 的視覺辨識能力
+    - 大 PDF 切 25 頁/批，避免 32K output token 上限導致 markdown 截斷為空
+    """
+    page_count = 0
+    if resource.gcs_path:
+        try:
+            from app.services.storage_service import get_storage_service
+            local_pdf = get_storage_service().download_to_temp(resource.gcs_path)
+            page_count = _get_pdf_page_count(local_pdf)
+        except Exception as exc:
+            logger.warning("PDF page count failed (will use single call): %s", exc)
+
+    if page_count > 0 and page_count > PAGE_THRESHOLD_FOR_BATCHING:
+        logger.info(
+            "PDF batched parse: pages=%d batch_size=%d resource=%s",
+            page_count, BATCH_SIZE_PAGES, resource.id,
+        )
+        return _call_gemini_chunked(resource, local_pdf, BATCH_SIZE_PAGES)
+
+    return _call_gemini_with_retry_single(resource)
+
+
+def _call_gemini_with_retry_single(resource: Resource) -> dict[str, Any]:
+    """單一 multimodal 呼叫 + retry + Flash fallback（原邏輯）。"""
     last_exc: Exception | None = None
     for attempt in range(MAX_RETRIES):
         try:
@@ -163,16 +192,178 @@ def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
         ) from exc
 
 
+def _call_gemini_chunked(
+    resource: Resource, local_pdf: str, batch_size: int,
+) -> dict[str, Any]:
+    """大 PDF 切批並行 multimodal Pro 解析後 merge。
+
+    每批失敗不影響其他；至少有 1 批成功 markdown 就算有效。
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import os as _os
+
+    batch_paths = _split_pdf_pages(local_pdf, batch_size=batch_size)
+    logger.info("split into %d batches resource=%s", len(batch_paths), resource.id)
+
+    parts: list[dict[str, Any]] = []
+    success = 0
+
+    def _run_batch(batch_path: str, model: str) -> dict[str, Any]:
+        """單批呼叫 + retry + Flash fallback（同 _call_gemini_with_retry_single 邏輯
+        但傳 local_pdf_override）。"""
+        last_exc: Exception | None = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                return _call_gemini_once(resource, model=GEMINI_MODEL, local_pdf_override=batch_path)
+            except _RetryableError as e:
+                last_exc = e
+                time.sleep(BASE_BACKOFF * (2 ** attempt))
+            except Exception:
+                raise
+        # Flash fallback
+        try:
+            return _call_gemini_once(resource, model=GEMINI_FLASH, local_pdf_override=batch_path)
+        except Exception as exc:
+            raise RuntimeError(f"batch retries exhausted; last={last_exc} final={exc}") from exc
+
+    with ThreadPoolExecutor(max_workers=min(4, len(batch_paths))) as ex:
+        futures = {}
+        for i, bp in enumerate(batch_paths):
+            offset = i * batch_size
+            futures[ex.submit(_run_batch, bp, GEMINI_MODEL)] = (i, bp, offset)
+        for fut in as_completed(futures):
+            i, bp, offset = futures[fut]
+            try:
+                result = fut.result()
+                _shift_page_numbers(result, offset)
+                parts.append(result)
+                success += 1
+                logger.info(
+                    "batch %d done resource=%s md_len=%d",
+                    i, resource.id, len(result.get("markdown") or ""),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "batch %d failed resource=%s: %s",
+                    i, resource.id, exc,
+                )
+
+    # 清掉 batch tempfiles
+    for bp in batch_paths:
+        try:
+            _os.unlink(bp)
+        except Exception:
+            pass
+
+    if success == 0:
+        raise RuntimeError(f"all {len(batch_paths)} batches failed for resource={resource.id}")
+
+    return _merge_parsed_results(parts)
+
+
+def _shift_page_numbers(parsed: dict[str, Any], offset: int) -> None:
+    """把 batch-local 頁碼（1-N）+offset 還原為全域 PDF 頁碼。"""
+    if not isinstance(parsed, dict) or offset == 0:
+        return
+    # critical_pages
+    parsed["critical_pages"] = [p + offset for p in (parsed.get("critical_pages") or [])]
+    # questions[].source_page
+    for q in parsed.get("questions") or []:
+        if isinstance(q, dict) and isinstance(q.get("source_page"), int):
+            q["source_page"] = q["source_page"] + offset
+    # markdown 中的 FIGURE:pN_iM 也要 shift
+    md = parsed.get("markdown") or ""
+    if md:
+        def _shift(m):
+            n = int(m.group(1))
+            idx = m.group(2)
+            return f"![圖](FIGURE:p{n + offset}_i{idx})"
+        parsed["markdown"] = re.sub(r"!\[圖\]\(FIGURE:p(\d+)_i(\d+)\)", _shift, md)
+
+
 class _RetryableError(Exception):
     """_ Retryable Error 例外類別。"""
     pass
 
 
-def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
+def _get_pdf_page_count(pdf_path: str) -> int:
+    """快速讀 PDF 頁數（PyMuPDF）。"""
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        n = len(doc)
+        doc.close()
+        return n
+    except Exception:
+        return 0
+
+
+def _split_pdf_pages(pdf_path: str, batch_size: int = 25) -> list[str]:
+    """切 PDF 為多個 batch_size 頁的小 PDF，回 tempfile 路徑陣列。
+
+    對 60+ 頁 PDF 解 max_output_tokens 上限：每批小於 25 頁
+    → markdown 預期 < 15K tokens 安全在 32K 內。
+    """
+    import tempfile
+    import fitz
+    out_paths: list[str] = []
+    src = fitz.open(pdf_path)
+    total = len(src)
+    for start in range(0, total, batch_size):
+        end = min(start + batch_size, total)
+        batch_doc = fitz.open()
+        batch_doc.insert_pdf(src, from_page=start, to_page=end - 1)
+        with tempfile.NamedTemporaryFile(prefix=f"batch_p{start+1}-{end}_", suffix=".pdf", delete=False) as f:
+            batch_doc.save(f.name)
+            out_paths.append(f.name)
+        batch_doc.close()
+    src.close()
+    return out_paths
+
+
+def _merge_parsed_results(parts: list[dict[str, Any]]) -> dict[str, Any]:
+    """合併 N 批 Gemini 結果為單一 parsed dict。"""
+    merged_md: list[str] = []
+    questions: list[dict] = []
+    scaffolds: list[dict] = []
+    critical_pages: list[int] = []
+    detected_types: list[str] = []
+    for p in parts:
+        if not isinstance(p, dict):
+            continue
+        md = p.get("markdown") or ""
+        if md:
+            merged_md.append(md)
+        questions.extend(p.get("questions") or [])
+        scaffolds.extend(p.get("scaffolds") or [])
+        critical_pages.extend(p.get("critical_pages") or [])
+        if p.get("detected_content_type"):
+            detected_types.append(p["detected_content_type"])
+    # detected_content_type 取多數派；critical_pages 去重保序
+    seen = set()
+    unique_pages = [p for p in critical_pages if not (p in seen or seen.add(p))]
+    return {
+        "markdown": "\n\n".join(merged_md),
+        "detected_content_type": (
+            max(set(detected_types), key=detected_types.count) if detected_types else None
+        ),
+        "critical_pages": unique_pages,
+        "questions": questions,
+        "scaffolds": scaffolds,
+    }
+
+
+def _call_gemini_once(
+    resource: Resource, model: str, local_pdf_override: str | None = None,
+) -> dict[str, Any]:
     """實際呼叫 Gemini。
 
     為避免在 import 時需要 google.generativeai，這裡 lazy import。
     測試可透過 monkeypatch 這個函式或塞 fake。
+
+    Args:
+        local_pdf_override: 若提供，跳過 storage.download_to_temp，直接用該本地路徑。
+                            用於 D 方案 batch 模式（傳已切好的 batch PDF）。
     """
     try:
         from google import genai
@@ -254,13 +445,18 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     )
     user_prompt = user_prompt + schema_hammer
 
-    # download PDF locally for upload
-    storage = get_storage_service()
-    if not resource.gcs_path:
-        raise RuntimeError("resource has no gcs_path")
-    local_pdf = storage.download_to_temp(resource.gcs_path)
+    # download PDF locally for upload (or use override for batch mode)
+    if local_pdf_override:
+        local_pdf = local_pdf_override
+    else:
+        storage = get_storage_service()
+        if not resource.gcs_path:
+            raise RuntimeError("resource has no gcs_path")
+        local_pdf = storage.download_to_temp(resource.gcs_path)
 
     ext = (resource.gcs_path or resource.name or "").lower().rsplit(".", 1)[-1]
+    if local_pdf_override:
+        ext = "pdf"  # batch 必為 pdf
 
     # Workaround: Gemini SDK 上傳檔名含中文時觸發 'ascii' codec error。
     # 複製到 ASCII-named tempfile 後再上傳。
