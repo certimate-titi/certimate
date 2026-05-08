@@ -355,6 +355,24 @@ def _persist_parsed(
     # 1) resources.* fields
     """儲存 parsed。"""
     raw_markdown = parsed.get("markdown") or ""
+    # 守門：若 Gemini Pro 回空 markdown（大 PDF 超 token / 解析失敗等），
+    # 不要覆蓋 Step 2 已寫的 markdown（chunks 可能仍有合理內容）。
+    # 這對 60+ 頁 PDF 特別重要，Pro 多模態常因 token 上限回空 / 截斷 JSON。
+    if not raw_markdown.strip():
+        logger.warning(
+            "parse markdown is empty resource=%s — skip overwrite to preserve Step 2 markdown",
+            resource.id,
+        )
+        resource.detected_content_type = parsed.get("detected_content_type") or resource.detected_content_type
+        # 仍回 outcome；不寫 parsed_markdown（保留先前值）
+        return ParseOutcome(
+            job_id=job.id,
+            status=ParseJobStatus.SUCCESS,
+            questions_created=0,
+            candidates_created=0,
+            scaffolds_created=0,
+            pages_rendered=0,
+        )
     resource.detected_content_type = parsed.get("detected_content_type")
 
     # 2) WebP + figures — dispatch to resource_storage_service（critical pages aware）
