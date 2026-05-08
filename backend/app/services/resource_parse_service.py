@@ -168,60 +168,6 @@ class _RetryableError(Exception):
     pass
 
 
-def _extract_pdf_text_with_pages(pdf_path: str) -> str:
-    """抽 PDF 全文，每頁前加 [P{N}] 錨點供 Gemini 對應頁碼。
-
-    輕量方案：fitz.get_text() per page。對掃描型 PDF 仍會失敗（無文字層），
-    那種情況走 multimodal vision call (per-figure path) 補強。
-    """
-    try:
-        import fitz
-    except ImportError:
-        return ""
-    try:
-        doc = fitz.open(pdf_path)
-        parts = []
-        for i, page in enumerate(doc, start=1):
-            text = page.get_text() or ""
-            parts.append(f"[P{i}]\n{text.strip()}")
-        doc.close()
-        return "\n\n".join(parts)
-    except Exception as exc:
-        logger.warning("PDF text extraction failed: %s", exc)
-        return ""
-
-
-def _describe_figure_via_vision(fig_local_path: str, page_no: int, idx: int) -> str:
-    """單張圖的 Gemini vision call → 回 alt text（短描述，<60 字）。
-
-    並行呼叫；單張失敗回 fallback「圖 pN_iM」。
-    """
-    try:
-        from google import genai
-        from app.core.config import get_settings as _gs
-
-        api_key = getattr(_gs(), "GEMINI_API_KEY", None) or getattr(_gs(), "gemini_api_key", None)
-        if not api_key:
-            return f"圖 p{page_no}_i{idx}"
-
-        client = genai.Client(api_key=api_key)
-        uploaded = client.files.upload(file=fig_local_path)
-        resp = client.models.generate_content(
-            model="gemini-2.5-flash",  # 單張圖用 Flash 即可，便宜快
-            contents=[
-                uploaded,
-                "用一句話（< 30 字）描述這張圖的主要內容，給視障使用者用的 alt text。"
-                "繁體中文。只回描述本身，不要加引號或標點開頭。",
-            ],
-            config={"temperature": 0.1, "max_output_tokens": 100},
-        )
-        text = (getattr(resp, "text", "") or "").strip().strip('"\'。')
-        return text[:60] if text else f"圖 p{page_no}_i{idx}"
-    except Exception as exc:
-        logger.warning("vision describe failed page=%s idx=%s: %s", page_no, idx, exc)
-        return f"圖 p{page_no}_i{idx}"
-
-
 def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     """實際呼叫 Gemini。
 
@@ -308,50 +254,55 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
     )
     user_prompt = user_prompt + schema_hammer
 
-    # ────────────────────────────────────────────────────────────────
-    # E 方案 (2026-05-08)：text-only 模式取代 multimodal
-    # 原因：Gemini 2.5 Pro multimodal 對 60+ 頁 PDF 容易超 32K output token
-    #       回空 markdown，導致 _persist_parsed 蓋掉 Step 2 的好內容。
-    # 改法：用 PyMuPDF 抽全 PDF 純文字，附 page anchor 給 Gemini Pro，
-    #       prompt 指示在對應頁碼處插入 `![圖](FIGURE:pN_iM)` 佔位符。
-    #       per-figure vision 由 _describe_figures_via_vision 平行處理 alt text。
-    # ────────────────────────────────────────────────────────────────
+    # download PDF locally for upload
     storage = get_storage_service()
     if not resource.gcs_path:
         raise RuntimeError("resource has no gcs_path")
+    local_pdf = storage.download_to_temp(resource.gcs_path)
 
-    # 抽 PDF 全文（含頁碼錨點）
     ext = (resource.gcs_path or resource.name or "").lower().rsplit(".", 1)[-1]
-    if ext == "pdf":
-        local_pdf = storage.download_to_temp(resource.gcs_path)
-        full_text = _extract_pdf_text_with_pages(local_pdf)
-    else:
-        # 非 PDF：read raw text (md/txt) — 已是純文字
-        try:
-            with open(storage.download_to_temp(resource.gcs_path), "r", encoding="utf-8", errors="ignore") as f:
-                full_text = f.read()
-        except Exception:
-            full_text = ""
 
-    # 太長截斷（保險）— Gemini 2.5 Pro context window 1M tokens，
-    # 但設個合理上限避免 prompt injection 異常 PDF 拉爆 input
-    MAX_INPUT_CHARS = 400_000  # ≈ 100K tokens
-    if len(full_text) > MAX_INPUT_CHARS:
-        full_text = full_text[:MAX_INPUT_CHARS] + "\n[... 內容過長已截斷 ...]"
-
-    user_prompt_with_text = (
-        f"{user_prompt}\n\n# PDF 全文（已附頁碼錨點 [P{{N}}]）\n\n{full_text}"
-    )
+    # Workaround: Gemini SDK 上傳檔名含中文時觸發 'ascii' codec error。
+    # 複製到 ASCII-named tempfile 後再上傳。
+    import tempfile, shutil, os as _os
+    try:
+        local_pdf.encode("ascii")
+        ascii_path = local_pdf  # 已是純 ASCII
+        ascii_temp = None
+    except UnicodeEncodeError:
+        suffix = f".{ext}" if ext and len(ext) <= 5 else ".bin"
+        with tempfile.NamedTemporaryFile(prefix="parse_", suffix=suffix, delete=False) as dst:
+            with open(local_pdf, "rb") as src:
+                shutil.copyfileobj(src, dst)
+            ascii_path = dst.name
+        ascii_temp = ascii_path
+        logger.info(f"copied non-ascii filename to {ascii_path} for Gemini upload")
+    mime_map = {
+        "pdf": "application/pdf",
+        "md": "text/markdown",
+        "markdown": "text/markdown",
+        "txt": "text/plain",
+        "html": "text/html",
+        "htm": "text/html",
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "webp": "image/webp",
+    }
+    mime = mime_map.get(ext, "application/pdf")
 
     try:
+        uploaded = client.files.upload(
+            file=ascii_path,
+            config={"mime_type": mime},
+        )
         resp = client.models.generate_content(
             model=model,
-            contents=[user_prompt_with_text],
+            contents=[uploaded, user_prompt],
             config={
                 "system_instruction": system_prompt,
                 "temperature": 0.1,
                 "response_mime_type": "application/json",
-                "max_output_tokens": 32768,
             },
         )
     except Exception as e:  # noqa: BLE001
@@ -359,6 +310,13 @@ def _call_gemini_once(resource: Resource, model: str) -> dict[str, Any]:
         if "429" in msg or "quota" in msg or "timeout" in msg or "unavailable" in msg:
             raise _RetryableError(str(e)) from e
         raise
+    finally:
+        # 清掉 ASCII tempfile（如果有建）
+        if ascii_temp:
+            try:
+                _os.unlink(ascii_temp)
+            except Exception:
+                pass
 
     text = getattr(resp, "text", None) or ""
     # RC19 修補（2026-04-30）：Gemini 偶爾回 JSON 但 markdown 字串內含
@@ -420,7 +378,6 @@ def _persist_parsed(
     # 2) WebP + figures — dispatch to resource_storage_service（critical pages aware）
     pages_rendered = 0
     figure_url_map: dict[str, str] = {}  # "p3_i0" → public URL
-    figure_local_paths: dict[str, str] = {}  # "p3_i0" → local path（per-figure vision 用）
     try:
         from app.services.resource_storage_service import render_pdf_to_webp
         from app.services.storage_service import get_storage_service
@@ -436,53 +393,27 @@ def _persist_parsed(
                 critical_pages=critical,
             )
             pages_rendered = len(results)
-            # 建立 figure_id → public URL + local path 對照
+            # 建立 figure_id → public URL 對照表（替換 markdown 佔位符用）
             for page_result in results:
                 for fig_path in (page_result.figures or []):
-                    fname = fig_path.rsplit("/", 1)[-1]
-                    fig_id = fname.rsplit(".", 1)[0]
+                    fname = fig_path.rsplit("/", 1)[-1]  # e.g. "p3_i0.png"
+                    fig_id = fname.rsplit(".", 1)[0]      # e.g. "p3_i0"
                     try:
                         figure_url_map[fig_id] = storage.to_public_url(fig_path)
-                        figure_local_paths[fig_id] = storage.download_to_temp(fig_path)
                     except Exception:
                         logger.warning(
-                            "to_public_url/download failed resource=%s fig=%s",
+                            "to_public_url failed resource=%s fig=%s",
                             resource.id, fig_id, exc_info=True,
                         )
     except Exception:
         logger.warning("webp render failed resource=%s", resource.id, exc_info=True)
 
-    # 2.5) E 方案 — Per-figure vision 並行產 alt text
-    figure_alt_map: dict[str, str] = {}
-    if figure_local_paths:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        # parallel up to 8 vision calls (Gemini Flash 並行限額充裕)
-        with ThreadPoolExecutor(max_workers=8) as ex:
-            futures = {}
-            for fid, fpath in figure_local_paths.items():
-                m = re.match(r"p(\d+)_i(\d+)", fid)
-                if not m:
-                    continue
-                pn, idx = int(m.group(1)), int(m.group(2))
-                futures[ex.submit(_describe_figure_via_vision, fpath, pn, idx)] = fid
-            for fut in as_completed(futures):
-                fid = futures[fut]
-                try:
-                    figure_alt_map[fid] = fut.result()
-                except Exception:
-                    figure_alt_map[fid] = f"圖 {fid}"
-        logger.info(
-            "vision alt text generated resource=%s figures=%d",
-            resource.id, len(figure_alt_map),
-        )
-
-    # 3) 替換 markdown 中圖片佔位符 ![圖](FIGURE:pN_iM) → ![alt](public_url)
+    # 3) 替換 markdown 中圖片佔位符 ![圖](FIGURE:p3_i0) → ![圖](https://gcs/...)
+    import re as _re
     def _sub(m):
         fid = m.group(1)
-        url = figure_url_map.get(fid)
-        alt = figure_alt_map.get(fid) or "圖"
-        return f"![{alt}]({url})" if url else ""
-    final_markdown = re.sub(r"!\[圖\]\(FIGURE:(p\d+_i\d+)\)", _sub, raw_markdown)
+        return f"![圖]({figure_url_map.get(fid, '')})" if figure_url_map.get(fid) else ""
+    final_markdown = _re.sub(r"!\[圖\]\(FIGURE:(p\d+_i\d+)\)", _sub, raw_markdown)
     resource.parsed_markdown = final_markdown
     resource.parsed_text = _extract_plain_text(final_markdown)
 
