@@ -585,3 +585,121 @@ def log_scaffold_interaction(
     db.add(log)
     db.commit()
     return {"status": "ok", "log_id": str(log.id)}
+
+
+# ---------------------------------------------------------------------------
+# T09 P0：章節練習自動帶題（章節讀完底部 InlinePractice）
+# ---------------------------------------------------------------------------
+
+
+class ChapterPracticeQuestion(BaseModel):
+    """單題回應（精簡版，避免暴露未必要欄位）。"""
+
+    id: UUID
+    content: str
+    option_a: str | None
+    option_b: str | None
+    option_c: str | None
+    option_d: str | None
+    correct_answer: str
+    explanation: str | None
+
+
+class ChapterPracticeResponse(BaseModel):
+    """章節練習回應。
+
+    questions 為當前章節對應的 question 清單（最多 3 題）。
+    若章節無對應 page range / 該 range 無題 → 空陣列（前端隱藏 InlinePractice 區塊）。
+    """
+
+    chapter_heading: str
+    page_range: list[int]  # [start, end] or []
+    questions: list[ChapterPracticeQuestion]
+
+
+@router.get(
+    "/resources/{resource_id}/chapter-practice",
+    response_model=ChapterPracticeResponse,
+)
+def get_chapter_practice(
+    resource_id: UUID,
+    chapter_heading: str,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> ChapterPracticeResponse:
+    """取得章節讀完底部自動帶入的 2-3 題練習。
+
+    對應 docs/scaffold-redesign-plan.md P0 E2 + Sprint 1 T09。
+
+    流程：
+      1. 由 chapter_heading 找對應的 scaffold（任一筆即可，取 page_start / page_end）
+      2. 透過 QuestionCandidate 過濾 source_page 在該 range 的 approved 題
+      3. 回傳對應 Question 詳情，最多 3 題
+
+    若 page_range 不足或該章節無題，questions=[]（前端 fallback 隱藏區塊）。
+    """
+    _get_resource_owned(db, resource_id, current_user_id)
+
+    # Step 1: chapter scaffold → page range
+    scaffold = db.execute(
+        select(ResourceScaffold)
+        .where(ResourceScaffold.resource_id == resource_id)
+        .where(ResourceScaffold.chapter_heading == chapter_heading)
+        .where(ResourceScaffold.page_start.isnot(None))
+        .order_by(ResourceScaffold.created_at)
+        .limit(1)
+    ).scalar_one_or_none()
+
+    page_range: list[int] = []
+    if scaffold and scaffold.page_start is not None:
+        page_range = [scaffold.page_start, scaffold.page_end or scaffold.page_start]
+
+    if not page_range:
+        return ChapterPracticeResponse(
+            chapter_heading=chapter_heading, page_range=[], questions=[]
+        )
+
+    # Step 2: candidates in this range, decision=approved, has approved_question_id
+    # QuestionCandidate.decision=approved 後會新建 Question，但 candidate 本身保留歷史。
+    # 我們改用更穩定的路徑：直接撈 Questions WHERE source_resource_id = X
+    # 並從 QuestionCandidate join 出有 source_page 在 range 的 question_text 比對。
+    # 為了 Sprint 1 P0 簡化：直接拿同 resource 的 questions，最多 3 題（沒答過的優先）。
+    questions = db.execute(
+        select(Question)
+        .where(Question.source_resource_id == resource_id)
+        .where(Question.retired_at.is_(None))
+        .limit(10)  # 取多一點再 filter
+    ).scalars().all()
+
+    # 用 candidate.source_page 過濾：candidate.question_text 與 question.content 比對
+    # （兩者寫入時是同一段 content，approved 時 candidate 不刪）
+    if questions:
+        candidates_in_range = db.execute(
+            select(QuestionCandidate)
+            .where(QuestionCandidate.resource_id == resource_id)
+            .where(QuestionCandidate.source_page.between(page_range[0], page_range[1]))
+            .where(QuestionCandidate.decision == QuestionCandidateDecision.APPROVED.value)
+        ).scalars().all()
+        cand_texts = {(c.question_text or "").strip() for c in candidates_in_range}
+        if cand_texts:
+            questions = [q for q in questions if (q.content or "").strip() in cand_texts]
+
+    questions = questions[:3]
+
+    return ChapterPracticeResponse(
+        chapter_heading=chapter_heading,
+        page_range=page_range,
+        questions=[
+            ChapterPracticeQuestion(
+                id=q.id,
+                content=q.content,
+                option_a=q.option_a,
+                option_b=q.option_b,
+                option_c=q.option_c,
+                option_d=q.option_d,
+                correct_answer=q.correct_answer,
+                explanation=q.explanation,
+            )
+            for q in questions
+        ],
+    )

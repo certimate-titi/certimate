@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, ListTree, ChevronRight } from 'lucide-react';
 
+import InlinePractice from '@/components/InlinePractice';
 import MathContent from '@/components/MathContent';
 import RetrievalCard from '@/components/RetrievalCard';
 import { useReadingPageState } from '@/hooks/use-reading-page-state';
@@ -176,9 +177,18 @@ export default function ReadingClient() {
               <p className="text-xs text-rose-600">你可以刪除後重新上傳，或先看下方知識節點摘要。</p>
             </div>
           ) : markdown ? (
-            <article className="prose prose-slate max-w-none">
-              <MathContent>{markdown}</MathContent>
-            </article>
+            <>
+              <article className="prose prose-slate max-w-none">
+                <MathContent>{markdown}</MathContent>
+              </article>
+              {/* T09：當前章節讀完底部 InlinePractice */}
+              {currentChapter && (
+                <InlinePractice
+                  resourceId={resourceId}
+                  chapterHeading={chapters.find((c) => c.anchorId === currentChapter)?.heading ?? ''}
+                />
+              )}
+            </>
           ) : (
             <div className="text-center py-12 text-sm text-slate-500">
               （尚無解析後的內容）
