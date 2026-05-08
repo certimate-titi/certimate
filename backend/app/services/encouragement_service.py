@@ -109,6 +109,7 @@ class EncouragementService:
             result = llm.generate(
                 system_prompt, user_prompt,
                 model="gemini-flash", max_tokens=256,
+                feature="encouragement",
             )
             if result and len(result.strip()) > 5:
                 return result.strip()

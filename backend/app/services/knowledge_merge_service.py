@@ -129,6 +129,7 @@ class KnowledgeMergeService:
                 user_prompt,
                 model="gemini-flash",
                 max_tokens=256,
+                feature="knowledge_merge",
             )
             return self._parse_llm_response(raw)
         except Exception as e:

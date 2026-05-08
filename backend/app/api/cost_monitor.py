@@ -136,6 +136,79 @@ def get_trends(
 
 
 # ---------------------------------------------------------------------------
+# Feature breakdown — Sprint 8 T69
+# ---------------------------------------------------------------------------
+
+@router.get("/by-feature")
+def get_cost_by_feature(
+    days: int = 30,
+    super_admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """近 N 天 LLM 成本按 feature 標籤拆分（從 ai_usage_ledger）。
+
+    Sprint 8 T69 — 用於財務毛利分析「每個功能花費佔比」。
+    結果按 sum(cost_usd) DESC，並計算佔比。
+
+    Returns:
+        {
+          "days": 30,
+          "total_usd": 1.23,
+          "buckets": [
+            {"feature": "unified_extract", "provider": "gemini",
+             "cost_usd": 0.50, "calls": 12, "percent": 40.7,
+             "tokens_in": 50000, "tokens_out": 8000},
+            ...
+          ]
+        }
+    """
+    from sqlalchemy import text
+    if days < 1 or days > 90:
+        raise HTTPException(status_code=400, detail={"message": "days 須介於 1-90"})
+
+    _record_view(db, super_admin.id, "/admin/cost/by-feature")
+
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              COALESCE(feature, '(unlabeled)') AS feature,
+              provider,
+              SUM(cost_usd)::float AS cost_usd,
+              COUNT(*) AS calls,
+              COALESCE(SUM(tokens_in), 0) AS tokens_in,
+              COALESCE(SUM(tokens_out), 0) AS tokens_out
+            FROM ai_usage_ledger
+            WHERE created_at >= NOW() - (:days || ' days')::interval
+            GROUP BY feature, provider
+            ORDER BY cost_usd DESC
+            """
+        ),
+        {"days": days},
+    ).fetchall()
+
+    total = sum(r[2] for r in rows) or 0
+    buckets = [
+        {
+            "feature": r[0],
+            "provider": r[1],
+            "cost_usd": round(r[2], 6),
+            "calls": r[3],
+            "tokens_in": int(r[4]),
+            "tokens_out": int(r[5]),
+            "percent": round(r[2] / total * 100, 2) if total else 0,
+        }
+        for r in rows
+    ]
+
+    return {
+        "days": days,
+        "total_usd": round(total, 6),
+        "buckets": buckets,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Budget CRUD
 # ---------------------------------------------------------------------------
 
