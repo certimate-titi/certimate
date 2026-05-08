@@ -220,13 +220,24 @@ def get_markdown(
 
     所有 plan（含 FREE）皆可讀；scaffolds / 題目等付費功能走 /parsed。
     對應「原文閱讀」UI — 點擊資源即可看到含圖排版 markdown。
+
+    回傳同時帶 parse_status 給前端判斷是否仍在解析中（避免空字串 = 失敗的誤判）。
     """
     res = _get_resource_owned(db, resource_id, current_user_id)
+    job = db.execute(
+        select(ResourceParseJob)
+        .where(ResourceParseJob.resource_id == resource_id)
+        .order_by(ResourceParseJob.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
     return {
         "resource_id": str(res.id),
         "filename": res.name,
         "markdown": res.parsed_markdown or "",
         "status": (res.status.value if hasattr(res.status, "value") else res.status),
+        "parse_status": (job.status if job else None),
+        "parse_started_at": (job.started_at.isoformat() if job and job.started_at else None),
+        "parse_failure_reason": (job.failure_reason if job else None),
     }
 
 
