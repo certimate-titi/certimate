@@ -1,12 +1,12 @@
 ---
 id: "K-06"
 name: "resource_parser_v2"
-display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 1 P0 retrieval-first）"
+display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 2 P1 pitfall）"
 category: "knowledge"
 model: "gemini-2.5-pro"
 max_tokens: 65536
 temperature: 0.1
-version: 3
+version: 5
 feature_refs:
   - "02-資源上傳"
   - "23-考古題題庫管理"
@@ -25,6 +25,11 @@ variables:
 
 <!--
 Changelog
+v5 (2026-05-09, Sprint 2 P1)：
+  - 新增 pitfall 鷹架類別（迷思警示）— Misconception Correction
+  - 對應 backend migration 083 ResourceScaffoldType.PITFALL
+  - 每章節 0-1 條 pitfall（高品質優先，不勉強湊數）
+v4：seed 同步修補（內容同 v3 但雲端 PATCH 重 push）
 v3 (2026-05-08, Sprint 1 P0)：
   - 學習鷹架 schema 升級為 retrieval-first：每筆 takeaway / elaborative 多帶 retrieval_prompt
   - max_tokens 提升至 65536（解大 PDF / 密集表格 markdown 截斷）
@@ -70,7 +75,7 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
 - 用戶上傳資源中有題無答（T2 常見）→ 在 question 物件中 `answer=null`, `needs_answer=true`
 - 給出 `ai_inferred_answer` + 推理文字 + confidence（用於盲推論 UI）
 
-# 學習鷹架類型（v3 升級為 retrieval-first）
+# 學習鷹架類型（v5 加 pitfall）
 - takeaway：章節 3-5 點重點提煉（簡短，降低認知負荷）
   ↳ **必填** retrieval_prompt：讀者讀到該章節前可以先思考的問題，
      不可洩漏 takeaway 答案。例：takeaway 是「公平、透明、安全、問責」，
@@ -79,6 +84,24 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
   ↳ **可選** retrieval_prompt：若 elaborative 本身就是問句可省略
 - strategy：1 則章節級學習建議（邀請式）
   ↳ **不需要** retrieval_prompt（本身已是行動引導）
+- **pitfall（v5 新增）**：1 條章節級「常見誤解警示」
+  ↳ 教學原理：Misconception Correction
+  ↳ 用於警告讀者「這個概念容易和 X 混淆」「很多人誤以為⋯ 其實⋯」
+  ↳ **不需要** retrieval_prompt（本身已是 alert 型內容）
+  ↳ **可選**：若該章節無明顯迷思點，可省略；不要為填數量勉強湊
+  ↳ 與 takeaway 區別：takeaway = 「要記住的」；pitfall = 「容易誤解的對比」
+
+# pitfall 寫作規則
+- 結構：「⚠️ 很多人以為 X⋯ 其實 Y⋯」 或「⚠️ 注意：A 與 B 不同，差在 C」
+- 長度建議 30-80 字（簡短直接）
+- 必含**對比**：誤解 vs 正確
+- 不可重複 takeaway 內容（補充而非重述）
+- 來源：教材文本中的「但是 / 須注意 / 容易混淆 / 不是 / 不應」等轉折詞附近常見
+
+# 良好 pitfall 範例
+✓「⚠️ 很多人以為 No-code 等於 Low-code，差在「程式量少」。其實兩者結構不同：No-code 完全無代碼、靠視覺化；Low-code 仍寫部分程式碼，給開發者更高客製。」
+✗「No-code 是無代碼平台」（這是 takeaway 內容、不是迷思警示）
+✗「要小心使用」（沒對比、太空泛）
 
 # retrieval_prompt 寫作規則（基於 Karpicke retrieval practice 學習科學原理）
 - 必須是「問句」結尾「？」
@@ -150,6 +173,12 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
       "chapter_heading": "3.1 折現率",
       "type": "strategy",
       "content": "📚 試著用 Excel 拉一張折現表，手動對照兩個情境。",
+      "retrieval_prompt": null
+    },
+    {
+      "chapter_heading": "3.1 折現率",
+      "type": "pitfall",
+      "content": "⚠️ 很多人以為折現率越低越好，其實折現率反映的是「資金時間價值 + 風險溢酬」。風險高的投資應給高折現率才合理；用過低折現率會高估專案價值。",
       "retrieval_prompt": null
     }
   ]
