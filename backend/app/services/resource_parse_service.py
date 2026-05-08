@@ -537,6 +537,9 @@ def _call_gemini_once(
                 "system_instruction": system_prompt,
                 "temperature": 0.1,
                 "response_mime_type": "application/json",
+                # 不設此欄 SDK 預設 8192，會把長表格 / 100 條清單 markdown 截斷
+                # （症狀：6949 chars 後突然停在第 4 列）。Gemini 2.5 Pro 上限 65536。
+                "max_output_tokens": 65536,
             },
         )
     except Exception as e:  # noqa: BLE001
