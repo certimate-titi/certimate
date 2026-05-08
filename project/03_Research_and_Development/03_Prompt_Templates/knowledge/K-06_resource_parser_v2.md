@@ -1,12 +1,12 @@
 ---
 id: "K-06"
 name: "resource_parser_v2"
-display_name: "資源 LLM 統一解析（EPIC-035）"
+display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 1 P0 retrieval-first）"
 category: "knowledge"
 model: "gemini-2.5-pro"
-max_tokens: 32768
+max_tokens: 65536
 temperature: 0.1
-version: 2
+version: 3
 feature_refs:
   - "02-資源上傳"
   - "23-考古題題庫管理"
@@ -22,6 +22,17 @@ variables:
     description: "上傳檔名"
     example: "金融市場概論_第三章.pdf"
 ---
+
+<!--
+Changelog
+v3 (2026-05-08, Sprint 1 P0)：
+  - 學習鷹架 schema 升級為 retrieval-first：每筆 takeaway / elaborative 多帶 retrieval_prompt
+  - max_tokens 提升至 65536（解大 PDF / 密集表格 markdown 截斷）
+  - strategy 不需要 retrieval_prompt（本身已是行動引導）
+  - 對應 backend migration 082 加 resource_scaffolds.retrieval_prompt 欄
+v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
+-->
+
 
 ## System Prompt
 
@@ -59,10 +70,28 @@ variables:
 - 用戶上傳資源中有題無答（T2 常見）→ 在 question 物件中 `answer=null`, `needs_answer=true`
 - 給出 `ai_inferred_answer` + 推理文字 + confidence（用於盲推論 UI）
 
-# 學習鷹架類型
+# 學習鷹架類型（v3 升級為 retrieval-first）
 - takeaway：章節 3-5 點重點提煉（簡短，降低認知負荷）
+  ↳ **必填** retrieval_prompt：讀者讀到該章節前可以先思考的問題，
+     不可洩漏 takeaway 答案。例：takeaway 是「公平、透明、安全、問責」，
+     retrieval_prompt 應為「想想看 — AI 治理有哪四大原則？」
 - elaborative：1 題延遲展開思考題（生成性處理；答案不給，讓用戶自己想）
-- strategy：1 則章節級學習建議（邀請式，如「讀這章時可試試用折現率公式重算案例」）
+  ↳ **可選** retrieval_prompt：若 elaborative 本身就是問句可省略
+- strategy：1 則章節級學習建議（邀請式）
+  ↳ **不需要** retrieval_prompt（本身已是行動引導）
+
+# retrieval_prompt 寫作規則（基於 Karpicke retrieval practice 學習科學原理）
+- 必須是「問句」結尾「？」
+- 必須能從 takeaway 內容直接驗證對錯
+- 不可包含 takeaway 的關鍵答案詞
+- 邀請式語氣：「想想看 — ⋯」「能說出 ⋯ 嗎？」「⋯ 是什麼？」
+- 長度建議 15-40 字（過短失去脈絡、過長變成提示）
+
+# 良好 retrieval_prompt 範例
+✓ takeaway「No-code 對應非技術用戶、視覺化、拖放操作」
+  → retrieval_prompt「想想看 — No-code 平台主要服務哪種用戶？操作風格是什麼？」
+✗ retrieval_prompt「No-code 對應什麼用戶？」（直接洩答提示「對應什麼用戶」）
+✗ retrieval_prompt「No-code」（過短，無脈絡）
 
 # critical_pages
 - 標出原文中最關鍵 3-8 頁（定義、核心公式、表格、流程圖）
@@ -105,9 +134,24 @@ variables:
     }
   ],
   "scaffolds": [
-    {"chapter_heading": "3.1 折現率", "type": "takeaway", "content": "• ..."},
-    {"chapter_heading": "3.1 折現率", "type": "elaborative", "content": "🤔 若折現率上升 1%，固定現金流折現值如何變？"},
-    {"chapter_heading": "3.1 折現率", "type": "strategy", "content": "📚 試著用 Excel 拉一張折現表，手動對照兩個情境。"}
+    {
+      "chapter_heading": "3.1 折現率",
+      "type": "takeaway",
+      "content": "折現率反映資金的時間價值，未來現金流必須以折現率折算為現值才能比較。",
+      "retrieval_prompt": "想想看 — 為什麼未來的錢不能直接和現在的錢比較？"
+    },
+    {
+      "chapter_heading": "3.1 折現率",
+      "type": "elaborative",
+      "content": "🤔 若折現率上升 1%，固定現金流折現值如何變？",
+      "retrieval_prompt": null
+    },
+    {
+      "chapter_heading": "3.1 折現率",
+      "type": "strategy",
+      "content": "📚 試著用 Excel 拉一張折現表，手動對照兩個情境。",
+      "retrieval_prompt": null
+    }
   ]
 }
 
