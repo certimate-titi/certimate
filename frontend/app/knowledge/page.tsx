@@ -675,12 +675,35 @@ function KnowledgeBasePageInner() {
                                   }
                                   // 主流：讀 multimodal Pro 解析的 markdown（含圖片引用）
                                   let fullText = '';
+                                  let parseStatus: string | null = null;
+                                  let parseFailReason: string | null = null;
                                   setLoadingChunks(doc.id);
                                   try {
-                                    const md = await resourceParseService.getMarkdown(doc.id);
+                                    const md = await resourceParseService.getMarkdown(doc.id) as {
+                                      markdown?: string;
+                                      parse_status?: string | null;
+                                      parse_failure_reason?: string | null;
+                                    };
                                     fullText = md.markdown || '';
+                                    parseStatus = md.parse_status ?? null;
+                                    parseFailReason = md.parse_failure_reason ?? null;
                                   } catch { /* fallback to chunks below */ }
                                   finally { setLoadingChunks(null); }
+
+                                  // 解析中 → 直接顯示等待提示，不要 fallback 到 chunks（會誤導使用者以為已完成）
+                                  if (!fullText && (parseStatus === 'queued' || parseStatus === 'parsing')) {
+                                    setDocFullText('⏳ multimodal Pro 解析中（含表格、圖片、章節結構），完整原文約 1-2 分鐘後可讀。\n\n關掉此頁稍後再點「📖 原文」即可。');
+                                    setDocFullTitle(doc.title);
+                                    setCenterView('document');
+                                    return;
+                                  }
+                                  // 解析失敗 → 顯示失敗原因
+                                  if (!fullText && parseStatus === 'failed') {
+                                    setDocFullText(`❌ 原文解析失敗${parseFailReason ? `：${parseFailReason}` : ''}\n\n你可以刪除後重新上傳，或先看下方知識節點摘要。`);
+                                    setDocFullTitle(doc.title);
+                                    setCenterView('document');
+                                    return;
+                                  }
 
                                   // Fallback 1：parsed_markdown 為空（舊資源或 parse 未完成）→ 拼 chunks
                                   if (!fullText || fullText.length < 20) {
