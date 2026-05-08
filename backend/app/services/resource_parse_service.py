@@ -391,6 +391,60 @@ def _merge_parsed_results(parts: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _select_prompt_template(resource: Resource) -> str:
+    """Sprint 2 P1 T18：依檔案類型 / 內容類型選 prompt template 名稱。
+
+    路由規則（順序敏感）：
+      1. 影片副檔名（mp4/mov/avi/mkv/webm）→ resource_parser_video
+      2. YouTube URL → resource_parser_video
+      3. detected_content_type=practice_questions → resource_parser_quiz
+      4. 預設 → resource_parser_v2（K-06-study，原有 prompt）
+
+    所有特化模板若 DB 不存在會 fallback 到 resource_parser_v2，避免阻斷流程。
+
+    Args:
+        resource: Resource ORM row
+
+    Returns:
+        prompt template name（不含路徑或檔案副檔名）
+    """
+    ext = ""
+    if resource.gcs_path:
+        ext = resource.gcs_path.lower().rsplit(".", 1)[-1] if "." in resource.gcs_path else ""
+
+    # 1) Video by extension
+    if ext in {"mp4", "mov", "avi", "mkv", "webm", "m4v"}:
+        return "resource_parser_video"
+
+    # 2) YouTube URL
+    if getattr(resource, "youtube_url", None):
+        return "resource_parser_video"
+
+    # 3) PPT slides (Sprint 3 P2)
+    if ext in {"ppt", "pptx"}:
+        return "resource_parser_slides"
+
+    # 4) DOCX personal notes (Sprint 3 P2)
+    if ext in {"doc", "docx"}:
+        return "resource_parser_notes"
+
+    # 5) Audio (Sprint 4 P3)
+    if ext in {"mp3", "wav", "m4a", "flac", "ogg", "wma", "aac"}:
+        return "resource_parser_audio"
+
+    # 6) Image (Sprint 4 P3)
+    if ext in {"png", "jpg", "jpeg", "gif", "webp"}:
+        return "resource_parser_image"
+
+    # 7) Quiz / practice questions
+    detected = getattr(resource, "detected_content_type", None)
+    if detected == "practice_questions":
+        return "resource_parser_quiz"
+
+    # 8) Default: K-06-study
+    return "resource_parser_v2"
+
+
 def _call_gemini_once(
     resource: Resource, model: str, local_pdf_override: str | None = None,
 ) -> dict[str, Any]:
@@ -422,7 +476,14 @@ def _call_gemini_once(
         raise RuntimeError("GEMINI_API_KEY not configured")
     client = genai.Client(api_key=api_key)
 
-    # load prompt template 'resource_parser_v2' (best-effort; falls back to hardcoded)
+    # P1 (Sprint 2 T18)：依檔案類型 / 內容類型分流選 prompt template
+    template_name = _select_prompt_template(resource)
+    logger.info(
+        "[prompt-routing] resource=%s template=%s ext=%s detected=%s",
+        resource.id, template_name,
+        (resource.gcs_path or '').lower().rsplit('.', 1)[-1] if resource.gcs_path else '?',
+        getattr(resource, 'detected_content_type', None),
+    )
     template = None
     try:
         from app.core.deps import _SessionLocal
@@ -430,7 +491,14 @@ def _call_gemini_once(
             _tmp_db = _SessionLocal()
             try:
                 prompt_service = PromptTemplateService(_tmp_db)
-                template = prompt_service.get_prompt_for_ai("resource_parser_v2")
+                template = prompt_service.get_prompt_for_ai(template_name)
+                # fallback 到 K-06-study (resource_parser_v2) 若特化模板不存在
+                if template is None and template_name != "resource_parser_v2":
+                    logger.warning(
+                        "prompt template '%s' not found, fallback to resource_parser_v2",
+                        template_name,
+                    )
+                    template = prompt_service.get_prompt_for_ai("resource_parser_v2")
             finally:
                 _tmp_db.close()
     except Exception as _e:
@@ -669,7 +737,20 @@ def _persist_parsed(
             c_created += 1
 
     new_scaffold_rows: list[ResourceScaffold] = []
+    # P1 (Sprint 2 T14)：dedup pitfall — 同 (chapter, type=pitfall) 只保留一筆
+    # （prompt 規則「每章節 0-1 條」，但 LLM 偶爾會重複）
+    seen_pitfall_chapters: set[str] = set()
     for s in parsed.get("scaffolds", []) or []:
+        if (s.get("type") or "").lower() == "pitfall":
+            ch = (s.get("chapter_heading") or "").strip()
+            if ch and ch in seen_pitfall_chapters:
+                logger.info(
+                    "[pitfall-dedup] skip duplicate pitfall in chapter=%r resource=%s",
+                    ch[:30], resource.id,
+                )
+                continue
+            if ch:
+                seen_pitfall_chapters.add(ch)
         row = _build_scaffold_row(resource, s)
         if row is not None:
             db.add(row)
@@ -680,6 +761,10 @@ def _persist_parsed(
 
     # 3b) elaborative 類鷹架預產 AI 參考答案（TASK-03）
     _generate_reference_answers(new_scaffold_rows)
+    db.flush()
+
+    # 3c) P6 (Sprint 7 T54)：voyage embedding 持久化（省後續 /concept-center cost）
+    _embed_scaffolds(new_scaffold_rows)
     db.flush()
 
     # 4) 映射 T1 題目到科目知識節點（Voyage cosine similarity）
@@ -846,6 +931,31 @@ def _build_scaffold_row(
         retrieval_prompt=retrieval_prompt,
         template_code="K-06-study",
     )
+
+
+def _embed_scaffolds(rows: list[ResourceScaffold]) -> None:
+    """P6 (Sprint 7 T54)：寫入 voyage embedding 給 /concept-center 語意搜尋用。
+
+    對 chapter_heading + content 做 embedding，存入 resource_scaffolds.embedding 欄。
+
+    失敗不阻斷：voyage API 異常時 embedding 留 NULL，
+    /concept-center 會 fallback 即時 embed（行為等同 Sprint 6 T49）。
+    """
+    if not rows:
+        return
+    try:
+        from app.services.embedding_service import EmbeddingService
+        emb = EmbeddingService()
+        texts = [
+            ((r.chapter_heading or "") + " " + (r.content or "")).strip()[:1000]
+            for r in rows
+        ]
+        vecs = emb.embed_texts(texts, input_type="document")
+        for row, vec in zip(rows, vecs):
+            row.embedding = vec
+        logger.info("[scaffold-embed] %d rows embedded", len(rows))
+    except Exception as e:
+        logger.warning("[scaffold-embed] failed (non-fatal): %s", e)
 
 
 def _generate_reference_answers(rows: list[ResourceScaffold]) -> None:

@@ -32,7 +32,8 @@ export interface ChapterEntry {
 export interface ScaffoldEntry {
   id: string;
   chapter_heading: string | null;
-  type: 'takeaway' | 'elaborative' | 'strategy';
+  /** Sprint 2 P1 加 pitfall；Sprint 4 P3 加 advance_organizer + concept_extract */
+  type: 'takeaway' | 'elaborative' | 'strategy' | 'pitfall' | 'advance_organizer' | 'concept_extract';
   content: string;
   retrieval_prompt: string | null;
   template_code: string | null;

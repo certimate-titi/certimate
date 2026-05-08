@@ -7,6 +7,7 @@ import enum
 import uuid
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,11 +16,25 @@ from app.models import Base
 
 
 class ResourceScaffoldType(str, enum.Enum):
-    """學習鷹架類型列舉（takeaway / elaborative / strategy）。"""
+    """學習鷹架類型列舉（6 種）。
+
+    - takeaway：章節重點精煉（含 retrieval_prompt，UX 摺疊式檢索觸發）
+    - elaborative：延伸思考題
+    - strategy：學習策略建議
+    - pitfall：迷思警示（Sprint 2 P1 / migration 083）
+      → 教學原理 Misconception Correction、紅色警示卡預設展開
+    - advance_organizer：讀前定錨（Sprint 4 P3 / migration 084）
+      → Ausubel Subsumption Theory，章節閱讀前先建立心智錨點
+    - concept_extract：考古題核心概念（Sprint 4 P3 / migration 084）
+      → K-06-quiz 解題後對照用，emerald 卡片
+    """
 
     TAKEAWAY = "takeaway"
     ELABORATIVE = "elaborative"
     STRATEGY = "strategy"
+    PITFALL = "pitfall"
+    ADVANCE_ORGANIZER = "advance_organizer"
+    CONCEPT_EXTRACT = "concept_extract"
 
 
 class ResourceScaffold(Base):
@@ -67,6 +82,8 @@ class ResourceScaffold(Base):
     # P0 (Sprint 1 T02)：retrieval-first UX 必備
     retrieval_prompt: Mapped[str | None] = mapped_column(Text)
     template_code: Mapped[str | None] = mapped_column(String(32))
+    # P6 (Sprint 7 T54)：1024 維 voyage embedding（給 /concept-center 語意搜尋用）
+    embedding = mapped_column(Vector(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

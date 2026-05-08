@@ -30,6 +30,47 @@ import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCar
  * 透過 `dashboardService` 載入儀表板資料，並支援上傳檔案、貼 YouTube
  * 連結後輪詢解析狀態（pending → processing → completed/failed）。
  */
+/**
+ * P5 (Sprint 6 T48)：軟性引導用戶到 /today 學習首頁。
+ *
+ * UX 策略：dashboard 保留向下相容，但加 banner 推 /today。
+ * 用戶 dismiss 後 localStorage 持久化（不再顯示）。
+ */
+function TodayMigrationBanner() {
+  const [hidden, setHidden] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('certimate_today_banner_dismissed') === '1';
+  });
+  if (hidden) return null;
+  const handleDismiss = () => {
+    setHidden(true);
+    if (typeof window !== 'undefined') localStorage.setItem('certimate_today_banner_dismissed', '1');
+  };
+  return (
+    <div className="bg-gradient-to-r from-emerald-50 to-violet-50 border border-emerald-200 rounded-2xl p-4 mb-4 flex items-center gap-3">
+      <div className="text-2xl">✨</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-slate-900 mb-0.5">試試新版「今日學習首頁」</p>
+        <p className="text-xs text-slate-600">每天打開只看 3 件事，更聚焦。儀表板隨時可回來查詳細數據。</p>
+      </div>
+      <Link
+        href="/today"
+        className="shrink-0 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium"
+      >
+        前往 /today →
+      </Link>
+      <button
+        type="button"
+        onClick={handleDismiss}
+        className="shrink-0 text-slate-400 hover:text-slate-600 text-xs px-1"
+        aria-label="關閉"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, isUltra, subscriptionTier } = useAuth();
   const router = useRouter();
@@ -351,6 +392,8 @@ export default function DashboardPage() {
       )}
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-6xl">
+        {/* P5 (Sprint 6 T48)：軟性導引到 /today 學習首頁 */}
+        <TodayMigrationBanner />
         {/* Header — Row 1: Greeting + Mode Badge / StreakCounter */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <div className="min-w-0">

@@ -606,3 +606,213 @@ def add_subject(
         "added": added,
         "subjects": [{"name": s.name, "id": str(s.id)} for s in subjects],
     }
+
+
+# ── Sprint 5 P4 T42：/today 學習首頁 endpoint ────────────────────────────────
+
+
+class TodayResume(BaseModel):
+    """上次中斷的章節（給「今日 3 件事」的「繼續讀」卡片用）。"""
+
+    resource_id: str
+    resource_name: str
+    subject_id: str | None
+    chapter_anchor: str | None  # 待 Sprint 6 接 reading_progress 表
+
+
+class TodayItem(BaseModel):
+    """今日學習任務（建議行動）。"""
+
+    kind: str  # "resume" | "review" | "sprint_exam"
+    title: str
+    description: str
+    minutes: int
+    target_count: int | None = None
+    href: str
+
+
+class TodayResponse(BaseModel):
+    """`/dashboard/today` 回應。"""
+
+    greeting: str  # 早安/午安/晚安
+    streak_days: int
+    days_to_exam: int | None
+    review_count: int  # 答錯題待複習數
+    scaffold_due_count: int  # P5 (Sprint 6 T47)：SM-2 鷹架到期數
+    resume: TodayResume | None
+    items: list[TodayItem]
+
+
+@router.get("/today", response_model=TodayResponse)
+def get_today(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+) -> TodayResponse:
+    """今日學習首頁資料聚合。
+
+    給前端 /today 路由使用，回傳今日 3 件事 + Hero 資訊。
+
+    Args:
+        user_id: 從 JWT 取得
+        db: tenant-scoped session
+
+    Returns:
+        TodayResponse — 含 resume / streak / 距考天數 / 3 件事
+    """
+    import logging
+    from datetime import datetime
+    from sqlalchemy import select, desc, and_, exists
+    from app.models.resource import Resource
+    from app.models.learning_journey import LearningJourney
+    from app.models.answer import Answer
+    from app.models.question import Question
+
+    user_uuid = uuid.UUID(user_id)
+
+    # Greeting by hour（伺服器時區）
+    h = datetime.now().hour
+    greeting = (
+        "夜深了" if h < 6 else
+        "早安" if h < 12 else
+        "午安" if h < 18 else
+        "晚安"
+    )
+
+    # Resume：最近上傳 / 最近被讀的 resource（簡化：用最近 created）
+    resume = None
+    try:
+        recent = db.execute(
+            select(Resource)
+            .where(Resource.user_id == user_uuid)
+            .where(Resource.status == "COMPLETED")
+            .order_by(desc(Resource.created_at))
+            .limit(1)
+        ).scalar_one_or_none()
+        if recent:
+            resume = TodayResume(
+                resource_id=str(recent.id),
+                resource_name=recent.name or '上次的資源',
+                subject_id=str(recent.subject_id) if recent.subject_id else None,
+                chapter_anchor=None,  # P5 接 reading_progress 表
+            )
+    except Exception as e:
+        logging.getLogger("dashboard.today").warning("resume lookup failed: %s", e)
+
+    # 距考天數：取最早的 LearningJourney.target_exam_date
+    days_to_exam: int | None = None
+    try:
+        journeys = db.execute(
+            select(LearningJourney)
+            .where(LearningJourney.user_id == user_uuid)
+        ).scalars().all()
+        future_dates = [
+            j.target_exam_date
+            for j in journeys
+            if getattr(j, "target_exam_date", None) is not None
+        ]
+        if future_dates:
+            today = datetime.now().date()
+            min_date = min(d for d in future_dates if d >= today) if any(d >= today for d in future_dates) else None
+            if min_date:
+                days_to_exam = (min_date - today).days
+    except Exception as e:
+        logging.getLogger("dashboard.today").warning("exam date lookup failed: %s", e)
+
+    # Streak: 用 dashboard_service 既有計算（best-effort）
+    streak_days = 0
+    try:
+        from app.services.dashboard_service import DashboardService
+        svc = DashboardService(db)
+        result = svc.get_dashboard(user_id=user_id, subject_name=None, subject_id=None)
+        streak_days = int(result.get("streak_days", 0) or 0)
+    except Exception:
+        streak_days = 0
+
+    # Review count: 待複習錯題（answers.is_correct=false 且 retired_at IS NULL 的 question 數）
+    review_count = 0
+    try:
+        review_count = db.execute(
+            select(Answer.question_id)
+            .distinct()
+            .where(Answer.user_id == user_uuid)
+            .where(Answer.is_correct.is_(False))
+            .where(
+                exists().where(
+                    and_(
+                        Question.id == Answer.question_id,
+                        Question.retired_at.is_(None),
+                    )
+                )
+            )
+        ).rowcount or 0
+        # rowcount may be -1 for SELECT in some drivers; do a count fallback
+        if review_count <= 0:
+            from sqlalchemy import func as _func
+            review_count = db.execute(
+                select(_func.count(Answer.question_id.distinct()))
+                .where(Answer.user_id == user_uuid)
+                .where(Answer.is_correct.is_(False))
+            ).scalar() or 0
+    except Exception as e:
+        logging.getLogger("dashboard.today").warning("review count failed: %s", e)
+        review_count = 0
+
+    # P5 (Sprint 6 T47)：SM-2 scaffold due reviews
+    scaffold_due_count = 0
+    try:
+        from app.services.sm2_service import list_due_reviews
+        due = list_due_reviews(db, user_id=user_uuid, limit=100)
+        scaffold_due_count = len(due)
+    except Exception as e:
+        logging.getLogger("dashboard.today").warning("sm2 due lookup failed: %s", e)
+
+    # 組「今日 3 件事」items
+    items: list[TodayItem] = []
+    if resume:
+        items.append(TodayItem(
+            kind="resume",
+            title=f"繼續讀「{resume.resource_name[:40]}」",
+            description="點擊接續上次中斷處",
+            minutes=20,
+            href=f"/library/read/reading?docId={resume.resource_id}" + (
+                f"&subjectId={resume.subject_id}" if resume.subject_id else ""
+            ),
+        ))
+    # 整合：scaffold_due 與 review_count 取較大者作主訊息
+    total_review = review_count + scaffold_due_count
+    if total_review > 0:
+        if scaffold_due_count > 0 and review_count > 0:
+            review_title = f"複習 {scaffold_due_count} 個重點 + {review_count} 題錯題"
+        elif scaffold_due_count > 0:
+            review_title = f"複習 {scaffold_due_count} 個鷹架重點"
+        else:
+            review_title = f"複習 {review_count} 題錯題"
+        items.append(TodayItem(
+            kind="review",
+            title=review_title,
+            description="遺忘曲線提醒（SM-2 演算法），現在複習效果最好",
+            minutes=10 + scaffold_due_count // 5,  # 多 5 個鷹架 +1 分鐘
+            target_count=total_review,
+            href="/knowledge/wrong-answers" if review_count > 0 else "/today/reviews",
+        ))
+    items.append(TodayItem(
+        kind="sprint_exam",
+        title=(
+            f"距考試 {days_to_exam} 天，建議今日 Sprint 模擬"
+            if days_to_exam is not None and days_to_exam <= 14
+            else "Sprint 模擬測驗"
+        ),
+        description="testing effect — 練習比再讀有效",
+        minutes=30,
+        href="/exam/setup",
+    ))
+
+    return TodayResponse(
+        greeting=greeting,
+        streak_days=streak_days,
+        days_to_exam=days_to_exam,
+        review_count=review_count,
+        scaffold_due_count=scaffold_due_count,
+        resume=resume,
+        items=items,
+    )

@@ -583,8 +583,34 @@ def log_scaffold_interaction(
         recall_quality=body.recall_quality,
     )
     db.add(log)
+    db.flush()
+    log_id = str(log.id)
+
+    # P4 (Sprint 5 T45)：recall_self_rated 事件 → 觸發 SM-2 排程更新
+    next_review_at = None
+    if body.event == "recall_self_rated" and body.recall_quality:
+        try:
+            from app.services.sm2_service import update_review
+            sched = update_review(
+                db,
+                user_id=_as_uuid(current_user_id),
+                scaffold_id=scaffold_id,
+                recall_quality=body.recall_quality,
+            )
+            next_review_at = sched.next_review_at.isoformat()
+        except Exception as e:
+            # SM-2 失敗不阻斷 log 寫入
+            import logging
+            logging.getLogger("scaffold.sm2").warning(
+                "SM-2 update failed scaffold=%s: %s", scaffold_id, e,
+            )
+
     db.commit()
-    return {"status": "ok", "log_id": str(log.id)}
+    return {
+        "status": "ok",
+        "log_id": log_id,
+        "next_review_at": next_review_at,  # 給前端顯示「下次複習：2026-05-13」
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -703,3 +729,271 @@ def get_chapter_practice(
             for q in questions
         ],
     )
+
+
+# ── Sprint 5 P4 T43：跨資源概念中心 endpoint ─────────────────────────────────
+
+
+class ConceptHit(BaseModel):
+    """單一概念命中項（用於 concept-center search）。"""
+
+    resource_id: UUID
+    resource_name: str
+    resource_type: str  # pdf | video | quiz | other
+    chapter_heading: str | None
+    scaffold_type: str
+    content: str
+
+
+class ConceptCenterResponse(BaseModel):
+    """跨資源概念中心搜尋結果。
+
+    依 scaffold_type 分組（前端展示用）：
+      - pitfall：跨資源迷思警示
+      - takeaway / advance_organizer：教材觀點
+      - elaborative：思考題引用
+    """
+
+    query: str
+    subject_id: UUID | None
+    total: int
+    hits: list[ConceptHit]
+
+
+@router.get(
+    "/concept-center", response_model=ConceptCenterResponse
+)
+def search_concept(
+    q: str,
+    subject_id: UUID | None = None,
+    limit: int = 50,
+    semantic: bool = True,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> ConceptCenterResponse:
+    """跨資源搜尋概念。
+
+    Args:
+        q: 搜尋關鍵字（必填，最少 2 字）
+        subject_id: 限定科目（可選，預設搜全 user resources）
+        limit: 回傳上限（1-200，default 50）
+        current_user_id: JWT 解出
+
+    Returns:
+        ConceptCenterResponse — query / subject_id / total / hits[]
+
+    Sprint 5 簡化版：純 SQL ILIKE 搜 scaffold.content + chapter_heading。
+    Sprint 6 P5 評估：擴 voyage embedding 語意搜尋。
+
+    Raises:
+        422: q 長度不足
+    """
+    from app.models.resource import Resource as _Resource
+
+    if not q or len(q.strip()) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "q must be at least 2 characters"},
+        )
+    limit = max(1, min(limit, 200))
+
+    # SQL ILIKE search across user's scaffolds（owner-scoped）
+    # P5 (Sprint 6 T49)：先撈寬範圍（OR 字串配對 + 取 200）然後 voyage rerank
+    user_uuid = _as_uuid(current_user_id)
+    query_pattern = f"%{q.strip()}%"
+
+    pre_limit = 200 if semantic else limit
+    stmt = (
+        select(ResourceScaffold, _Resource)
+        .join(_Resource, ResourceScaffold.resource_id == _Resource.id)
+        .where(_Resource.user_id == user_uuid)
+        .where(
+            (ResourceScaffold.content.ilike(query_pattern))
+            | (ResourceScaffold.chapter_heading.ilike(query_pattern))
+        )
+        .order_by(
+            # pitfall 排最前（警示優先）
+            (ResourceScaffold.type == "pitfall").desc(),
+            ResourceScaffold.created_at.desc(),
+        )
+        .limit(pre_limit)
+    )
+    if subject_id is not None:
+        stmt = stmt.where(_Resource.subject_id == subject_id)
+
+    rows = db.execute(stmt).all()
+
+    # P5 T49：Voyage 語意 rerank（best-effort，失敗 fallback ILIKE 順序）
+    if semantic and rows:
+        try:
+            from app.services.embedding_service import EmbeddingService
+            emb = EmbeddingService()
+            # P6 (Sprint 7 T54)：優先用 DB 持久化的 embedding（省 voyage cost）
+            # 若 row.embedding IS NULL（舊資料 / lazy backfill 未跑）→ 即時 embed
+            missing_indices = [
+                i for i, (sf, _r) in enumerate(rows)
+                if getattr(sf, "embedding", None) is None
+            ]
+            doc_vecs: list[list[float]] = [
+                list(getattr(sf, "embedding", None) or [])
+                for sf, _r in rows
+            ]
+            if missing_indices:
+                texts_to_embed = [
+                    ((rows[i][0].chapter_heading or "")
+                     + " " + (rows[i][0].content or "")).strip()[:1000]
+                    for i in missing_indices
+                ]
+                fresh_vecs = emb.embed_texts(texts_to_embed, input_type="document")
+                for idx, vec in zip(missing_indices, fresh_vecs):
+                    doc_vecs[idx] = vec
+            q_vec = emb.embed_texts([q.strip()], input_type="query")[0]
+            # cosine similarity
+            import math
+
+            def _cos(a: list[float], b: list[float]) -> float:
+                dot = sum(x * y for x, y in zip(a, b))
+                na = math.sqrt(sum(x * x for x in a))
+                nb = math.sqrt(sum(x * x for x in b))
+                return dot / (na * nb) if na and nb else 0.0
+
+            scored = [
+                (_cos(q_vec, dv), idx) for idx, dv in enumerate(doc_vecs)
+            ]
+            # pitfall 仍 priority boost +0.05
+            scored = [
+                (
+                    score + (0.05 if (rows[idx][0].type == "pitfall") else 0.0),
+                    idx,
+                )
+                for score, idx in scored
+            ]
+            scored.sort(key=lambda t: t[0], reverse=True)
+            rows = [rows[idx] for _, idx in scored[:limit]]
+        except Exception as e:
+            import logging
+            logging.getLogger("concept-center").warning(
+                "voyage rerank failed, fallback ILIKE order: %s", e,
+            )
+            rows = rows[:limit]
+    else:
+        rows = rows[:limit]
+
+    def _resource_type(r: _Resource) -> str:
+        ext = (r.gcs_path or "").lower().rsplit(".", 1)[-1] if r.gcs_path else ""
+        if ext in {"mp4", "mov", "avi", "mkv", "webm"} or getattr(r, "youtube_url", None):
+            return "video"
+        if r.detected_content_type == "practice_questions":
+            return "quiz"
+        if ext in {"ppt", "pptx"}:
+            return "slides"
+        return "pdf"
+
+    hits = [
+        ConceptHit(
+            resource_id=res.id,
+            resource_name=res.name or "(未命名)",
+            resource_type=_resource_type(res),
+            chapter_heading=sf.chapter_heading,
+            scaffold_type=sf.type if isinstance(sf.type, str) else sf.type.value,
+            content=sf.content or "",
+        )
+        for sf, res in rows
+    ]
+
+    return ConceptCenterResponse(
+        query=q.strip(),
+        subject_id=subject_id,
+        total=len(hits),
+        hits=hits,
+    )
+
+
+# ── Sprint 5 P4 T45：SM-2 due reviews endpoint ──────────────────────────────
+
+
+class DueReviewItem(BaseModel):
+    """SM-2 該複習項。"""
+
+    schedule_id: UUID
+    scaffold_id: UUID
+    chapter_heading: str | None
+    type: str
+    content_preview: str  # scaffold.content 前 100 字
+    resource_id: UUID
+    resource_name: str
+    next_review_at: datetime
+    interval_days: int
+    repetitions: int
+
+
+class DueReviewsResponse(BaseModel):
+    """SM-2 due 清單回應。"""
+
+    total: int
+    items: list[DueReviewItem]
+
+
+@router.get(
+    "/scaffold-reviews/due", response_model=DueReviewsResponse
+)
+def list_scaffold_due_reviews(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> DueReviewsResponse:
+    """取「今日該複習」鷹架清單（SM-2 next_review_at <= now）。
+
+    Args:
+        limit: 上限 1-100，default 20
+        current_user_id: JWT 解出
+
+    Returns:
+        DueReviewsResponse — total + items[]
+    """
+    from app.services.sm2_service import list_due_reviews
+    from app.models.resource import Resource as _Resource
+
+    limit = max(1, min(limit, 100))
+    user_uuid = _as_uuid(current_user_id)
+    schedules = list_due_reviews(db, user_id=user_uuid, limit=limit)
+
+    if not schedules:
+        return DueReviewsResponse(total=0, items=[])
+
+    # Bulk fetch scaffolds + resources
+    scaffold_ids = [s.scaffold_id for s in schedules]
+    scaffolds = {
+        s.id: s for s in db.execute(
+            select(ResourceScaffold).where(ResourceScaffold.id.in_(scaffold_ids))
+        ).scalars().all()
+    }
+    resource_ids = list({s.resource_id for s in scaffolds.values()})
+    resources = {
+        r.id: r for r in db.execute(
+            select(_Resource).where(_Resource.id.in_(resource_ids))
+        ).scalars().all()
+    }
+
+    items = []
+    for sch in schedules:
+        sf = scaffolds.get(sch.scaffold_id)
+        if not sf:
+            continue
+        res = resources.get(sf.resource_id)
+        if not res:
+            continue
+        items.append(DueReviewItem(
+            schedule_id=sch.id,
+            scaffold_id=sf.id,
+            chapter_heading=sf.chapter_heading,
+            type=sf.type if isinstance(sf.type, str) else sf.type.value,
+            content_preview=(sf.content or "")[:100],
+            resource_id=res.id,
+            resource_name=res.name or "(未命名)",
+            next_review_at=sch.next_review_at,
+            interval_days=sch.interval_days,
+            repetitions=sch.repetitions,
+        ))
+
+    return DueReviewsResponse(total=len(items), items=items)

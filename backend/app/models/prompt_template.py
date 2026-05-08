@@ -119,8 +119,8 @@ class PromptTemplateV2(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     template_id: Mapped[str] = mapped_column(
-        String(10), unique=True, nullable=False,
-        comment="e.g. S-01, K-01, T-02"
+        String(32), unique=True, nullable=False,
+        comment="e.g. S-01, K-01, K-06-slides, K-06-video（migration 085 擴 VARCHAR(32)）"
     )
     name: Mapped[str] = mapped_column(
         String(100), unique=True, nullable=False,

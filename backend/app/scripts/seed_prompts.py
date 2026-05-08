@@ -232,8 +232,44 @@ def run_seed(db_url: Optional[str] = None):
                 stats["updated"] += 1
 
             else:
-                print(f"  ⏭️  跳過：{tid} {data['name']} (v{existing.current_version} = file v{file_version})")
-                stats["skipped"] += 1
+                # P3 (Sprint 4 T38)：版本相同也要比對內容 hash
+                # 修 Sprint 1 K-06 v3 silent failure（標 v3 但內容是 v2）
+                import hashlib
+                file_hash = hashlib.sha256(
+                    (data["system_prompt"] + "\n\n---\n\n" + data["user_prompt"]).encode("utf-8")
+                ).hexdigest()
+                db_hash = hashlib.sha256(
+                    ((existing.system_prompt or "") + "\n\n---\n\n" + (existing.user_prompt or "")).encode("utf-8")
+                ).hexdigest()
+                if file_hash != db_hash:
+                    # 版本相同但內容不同 → 強制 sync 並 bump version + 1
+                    bumped_version = file_version + 1
+                    existing.system_prompt = data["system_prompt"]
+                    existing.user_prompt = data["user_prompt"]
+                    existing.model = data["model"]
+                    existing.max_tokens = data["max_tokens"]
+                    existing.temperature = data["temperature"]
+                    existing.variables = data.get("variables", [])
+                    existing.current_version = bumped_version
+                    session.commit()
+                    version_obj = PromptTemplateVersion(
+                        template_id=existing.id,
+                        version=bumped_version,
+                        model=existing.model,
+                        max_tokens=existing.max_tokens,
+                        max_tokens_by_plan=existing.max_tokens_by_plan,
+                        temperature=float(existing.temperature),
+                        system_prompt=existing.system_prompt,
+                        user_prompt=existing.user_prompt,
+                        variables=existing.variables or [],
+                        change_note=f"Hash mismatch v{file_version}; auto-bumped to v{bumped_version}",
+                    )
+                    repo.save_version(version_obj)
+                    print(f"  🔄 內容 hash 不符自動更新：{tid} {data['name']} (v{file_version}→v{bumped_version})")
+                    stats["updated"] += 1
+                else:
+                    print(f"  ⏭️  跳過：{tid} {data['name']} (v{existing.current_version} = file v{file_version} + hash match)")
+                    stats["skipped"] += 1
 
         except Exception as e:
             print(f"  ❌ 錯誤：{tid} — {e}")
