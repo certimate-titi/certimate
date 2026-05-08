@@ -828,6 +828,13 @@ def _build_scaffold_row(
         )
         return None
     page_start, page_end = _coerce_page_range(s)
+    # P0 (Sprint 1 T04)：寫入 retrieval_prompt（K-06 v3 schema）
+    # takeaway 必填、elaborative 可選、strategy 不需要
+    retrieval_prompt = s.get("retrieval_prompt")
+    if retrieval_prompt is not None and not isinstance(retrieval_prompt, str):
+        retrieval_prompt = None
+    if retrieval_prompt and not retrieval_prompt.strip():
+        retrieval_prompt = None
     return ResourceScaffold(
         resource_id=resource.id,
         tenant_id=resource.tenant_id,
@@ -836,6 +843,8 @@ def _build_scaffold_row(
         content=s.get("content") or "",
         page_start=page_start,
         page_end=page_end,
+        retrieval_prompt=retrieval_prompt,
+        template_code="K-06-study",
     )
 
 

@@ -277,6 +277,8 @@ def get_parsed(
                 "type": s.type,
                 "content": s.content,
                 "user_response": s.user_response,
+                "retrieval_prompt": s.retrieval_prompt,
+                "template_code": s.template_code,
             }
             for s in scaffolds_rows
         ],
