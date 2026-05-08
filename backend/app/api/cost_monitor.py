@@ -176,8 +176,8 @@ def get_cost_by_feature(
               provider,
               SUM(cost_usd)::float AS cost_usd,
               COUNT(*) AS calls,
-              COALESCE(SUM(tokens_in), 0) AS tokens_in,
-              COALESCE(SUM(tokens_out), 0) AS tokens_out
+              COALESCE(SUM(input_tokens), 0) AS tokens_in,
+              COALESCE(SUM(output_tokens), 0) AS tokens_out
             FROM ai_usage_ledger
             WHERE created_at >= NOW() - (:days || ' days')::interval
             GROUP BY feature, provider
