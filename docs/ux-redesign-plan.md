@@ -213,11 +213,12 @@ P7. Visual Hierarchy: Activity > Content > Tool
 - 章節讀完底部 Sticky bar：「下一節」「複習此節」「跨資源對照」
 
 #### YouTube / MP4 影片 → `/library/{sid}/watch?docId&t=`
-- 影片播放器置頂、固定
-- 下方時間軸 + 段落 takeaway 標記（可點 seek）
-- 右側面板：當前秒數對應的 takeaway / pitfall（隨播放高亮）
-- 每 3-5 分鐘暫停彈出 in-session-retrieval prompt（可關閉）
-- 看完整支：強制經過一輪 retrieval 才解鎖下一支
+- 影片播放器置頂、固定（HTML5 `<video>` 或 YouTube embed）
+- 右側面板：時間戳重點清單（takeaway / pitfall），點任何一條 → `currentTime = seconds`
+- 重點預設摺疊（retrieval-first），用戶手動展開才看答案
+- ❌ **不做強制暫停**（過度工程、用戶煩、跨裝置難穩）
+- ❌ **不做「看完整支才解鎖」**（侵入感太強）
+- 用戶自律：想練 retrieval 自己按 ⭐ 標記點，主動暫停想完再點答案揭曉
 
 #### PPT 簡報 → `/library/{sid}/slides?docId&page=`
 - 投影片網格首頁（縮圖 4 列）
@@ -542,6 +543,7 @@ P7. Visual Hierarchy: Activity > Content > Tool
 | 考古題顯示 takeaway | 教育顧問 | 等於洩題 |
 | 全平台同一 viewer | 前端 + 設計 + 教育 | 違反三方共識 |
 | 自動播放影片 | 設計師 | A11y 災難 + 流量灼燒 |
+| **影片強制每 3-5 分鐘暫停** | **CEO + 前端** | **過度工程、跨裝置不穩、用戶煩；改側欄時間戳 + 用戶自律** |
 
 ---
 
@@ -552,7 +554,7 @@ P7. Visual Hierarchy: Activity > Content > Tool
 | Q1 | 是否把 `/dashboard` 改名 `/`（學習首頁）？ | 是 / 否 / 並存 | **是**（IA 重劃核心動作） |
 | Q2 | 章節練習答錯題是否強制進複習清單？ | 強制 / 可選 | **強制**（學習科學要求） |
 | Q3 | 圖譜（mindmap）降級為工具入口？ | 是 / 否 / 加 toggle | **是**（圖譜不是學習主動線） |
-| Q4 | 影片頁是否強制每 3-5 分鐘暫停 retrieval？ | 強制 / 可關 | **可關但預設開**（教育要求） |
+| Q4 | 影片頁是否強制每 3-5 分鐘暫停 retrieval？ | 強制 / 可關 / 不做 | ✅ **不做**（CEO 拍板）— 改側欄時間戳重點 + 用戶自律 |
 | Q5 | 概念中心頁（P3）優先級是否拉前？ | P3 → P1 / 維持 | **維持 P3**（依賴 cross-resource embedding 成熟） |
 | Q6 | 動效升級是否同步換新動效庫？ | Motion 12 升級 / 不動 | **不動**（穩定優先） |
 | Q7 | 章節閱讀字體升級到 `text-base` | 升級 / 維持 sm | **升級**（A11y + 閱讀體驗） |
