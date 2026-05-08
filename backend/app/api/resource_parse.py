@@ -583,8 +583,34 @@ def log_scaffold_interaction(
         recall_quality=body.recall_quality,
     )
     db.add(log)
+    db.flush()
+    log_id = str(log.id)
+
+    # P4 (Sprint 5 T45)：recall_self_rated 事件 → 觸發 SM-2 排程更新
+    next_review_at = None
+    if body.event == "recall_self_rated" and body.recall_quality:
+        try:
+            from app.services.sm2_service import update_review
+            sched = update_review(
+                db,
+                user_id=_as_uuid(current_user_id),
+                scaffold_id=scaffold_id,
+                recall_quality=body.recall_quality,
+            )
+            next_review_at = sched.next_review_at.isoformat()
+        except Exception as e:
+            # SM-2 失敗不阻斷 log 寫入
+            import logging
+            logging.getLogger("scaffold.sm2").warning(
+                "SM-2 update failed scaffold=%s: %s", scaffold_id, e,
+            )
+
     db.commit()
-    return {"status": "ok", "log_id": str(log.id)}
+    return {
+        "status": "ok",
+        "log_id": log_id,
+        "next_review_at": next_review_at,  # 給前端顯示「下次複習：2026-05-13」
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -822,3 +848,93 @@ def search_concept(
         total=len(hits),
         hits=hits,
     )
+
+
+# ── Sprint 5 P4 T45：SM-2 due reviews endpoint ──────────────────────────────
+
+
+class DueReviewItem(BaseModel):
+    """SM-2 該複習項。"""
+
+    schedule_id: UUID
+    scaffold_id: UUID
+    chapter_heading: str | None
+    type: str
+    content_preview: str  # scaffold.content 前 100 字
+    resource_id: UUID
+    resource_name: str
+    next_review_at: datetime
+    interval_days: int
+    repetitions: int
+
+
+class DueReviewsResponse(BaseModel):
+    """SM-2 due 清單回應。"""
+
+    total: int
+    items: list[DueReviewItem]
+
+
+@router.get(
+    "/scaffold-reviews/due", response_model=DueReviewsResponse
+)
+def list_scaffold_due_reviews(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> DueReviewsResponse:
+    """取「今日該複習」鷹架清單（SM-2 next_review_at <= now）。
+
+    Args:
+        limit: 上限 1-100，default 20
+        current_user_id: JWT 解出
+
+    Returns:
+        DueReviewsResponse — total + items[]
+    """
+    from app.services.sm2_service import list_due_reviews
+    from app.models.resource import Resource as _Resource
+
+    limit = max(1, min(limit, 100))
+    user_uuid = _as_uuid(current_user_id)
+    schedules = list_due_reviews(db, user_id=user_uuid, limit=limit)
+
+    if not schedules:
+        return DueReviewsResponse(total=0, items=[])
+
+    # Bulk fetch scaffolds + resources
+    scaffold_ids = [s.scaffold_id for s in schedules]
+    scaffolds = {
+        s.id: s for s in db.execute(
+            select(ResourceScaffold).where(ResourceScaffold.id.in_(scaffold_ids))
+        ).scalars().all()
+    }
+    resource_ids = list({s.resource_id for s in scaffolds.values()})
+    resources = {
+        r.id: r for r in db.execute(
+            select(_Resource).where(_Resource.id.in_(resource_ids))
+        ).scalars().all()
+    }
+
+    items = []
+    for sch in schedules:
+        sf = scaffolds.get(sch.scaffold_id)
+        if not sf:
+            continue
+        res = resources.get(sf.resource_id)
+        if not res:
+            continue
+        items.append(DueReviewItem(
+            schedule_id=sch.id,
+            scaffold_id=sf.id,
+            chapter_heading=sf.chapter_heading,
+            type=sf.type if isinstance(sf.type, str) else sf.type.value,
+            content_preview=(sf.content or "")[:100],
+            resource_id=res.id,
+            resource_name=res.name or "(未命名)",
+            next_review_at=sch.next_review_at,
+            interval_days=sch.interval_days,
+            repetitions=sch.repetitions,
+        ))
+
+    return DueReviewsResponse(total=len(items), items=items)
