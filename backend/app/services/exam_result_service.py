@@ -370,7 +370,7 @@ class ExamResultService:
         try:
             max_tokens_map = {"PRO": 512, "PRO_PLUS": 768, "ULTRA": 1024}
             max_tokens = max_tokens_map.get(plan, 512)
-            result = llm.generate(system_prompt, user_prompt, plan=plan, task_type="basic", max_tokens=max_tokens)
+            result = llm.generate(system_prompt, user_prompt, plan=plan, task_type="basic", max_tokens=max_tokens, feature="exam_result_summary")
             return result if result and len(result.strip()) > 30 else None
         except Exception:
             import logging

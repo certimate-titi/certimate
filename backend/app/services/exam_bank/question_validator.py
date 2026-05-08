@@ -164,6 +164,7 @@ def validate_with_cross_llm(
             user_prompt,
             model=validator_model,
             max_tokens=256,
+            feature="question_validate",
         )
 
         result = _parse_validation_response(raw)

@@ -696,6 +696,7 @@ class KnowledgeNavService:
                 system_prompt, user_prompt,
                 plan=plan_val if plan_val in ("PRO_PLUS", "ULTRA") else "PRO_PLUS",
                 task_type="advanced", max_tokens=1024,
+                feature="ai_coach_chat",
             )
             return reply.strip() if reply else "抱歉，目前無法產生回覆，請稍後再試。"
         except Exception as e:

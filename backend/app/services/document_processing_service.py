@@ -522,6 +522,7 @@ class DocumentProcessingService:
                 user_prompt,
                 model="gemini-flash",
                 max_tokens=4096,
+                feature="doc_structure_md",
             )
 
             if not structured_md or len(structured_md.strip()) < 20:
@@ -788,6 +789,7 @@ class DocumentProcessingService:
                 user_prompt,
                 model="gemini-flash",
                 max_tokens=4096,
+                feature="doc_chapter_extract",
             )
             parsed = self._parse_json_response(result)
             # 防禦：LLM 偶爾直接回傳 list（章節陣列）而非 {"chapters": [...]}
@@ -956,6 +958,7 @@ class DocumentProcessingService:
                     user_prompt,
                     model="gemini-flash",
                     max_tokens=1024,
+                    feature="doc_subtitle_gen",
                 )
                 titles = json.loads(response.strip())
                 if isinstance(titles, list):
@@ -1067,6 +1070,7 @@ class DocumentProcessingService:
                 sys_prompt,
                 user_content,
                 max_tokens=8000,
+                feature="doc_structure_analysis",
             )
 
             parsed = self._parse_json_response(result)

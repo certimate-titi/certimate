@@ -479,7 +479,7 @@ class AiGenerationService:
 
         try:
             if self._llm:
-                raw = self._llm.generate(system_prompt, user_prompt, task_type="basic", max_tokens=2048)
+                raw = self._llm.generate(system_prompt, user_prompt, task_type="basic", max_tokens=2048, feature="exam_points_extract")
                 parsed = self._parse_json_response(raw)
                 if parsed and parsed.get("exam_points"):
                     # Map node_id back
@@ -710,7 +710,8 @@ class AiGenerationService:
                     )
                 else:
                     result = self._llm.generate(
-                        system_prompt, user_prompt, max_tokens=4000
+                        system_prompt, user_prompt, max_tokens=4000,
+                        feature="ai_question_gen",
                     )
                 parsed = self._parse_json_response(result)
                 batch_questions = parsed.get("questions", [])
@@ -1895,7 +1896,7 @@ class AiGenerationService:
             result = self._llm.generate_json(system_prompt, user_prompt)
         except Exception as e:
             logger.warning("LLM generate_json failed: %s, trying generate()", e)
-            raw = self._llm.generate(system_prompt, user_prompt)
+            raw = self._llm.generate(system_prompt, user_prompt, feature="ai_question_gen_fallback")
             result = self._parse_json_from_text(raw)
 
         if not result:

@@ -126,6 +126,7 @@ class WeeklyReportService:
             result = llm.generate(
                 system_prompt, user_prompt,
                 model="gemini-flash", max_tokens=512,
+                feature="weekly_report",
             )
             if result and len(result.strip()) > 10:
                 return result.strip()
