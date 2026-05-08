@@ -515,3 +515,73 @@ def set_scaffold_response(
     s.responded_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# T08 P0：Scaffold interaction logging（retrieval-first UX）
+# ---------------------------------------------------------------------------
+
+
+class ScaffoldInteractionRequest(BaseModel):
+    """retrieval-first UX 互動事件記錄請求。
+
+    event 必為下列之一：
+      - "viewed"            使用者看到此鷹架（可作 SM-2 第一次曝光）
+      - "revealed"          使用者點「看答案」揭曉 takeaway
+      - "recall_self_rated" 使用者自評回想感（必帶 recall_quality）
+    """
+
+    event: str = Field(..., pattern=r"^(viewed|revealed|recall_self_rated)$")
+    recall_quality: str | None = Field(
+        default=None, pattern=r"^(none|partial|full)$"
+    )
+
+
+@router.post("/resource-scaffolds/{scaffold_id}/interactions")
+def log_scaffold_interaction(
+    scaffold_id: UUID,
+    body: ScaffoldInteractionRequest,
+    db: Session = Depends(get_db),
+    current_user_id: UUID = Depends(get_current_user_id),
+) -> dict[str, str]:
+    """記錄一筆 retrieval-first UX 互動事件 → scaffold_interaction_log。
+
+    對應 docs/scaffold-redesign-plan.md P0 + Sprint 1 T08。
+
+    Args:
+        scaffold_id: 鷹架 UUID
+        body: ScaffoldInteractionRequest
+        current_user_id: 從 JWT 取得
+
+    Returns:
+        {"status": "ok", "log_id": str}
+
+    Raises:
+        404: scaffold 不存在
+        403: scaffold 不屬於該用戶
+        422: event 或 recall_quality 格式錯誤
+    """
+    from app.models.scaffold_interaction_log import ScaffoldInteractionLog
+
+    if body.event == "recall_self_rated" and not body.recall_quality:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "recall_self_rated event requires recall_quality"},
+        )
+
+    s = db.get(ResourceScaffold, scaffold_id)
+    if not s:
+        raise HTTPException(status_code=404, detail={"message": "scaffold not found"})
+    res = db.get(Resource, s.resource_id)
+    if not res or res.user_id != _as_uuid(current_user_id):
+        raise HTTPException(status_code=403, detail={"message": "forbidden"})
+
+    log = ScaffoldInteractionLog(
+        user_id=_as_uuid(current_user_id),
+        scaffold_id=scaffold_id,
+        event=body.event,
+        recall_quality=body.recall_quality,
+    )
+    db.add(log)
+    db.commit()
+    return {"status": "ok", "log_id": str(log.id)}

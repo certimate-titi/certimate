@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, ListTree, ChevronRight } from 'lucide-react';
 
 import MathContent from '@/components/MathContent';
+import RetrievalCard from '@/components/RetrievalCard';
 import { useReadingPageState } from '@/hooks/use-reading-page-state';
 import { useAuth } from '@/lib/auth-context';
 
@@ -204,14 +205,56 @@ export default function ReadingClient() {
             </div>
           </div>
 
-          {/* T08 RetrievalCard / T09 InlinePractice 將掛在此處 */}
+          {/* T08：當前章節 takeaway/elaborative 鷹架（retrieval-first） */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4">
-            <h2 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
-              <ChevronRight className="w-4 h-4" /> 章節練習與鷹架
+            <h2 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-1">
+              <ChevronRight className="w-4 h-4" /> 章節重點與思考
             </h2>
-            <p className="text-xs text-slate-400 italic">
-              T08 RetrievalCard 與 T09 InlinePractice 將在此區渲染。
-            </p>
+            {chapterScaffolds.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">
+                {currentChapter ? '此章節尚無學習鷹架' : '點左側目錄選擇章節'}
+              </p>
+            ) : (
+              <div className="space-y-2 -mx-2">
+                {chapterScaffolds
+                  .filter((s) => s.type === 'takeaway' || s.type === 'elaborative')
+                  .map((s) =>
+                    s.retrieval_prompt ? (
+                      <RetrievalCard
+                        key={s.id}
+                        scaffoldId={s.id}
+                        chapterHeading={s.chapter_heading}
+                        retrievalPrompt={s.retrieval_prompt}
+                        content={s.content}
+                      />
+                    ) : (
+                      <div
+                        key={s.id}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-3 mx-2"
+                      >
+                        <span className="text-xs font-bold text-slate-500">
+                          {s.type === 'elaborative' ? '💭 延伸思考' : '📌 重點'}
+                        </span>
+                        <p className="text-sm text-slate-700 mt-1">{s.content}</p>
+                      </div>
+                    ),
+                  )}
+                {/* strategy 類型不需檢索觸發 */}
+                {chapterScaffolds
+                  .filter((s) => s.type === 'strategy')
+                  .map((s) => (
+                    <div
+                      key={s.id}
+                      className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3 mx-2"
+                    >
+                      <span className="text-xs font-bold text-indigo-700">
+                        📚 學習策略
+                      </span>
+                      <p className="text-sm text-slate-700 mt-1">{s.content}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         </aside>
       </div>

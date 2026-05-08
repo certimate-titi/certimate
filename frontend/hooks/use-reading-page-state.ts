@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { resourceParseService } from '@/lib/api/services';
 
@@ -108,7 +109,12 @@ function parseUrlParams(): { resourceId: string; subjectId: string; chapter: str
 }
 
 export function useReadingPageState(): ReadingPageState {
-  const [{ resourceId, subjectId, chapter }, setUrlParams] = useState(parseUrlParams);
+  // Next.js useSearchParams 在 Link.click() pushState 時會即時更新（比 popstate 早）
+  const searchParams = useSearchParams();
+  const resourceId = searchParams.get('docId') ?? '';
+  const subjectId = searchParams.get('subjectId') ?? '';
+  const chapter = searchParams.get('chapter') ?? '';
+  const [, setUrlParams] = useState(parseUrlParams);
   const [parseStatus, setParseStatus] = useState<ParseStatus>(null);
   const [parseFailureReason, setParseFailureReason] = useState<string | null>(null);
   const [markdown, setMarkdown] = useState<string>('');
