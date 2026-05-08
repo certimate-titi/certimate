@@ -767,6 +767,7 @@ def search_concept(
     q: str,
     subject_id: UUID | None = None,
     limit: int = 50,
+    semantic: bool = True,
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
 ) -> ConceptCenterResponse:
@@ -797,9 +798,11 @@ def search_concept(
     limit = max(1, min(limit, 200))
 
     # SQL ILIKE search across user's scaffolds（owner-scoped）
+    # P5 (Sprint 6 T49)：先撈寬範圍（OR 字串配對 + 取 200）然後 voyage rerank
     user_uuid = _as_uuid(current_user_id)
     query_pattern = f"%{q.strip()}%"
 
+    pre_limit = 200 if semantic else limit
     stmt = (
         select(ResourceScaffold, _Resource)
         .join(_Resource, ResourceScaffold.resource_id == _Resource.id)
@@ -813,12 +816,54 @@ def search_concept(
             (ResourceScaffold.type == "pitfall").desc(),
             ResourceScaffold.created_at.desc(),
         )
-        .limit(limit)
+        .limit(pre_limit)
     )
     if subject_id is not None:
         stmt = stmt.where(_Resource.subject_id == subject_id)
 
     rows = db.execute(stmt).all()
+
+    # P5 T49：Voyage 語意 rerank（best-effort，失敗 fallback ILIKE 順序）
+    if semantic and rows:
+        try:
+            from app.services.embedding_service import EmbeddingService
+            emb = EmbeddingService()
+            texts = [
+                ((sf.chapter_heading or "") + " " + (sf.content or "")).strip()[:1000]
+                for sf, _r in rows
+            ]
+            q_vec = emb.embed_texts([q.strip()], input_type="query")[0]
+            doc_vecs = emb.embed_texts(texts, input_type="document")
+            # cosine similarity
+            import math
+
+            def _cos(a: list[float], b: list[float]) -> float:
+                dot = sum(x * y for x, y in zip(a, b))
+                na = math.sqrt(sum(x * x for x in a))
+                nb = math.sqrt(sum(x * x for x in b))
+                return dot / (na * nb) if na and nb else 0.0
+
+            scored = [
+                (_cos(q_vec, dv), idx) for idx, dv in enumerate(doc_vecs)
+            ]
+            # pitfall 仍 priority boost +0.05
+            scored = [
+                (
+                    score + (0.05 if (rows[idx][0].type == "pitfall") else 0.0),
+                    idx,
+                )
+                for score, idx in scored
+            ]
+            scored.sort(key=lambda t: t[0], reverse=True)
+            rows = [rows[idx] for _, idx in scored[:limit]]
+        except Exception as e:
+            import logging
+            logging.getLogger("concept-center").warning(
+                "voyage rerank failed, fallback ILIKE order: %s", e,
+            )
+            rows = rows[:limit]
+    else:
+        rows = rows[:limit]
 
     def _resource_type(r: _Resource) -> str:
         ext = (r.gcs_path or "").lower().rsplit(".", 1)[-1] if r.gcs_path else ""
