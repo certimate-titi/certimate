@@ -53,12 +53,15 @@ class RateLimitConfig:
         self.window_seconds: int = int(os.environ.get("RATE_LIMIT_WINDOW", "1"))
 
         # QPS 限制（請求 / 時間窗口）
+        # 2026-05-08 smoke fix：reading 頁開啟瞬間並發 7+ 筆 interactions log
+        # + chapter-practice，原 FREE=10 直接 429。提高基線並加 default=10 以
+        # 兼容尚未含 plan claim 的 JWT。
         self.limits: Dict[str, int] = {
-            "b2c_free":    int(os.environ.get("B2C_FREE_QPS", "10")),
-            "b2c_pro":     int(os.environ.get("B2C_PRO_QPS", "30")),
-            "b2c_ultra":   int(os.environ.get("B2C_ULTRA_QPS", "100")),
-            "b2b":         int(os.environ.get("B2B_QPS", "200")),
-            "default":     int(os.environ.get("DEFAULT_QPS", "5")),
+            "b2c_free":    int(os.environ.get("B2C_FREE_QPS", "30")),
+            "b2c_pro":     int(os.environ.get("B2C_PRO_QPS", "60")),
+            "b2c_ultra":   int(os.environ.get("B2C_ULTRA_QPS", "200")),
+            "b2b":         int(os.environ.get("B2B_QPS", "400")),
+            "default":     int(os.environ.get("DEFAULT_QPS", "10")),
         }
 
 
@@ -273,6 +276,18 @@ _EXEMPT_PATHS = {
     "/api/v1/openapi.json",
 }
 
+# 豁免路徑前綴 — 分析型/UX 紀錄寫入不應佔用戶 QPS 配額
+# （reading 頁載入會瞬間並發多筆 interactions log，會誤觸 free QPS 限制）
+_EXEMPT_PREFIXES: Tuple[str, ...] = (
+    "/api/v1/resource-scaffolds/",  # POST {id}/interactions：scaffold 互動 log
+)
+
+
+def _is_exempt(path: str) -> bool:
+    if path in _EXEMPT_PATHS:
+        return True
+    return any(path.startswith(p) and path.endswith("/interactions") for p in _EXEMPT_PREFIXES)
+
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """多租戶限流 Middleware — Token Bucket 算法。
@@ -284,7 +299,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # 未啟用或豁免路徑 → 直接通過
-        if not _config.enabled or request.url.path in _EXEMPT_PATHS:
+        if not _config.enabled or _is_exempt(request.url.path):
             return await call_next(request)
         # CORS preflight (OPTIONS) 不應計入限流 — 瀏覽器會為每個跨域請求自動發送
         if request.method == "OPTIONS":
