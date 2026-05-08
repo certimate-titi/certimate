@@ -22,13 +22,13 @@ export default function Navbar() {
   const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
 
   const navLinks = [
-    // P5 (Sprint 6 T48)：/today 加入主導覽，作為「學習首頁」入口
+    // UX redesign Q1+Q3 對齊 wireframe（5.1 學習首頁）— 4 等位主導航
+    // /today（學習首頁）→ /knowledge（學習庫）→ /practice（練習）→ /review（AI 教練）
+    // /dashboard 降為 /today footer chip「📊 完整儀表板」
+    // /exam/setup 收進 /today footer chip「📝 自由練習」or 行內入口
     { href: '/today', label: '今日', icon: LayoutDashboard },
-    { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
     { href: '/knowledge', label: '學習庫', icon: BookOpen },
-    { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/practice', label: '練習', icon: Dumbbell },
-    // 排程已移至 /dashboard 右側「學習排程」卡片，避免重複入口
     { href: '/review', label: 'AI 教練', icon: BrainCircuit },
     // 教育管理：ULTRA tier 用戶；管理者帳號（ADMIN/SUPER_ADMIN）亦自動含
     ...(isUltra || isAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),

@@ -73,7 +73,8 @@ function KnowledgeBasePageInner() {
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<string | null>(null);
-  const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
+  // UX redesign Q3 對齊：圖譜降為工具，預設 tree 列表（force 圖譜需手動切）
+  const [graphView, setGraphView] = useState<'tree' | 'force'>('tree');
   const [centerView, setCenterView] = useState<'graph' | 'document'>('graph');
   const [parseJobFailures, setParseJobFailures] = useState<Record<string, string>>({});
   const [docFullText, setDocFullText] = useState<string>('');

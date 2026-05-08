@@ -233,10 +233,14 @@ def _build_nav_items(user: User) -> list:
 
 
 def _build_redirect(user: User) -> str:
-    """建立 redirect。"""
+    """建立 redirect。
+
+    UX redesign Q1（CEO 拍板）：dashboard 改名 / 學習首頁。登入後預設進
+    /today（聚焦今日 3 件事），/dashboard 保留作完整數據面板。
+    """
     if not user.onboarding_completed:
         return "/onboarding"
-    return "/dashboard"
+    return "/today"
 
 
 class AuthService:
