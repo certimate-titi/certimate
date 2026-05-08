@@ -35,26 +35,27 @@ Feature: 個人儀表板與成就系統
       Then 操作成功
       And 頁面應顯示「請至少新增一個備考科目」引導提示
 
-  # ========== 科目切換器 ==========
+  # ========== 學習排程卡片（取代科目切換器 2026-05） ==========
 
-  Rule: 後置（回應）- 儀表板應顯示科目切換器與核心學習組件
+  Rule: 後置（回應）- 儀表板應透過學習排程卡片展示全部備考科目
 
-    Example: 備考多科時顯示科目切換器
+    @removed
+    # 原科目切換器已於 2026-05 從 dashboard 移除，多科目切換改至 /knowledge 與 /onboarding。
+    # 替代行為：右側 ScheduleWeekCard 列出全部科目 + 倒數天數 + 今日複習入口。
+
+    Example: 備考多科時學習排程卡片列出全部科目
       When 使用者 "alice@example.com" 查看儀表板
       Then 操作成功
-      And 科目切換器應包含：
-        | 科目    |
-        | AWS SAA |
-        | TOEIC   |
-      And 頁面應顯示「+ 新增備考科目」入口
-      And 預設顯示 "AWS SAA" 的學習數據
+      And 學習排程卡片應包含以下科目與倒數：
+        | 科目    | 考試日期   |
+        | AWS SAA | 2026-06-15 |
+        | TOEIC   | 2026-09-01 |
+      And 每個科目應顯示「開始今日複習」入口
 
-    Example: 切換科目後儀表板數據更新
-      Given 使用者 "alice@example.com" 目前在儀表板檢視 "AWS SAA"
-      When 使用者 "alice@example.com" 切換至 "TOEIC"
+    Example: 儀表板預設顯示第一個科目的學習數據
+      When 使用者 "alice@example.com" 查看儀表板
       Then 操作成功
-      And 回應中的考試倒數應對應 "TOEIC" 的考試日期 2026-09-01
-      And 回應中的雷達圖應對應 "TOEIC" 的能力分布
+      And 核心指標卡與雷達圖應對應第一個備考科目 "AWS SAA" 的數據
 
   Rule: 後置（回應）- 儀表板應包含考試倒數、雷達圖、快速上傳區與待辦提醒
 

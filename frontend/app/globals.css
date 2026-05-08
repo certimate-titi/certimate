@@ -1,5 +1,168 @@
 @import "tailwindcss";
 
+/* ===== Dark Mode 全站主題 ===== */
+
+/* 預設亮色 CSS 變數 */
+:root {
+  --color-bg-primary: #f8fafc;       /* slate-50 */
+  --color-bg-secondary: #ffffff;      /* white */
+  --color-bg-tertiary: #f1f5f9;      /* slate-100 */
+  --color-bg-card: #ffffff;
+  --color-bg-sidebar: #ffffff;
+  --color-bg-input: #ffffff;
+  --color-bg-hover: #f1f5f9;         /* slate-100 */
+
+  --color-text-primary: #0f172a;      /* slate-900 */
+  --color-text-secondary: #475569;    /* slate-600 */
+  --color-text-tertiary: #94a3b8;     /* slate-400 */
+  --color-text-muted: #64748b;        /* slate-500 */
+
+  --color-border-primary: #e2e8f0;    /* slate-200 */
+  --color-border-secondary: #f1f5f9;  /* slate-100 */
+
+  --color-accent: #10b981;           /* emerald-500 */
+  --color-accent-hover: #059669;     /* emerald-600 */
+}
+
+/* 暗色主題 CSS 變數 */
+.dark {
+  --color-bg-primary: #0f172a;        /* slate-900 */
+  --color-bg-secondary: #1e293b;      /* slate-800 */
+  --color-bg-tertiary: #334155;       /* slate-700 */
+  --color-bg-card: #1e293b;
+  --color-bg-sidebar: #1e293b;
+  --color-bg-input: #334155;
+  --color-bg-hover: #334155;
+
+  --color-text-primary: #f1f5f9;      /* slate-100 */
+  --color-text-secondary: #cbd5e1;    /* slate-300 */
+  --color-text-tertiary: #64748b;     /* slate-500 */
+  --color-text-muted: #94a3b8;        /* slate-400 */
+
+  --color-border-primary: #334155;    /* slate-700 */
+  --color-border-secondary: #475569;  /* slate-600 */
+
+  --color-accent: #34d399;           /* emerald-400 */
+  --color-accent-hover: #10b981;     /* emerald-500 */
+}
+
+/* 暗色模式全局覆寫 */
+.dark body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* 暗色模式：卡片、面板、側邊欄 */
+.dark .bg-white {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary);
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--color-bg-primary) !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--color-bg-tertiary) !important;
+}
+
+/* 暗色模式：文字顏色覆寫 */
+.dark .text-slate-900 {
+  color: var(--color-text-primary) !important;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-700 {
+  color: var(--color-text-secondary) !important;
+}
+
+.dark .text-slate-600 {
+  color: var(--color-text-secondary) !important;
+}
+
+.dark .text-slate-500 {
+  color: var(--color-text-muted) !important;
+}
+
+/* 暗色模式：邊框覆寫 */
+.dark .border-slate-200 {
+  border-color: var(--color-border-primary) !important;
+}
+
+.dark .border-slate-100 {
+  border-color: var(--color-border-secondary) !important;
+}
+
+.dark .border-slate-300 {
+  border-color: var(--color-border-primary) !important;
+}
+
+/* 暗色模式：輸入框 */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-primary);
+}
+
+/* 暗色模式：Navbar 與 sidebar */
+.dark nav {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border-primary);
+}
+
+/* 暗色模式：下拉選單、彈窗 */
+.dark [role="dialog"],
+.dark [role="menu"] {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-primary);
+}
+
+/* 暗色模式：hover 效果 */
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--color-bg-hover) !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--color-bg-hover) !important;
+}
+
+/* 暗色模式：placeholder 文字 */
+.dark ::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* 暗色模式：scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-border-primary);
+  border-radius: 4px;
+}
+
+/* 暗色模式：focus ring 調整 */
+.dark .focus\:ring-emerald-500:focus {
+  --tw-ring-color: var(--color-accent);
+}
+
+/* 暗色模式：bg-slate-50/50 半透明背景 */
+.dark .bg-slate-50\/50 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
+
+/* ===== End Dark Mode ===== */
+
 /* iOS 防止表單 input focus 自動放大頁面（避免 16px 以下被觸發） */
 @supports (-webkit-touch-callout: none) {
   input, textarea, select {

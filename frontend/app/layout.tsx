@@ -32,8 +32,23 @@ export const viewport: Viewport = {
  * 包覆所有子路由並提供認證、Google OAuth、全站導覽列等全域 context。
  */
 export default function RootLayout({children}: {children: React.ReactNode}) {
+  // Dark mode: 在 SSR/SSG 靜態匯出環境中，透過 inline script 在 hydration 前套用 .dark class
+  // 避免 FOUC (Flash of Unstyled Content)
+  const darkModeScript = `
+    (function(){
+      try {
+        if(localStorage.getItem('certimate_dark_mode')==='true'){
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e){}
+    })();
+  `;
+
   return (
-    <html lang="en" className={`${inter.variable} font-sans`}>
+    <html lang="en" className={`${inter.variable} font-sans`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
+      </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col" suppressHydrationWarning>
         <GoogleOAuthWrapper>
           <AuthProvider>

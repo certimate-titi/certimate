@@ -302,10 +302,16 @@ function MockExamWorkspacePage() {
                 const isCurrent = i === currentIndex;
                 const isAnswered = !!answers[q.id];
                 const isMarked = markedForReview.has(q.id);
+                const confidence = confidences[q.id];
 
+                // Feature 20: 題號網格依信心度以不同底色標示
+                // 信心度底色僅在已作答且非當前、非標記時顯示
                 let stateClass = 'bg-slate-200 border-slate-200 text-slate-600 hover:border-emerald-300';
                 if (isCurrent) stateClass = 'bg-slate-900 border-slate-900 text-white font-bold shadow-md';
                 else if (isMarked) stateClass = 'bg-yellow-400 border-yellow-400 text-slate-900';
+                else if (isAnswered && confidence === 'confident') stateClass = 'bg-emerald-500 border-emerald-500 text-white';
+                else if (isAnswered && confidence === 'guessing') stateClass = 'bg-rose-400 border-rose-400 text-white';
+                else if (isAnswered && confidence === 'somewhat') stateClass = 'bg-amber-400 border-amber-400 text-white';
                 else if (isAnswered) stateClass = 'bg-emerald-500 border-emerald-500 text-white';
 
                 return (
@@ -326,7 +332,9 @@ function MockExamWorkspacePage() {
 
           <div className="p-4 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 space-y-2">
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-slate-900" /> 目前題目</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500" /> 已作答</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500" /> 😎 非常確定</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-400" /> 😐 有點把握</div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-rose-400" /> 😰 完全猜測</div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-slate-200" /> 未作答</div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-yellow-400" /> 標記複習</div>
           </div>
