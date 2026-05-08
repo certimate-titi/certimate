@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, FileText, Youtube, BrainCircuit, Play, Lock, ChevronDown, Sparkles, RotateCcw, AlertTriangle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { documentService, examService, subjectService, knowledgeService, resourceParseService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
@@ -68,6 +68,9 @@ function ExamSetupPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
+  // T62 (Sprint 8 L65)：當 documents.length === 0 但有 FAILED resource 時，
+  // 主動查 parse job 表取 failure_reason（CLAUDE.md Layer 3 標準）
+  const [parseFailures, setParseFailures] = useState<{ id: string; title: string; reason: string }[]>([]);
 
   // Subject state
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
@@ -140,6 +143,30 @@ function ExamSetupPage() {
         d.status === 'COMPLETED' && d.subjectId === targetSubjectId
       );
       setDocuments(filteredDocs);
+
+      // T62 (Layer 3)：若 COMPLETED 過濾後為空，主動查 FAILED 資源的具體原因
+      if (filteredDocs.length === 0) {
+        const failedDocs = res.documents.filter(
+          d => d.status === 'FAILED' && d.subjectId === targetSubjectId
+        );
+        if (failedDocs.length > 0) {
+          const reasons = await Promise.all(
+            failedDocs.slice(0, 5).map(async d => {
+              try {
+                const job = await resourceParseService.getStatus(d.id);
+                return { id: d.id, title: d.title, reason: job.failure_reason || '解析失敗（後端未提供原因）' };
+              } catch {
+                return { id: d.id, title: d.title, reason: '無法取得解析狀態' };
+              }
+            })
+          );
+          setParseFailures(reasons);
+        } else {
+          setParseFailures([]);
+        }
+      } else {
+        setParseFailures([]);
+      }
 
       // Always load system knowledge nodes (historical exam bank)
       try {
@@ -607,10 +634,34 @@ function ExamSetupPage() {
                 })}
               </div>
             ) : documents.length === 0 ? (
-              <div className="text-center text-slate-400 py-8">
-                <p className="text-sm">尚無可用的測驗範圍</p>
-                <p className="text-xs mt-1">上傳文件後即可生成考題</p>
-                <p className="text-xs mt-2 text-slate-300">若已上傳資源但此處為空，可能資源解析失敗，請至學習庫頁面查看狀態</p>
+              <div className="py-6">
+                {parseFailures.length > 0 ? (
+                  // T62 (Layer 3)：直接顯示 parse job failure_reason
+                  <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                    <div className="flex items-start gap-2 mb-2">
+                      <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                      <p className="text-sm font-bold text-rose-800">
+                        {parseFailures.length} 份資源解析失敗，無法用於出題
+                      </p>
+                    </div>
+                    <ul className="space-y-1.5 ml-6">
+                      {parseFailures.map(f => (
+                        <li key={f.id} className="text-xs text-rose-700">
+                          <span className="font-medium">{f.title}：</span>
+                          <span className="text-rose-600">{f.reason.slice(0, 120)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link href="/knowledge" className="inline-block mt-3 text-xs font-bold text-rose-700 underline">
+                      前往學習庫重新解析 →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-400">
+                    <p className="text-sm">尚無可用的測驗範圍</p>
+                    <p className="text-xs mt-1">上傳文件後即可生成考題</p>
+                  </div>
+                )}
               </div>
             ) : null}
             </div>

@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Youtube, FileText, Clock, TrendingUp, BookOpen, AlertCircle, Sparkles, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
-import { dashboardService, documentService, subjectService } from '@/lib/api/services';
+import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
 import ScheduleWeekCard from '@/components/ScheduleWeekCard';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -222,11 +222,11 @@ export default function DashboardPage() {
       const uploadRes = await documentService.upload({ file: files[0], title: files[0].name, subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
-      setUploadStatus('completed');
       setData(await loadDashboardData(activeSubjectId));
       invalidateQuotaCache(); // L-quota: 上傳成功後刷新配額計數
-      // 解析在後端自動串接（/upload-file → enqueue → process_resource → run_parse_job）
-      // 不需要前端再 trigger；reparse 端點已下架（2026-05-08）。
+      // T60 (Sprint 8)：保持 processing 直到 parse job 結束；
+      // 失敗時主動查 resource_parse_jobs.failure_reason 顯示具體原因（Layer 3）
+      await pollParseUntilDone(uploadRes.document.id);
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));
@@ -235,6 +235,31 @@ export default function DashboardPage() {
       setUploading(false);
     }
   }, [activeSubjectId, loadDashboardData]);
+
+  // T60 (Sprint 8 L69)：上傳完成後輪詢 parse job 終態，失敗時讀 failure_reason
+  const pollParseUntilDone = useCallback(async (resourceId: string) => {
+    const startedAt = Date.now();
+    const timeoutMs = 90_000; // 90s 上限，超時不阻塞使用者
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const job = await resourceParseService.getStatus(resourceId);
+        if (job.status === 'COMPLETED') {
+          setUploadStatus('completed');
+          return;
+        }
+        if (job.status === 'FAILED') {
+          setUploadErrorMessage(job.failure_reason || '解析失敗（後端未提供原因）');
+          setUploadStatus('failed');
+          return;
+        }
+      } catch {
+        // job 尚未建立或暫時不可達 — 繼續等下一輪
+      }
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    // 超時 → 視為 completed（背景仍在跑），讓使用者繼續操作
+    setUploadStatus('completed');
+  }, []);
 
   const handleYoutubeSubmit = useCallback(async () => {
     if (!youtubeUrl.trim()) return;
@@ -258,11 +283,11 @@ export default function DashboardPage() {
       const uploadRes = await documentService.upload({ youtubeUrl: youtubeUrl.trim(), subjectId: activeSubjectId });
       clearInterval(progressInterval);
       setUploadProgress(100);
-      setUploadStatus('completed');
       setYoutubeUrl('');
       setData(await loadDashboardData(activeSubjectId));
       invalidateQuotaCache(); // L-quota
-      // 解析自動串接（同 PDF upload 路徑）
+      // T60 (Sprint 8)：YouTube parse 也走 failure_reason 主動查詢
+      await pollParseUntilDone(uploadRes.document.id);
     } catch (err) {
       clearInterval(progressInterval);
       setUploadErrorMessage(err instanceof Error ? err.message : String(err));

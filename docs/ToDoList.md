@@ -64,12 +64,12 @@
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-07 新增）
 
-- [ ] `/exam/setup` — 空文件態（documents.length === 0，COMPLETED 過濾後）顯示靜態提示文字（L609-615）「若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態」，未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason。依 CLAUDE.md Layer 3 標準需直接於當頁查 job 表並顯示具體失敗原因（前次 2026-04-24 修復僅達靜態提示層級，未達 Layer 3）（首見重新標記：2026-05-07）
+- [x] `/exam/setup` — ~~空文件態顯示靜態提示文字，未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason~~ T62 已修正：`documents.length === 0` 時若有 FAILED 資源，主動 batch 查 parse-status，rose 警示卡顯示每筆 title + failure_reason（最多 5 筆）+ 學習庫重新解析連結（修復：2026-05-08 Sprint 8 CTO quick wins）
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-06 新增）
 
-- [ ] `/dashboard` — 上傳後異步 parse 失敗僅顯示例外訊息，未查 `resource_parse_jobs.failure_reason`；需在 `uploadStatus === 'failed'` 後主動查 job 表取得具體失敗原因（首見：2026-05-06）
-- [ ] `/knowledge` — PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分「正在解析中」vs「解析失敗」vs「從未上傳」三種情境；需補 PROCESSING 狀態的進度說明 UI（首見：2026-05-06）
+- [x] `/dashboard` — ~~上傳後異步 parse 失敗僅顯示例外訊息，未查 `resource_parse_jobs.failure_reason`~~ T60 已修正：`pollParseUntilDone()` 上傳後輪詢 parse job 終態（90s 上限），FAILED 時讀 `job.failure_reason` 顯示給使用者；PDF + YouTube 兩入口同時生效（修復：2026-05-08 Sprint 8 CTO quick wins）
+- [x] `/knowledge` — ~~PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分三種情境~~ 巡檢誤報：[knowledge/page.tsx:887-1000](frontend/app/knowledge/page.tsx) 已實作 4 種情境分流（無資源 / 全 FAILED / 有 PROCESSING / 樹未生成），含 PROCESSING 中文件清單 + 預估時間 + 5 秒自動更新提示（確認：2026-05-08 Sprint 8 audit）
 - [x] `/account/weekly-reports` — ~~`reports.length === 0` 時靜默空白，無「尚無週報」說明文字~~ 空態 UI 已存在：Calendar icon + 「尚無週報」標題 + 「活躍用戶（每週至少做 1 份測驗）會在週日自動收到報告」說明文字；TODO 首見時為誤報（確認：2026-05-06 TiTi Commander 排程巡檢）
 - [x] `/edu-console` — ~~DPA 已簽署但學員清單空時，缺明確「邀請第一位學員」CTA 或引導訊息~~ 已修復：空態匯入按鈕改用 `handleImportClick`（未簽 DPA 先攔截至 DPA modal）；按鈕文字改為「邀請第一位學員」更明確（修復：2026-05-06 TiTi Commander 排程巡檢）
 
