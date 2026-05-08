@@ -5,7 +5,7 @@ import sys
 import subprocess
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -1212,3 +1212,54 @@ def unbind_default_resource(
     db.delete(link)
     db.commit()
     return {"ok": True}
+
+
+# ── Sprint 8 T66：背景觸發 scaffold embedding backfill ─────────────────────
+
+@router.post("/backfill-scaffold-embeddings")
+def trigger_scaffold_backfill(
+    background_tasks: BackgroundTasks,
+    limit: int = 200,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """觸發 resource_scaffolds.embedding NULL row 補 voyage embedding（背景）。
+
+    Sprint 8 T66：取代 CLI 手動跑，可由 super-admin 從後台一鍵觸發。
+    backfill 在背景跑（FastAPI BackgroundTasks），即時回傳 NULL 數量。
+
+    Args:
+        limit: 本次最多處理筆數（避免燒爆 voyage 配額）。預設 200。
+
+    僅 SUPER_ADMIN 可呼叫。
+    """
+    import uuid as _uuid
+    from sqlalchemy import text
+    from app.models.user import User, UserRole
+
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    user = db.query(User).filter_by(id=user_uuid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    null_count = db.execute(
+        text("SELECT COUNT(*) FROM resource_scaffolds WHERE embedding IS NULL")
+    ).scalar_one()
+
+    if null_count == 0:
+        return {"queued": False, "null_count": 0, "message": "無需 backfill"}
+
+    def _run_backfill(target_limit: int):
+        """背景執行 backfill — 重用 CLI 腳本的 run() 函式。"""
+        from app.scripts.backfill_scaffold_embeddings import run
+        try:
+            run(batch_size=64, limit=target_limit, dry_run=False)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("backfill_scaffold_embeddings failed")
+
+    background_tasks.add_task(_run_backfill, limit)
+    return {"queued": True, "null_count": null_count, "limit": limit}

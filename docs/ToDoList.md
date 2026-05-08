@@ -29,7 +29,7 @@
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-08 新增）
 
 - [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08）
-- [ ] `/dashboard` — Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊（首見：2026-05-08）
+- [x] `/dashboard` — ~~Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊~~ T63 已修正：dashboardService.getConfidenceCalibration() 對接後端 /dashboard/confidence-calibration（trend / rate / status），DomainRadarChart 下方加迷你 sparkline + 狀態 badge（emerald/amber/rose 三色）；Chrome Preview Layer 2 實測通過（修復：2026-05-08 Sprint 8 CTO quick wins）
 - [x] `/exam/workspace` — ~~Feature 20 Rule「後置（回應）- 題號導覽網格應以不同底色標示信心度」要求網格底色差異，目前網格格子無信心度底色~~ 已修復：題號網格依 `confidences[q.id]` 信心度值上色（😎 confident → 綠色 / 😐 somewhat → 琥珀色 / 😰 guessing → 玫瑰色），圖例同步更新；TypeScript 編譯零錯誤（修復：2026-05-08 TiTi Commander 排程巡檢）
 
 ## 🟠 實作缺失 — 需補前端功能（2026-05-08 新增）
@@ -58,18 +58,18 @@
 ## 🟠 實作缺失 — 需補前端功能（2026-05-06 新增）
 
 - [x] `/exam/workspace` — ~~Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失~~ 與上方 #21 同件事；[PomodoroTimer.tsx](frontend/components/PomodoroTimer.tsx) 已實作，巡檢誤報（移交 BDD 補測清單，2026-05-08 audit）
-- [ ] `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI（首見：2026-05-06）
+- [x] `/knowledge` — ~~Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI~~ 巡檢誤報：[knowledge/page.tsx:819 / 873](frontend/app/knowledge/page.tsx) 已實作左右兩面板各自 toggle 按鈕（「◀ 隱藏資料」/「▶ 資料列表」與右側對稱）；註解 L28 已標明 react-resizable-panels removed（確認：2026-05-08 Sprint 8 audit）
 - [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06）
 - [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-07 新增）
 
-- [ ] `/exam/setup` — 空文件態（documents.length === 0，COMPLETED 過濾後）顯示靜態提示文字（L609-615）「若已上傳資源但此處為空，可能資源解析失敗，請至知識庫頁面查看狀態」，未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason。依 CLAUDE.md Layer 3 標準需直接於當頁查 job 表並顯示具體失敗原因（前次 2026-04-24 修復僅達靜態提示層級，未達 Layer 3）（首見重新標記：2026-05-07）
+- [x] `/exam/setup` — ~~空文件態顯示靜態提示文字，未主動呼叫 `resourceParseService.getStatus()` 查詢 parse job failure_reason~~ T62 已修正：`documents.length === 0` 時若有 FAILED 資源，主動 batch 查 parse-status，rose 警示卡顯示每筆 title + failure_reason（最多 5 筆）+ 學習庫重新解析連結（修復：2026-05-08 Sprint 8 CTO quick wins）
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-06 新增）
 
-- [ ] `/dashboard` — 上傳後異步 parse 失敗僅顯示例外訊息，未查 `resource_parse_jobs.failure_reason`；需在 `uploadStatus === 'failed'` 後主動查 job 表取得具體失敗原因（首見：2026-05-06）
-- [ ] `/knowledge` — PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分「正在解析中」vs「解析失敗」vs「從未上傳」三種情境；需補 PROCESSING 狀態的進度說明 UI（首見：2026-05-06）
+- [x] `/dashboard` — ~~上傳後異步 parse 失敗僅顯示例外訊息，未查 `resource_parse_jobs.failure_reason`~~ T60 已修正：`pollParseUntilDone()` 上傳後輪詢 parse job 終態（90s 上限），FAILED 時讀 `job.failure_reason` 顯示給使用者；PDF + YouTube 兩入口同時生效（修復：2026-05-08 Sprint 8 CTO quick wins）
+- [x] `/knowledge` — ~~PROCESSING 中的資源解析狀態未向使用者說明；空圖譜時無法區分三種情境~~ 巡檢誤報：[knowledge/page.tsx:887-1000](frontend/app/knowledge/page.tsx) 已實作 4 種情境分流（無資源 / 全 FAILED / 有 PROCESSING / 樹未生成），含 PROCESSING 中文件清單 + 預估時間 + 5 秒自動更新提示（確認：2026-05-08 Sprint 8 audit）
 - [x] `/account/weekly-reports` — ~~`reports.length === 0` 時靜默空白，無「尚無週報」說明文字~~ 空態 UI 已存在：Calendar icon + 「尚無週報」標題 + 「活躍用戶（每週至少做 1 份測驗）會在週日自動收到報告」說明文字；TODO 首見時為誤報（確認：2026-05-06 TiTi Commander 排程巡檢）
 - [x] `/edu-console` — ~~DPA 已簽署但學員清單空時，缺明確「邀請第一位學員」CTA 或引導訊息~~ 已修復：空態匯入按鈕改用 `handleImportClick`（未簽 DPA 先攔截至 DPA modal）；按鈕文字改為「邀請第一位學員」更明確（修復：2026-05-06 TiTi Commander 排程巡檢）
 
