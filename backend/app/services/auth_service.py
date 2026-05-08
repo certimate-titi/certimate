@@ -57,14 +57,20 @@ def _is_password_strong_enough(password: str) -> bool:
     return _check_password_strength(password) != "弱"
 
 
-def _generate_token(user_id: str, extra_claims: dict = None) -> str:
-    """產生 token。"""
+def _generate_token(user_id: str, extra_claims: dict = None, plan: str | None = None) -> str:
+    """產生 token。
+
+    Sprint 8 T58：加 plan claim 給 RateLimitMiddleware 判層級
+    （FREE/PRO/PRO_PLUS/ULTRA → b2c_free/pro/pro/ultra）。
+    """
     settings = get_settings()
     payload = {
         "sub": str(user_id),
         "exp": datetime.utcnow() + timedelta(hours=settings.JWT_EXPIRE_HOURS),
         "iat": datetime.utcnow(),
     }
+    if plan:
+        payload["plan"] = plan
     if extra_claims:
         payload.update(extra_claims)
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -333,7 +339,7 @@ class AuthService:
         user.last_login_at = datetime.now(_tz.utc)
         self.repo.save(user)
 
-        token = _generate_token(str(user.id))
+        token = _generate_token(str(user.id), plan=_enum_value(user.subscription_plan))
         redirect_to = _build_redirect(user)
         nav_items = _build_nav_items(user)
 
@@ -394,7 +400,7 @@ class AuthService:
         user.last_login_at = datetime.now(_tz.utc)
         self.repo.save(user)
 
-        token = _generate_token(str(user.id))
+        token = _generate_token(str(user.id), plan=_enum_value(user.subscription_plan))
         redirect_to = _build_redirect(user)
         nav_items = _build_nav_items(user)
 
