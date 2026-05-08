@@ -379,7 +379,8 @@ class WrongAnswerService:
                               history_context: str | None = None,
                               conversation_history: list | None = None,
                               confidence_quadrant: str | None = None,
-                              user_id: uuid.UUID | None = None) -> str | dict:
+                              user_id: uuid.UUID | None = None,
+                              plan: str = "PRO_PLUS") -> str | dict:
         """生成蘇格拉底式 AI 教練回覆。
 
         設計原則（白皮書 #8）：
@@ -501,10 +502,11 @@ class WrongAnswerService:
                     system_prompt += "\n如果需要引用教材，可以提到「根據你的教材...」但仍以提問引導為主。"
                     return llm.generate_with_context(
                         system_prompt, user_prompt, context,
-                        task_type="advanced", max_tokens=1024,
+                        plan=plan, task_type="advanced", max_tokens=1024,
+                        feature="wrong_answer_advanced_rag",
                     )
 
-            return llm.generate(system_prompt, user_prompt, task_type="advanced", max_tokens=1024, feature="wrong_answer_advanced")
+            return llm.generate(system_prompt, user_prompt, plan=plan, task_type="advanced", max_tokens=1024, feature="wrong_answer_advanced")
 
         except Exception as e:
             logger.warning("AI Coach LLM call failed: %s", e)
@@ -707,6 +709,7 @@ class WrongAnswerService:
                 conversation_history=conversation_history,
                 confidence_quadrant=confidence_quadrant,
                 user_id=user_uuid,
+                plan=plan,
             )
             # _generate_coach_reply may return a dict with "rejected" or "error" flag
             if isinstance(result, dict):
