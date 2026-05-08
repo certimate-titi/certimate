@@ -637,7 +637,8 @@ class TodayResponse(BaseModel):
     greeting: str  # 早安/午安/晚安
     streak_days: int
     days_to_exam: int | None
-    review_count: int
+    review_count: int  # 答錯題待複習數
+    scaffold_due_count: int  # P5 (Sprint 6 T47)：SM-2 鷹架到期數
     resume: TodayResume | None
     items: list[TodayItem]
 
@@ -756,6 +757,15 @@ def get_today(
         logging.getLogger("dashboard.today").warning("review count failed: %s", e)
         review_count = 0
 
+    # P5 (Sprint 6 T47)：SM-2 scaffold due reviews
+    scaffold_due_count = 0
+    try:
+        from app.services.sm2_service import list_due_reviews
+        due = list_due_reviews(db, user_id=user_uuid, limit=100)
+        scaffold_due_count = len(due)
+    except Exception as e:
+        logging.getLogger("dashboard.today").warning("sm2 due lookup failed: %s", e)
+
     # 組「今日 3 件事」items
     items: list[TodayItem] = []
     if resume:
@@ -768,14 +778,22 @@ def get_today(
                 f"&subjectId={resume.subject_id}" if resume.subject_id else ""
             ),
         ))
-    if review_count > 0:
+    # 整合：scaffold_due 與 review_count 取較大者作主訊息
+    total_review = review_count + scaffold_due_count
+    if total_review > 0:
+        if scaffold_due_count > 0 and review_count > 0:
+            review_title = f"複習 {scaffold_due_count} 個重點 + {review_count} 題錯題"
+        elif scaffold_due_count > 0:
+            review_title = f"複習 {scaffold_due_count} 個鷹架重點"
+        else:
+            review_title = f"複習 {review_count} 題錯題"
         items.append(TodayItem(
             kind="review",
-            title=f"複習 {review_count} 題錯題",
-            description="遺忘曲線提醒，現在複習效果最好",
-            minutes=10,
-            target_count=review_count,
-            href="/knowledge/wrong-answers",
+            title=review_title,
+            description="遺忘曲線提醒（SM-2 演算法），現在複習效果最好",
+            minutes=10 + scaffold_due_count // 5,  # 多 5 個鷹架 +1 分鐘
+            target_count=total_review,
+            href="/knowledge/wrong-answers" if review_count > 0 else "/today/reviews",
         ))
     items.append(TodayItem(
         kind="sprint_exam",
@@ -794,6 +812,7 @@ def get_today(
         streak_days=streak_days,
         days_to_exam=days_to_exam,
         review_count=review_count,
+        scaffold_due_count=scaffold_due_count,
         resume=resume,
         items=items,
     )

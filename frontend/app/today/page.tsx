@@ -31,6 +31,7 @@ interface TodaySnapshot {
   // 上次讀的資源（從 dashboard 取）
   resume?: { resourceId: string; chapterAnchor?: string; resourceName: string; subjectId?: string } | null;
   reviewCount: number;
+  scaffoldDueCount: number;  // P5 SM-2 鷹架到期數
   examDaysLeft: number | null;
   streak: number;
 }
@@ -56,6 +57,7 @@ export default function TodayPage() {
         streak_days?: number;
         days_to_exam?: number | null;
         review_count?: number;
+        scaffold_due_count?: number;
         resume?: { resource_id: string; resource_name: string; subject_id: string | null } | null;
       };
       setSnapshot({
@@ -63,12 +65,13 @@ export default function TodayPage() {
           ? { resourceId: t.resume.resource_id, resourceName: t.resume.resource_name, subjectId: t.resume.subject_id ?? undefined }
           : null,
         reviewCount: t.review_count ?? 0,
+        scaffoldDueCount: t.scaffold_due_count ?? 0,
         examDaysLeft: t.days_to_exam ?? null,
         streak: t.streak_days ?? 0,
       });
     } catch {
       // /today endpoint 失敗 → 仍渲染基本卡片但無資料
-      setSnapshot({ resume: null, reviewCount: 0, examDaysLeft: null, streak: 0 });
+      setSnapshot({ resume: null, reviewCount: 0, scaffoldDueCount: 0, examDaysLeft: null, streak: 0 });
     } finally {
       setLoading(false);
     }
