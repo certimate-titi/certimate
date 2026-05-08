@@ -22,6 +22,8 @@ export default function Navbar() {
   const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
 
   const navLinks = [
+    // P5 (Sprint 6 T48)：/today 加入主導覽，作為「學習首頁」入口
+    { href: '/today', label: '今日', icon: LayoutDashboard },
     { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
     { href: '/knowledge', label: '學習庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
