@@ -428,12 +428,20 @@ def _select_prompt_template(resource: Resource) -> str:
     if ext in {"doc", "docx"}:
         return "resource_parser_notes"
 
-    # 5) Quiz / practice questions
+    # 5) Audio (Sprint 4 P3)
+    if ext in {"mp3", "wav", "m4a", "flac", "ogg", "wma", "aac"}:
+        return "resource_parser_audio"
+
+    # 6) Image (Sprint 4 P3)
+    if ext in {"png", "jpg", "jpeg", "gif", "webp"}:
+        return "resource_parser_image"
+
+    # 7) Quiz / practice questions
     detected = getattr(resource, "detected_content_type", None)
     if detected == "practice_questions":
         return "resource_parser_quiz"
 
-    # 6) Default: K-06-study
+    # 8) Default: K-06-study
     return "resource_parser_v2"
 
 
