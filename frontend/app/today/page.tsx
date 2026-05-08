@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Repeat, Target, Zap } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth-context';
-import { dashboardService } from '@/lib/api/services';
+// dashboardService removed in T42; using /dashboard/today via apiClient
 
 interface TodaySnapshot {
   // 上次讀的資源（從 dashboard 取）
@@ -50,29 +50,25 @@ export default function TodayPage() {
   const loadSnapshot = async () => {
     setLoading(true);
     try {
-      // 用既有 dashboardService.get() 取資料（不打新 endpoint）
-      const dash = await dashboardService.get() as unknown as {
-        next_review_count?: number;
-        days_to_exam?: number | null;
+      // P4 (Sprint 5 T42)：改用 /dashboard/today 專屬 endpoint
+      const t = await (await import('@/lib/api/client')).apiClient.get('/dashboard/today') as {
+        greeting?: string;
         streak_days?: number;
-        last_resource?: { id?: string; name?: string; subject_id?: string };
+        days_to_exam?: number | null;
+        review_count?: number;
+        resume?: { resource_id: string; resource_name: string; subject_id: string | null } | null;
       };
       setSnapshot({
-        resume: dash.last_resource?.id
-          ? { resourceId: dash.last_resource.id, resourceName: dash.last_resource.name ?? '', subjectId: dash.last_resource.subject_id }
+        resume: t.resume
+          ? { resourceId: t.resume.resource_id, resourceName: t.resume.resource_name, subjectId: t.resume.subject_id ?? undefined }
           : null,
-        reviewCount: dash.next_review_count ?? 0,
-        examDaysLeft: dash.days_to_exam ?? null,
-        streak: dash.streak_days ?? 0,
+        reviewCount: t.review_count ?? 0,
+        examDaysLeft: t.days_to_exam ?? null,
+        streak: t.streak_days ?? 0,
       });
     } catch {
-      // dashboard endpoint 失敗 → 仍渲染基本卡片但無資料
-      setSnapshot({
-        resume: null,
-        reviewCount: 0,
-        examDaysLeft: null,
-        streak: 0,
-      });
+      // /today endpoint 失敗 → 仍渲染基本卡片但無資料
+      setSnapshot({ resume: null, reviewCount: 0, examDaysLeft: null, streak: 0 });
     } finally {
       setLoading(false);
     }
