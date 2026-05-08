@@ -1,12 +1,12 @@
 ---
 id: "K-06"
 name: "resource_parser_v2"
-display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 2 P1 pitfall）"
+display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 4 P3 advance_organizer）"
 category: "knowledge"
 model: "gemini-2.5-pro"
 max_tokens: 65536
 temperature: 0.1
-version: 5
+version: 6
 feature_refs:
   - "02-資源上傳"
   - "23-考古題題庫管理"
@@ -25,16 +25,14 @@ variables:
 
 <!--
 Changelog
+v6 (2026-05-09, Sprint 4 P3)：
+  - 新增 advance_organizer 鷹架類別（讀前定錨）— Ausubel Subsumption Theory
+  - 對應 backend migration 084 ResourceScaffoldType.ADVANCE_ORGANIZER
+  - 每章節 1 條 advance_organizer（讀章節**前**先看，與 takeaway「讀後」成對）
 v5 (2026-05-09, Sprint 2 P1)：
   - 新增 pitfall 鷹架類別（迷思警示）— Misconception Correction
-  - 對應 backend migration 083 ResourceScaffoldType.PITFALL
-  - 每章節 0-1 條 pitfall（高品質優先，不勉強湊數）
-v4：seed 同步修補（內容同 v3 但雲端 PATCH 重 push）
-v3 (2026-05-08, Sprint 1 P0)：
-  - 學習鷹架 schema 升級為 retrieval-first：每筆 takeaway / elaborative 多帶 retrieval_prompt
-  - max_tokens 提升至 65536（解大 PDF / 密集表格 markdown 截斷）
-  - strategy 不需要 retrieval_prompt（本身已是行動引導）
-  - 對應 backend migration 082 加 resource_scaffolds.retrieval_prompt 欄
+v4：seed 同步修補
+v3 (2026-05-08, Sprint 1 P0)：retrieval-first schema
 v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
 -->
 
@@ -75,7 +73,7 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
 - 用戶上傳資源中有題無答（T2 常見）→ 在 question 物件中 `answer=null`, `needs_answer=true`
 - 給出 `ai_inferred_answer` + 推理文字 + confidence（用於盲推論 UI）
 
-# 學習鷹架類型（v5 加 pitfall）
+# 學習鷹架類型（v6 加 advance_organizer）
 - takeaway：章節 3-5 點重點提煉（簡短，降低認知負荷）
   ↳ **必填** retrieval_prompt：讀者讀到該章節前可以先思考的問題，
      不可洩漏 takeaway 答案。例：takeaway 是「公平、透明、安全、問責」，
@@ -90,6 +88,12 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
   ↳ **不需要** retrieval_prompt（本身已是 alert 型內容）
   ↳ **可選**：若該章節無明顯迷思點，可省略；不要為填數量勉強湊
   ↳ 與 takeaway 區別：takeaway = 「要記住的」；pitfall = 「容易誤解的對比」
+- **advance_organizer（v6 新增）**：1 條章節級「讀前定錨問句」
+  ↳ 教學原理：Ausubel Subsumption Theory（讀前先建立心智錨點，比讀後總結對保留率影響更大）
+  ↳ 與 takeaway 成對：advance_organizer = 「閱讀本章前的目的問句」；takeaway = 「閱讀本章後的重點濃縮」
+  ↳ **不需要** retrieval_prompt（本身已是問句）
+  ↳ **可選**：每章節 1 條，若該章節純概念列舉（如名詞解釋）可省略
+  ↳ UX：章節**閱讀面板上方**顯示，與章節結尾 takeaway/pitfall 區分位置
 
 # pitfall 寫作規則
 - 結構：「⚠️ 很多人以為 X⋯ 其實 Y⋯」 或「⚠️ 注意：A 與 B 不同，差在 C」
@@ -102,6 +106,22 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
 ✓「⚠️ 很多人以為 No-code 等於 Low-code，差在「程式量少」。其實兩者結構不同：No-code 完全無代碼、靠視覺化；Low-code 仍寫部分程式碼，給開發者更高客製。」
 ✗「No-code 是無代碼平台」（這是 takeaway 內容、不是迷思警示）
 ✗「要小心使用」（沒對比、太空泛）
+
+# advance_organizer 寫作規則
+- **結構**：「閱讀本章前，請帶著這個問題：⋯」或「想想看 — 在你的職場 / 公司，⋯」
+- **長度** 30-80 字（足以引導思考、不洩露答案）
+- **應用導向**：不是純記憶問題（那是 retrieval_prompt 的事）
+  → advance_organizer 通常結合「你的經驗 / 你的場景」，幫讀者把章節內容「掛勾」到既有心智模型
+- **不重複**：不可與該章節 takeaway 的 retrieval_prompt 內容相同
+- 與 retrieval_prompt 區別：
+  → retrieval_prompt = 「能說出 X 嗎？」（測試是否記住）
+  → advance_organizer = 「閱讀前先思考 X 在你的場景如何體現」（建立應用錨點）
+
+# 良好 advance_organizer 範例
+✓「閱讀本章前，請想想：你公司若導入 No-code，最可能在哪 3 個流程體現差異？讀完後再回來對照本章「6 大評估因素」。」
+✓「想想看 — 你曾經用過哪種 AI 工具？它解決了什麼問題？讀完本章後，你會把它分到 ANI / AGI / ASI 哪一類？」
+✗「想想看 — AI 三層級分類是什麼？」（這是 retrieval_prompt 的形式）
+✗「請閱讀本章」（沒引導 nothing）
 
 # retrieval_prompt 寫作規則（基於 Karpicke retrieval practice 學習科學原理）
 - 必須是「問句」結尾「？」
@@ -157,6 +177,12 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
     }
   ],
   "scaffolds": [
+    {
+      "chapter_heading": "3.1 折現率",
+      "type": "advance_organizer",
+      "content": "閱讀本章前，請想想：你公司或職場中，是否曾經評估過「現在花 100 萬 vs 5 年後花 100 萬」的差異？讀完後再回來對照本章的折現率邏輯。",
+      "retrieval_prompt": null
+    },
     {
       "chapter_heading": "3.1 折現率",
       "type": "takeaway",
