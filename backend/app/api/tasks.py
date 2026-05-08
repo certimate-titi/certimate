@@ -319,6 +319,7 @@ def process_resource_task(
     # 移到 handler 端執行避開 pipeline runner 深層 try 怪事；先 rollback 修
     # process_resource 內部留下的 aborted transaction（InFailedSqlTransaction）
     parse_outcome_status = None
+    logger.info("[parse-trigger] entry resource=%s", resource_id)
     try:
         # 必須先 rollback：process_resource 內某 SQL error 會留 aborted tx
         # 後續任何 db.execute 都失敗（commands ignored until end of tx block）
@@ -331,6 +332,12 @@ def process_resource_task(
         _set_rls(db, payload.tenant_id or PUBLIC_B2C_TENANT_ID)
         # 重 fetch resource 確保 ORM session fresh
         resource_fresh = db.query(Resource).filter_by(id=uuid.UUID(resource_id)).first()
+        logger.info(
+            "[parse-trigger] resource_fresh=%s gcs_path=%s tenant_payload=%s",
+            "found" if resource_fresh else "None",
+            bool(resource_fresh and resource_fresh.gcs_path),
+            payload.tenant_id,
+        )
         if resource_fresh and resource_fresh.gcs_path:
             job = create_parse_job(db, resource_fresh)
             db.commit()
@@ -340,6 +347,13 @@ def process_resource_task(
             logger.info(
                 "[parse-trigger] resource=%s parse_job=%s status=%s",
                 resource_id, job.id, outcome.status,
+            )
+        else:
+            logger.warning(
+                "[parse-trigger] SKIPPED Step 3: resource_fresh=%s gcs_path_present=%s — "
+                "可能 RLS 過濾或 gcs_path 未寫入",
+                bool(resource_fresh),
+                bool(resource_fresh and resource_fresh.gcs_path),
             )
     except Exception as parse_exc:
         logger.exception(
