@@ -146,22 +146,32 @@ def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
     - 小 PDF 保留 multimodal Pro 對掃描型/特殊編碼 PDF 的視覺辨識能力
     - 大 PDF 切 25 頁/批，避免 32K output token 上限導致 markdown 截斷為空
     """
+    logger.info(
+        "[D-dispatch] _call_gemini_with_retry entry resource=%s gcs_path=%s",
+        resource.id, bool(resource.gcs_path),
+    )
     page_count = 0
+    local_pdf: str | None = None
     if resource.gcs_path:
         try:
             from app.services.storage_service import get_storage_service
             local_pdf = get_storage_service().download_to_temp(resource.gcs_path)
             page_count = _get_pdf_page_count(local_pdf)
+            logger.info(
+                "[D-dispatch] resource=%s page_count=%d threshold=%d",
+                resource.id, page_count, PAGE_THRESHOLD_FOR_BATCHING,
+            )
         except Exception as exc:
-            logger.warning("PDF page count failed (will use single call): %s", exc)
+            logger.warning("[D-dispatch] PDF page count failed (will use single call): %s", exc)
 
-    if page_count > 0 and page_count > PAGE_THRESHOLD_FOR_BATCHING:
+    if page_count > 0 and page_count > PAGE_THRESHOLD_FOR_BATCHING and local_pdf:
         logger.info(
-            "PDF batched parse: pages=%d batch_size=%d resource=%s",
+            "[D-dispatch] PDF batched parse: pages=%d batch_size=%d resource=%s",
             page_count, BATCH_SIZE_PAGES, resource.id,
         )
         return _call_gemini_chunked(resource, local_pdf, BATCH_SIZE_PAGES)
 
+    logger.info("[D-dispatch] using single-call path resource=%s", resource.id)
     return _call_gemini_with_retry_single(resource)
 
 
@@ -293,8 +303,10 @@ def _get_pdf_page_count(pdf_path: str) -> int:
         doc = fitz.open(pdf_path)
         n = len(doc)
         doc.close()
+        logger.info("_get_pdf_page_count: pdf_path=%s pages=%d", pdf_path, n)
         return n
-    except Exception:
+    except Exception as exc:
+        logger.warning("_get_pdf_page_count failed pdf_path=%s: %s", pdf_path, exc)
         return 0
 
 
