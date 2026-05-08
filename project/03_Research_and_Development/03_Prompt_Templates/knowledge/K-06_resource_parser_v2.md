@@ -1,12 +1,12 @@
 ---
 id: "K-06"
 name: "resource_parser_v2"
-display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 4 P3 advance_organizer）"
+display_name: "資源 LLM 統一解析（EPIC-035 + Sprint 5 P4 interleaving）"
 category: "knowledge"
 model: "gemini-2.5-pro"
 max_tokens: 65536
 temperature: 0.1
-version: 6
+version: 7
 feature_refs:
   - "02-資源上傳"
   - "23-考古題題庫管理"
@@ -25,6 +25,10 @@ variables:
 
 <!--
 Changelog
+v7 (2026-05-09, Sprint 5 P4)：
+  - strategy 升級為 interleaving-aware：每章節 strategy 應交錯引用前後章節
+  - 教學原理：Bjork Interleaving — 跨章節對照比同章節重複學更穩固
+  - 與既有 strategy 區別：v6 strategy = 「讀本章可⋯」；v7 strategy = 「對照前/後章節 X⋯」
 v6 (2026-05-09, Sprint 4 P3)：
   - 新增 advance_organizer 鷹架類別（讀前定錨）— Ausubel Subsumption Theory
   - 對應 backend migration 084 ResourceScaffoldType.ADVANCE_ORGANIZER
@@ -80,8 +84,11 @@ v2：圖片內嵌 + scaffolds（takeaway / elaborative / strategy）
      retrieval_prompt 應為「想想看 — AI 治理有哪四大原則？」
 - elaborative：1 題延遲展開思考題（生成性處理；答案不給，讓用戶自己想）
   ↳ **可選** retrieval_prompt：若 elaborative 本身就是問句可省略
-- strategy：1 則章節級學習建議（邀請式）
+- strategy：1 則章節級學習建議（邀請式，**v7 interleaving-aware**）
   ↳ **不需要** retrieval_prompt（本身已是行動引導）
+  ↳ **v7 升級**：應交錯引用前後章節（Bjork Interleaving）
+     例：「對照 3.1 折現率公式 + 3.2 風險溢酬，本章 (3.3) 投資決策時兩者怎麼結合？」
+  ↳ 至少 50% 的 strategy 應含「對照 X 章 / 結合 Y 概念」型引用
 - **pitfall（v5 新增）**：1 條章節級「常見誤解警示」
   ↳ 教學原理：Misconception Correction
   ↳ 用於警告讀者「這個概念容易和 X 混淆」「很多人誤以為⋯ 其實⋯」
