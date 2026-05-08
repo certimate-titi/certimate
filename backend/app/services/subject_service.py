@@ -391,9 +391,16 @@ class ResourceDeleteService:
         gcs_path = resource.gcs_path
 
         try:
-            # 清 orphan questions（防 ck_questions_has_parent）
+            # 清此 resource 牽連的 orphan questions（防 ck_questions_has_parent）
+            # 之前用全表掃 (DELETE FROM questions WHERE exam_id IS NULL AND ...)
+            # 在雲端 7,992+ rows 表上要 4 分鐘 + 表級 lock；改為精準刪。
             self.db.execute(
-                _text("DELETE FROM questions WHERE exam_id IS NULL AND historical_exam_id IS NULL")
+                _text(
+                    "DELETE FROM questions "
+                    "WHERE source_resource_id = :rid "
+                    "AND exam_id IS NULL AND historical_exam_id IS NULL"
+                ),
+                {"rid": rid},
             )
             self.db.delete(resource)
 
