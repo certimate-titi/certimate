@@ -391,6 +391,44 @@ def _merge_parsed_results(parts: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _select_prompt_template(resource: Resource) -> str:
+    """Sprint 2 P1 T18：依檔案類型 / 內容類型選 prompt template 名稱。
+
+    路由規則（順序敏感）：
+      1. 影片副檔名（mp4/mov/avi/mkv/webm）→ resource_parser_video
+      2. YouTube URL → resource_parser_video
+      3. detected_content_type=practice_questions → resource_parser_quiz
+      4. 預設 → resource_parser_v2（K-06-study，原有 prompt）
+
+    所有特化模板若 DB 不存在會 fallback 到 resource_parser_v2，避免阻斷流程。
+
+    Args:
+        resource: Resource ORM row
+
+    Returns:
+        prompt template name（不含路徑或檔案副檔名）
+    """
+    ext = ""
+    if resource.gcs_path:
+        ext = resource.gcs_path.lower().rsplit(".", 1)[-1] if "." in resource.gcs_path else ""
+
+    # 1) Video by extension
+    if ext in {"mp4", "mov", "avi", "mkv", "webm", "m4v"}:
+        return "resource_parser_video"
+
+    # 2) YouTube URL
+    if getattr(resource, "youtube_url", None):
+        return "resource_parser_video"
+
+    # 3) Quiz / practice questions
+    detected = getattr(resource, "detected_content_type", None)
+    if detected == "practice_questions":
+        return "resource_parser_quiz"
+
+    # 4) Default: K-06-study
+    return "resource_parser_v2"
+
+
 def _call_gemini_once(
     resource: Resource, model: str, local_pdf_override: str | None = None,
 ) -> dict[str, Any]:
@@ -422,7 +460,14 @@ def _call_gemini_once(
         raise RuntimeError("GEMINI_API_KEY not configured")
     client = genai.Client(api_key=api_key)
 
-    # load prompt template 'resource_parser_v2' (best-effort; falls back to hardcoded)
+    # P1 (Sprint 2 T18)：依檔案類型 / 內容類型分流選 prompt template
+    template_name = _select_prompt_template(resource)
+    logger.info(
+        "[prompt-routing] resource=%s template=%s ext=%s detected=%s",
+        resource.id, template_name,
+        (resource.gcs_path or '').lower().rsplit('.', 1)[-1] if resource.gcs_path else '?',
+        getattr(resource, 'detected_content_type', None),
+    )
     template = None
     try:
         from app.core.deps import _SessionLocal
@@ -430,7 +475,14 @@ def _call_gemini_once(
             _tmp_db = _SessionLocal()
             try:
                 prompt_service = PromptTemplateService(_tmp_db)
-                template = prompt_service.get_prompt_for_ai("resource_parser_v2")
+                template = prompt_service.get_prompt_for_ai(template_name)
+                # fallback 到 K-06-study (resource_parser_v2) 若特化模板不存在
+                if template is None and template_name != "resource_parser_v2":
+                    logger.warning(
+                        "prompt template '%s' not found, fallback to resource_parser_v2",
+                        template_name,
+                    )
+                    template = prompt_service.get_prompt_for_ai("resource_parser_v2")
             finally:
                 _tmp_db.close()
     except Exception as _e:
