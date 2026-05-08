@@ -275,8 +275,20 @@ def _shift_page_numbers(parsed: dict[str, Any], offset: int) -> None:
     """把 batch-local 頁碼（1-N）+offset 還原為全域 PDF 頁碼。"""
     if not isinstance(parsed, dict) or offset == 0:
         return
-    # critical_pages
-    parsed["critical_pages"] = [p + offset for p in (parsed.get("critical_pages") or [])]
+    # critical_pages（容錯 dict / str）
+    shifted_pages = []
+    for p in (parsed.get("critical_pages") or []):
+        if isinstance(p, int):
+            shifted_pages.append(p + offset)
+        elif isinstance(p, dict):
+            for key in ("page", "page_number", "p"):
+                if isinstance(p.get(key), int):
+                    p[key] = p[key] + offset
+                    shifted_pages.append(p[key])
+                    break
+        elif isinstance(p, str) and p.isdigit():
+            shifted_pages.append(int(p) + offset)
+    parsed["critical_pages"] = shifted_pages
     # questions[].source_page
     for q in parsed.get("questions") or []:
         if isinstance(q, dict) and isinstance(q.get("source_page"), int):
@@ -348,12 +360,26 @@ def _merge_parsed_results(parts: list[dict[str, Any]]) -> dict[str, Any]:
             merged_md.append(md)
         questions.extend(p.get("questions") or [])
         scaffolds.extend(p.get("scaffolds") or [])
-        critical_pages.extend(p.get("critical_pages") or [])
+        # critical_pages 容錯：Gemini 偶爾回 dict（{"page": N, "reason": ...}）
+        # 不是純 int。提取數字部分，丟掉異常型別。
+        for cp in (p.get("critical_pages") or []):
+            if isinstance(cp, int):
+                critical_pages.append(cp)
+            elif isinstance(cp, dict):
+                v = cp.get("page") or cp.get("page_number") or cp.get("p")
+                if isinstance(v, int):
+                    critical_pages.append(v)
+            elif isinstance(cp, str) and cp.isdigit():
+                critical_pages.append(int(cp))
         if p.get("detected_content_type"):
             detected_types.append(p["detected_content_type"])
     # detected_content_type 取多數派；critical_pages 去重保序
-    seen = set()
-    unique_pages = [p for p in critical_pages if not (p in seen or seen.add(p))]
+    seen: set = set()
+    unique_pages: list[int] = []
+    for p in critical_pages:
+        if p not in seen:
+            seen.add(p)
+            unique_pages.append(p)
     return {
         "markdown": "\n\n".join(merged_md),
         "detected_content_type": (
