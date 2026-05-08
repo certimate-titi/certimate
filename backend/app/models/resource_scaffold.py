@@ -7,6 +7,7 @@ import enum
 import uuid
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -81,6 +82,8 @@ class ResourceScaffold(Base):
     # P0 (Sprint 1 T02)：retrieval-first UX 必備
     retrieval_prompt: Mapped[str | None] = mapped_column(Text)
     template_code: Mapped[str | None] = mapped_column(String(32))
+    # P6 (Sprint 7 T54)：1024 維 voyage embedding（給 /concept-center 語意搜尋用）
+    embedding = mapped_column(Vector(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

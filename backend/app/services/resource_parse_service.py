@@ -763,6 +763,10 @@ def _persist_parsed(
     _generate_reference_answers(new_scaffold_rows)
     db.flush()
 
+    # 3c) P6 (Sprint 7 T54)：voyage embedding 持久化（省後續 /concept-center cost）
+    _embed_scaffolds(new_scaffold_rows)
+    db.flush()
+
     # 4) 映射 T1 題目到科目知識節點（Voyage cosine similarity）
     if q_created > 0 and resource.subject_id:
         try:
@@ -927,6 +931,31 @@ def _build_scaffold_row(
         retrieval_prompt=retrieval_prompt,
         template_code="K-06-study",
     )
+
+
+def _embed_scaffolds(rows: list[ResourceScaffold]) -> None:
+    """P6 (Sprint 7 T54)：寫入 voyage embedding 給 /concept-center 語意搜尋用。
+
+    對 chapter_heading + content 做 embedding，存入 resource_scaffolds.embedding 欄。
+
+    失敗不阻斷：voyage API 異常時 embedding 留 NULL，
+    /concept-center 會 fallback 即時 embed（行為等同 Sprint 6 T49）。
+    """
+    if not rows:
+        return
+    try:
+        from app.services.embedding_service import EmbeddingService
+        emb = EmbeddingService()
+        texts = [
+            ((r.chapter_heading or "") + " " + (r.content or "")).strip()[:1000]
+            for r in rows
+        ]
+        vecs = emb.embed_texts(texts, input_type="document")
+        for row, vec in zip(rows, vecs):
+            row.embedding = vec
+        logger.info("[scaffold-embed] %d rows embedded", len(rows))
+    except Exception as e:
+        logger.warning("[scaffold-embed] failed (non-fatal): %s", e)
 
 
 def _generate_reference_answers(rows: list[ResourceScaffold]) -> None:

@@ -828,12 +828,26 @@ def search_concept(
         try:
             from app.services.embedding_service import EmbeddingService
             emb = EmbeddingService()
-            texts = [
-                ((sf.chapter_heading or "") + " " + (sf.content or "")).strip()[:1000]
+            # P6 (Sprint 7 T54)：優先用 DB 持久化的 embedding（省 voyage cost）
+            # 若 row.embedding IS NULL（舊資料 / lazy backfill 未跑）→ 即時 embed
+            missing_indices = [
+                i for i, (sf, _r) in enumerate(rows)
+                if getattr(sf, "embedding", None) is None
+            ]
+            doc_vecs: list[list[float]] = [
+                list(getattr(sf, "embedding", None) or [])
                 for sf, _r in rows
             ]
+            if missing_indices:
+                texts_to_embed = [
+                    ((rows[i][0].chapter_heading or "")
+                     + " " + (rows[i][0].content or "")).strip()[:1000]
+                    for i in missing_indices
+                ]
+                fresh_vecs = emb.embed_texts(texts_to_embed, input_type="document")
+                for idx, vec in zip(missing_indices, fresh_vecs):
+                    doc_vecs[idx] = vec
             q_vec = emb.embed_texts([q.strip()], input_type="query")[0]
-            doc_vecs = emb.embed_texts(texts, input_type="document")
             # cosine similarity
             import math
 
