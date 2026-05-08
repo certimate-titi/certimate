@@ -15,19 +15,25 @@ from app.models import Base
 
 
 class ResourceScaffoldType(str, enum.Enum):
-    """學習鷹架類型列舉（takeaway / elaborative / strategy / pitfall）。
+    """學習鷹架類型列舉（6 種）。
 
     - takeaway：章節重點精煉（含 retrieval_prompt，UX 摺疊式檢索觸發）
     - elaborative：延伸思考題
     - strategy：學習策略建議
     - pitfall：迷思警示（Sprint 2 P1 / migration 083）
       → 教學原理 Misconception Correction、紅色警示卡預設展開
+    - advance_organizer：讀前定錨（Sprint 4 P3 / migration 084）
+      → Ausubel Subsumption Theory，章節閱讀前先建立心智錨點
+    - concept_extract：考古題核心概念（Sprint 4 P3 / migration 084）
+      → K-06-quiz 解題後對照用，emerald 卡片
     """
 
     TAKEAWAY = "takeaway"
     ELABORATIVE = "elaborative"
     STRATEGY = "strategy"
     PITFALL = "pitfall"
+    ADVANCE_ORGANIZER = "advance_organizer"
+    CONCEPT_EXTRACT = "concept_extract"
 
 
 class ResourceScaffold(Base):
