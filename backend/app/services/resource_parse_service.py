@@ -420,12 +420,20 @@ def _select_prompt_template(resource: Resource) -> str:
     if getattr(resource, "youtube_url", None):
         return "resource_parser_video"
 
-    # 3) Quiz / practice questions
+    # 3) PPT slides (Sprint 3 P2)
+    if ext in {"ppt", "pptx"}:
+        return "resource_parser_slides"
+
+    # 4) DOCX personal notes (Sprint 3 P2)
+    if ext in {"doc", "docx"}:
+        return "resource_parser_notes"
+
+    # 5) Quiz / practice questions
     detected = getattr(resource, "detected_content_type", None)
     if detected == "practice_questions":
         return "resource_parser_quiz"
 
-    # 4) Default: K-06-study
+    # 6) Default: K-06-study
     return "resource_parser_v2"
 
 
