@@ -669,7 +669,20 @@ def _persist_parsed(
             c_created += 1
 
     new_scaffold_rows: list[ResourceScaffold] = []
+    # P1 (Sprint 2 T14)：dedup pitfall — 同 (chapter, type=pitfall) 只保留一筆
+    # （prompt 規則「每章節 0-1 條」，但 LLM 偶爾會重複）
+    seen_pitfall_chapters: set[str] = set()
     for s in parsed.get("scaffolds", []) or []:
+        if (s.get("type") or "").lower() == "pitfall":
+            ch = (s.get("chapter_heading") or "").strip()
+            if ch and ch in seen_pitfall_chapters:
+                logger.info(
+                    "[pitfall-dedup] skip duplicate pitfall in chapter=%r resource=%s",
+                    ch[:30], resource.id,
+                )
+                continue
+            if ch:
+                seen_pitfall_chapters.add(ch)
         row = _build_scaffold_row(resource, s)
         if row is not None:
             db.add(row)
