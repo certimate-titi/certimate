@@ -3,7 +3,9 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-08 Daily QA Audit 排程巡檢 — 新增 3 🔴 + 1 🟠（exam/results Certi 安撫表情、dashboard 信心度趨勢、workspace 題號網格信心度底色、account dark mode 全站效果）
+**最後更新**：2026-05-08 ToDoList 殘留 audit — 14 項 unchecked 對照實作，2 項巡檢誤報已勾掉（番茄鐘 UI L44/L58）；其餘分類：4 項 BDD 覆蓋缺口（UI 已做需補 scenario：L45 AI inference / L46 模式 tooltip / L47 行內加科目 modal / L50 weekly-reports 空態）+ 8 項真未做（L29 Certi 表情 / L30 信心度趨勢 / L48 分享節點 / L59 摺疊按鈕 / L60 confetti / L65 setup Layer 3 / L69 dashboard parse failure_reason / L70 PROCESSING 三態）
+
+> **2026-05-08 ToDoList Audit 註**：剩餘 12 項 unchecked 已分類，巡檢「未實作 UI」的判定標準需區分「UI 缺」vs「Scenario 缺」— 後者 UI 存在但 BDD spec 缺，task 仍未完成。未來巡檢腳本應優先讀程式碼存在性再判 missing，避免誤報。
 
 **權限模型備忘**（2026-05-03 最終確認）：
 
@@ -41,7 +43,7 @@
 
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-06 新增）
 
-- [ ] `/exam/workspace` — Feature 21（番茄鐘）有「啟用番茄鐘」、「設定時長」、「繼續作答/開始休息」三個 Scenario，但頁面缺啟用開關及設定 UI，導致這些 Scenario 無對應前端觸發路徑（首見：2026-05-06）
+- [x] `/exam/workspace` — ~~Feature 21（番茄鐘）有「啟用番茄鐘」、「設定時長」、「繼續作答/開始休息」三個 Scenario，但頁面缺啟用開關及設定 UI~~ 巡檢誤報：[PomodoroTimer.tsx](frontend/components/PomodoroTimer.tsx) 完整實作（啟用 toggle / 時長設定 / 繼續休息切換），workspace/page.tsx:268 已引入；UI 存在，僅 BDD step 對應路徑未補（移交 #21 BDD 補測清單，2026-05-08 audit）
 - [ ] `/exam/workspace` + `/practice` — AI inference 判斷按鈕（EPIC-035：保留我的答案/採信AI/略過）已在兩頁實作，但無任何 Feature Scenario 覆蓋（Feature 32/04a 皆未涵蓋此 UI 互動）（首見：2026-05-06）
 - [ ] `/dashboard` — 模式 tooltip 說明按鈕（Sprint/Standard/Mastery 策略說明彈窗）無對應 Feature Scenario（Feature 09/13 皆未覆蓋此互動）（首見：2026-05-06）
 - [ ] `/dashboard` — 儀表板無科目時「開始選擇科目」dashboard-level modal 路徑，Feature 15 只覆蓋 /onboarding 流程，未涵蓋此行內加科目路徑（首見：2026-05-06）
@@ -55,7 +57,7 @@
 
 ## 🟠 實作缺失 — 需補前端功能（2026-05-06 新增）
 
-- [ ] `/exam/workspace` — Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失：(1) 啟用/停用開關、(2) 專注/休息時長設定輸入、(3) 計時結束後「繼續作答」或「開始休息」選擇按鈕（首見：2026-05-06）
+- [x] `/exam/workspace` — ~~Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失~~ 與上方 #21 同件事；[PomodoroTimer.tsx](frontend/components/PomodoroTimer.tsx) 已實作，巡檢誤報（移交 BDD 補測清單，2026-05-08 audit）
 - [ ] `/knowledge` — Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI（首見：2026-05-06）
 - [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06）
 - [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）

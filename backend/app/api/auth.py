@@ -214,8 +214,8 @@ def refresh_token(
     if hasattr(user.status, 'value') and user.status.value != "active":
         raise HTTPException(status_code=403, detail={"message": "帳號狀態異常，無法續期"})
 
-    from app.services.auth_service import _generate_token
-    new_token = _generate_token(str(user.id))
+    from app.services.auth_service import _generate_token, _enum_value
+    new_token = _generate_token(str(user.id), plan=_enum_value(user.subscription_plan))
     return {"access_token": new_token, "token_type": "bearer"}
 
 

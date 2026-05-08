@@ -213,8 +213,12 @@ def _get_backends() -> Tuple[Optional[_RedisTokenBucket], _InMemoryTokenBucket]:
 # ── 訂閱方案 → 限流等級映射 ────────────────────────────────────────────────
 
 _PLAN_TO_TIER = {
-    # B2C
+    # B2C — DB enum value（auth_service 加 plan claim 後實際傳入的值）
     "FREE":            "b2c_free",
+    "PRO":             "b2c_pro",
+    "PRO_PLUS":        "b2c_pro",
+    "ULTRA":           "b2c_ultra",
+    # B2C — API 顯示名（向後相容舊 token）
     "PRO_199":         "b2c_pro",
     "PRO_PLUS_399":    "b2c_pro",
     "ULTRA_1599":      "b2c_ultra",
