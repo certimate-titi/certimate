@@ -146,6 +146,37 @@ if [[ "$FILTER" == "all" || "$FILTER" == "today" ]]; then
   _check "GET /dashboard/confidence-calibration" "200" "$CODE"
 fi
 
+# ── knowledge map（migration schema 健康檢查 + N:M 端點）───────────────────
+# Sprint 10：撞 knowledge_nodes 表的 ORM 全 SELECT，能抓 schema drift
+# （embedding 欄位遺漏等）。PR #29 修 migration 091 後加入此檢查防 regression。
+if [[ "$FILTER" == "all" || "$FILTER" == "knowledge" ]]; then
+  _section "Knowledge Map (Sprint 10 schema 健康檢查)"
+  TEST_SUBJ="b0000003-0001-0001-0000-000000000001"
+  CODE=$(_curl_status "$API_URL/knowledge-map/subjects/$TEST_SUBJ/nodes" -H "$AUTH")
+  NODES_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_smoke_body')); print(len(d.get('nodes',[])))" 2>/dev/null || echo "?")
+  _check "GET /knowledge-map/subjects/.../nodes" "200" "$CODE" "(nodes=$NODES_COUNT)"
+
+  if [[ "$NODES_COUNT" != "?" && "$NODES_COUNT" != "0" ]]; then
+    NODE_ID=$(python3 -c "import json; d=json.load(open('/tmp/_smoke_body')); print(d['nodes'][0]['id'])" 2>/dev/null)
+    if [[ -n "$NODE_ID" ]]; then
+      CODE=$(_curl_status "$API_URL/knowledge-map/nodes/$NODE_ID/scaffolds" -H "$AUTH")
+      _check "GET /knowledge-map/nodes/.../scaffolds (T85 N:M)" "200" "$CODE"
+    fi
+  fi
+
+  # Sprint 10 T87：orphan 監控
+  CODE=$(_curl_status "$API_URL/admin/knowledge/orphan-stats" -H "$AUTH")
+  STATS=$(python3 -c "
+import json
+try:
+  d = json.load(open('/tmp/_smoke_body'))
+  subjs = d.get('subjects', [])
+  print(f'subjects={len(subjs)}')
+except: print('parse_fail')
+" 2>/dev/null)
+  _check "GET /admin/knowledge/orphan-stats (T87)" "200" "$CODE" "($STATS)"
+fi
+
 # ── ai_model_routings (T72 verify, indirect) ────────────────────────────────
 
 if [[ "$FILTER" == "all" || "$FILTER" == "routing" ]]; then
