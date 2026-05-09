@@ -1390,3 +1390,87 @@ def get_orphan_stats(
             for r in rows
         ]
     }
+
+
+# ── Deploy 健康檢查 — 主動驗 schema 狀態（不需 auth，CI 可呼） ──────────────
+
+@router.get("/health/db-schema", include_in_schema=False)
+def health_db_schema():
+    """Schema 健康檢查 — Deploy 後 CI / smoke 主動驗。
+
+    回傳：
+    - alembic_version：當前 migration 版本
+    - missing_tables / missing_columns：應有但 DB 沒有的（若有，表示 migration 未跑完）
+    - status：healthy / degraded / unknown
+
+    無 auth — 為了讓 CI / Cloud Run 健康檢查能呼叫。
+    不暴露敏感資訊（schema 名稱本身為公開）。
+    """
+    from sqlalchemy import text
+    from app.core.deps import _engine_singleton  # noqa: F401（讓 SQLAlchemy 連線）
+    from app.models import Base
+
+    # 期待存在的關鍵 schema 元素（每加新 migration 應更新此清單）
+    EXPECTED_TABLES = [
+        "users", "subjects", "resources", "knowledge_nodes",
+        "resource_scaffolds", "scaffold_node_links",
+        "node_mastery", "node_mastery_orphans",
+        "user_email_preferences", "email_send_log",
+        "ai_model_routings",
+    ]
+    EXPECTED_COLUMNS = {
+        # (table, column) — Sprint 7+ 新增的關鍵欄位
+        ("resource_scaffolds", "embedding"): "Sprint 7 T54",
+        ("knowledge_nodes", "embedding"): "Sprint 10 T80",
+    }
+
+    from app.core.deps import get_db
+    db_gen = get_db()
+    db = next(db_gen)
+    try:
+        # 1. alembic version
+        try:
+            ver = db.execute(text("SELECT version_num FROM alembic_version")).scalar()
+        except Exception:
+            ver = None
+
+        # 2. tables
+        existing_tables = {
+            r[0] for r in db.execute(text(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'public'"
+            )).fetchall()
+        }
+        missing_tables = [t for t in EXPECTED_TABLES if t not in existing_tables]
+
+        # 3. critical columns
+        missing_columns = []
+        for (table, col), src in EXPECTED_COLUMNS.items():
+            if table not in existing_tables:
+                continue  # 表本身缺，已歸類在 missing_tables
+            exists = db.execute(text(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = :t AND column_name = :c"
+            ), {"t": table, "c": col}).first()
+            if not exists:
+                missing_columns.append({"table": table, "column": col, "source": src})
+
+        if missing_tables or missing_columns:
+            status = "degraded"
+        elif ver:
+            status = "healthy"
+        else:
+            status = "unknown"
+
+        return {
+            "status": status,
+            "alembic_version": ver,
+            "missing_tables": missing_tables,
+            "missing_columns": missing_columns,
+            "table_count": len(existing_tables),
+        }
+    finally:
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass

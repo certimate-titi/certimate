@@ -2,7 +2,10 @@
 
 echo "=== CertiMate Backend Startup ==="
 
-# Run Alembic migrations (retry up to 3 times, non-fatal)
+# Run Alembic migrations — FAIL-FAST（alpha 階段直接 root cause，不 fallback start）
+# 之前的 fallback 政策導致 migration fail 時 server 仍 start 但 schema 壞掉，
+# user-facing endpoint 撞 ORM 全 SELECT 才會發現（如 PR #28 事故）。
+# Cloud Run 看到 container exit 1 會自動 keep 舊 revision，比偷偷上線壞版本好。
 echo "Running database migrations..."
 RETRY=0
 MAX_RETRY=3
@@ -16,7 +19,10 @@ while [ $RETRY -lt $MAX_RETRY ]; do
             echo "Migration attempt $RETRY failed, retrying in 5s..."
             sleep 5
         else
-            echo "WARNING: Migrations failed after $MAX_RETRY attempts. Starting server anyway..."
+            echo "ERROR: Migrations failed after $MAX_RETRY attempts. Container exits 1." >&2
+            echo "  → Cloud Run will keep the previous healthy revision." >&2
+            echo "  → Fix migration locally + retry deploy. Do not bypass." >&2
+            exit 1
         fi
     fi
 done
