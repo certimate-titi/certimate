@@ -115,6 +115,77 @@ def update_my_preferences(
 
 # ── Admin: cron 觸發入口 ───────────────────────────────────────────────────
 
+@admin_router.get("/analytics")
+def get_retention_analytics(
+    days: int = Query(30, ge=1, le=90),
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """retention email 寄送分析（近 N 天）— 補配 UTM 參數讓你雙向對帳。
+
+    回傳 by trigger × variant × status 的彙總，配合 GA / PostHog 的 utm_campaign
+    + utm_content 拉訪客行為，可算出每個 trigger 的「寄送 → click → conversion」漏斗。
+
+    回傳結構：
+      {
+        "days": 30,
+        "summary": [{
+          "trigger_id": "daily_review",
+          "variant": "A",
+          "sent": 120, "skipped": 30, "failed": 2,
+          "skipped_breakdown": {"FREE_NOT_ELIGIBLE": 20, "ALREADY_SENT_TODAY": 10}
+        }, ...]
+      }
+    """
+    from sqlalchemy import text
+    user = db.query(User).filter_by(id=uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              trigger_id,
+              COALESCE(subject_variant, 'A') AS variant,
+              status,
+              reason,
+              COUNT(*) AS n
+            FROM email_send_log
+            WHERE sent_at >= NOW() - (:days || ' days')::interval
+            GROUP BY trigger_id, COALESCE(subject_variant, 'A'), status, reason
+            ORDER BY trigger_id, variant, status
+            """
+        ),
+        {"days": days},
+    ).fetchall()
+
+    # 折成 (trigger, variant) → counts 結構
+    bucket: dict[tuple[str, str], dict] = {}
+    for r in rows:
+        key = (r[0], r[1])
+        b = bucket.setdefault(key, {"sent": 0, "skipped": 0, "failed": 0,
+                                    "skipped_breakdown": {}, "failed_breakdown": {}})
+        st = r[2]
+        n = int(r[4])
+        if st == "sent":
+            b["sent"] += n
+        elif st == "skipped":
+            b["skipped"] += n
+            if r[3]:
+                b["skipped_breakdown"][r[3]] = b["skipped_breakdown"].get(r[3], 0) + n
+        elif st == "failed":
+            b["failed"] += n
+            if r[3]:
+                b["failed_breakdown"][r[3]] = b["failed_breakdown"].get(r[3], 0) + n
+
+    summary = [
+        {"trigger_id": k[0], "variant": k[1], **v}
+        for k, v in bucket.items()
+    ]
+    return {"days": days, "summary": summary}
+
+
 @admin_router.post("/run-daily-cron")
 def run_daily_cron(
     background_tasks: BackgroundTasks,

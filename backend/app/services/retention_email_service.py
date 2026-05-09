@@ -37,6 +37,32 @@ def _is_free_user(user: User) -> bool:
     return val in ("FREE", "EDU")
 
 
+# ── UTM tagging（GA / PostHog 可分析）──────────────────────────────────────
+
+def with_utm(url: str, *, trigger: str, variant: str = "A") -> str:
+    """所有 retention email CTA 都加 UTM 參數，後續可在 GA / PostHog 拉資料分析：
+    - 哪封信轉換率最高（utm_campaign）
+    - 哪個 A/B 變體贏（utm_content）
+    - 開信時段對 click 率的影響（透過 sent_at × utm_campaign join）
+
+    UTM 標準：
+      utm_source = retention_email （統一來源）
+      utm_medium = email
+      utm_campaign = trigger_id（daily_review / weekly_report / streak_warning / parse_failure）
+      utm_content = variant（A / B，A/B 測試用）
+
+    對 GA4 / PostHog 都自動識別。配合 email_send_log.trigger_id 可雙向對帳。
+    """
+    sep = "&" if "?" in url else "?"
+    return (
+        f"{url}{sep}"
+        f"utm_source=retention_email&"
+        f"utm_medium=email&"
+        f"utm_campaign={trigger}&"
+        f"utm_content={variant}"
+    )
+
+
 # ── unsubscribe token JWT ──────────────────────────────────────────────────
 
 def _generate_unsubscribe_token(user_id: uuid.UUID) -> str:
@@ -178,10 +204,13 @@ class RetentionEmailService:
              status="failed", reason="SMTP_ERROR", subject=subject)
         return "failed:SMTP_ERROR"
 
-    def _render_daily_review(self, user: User, due_count: int, unsub_token: str) -> str:
-        cta = f"{self.settings.FRONTEND_URL}/today"
+    def _render_daily_review(self, user: User, due_count: int, unsub_token: str,
+                             variant: str = "A") -> str:
+        cta = with_utm(f"{self.settings.FRONTEND_URL}/today",
+                       trigger=self.TRIGGER_DAILY_REVIEW, variant=variant)
         unsub = (
-            f"{self.settings.FRONTEND_URL}/email-preferences?token={unsub_token}&trigger=daily_review"
+            f"{self.settings.FRONTEND_URL}/email-preferences"
+            f"?token={unsub_token}&trigger=daily_review"
         )
         return f"""<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
             <h2 style="color:#10b981">嗨 {user.display_name or user.email}！</h2>
@@ -197,10 +226,12 @@ class RetentionEmailService:
 
     # ── trigger 4: parse_failure（事務型，必寄） ──────────────────────────
     def send_parse_failure(self, user: User, *, resource_id: str,
-                           resource_name: str, failure_reason: str) -> str:
+                           resource_name: str, failure_reason: str,
+                           variant: str = "A") -> str:
         pref = get_or_create_preferences(self.db, user)
         subject = "你的檔案上傳失敗，請重新上傳"
-        cta = f"{self.settings.FRONTEND_URL}/dashboard?retry={resource_id}"
+        cta = with_utm(f"{self.settings.FRONTEND_URL}/dashboard?retry={resource_id}",
+                       trigger=self.TRIGGER_PARSE_FAILURE, variant=variant)
         unsub = f"{self.settings.FRONTEND_URL}/email-preferences?token={pref.unsubscribe_token}"
         # 事務型不能退訂（按鈕到 preference 頁但顯示「服務必要通知無法關閉」）
         html = f"""<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">

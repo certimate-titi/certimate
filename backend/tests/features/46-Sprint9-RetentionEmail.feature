@@ -119,6 +119,26 @@ Feature: Email retention 觸發系統（議題 E）
       Then email_send_log 含 status="failed", error 內容
       And alice 不會被自動 retry（隔天才能再寄）
 
+  @backend @analytics
+  Rule: UTM 標籤與分析端點（讓 GA / PostHog 後續可拉資料）
+    Scenario: 所有 retention email CTA 都帶 utm 參數
+      Given alice 收到 daily_review 信
+      Then 信內 CTA 連結含 utm_source=retention_email
+      And utm_medium=email
+      And utm_campaign=daily_review
+      And utm_content=A 或 B（A/B 變體）
+
+    Scenario: 退訂連結不帶 utm（避免污染分析）
+      Given alice 收到 daily_review 信
+      Then 信內退訂連結不含 utm_source
+
+    Scenario: admin GET /admin/retention/analytics?days=30 拉彙總
+      Given email_send_log 含 30 天內 daily_review 共 sent=120 / skipped=30 / failed=2
+      When admin GET /admin/retention/analytics?days=30
+      Then 回 200，summary 含 (trigger=daily_review, variant=A, sent=120, skipped=30, failed=2)
+      And skipped_breakdown 拆分 FREE_NOT_ELIGIBLE / ALREADY_SENT_TODAY 等原因
+      And 一般用戶 GET 同 endpoint 回 403
+
   @backend @permission
   Rule: 僅 SUPER_ADMIN 可手動觸發 cron
     Scenario: admin POST /admin/retention/run-daily-cron 回 200
