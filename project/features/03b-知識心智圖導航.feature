@@ -321,3 +321,49 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       When 使用者輸入 "**這不是粗體**"
       Then 使用者氣泡應直接顯示原始字元 "**這不是粗體**"
       And 不應將其渲染為粗體
+
+  # ========== 節點驅動鷹架呈現（Sprint 9 UI 簡化）==========
+  # 決策紀錄：docs/ops/feature-knowledge-node-scaffold-merge-2026-05-09.md
+  # 教育顧問依 Sweller split-attention 原則，判定 sourceText 與 takeaway 鷹架重疊。
+  # ScaffoldMaterial 上推至「資訊」tab；「鷹架教材」tab 改為空提示，保留 4-tab 結構。
+  # Commit: 416f647 (branch fix/knowledge-node-scaffold-merge)
+
+  @frontend @ui_simplification @sprint_9
+  Rule: 後置（鷹架整合）- 節點驅動鷹架呈現：ScaffoldMaterial 整合至資訊 tab
+
+    Example: 點擊節點後資訊 tab 顯示 meta 與對應鷹架
+      Given 節點 101 有 2 筆 ScaffoldMaterial（takeaway + elaborative）
+      When 使用者 "pro@example.com" 點擊節點 101
+      Then 右側面板「資訊」tab 應顯示 mastery badge 與 citation badge
+      And 「資訊」tab 應出現「此節點的學習鷹架」區塊，列出 2 筆鷹架內容
+
+    Example: 節點無鷹架時 fallback 到 resource 層級鷹架
+      Given 節點 103 無任何 ScaffoldMaterial
+      And 節點 103 所屬 resource 有 3 筆 resource 層級鷹架
+      When 使用者 "pro@example.com" 點擊節點 103
+      Then 「資訊」tab 鷹架內容應來自 resource 層級，並標示「（來自資源層）」
+
+    Example: 節點與 resource 皆無鷹架時顯示空提示
+      Given 節點 103 及所屬 resource 均無任何 ScaffoldMaterial
+      When 使用者 "pro@example.com" 點擊節點 103
+      Then 「資訊」tab 應顯示「尚無學習鷹架，完成更多練習後自動生成」
+
+    Example: 「鷹架教材」tab 顯示空提示引導查看「資訊」tab
+      When 使用者 "pro@example.com" 點擊右側面板「鷹架教材」tab
+      Then 「鷹架教材」tab 應顯示「學習鷹架已整合至「資訊」頁籤，請切換查看」
+      And 不應顯示任何 ScaffoldMaterial 列表
+
+    Example: sourceText 大段原文不再顯示（防 regression）
+      Given 節點 101 的 source_text 欄位有 200 字以上原文
+      When 使用者 "pro@example.com" 點擊節點 101 並查看「資訊」tab
+      Then 「資訊」tab 不應顯示 source_text 大段原文區塊
+      And 畫面不應出現 class 含 "source-text" 或 "sourceText" 的元素
+
+    Example: mastery badge 與 citation badge 保留顯示
+      Given 節點 101 答對率為 85%，citation 來源為 "aws-guide.pdf 第 12 頁"
+      When 使用者 "pro@example.com" 點擊節點 101
+      Then 「資訊」tab 應顯示綠色 mastery badge「85%」與 citation badge「aws-guide.pdf 第 12 頁」
+
+    Example: 4-tab 結構保留，tab 總數不應減少
+      When 使用者 "pro@example.com" 點擊任一節點
+      Then 右側面板應顯示「資訊 / 鷹架教材 / 筆記 / AI 教練」共 4 個 tab
