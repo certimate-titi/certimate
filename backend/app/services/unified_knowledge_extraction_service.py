@@ -768,9 +768,11 @@ class UnifiedKnowledgeExtractionService:
             texts = [(r[1] + " " + r[2]).strip()[:1000] for r in rows]
             vecs = emb.embed_texts(texts, input_type="document")
             for r, vec in zip(rows, vecs):
+                # Fix: numpy float32 → Python float（pgvector 不認 np.float32 repr）
+                vec_str = "[" + ",".join(f"{float(v):.7f}" for v in vec) + "]"
                 self.db.execute(text(
                     "UPDATE knowledge_nodes SET embedding = CAST(:v AS vector) WHERE id = :id"
-                ), {"v": str(list(vec)), "id": str(r[0])})
+                ), {"v": vec_str, "id": str(r[0])})
             log.info("[節點 embedding] 寫入 %d 筆 subject=%s", len(rows), sid)
             return len(rows)
         except Exception as e:

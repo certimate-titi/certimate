@@ -1000,6 +1000,8 @@ def _link_scaffolds_to_nodes(
             continue
         # cosine similarity via pgvector <=> operator (lower = more similar)
         # 1 - distance = similarity
+        # Fix: numpy float32 array → Python float list（pgvector 不認 np.float32 repr）
+        vec_str = "[" + ",".join(f"{float(v):.7f}" for v in s.embedding) + "]"
         rows = db.execute(
             sql_text(
                 """
@@ -1011,7 +1013,7 @@ def _link_scaffolds_to_nodes(
                 LIMIT :k
                 """
             ),
-            {"vec": str(list(s.embedding)), "sid": str(subject_id), "k": TOP_K},
+            {"vec": vec_str, "sid": str(subject_id), "k": TOP_K},
         ).fetchall()
         for r in rows:
             sim = float(r[1])
