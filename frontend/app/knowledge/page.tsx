@@ -787,6 +787,15 @@ function KnowledgeBasePageInner() {
                   <button
                     onClick={async () => {
                       if (extracting || !activeSubjectId) return;
+                      // T94：警告對話框（mastery 保留說明）
+                      if (!confirm(
+                        `重新分析會用 AI 重組知識樹結構。\n\n` +
+                        `Sprint 11 T99 smart merge 後：\n` +
+                        `• 結構不變的節點 → ID 保留，學習進度（mastery）完全不動\n` +
+                        `• 名稱微調的節點 → ID 保留，僅更新名稱與描述\n` +
+                        `• 完全找不到對應的節點 → 進度寫入「待人工確認」隊列（不會默默丟失）\n\n` +
+                        `確定繼續嗎？`
+                      )) return;
                       const activeSubject = subjects.find(s => s.id === activeSubjectId);
                       const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
                       setExtracting(true);
@@ -795,6 +804,10 @@ function KnowledgeBasePageInner() {
                         const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
                         const created = (res as Record<string, number>).nodes_created || 0;
                         setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                        // T93：清空舊 node 引用，避免按鈕點到已刪除的 ID 失效
+                        setSelectedNodeDetail(null);
+                        setSelectedDocId(null);
+                        setActiveNodeTab('info');
                         // 重新載入知識圖譜
                         const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
                         setNodes((mapRes.nodes || []) as KnowledgeNode[]);
