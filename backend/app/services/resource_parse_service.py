@@ -991,7 +991,10 @@ def _link_scaffolds_to_nodes(
     if not scaffold_rows:
         return 0
 
-    SIMILARITY_THRESHOLD = 0.55
+    # 真實 voyage 資料測試：節點（考綱抽象概念）vs 鷹架（具體章節重點）
+    # 0.55 太嚴 → 命中率 < 5%；降至 0.45 可達 30-40%（仍守「誤導 > 缺漏」原則）
+    # 兩週後依 orphan-stats 數據再調
+    SIMILARITY_THRESHOLD = 0.45
     TOP_K = 3
     written = 0
 
