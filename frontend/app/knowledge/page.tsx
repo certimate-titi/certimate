@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles } from 'lucide-react';
 import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
+import OrphanCoachPanel from '@/components/coach/OrphanCoachPanel';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -73,8 +74,7 @@ function KnowledgeBasePageInner() {
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<string | null>(null);
-  // UX redesign Q3 對齊：圖譜降為工具，預設 tree 列表（force 圖譜需手動切）
-  const [graphView, setGraphView] = useState<'tree' | 'force'>('tree');
+  const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
   const [centerView, setCenterView] = useState<'graph' | 'document'>('graph');
   const [parseJobFailures, setParseJobFailures] = useState<Record<string, string>>({});
   const [docFullText, setDocFullText] = useState<string>('');
@@ -88,6 +88,8 @@ function KnowledgeBasePageInner() {
     const valid: NodeDetailTab[] = ['info', 'material', 'notebook', 'coach'];
     return (valid.includes(initialTab as NodeDetailTab) ? initialTab : 'info') as NodeDetailTab;
   });
+  // Orphan AI 教練：切換蘇格拉底對話面板
+  const [showOrphanCoach, setShowOrphanCoach] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // On mobile, collapse both panels by default
@@ -266,6 +268,7 @@ function KnowledgeBasePageInner() {
     setLoadingDetail(true);
     setChatMessages([]);
     setFreeQueriesLeft(isPro199 ? 0 : 3);
+    setShowOrphanCoach(false);
     try {
       const raw = await knowledgeService.getNodeDetail(nodeId) as unknown as Record<string, unknown>;
       const srcCitation = (raw.source_citation || {}) as Record<string, unknown>;
@@ -410,99 +413,6 @@ function KnowledgeBasePageInner() {
     }
   };
 
-  // UX 簡化（2026-05-09）：點資源直接出現原文，不再有 chunk 下拉與「原文」按鈕。
-  // 整合原本「點資源 → 展開 chunks 預覽」與「點原文按鈕 → 中間出原文」兩個動作。
-  const handleOpenOriginal = async (doc: Document) => {
-    setSelectedDocId(doc.id);
-    // Status-aware fallback messages
-    const statusMsg = doc.status === 'PROCESSING'
-      ? '⏳ 此資源仍在處理中（PDF 解析 → 文字切塊 → 向量化）。系統每 5 秒自動更新狀態，請稍後再試。'
-      : doc.status === 'FAILED'
-        ? (doc.errorMessage
-            ? `❌ 處理失敗：${doc.errorMessage}\n\n請刪除後修正問題並重新上傳。`
-            : '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。')
-        : '（尚無可顯示內容）';
-
-    // Historical exam virtual resource — render markdown from backend
-    if (doc.sourceType === 'historical_exam' || doc.id.startsWith('hist:')) {
-      const hid = doc.id.startsWith('hist:') ? doc.id.slice(5) : doc.id;
-      try {
-        const md = await documentService.getHistoricalMarkdown(hid);
-        setDocFullText(md.content || '（無題目內容）');
-      } catch {
-        setDocFullText('❌ 載入考古題內容失敗');
-      }
-      setDocFullTitle(doc.title);
-      setCenterView('document');
-      return;
-    }
-
-    // 主流：讀 multimodal Pro 解析的 markdown（含圖片引用）
-    let fullText = '';
-    let parseStatus: string | null = null;
-    let parseFailReason: string | null = null;
-    setLoadingChunks(doc.id);
-    try {
-      const md = await resourceParseService.getMarkdown(doc.id) as {
-        markdown?: string;
-        parse_status?: string | null;
-        parse_failure_reason?: string | null;
-      };
-      fullText = md.markdown || '';
-      parseStatus = md.parse_status ?? null;
-      parseFailReason = md.parse_failure_reason ?? null;
-    } catch { /* fallback to chunks below */ }
-    finally { setLoadingChunks(null); }
-
-    if (!fullText && (parseStatus === 'queued' || parseStatus === 'parsing')) {
-      setDocFullText('⏳ multimodal Pro 解析中（含表格、圖片、章節結構），完整原文約 1-2 分鐘後可讀。\n\n關掉此頁稍後再點即可。');
-      setDocFullTitle(doc.title);
-      setCenterView('document');
-      return;
-    }
-    if (!fullText && parseStatus === 'failed') {
-      setDocFullText(`❌ 原文解析失敗${parseFailReason ? `：${parseFailReason}` : ''}\n\n你可以刪除後重新上傳，或先看下方知識節點摘要。`);
-      setDocFullTitle(doc.title);
-      setCenterView('document');
-      return;
-    }
-
-    // Fallback: parsed_markdown 為空 → 拼 chunks（為後台管理用，使用者不再看到列表）
-    if (!fullText || fullText.length < 20) {
-      if (!docChunks[doc.id]) {
-        setLoadingChunks(doc.id);
-        try {
-          const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
-          const chunks = res.chunks || [];
-          setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
-          const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
-          fullText = sorted.map(c => c.content).join('\n\n');
-        } catch { /* silent */ }
-        finally { setLoadingChunks(null); }
-      } else {
-        const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
-        fullText = sorted.map(c => c.content).join('\n\n');
-      }
-    }
-
-    if (!fullText || fullText.length < 20) {
-      try {
-        const summary = await knowledgeService.getResourceSummary(doc.id);
-        if (summary?.content && summary.content.length > 20) {
-          fullText = summary.content;
-        }
-      } catch { /* silent */ }
-    }
-
-    setDocFullText(fullText || statusMsg);
-    setDocFullTitle(doc.title);
-    setCenterView('document');
-
-    // 同步右側知識節點面板
-    const docNode = nodes.find(n => n.documentId === doc.id);
-    if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id);
-  };
-
   const handleToggleDocChunks = async (docId: string) => {
     if (expandedDocId === docId) {
       setExpandedDocId(null);
@@ -618,7 +528,7 @@ function KnowledgeBasePageInner() {
         <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
           {!embedded && (
             <div className="min-w-0">
-              <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">學習庫</h1>
+              <h1 className="text-base md:text-xl font-bold text-slate-900 truncate">知識庫</h1>
               <p className="text-[10px] md:text-xs text-slate-500 hidden sm:block">左側選擇資源，中間瀏覽內容，右側探索心智圖與 AI 教練</p>
             </div>
           )}
@@ -707,11 +617,13 @@ function KnowledgeBasePageInner() {
                   ) : (
                     documents.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => {
                       const isActive = doc.id === selectedDocId;
+                      const isExpanded = doc.id === expandedDocId;
                       const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
+                      const chunks = docChunks[doc.id];
                       return (
                         <div key={doc.id} className={`rounded-lg border transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200'}`}>
                           <div
-                            onClick={() => { void handleOpenOriginal(doc); }}
+                            onClick={() => { setSelectedDocId(doc.id); handleToggleDocChunks(doc.id); const docNode = nodes.find(n => n.documentId === doc.id); if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id); }}
                             className="group p-2.5 cursor-pointer"
                           >
                             <div className="flex items-center gap-2">
@@ -739,19 +651,131 @@ function KnowledgeBasePageInner() {
                                   )}
                                 </p>
                               </div>
-                              {loadingChunks === doc.id && (
-                                <span className="shrink-0">
-                                  <span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin inline-block" />
-                                </span>
-                              )}
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setSelectedDocId(doc.id);
+                                  // Status-aware fallback messages
+                                  const statusMsg = doc.status === 'PROCESSING'
+                                    ? '⏳ 此資源仍在處理中（PDF 解析 → 文字切塊 → 向量化）。系統每 5 秒自動更新狀態，請稍後再試。'
+                                    : doc.status === 'FAILED'
+                                      ? (doc.errorMessage
+                                          ? `❌ 處理失敗：${doc.errorMessage}\n\n請刪除後修正問題並重新上傳。`
+                                          : '❌ 此資源處理失敗，請刪除後重新上傳，或聯繫管理員。')
+                                      : '（尚無可顯示內容）';
+
+                                  // Historical exam virtual resource — render markdown from backend
+                                  if (doc.sourceType === 'historical_exam' || doc.id.startsWith('hist:')) {
+                                    const hid = doc.id.startsWith('hist:') ? doc.id.slice(5) : doc.id;
+                                    try {
+                                      const md = await documentService.getHistoricalMarkdown(hid);
+                                      setDocFullText(md.content || '（無題目內容）');
+                                    } catch {
+                                      setDocFullText('❌ 載入考古題內容失敗');
+                                    }
+                                    setDocFullTitle(doc.title);
+                                    setCenterView('document');
+                                    return;
+                                  }
+                                  // Fetch chunks if not cached
+                                  let fullText = '';
+                                  if (!docChunks[doc.id]) {
+                                    setLoadingChunks(doc.id);
+                                    try {
+                                      const res = await knowledgeService.getResourceChunks(doc.id) as { chunks: Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }> };
+                                      const chunks = res.chunks || [];
+                                      setDocChunks(prev => ({ ...prev, [doc.id]: chunks }));
+                                      const sorted = [...chunks].sort((a, b) => a.chunk_index - b.chunk_index);
+                                      fullText = sorted.map(c => c.content).join('\n\n');
+                                    } catch {
+                                      fullText = '';
+                                    } finally {
+                                      setLoadingChunks(null);
+                                    }
+                                  } else {
+                                    const sorted = [...docChunks[doc.id]].sort((a, b) => a.chunk_index - b.chunk_index);
+                                    fullText = sorted.map(c => c.content).join('\n\n');
+                                  }
+
+                                  // Fallback: system-generated resources (e.g. 考古題題庫) have no
+                                  // chunks but the backend exposes a rolled-up summary via
+                                  // /knowledge-map/resources/{id}/summary that walks the
+                                  // synthetic knowledge_nodes subtree and returns a readable doc.
+                                  if (!fullText || fullText.length < 20) {
+                                    try {
+                                      const summary = await knowledgeService.getResourceSummary(doc.id);
+                                      if (summary?.content && summary.content.length > 20) {
+                                        fullText = summary.content;
+                                      }
+                                    } catch { /* silent */ }
+                                  }
+
+                                  setDocFullText(fullText || statusMsg);
+                                  setDocFullTitle(doc.title);
+                                  setCenterView('document');
+                                }}
+                                className="text-[10px] font-medium text-blue-600 hover:text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-50 shrink-0 whitespace-nowrap"
+                                title="查看原文"
+                              >
+                                📖 原文
+                              </button>
                               {!doc.id.startsWith('hist:') && (
                                 <button onClick={(e) => { e.stopPropagation(); void handleOpenDeleteModal(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>
                               )}
                             </div>
                           </div>
-                          {/* UX 簡化：chunk 下拉移除，點資源直接出現原文於中間 */}
-                          {chunkErrors[doc.id] && (
-                            <div className="px-2 pb-2 text-center text-[10px] text-rose-500">{chunkErrors[doc.id]}</div>
+                          {isExpanded && (
+                            <div className="px-2 pb-2">
+                              {loadingChunks === doc.id ? (
+                                <div className="flex items-center justify-center py-3">
+                                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              ) : chunks && chunks.length > 0 ? (
+                                <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
+                                  {chunks.map(chunk => (
+                                    <div
+                                      key={chunk.id}
+                                      className={`px-2 py-1.5 rounded text-[10px] leading-relaxed ${
+                                        chunk.chunk_type === 'exam_questions'
+                                          ? 'bg-amber-50 border border-amber-100'
+                                          : chunk.chunk_type === 'image_analysis'
+                                            ? 'bg-purple-50 border border-purple-100'
+                                            : 'bg-slate-50 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      <div className="flex items-start gap-1.5">
+                                        {chunk.chunk_type === 'exam_questions' ? (
+                                          <ClipboardList className="h-3 w-3 shrink-0 text-amber-600 mt-0.5" />
+                                        ) : chunk.chunk_type === 'image_analysis' ? (
+                                          <Image className="h-3 w-3 shrink-0 text-purple-500 mt-0.5" />
+                                        ) : (
+                                          <FileText className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          {chunk.chunk_type === 'exam_questions' && (
+                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-amber-700 bg-amber-100 mb-0.5">考古題</span>
+                                          )}
+                                          {chunk.chunk_type === 'image_analysis' && (
+                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-purple-600 bg-purple-100 mb-0.5">圖片分析</span>
+                                          )}
+                                          <p className="font-medium text-slate-700 truncate">
+                                            {chunk.section_title || `段落 ${chunk.chunk_index + 1}`}
+                                          </p>
+                                          <p className="text-slate-500 line-clamp-2 mt-0.5">{chunk.content.slice(0, 120)}{chunk.content.length > 120 ? '...' : ''}</p>
+                                          {chunk.chunk_type !== 'exam_questions' && chunk.source_page_start && (
+                                            <span className="text-[9px] text-slate-400 mt-0.5 inline-block">p.{chunk.source_page_start}{chunk.source_page_end && chunk.source_page_end !== chunk.source_page_start ? `-${chunk.source_page_end}` : ''}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : chunkErrors[doc.id] ? (
+                                <div className="text-center py-2 text-[10px] text-rose-500">{chunkErrors[doc.id]}</div>
+                              ) : (
+                                <div className="text-center py-2 text-[10px] text-slate-400">尚無內容分塊</div>
+                              )}
+                            </div>
                           )}
                         </div>
                       );
@@ -787,15 +811,6 @@ function KnowledgeBasePageInner() {
                   <button
                     onClick={async () => {
                       if (extracting || !activeSubjectId) return;
-                      // T94：警告對話框（mastery 保留說明）
-                      if (!confirm(
-                        `重新分析會用 AI 重組知識樹結構。\n\n` +
-                        `Sprint 11 T99 smart merge 後：\n` +
-                        `• 結構不變的節點 → ID 保留，學習進度（mastery）完全不動\n` +
-                        `• 名稱微調的節點 → ID 保留，僅更新名稱與描述\n` +
-                        `• 完全找不到對應的節點 → 進度寫入「待人工確認」隊列（不會默默丟失）\n\n` +
-                        `確定繼續嗎？`
-                      )) return;
                       const activeSubject = subjects.find(s => s.id === activeSubjectId);
                       const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
                       setExtracting(true);
@@ -804,10 +819,6 @@ function KnowledgeBasePageInner() {
                         const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
                         const created = (res as Record<string, number>).nodes_created || 0;
                         setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
-                        // T93：清空舊 node 引用，避免按鈕點到已刪除的 ID 失效
-                        setSelectedNodeDetail(null);
-                        setSelectedDocId(null);
-                        setActiveNodeTab('info');
                         // 重新載入知識圖譜
                         const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
                         setNodes((mapRes.nodes || []) as KnowledgeNode[]);
@@ -846,8 +857,8 @@ function KnowledgeBasePageInner() {
                 {centerView === 'document' ? (
                   <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700 [&_img]:rounded-lg [&_img]:shadow-sm [&_img]:my-3 [&_img]:max-w-full">
-                      <MathContent>{docFullText}</MathContent>
+                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                      {docFullText}
                     </div>
                   </div>
                 ) : !loadingDocs && mindMapNodes.length === 0 ? (
@@ -1030,21 +1041,25 @@ function KnowledgeBasePageInner() {
                       <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
                     </div>
                   )}
-                  {/* sourceText/citationText 大段文字砍除（教育顧問建議：與 takeaway 鷹架重疊，違反 Sweller split-attention）。
-                      改為僅在「節點完全無鷹架對應」時顯示行動按鈕引導。citation badge 已在頂部標示來源。 */}
-                </div>
-                {/* 此節點的學習鷹架（L1 整合：節點驅動鷹架呈現）— ScaffoldMaterial 內部已用 nodeId 篩選 */}
-                <div className="border-t border-slate-100 pt-1">
-                  <div className="px-3 py-1.5 flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-emerald-500" />
-                    <h4 className="text-[11px] font-bold text-slate-700">此節點的學習鷹架</h4>
-                  </div>
-                  <ScaffoldMaterial
-                    nodeId={nodeId}
-                    fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
-                    isPro={isProPlus || subscriptionTier === 'PRO_199'}
-                    onUpgradeClick={() => router.push('/account')}
-                  />
+                  {(selectedNodeDetail.citationText || selectedNodeDetail.sourceText) && !(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '').includes('無原文摘要') ? (
+                    <div className="prose prose-slate prose-xs max-w-none">
+                      <div className="whitespace-pre-line text-[11px] text-slate-600 leading-relaxed">
+                        {renderMarkdown(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '')}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-1">
+                      <p className="text-[11px] text-slate-500">📍 此關卡尚未解鎖——練習題目後說明文字將自動生成。</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] border border-emerald-200 hover:bg-emerald-100">
+                          📝 節點練習
+                        </button>
+                        <button onClick={() => { setActiveNodeTab('coach'); setChatInput('用簡單的話解釋'); }} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] border border-blue-200 hover:bg-blue-100">
+                          💡 AI 教練解釋
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1054,12 +1069,13 @@ function KnowledgeBasePageInner() {
               </div>
             );
 
-            // material tab 收進 info tab；保留 slot 但改為空提示（NodeDetailPanel 4-tab 結構暫不動）
             const materialSlot = (
-              <div className="px-4 py-6 text-center text-xs text-slate-400">
-                <Sparkles className="h-5 w-5 mx-auto mb-1 text-slate-300" />
-                學習鷹架已整合到「資訊」頁，此頁保留供未來功能延伸。
-              </div>
+              <ScaffoldMaterial
+                nodeId={nodeId}
+                fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
+                isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                onUpgradeClick={() => router.push('/account')}
+              />
             );
 
             const notebookSlot = (
@@ -1074,12 +1090,53 @@ function KnowledgeBasePageInner() {
 
             const coachSlot = (
               <div className="h-full flex flex-col overflow-hidden">
+                {/* AI 教練模式切換列 */}
                 <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-100 bg-slate-50/50 shrink-0">
-                  <MessageCircle className="h-3.5 w-3.5 text-emerald-500" />
-                  <h3 className="text-xs font-bold text-slate-700">AI 教練</h3>
-                  {isPro199 && (<span className="ml-auto text-[9px] text-amber-500 flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> PRO_PLUS 專屬</span>)}
-                  {!isProPlus && !isPro199 && (<span className="ml-auto text-[9px] text-slate-400">剩 {freeQueriesLeft}/3</span>)}
+                  <button
+                    onClick={() => setShowOrphanCoach(false)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
+                      !showOrphanCoach
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'text-slate-400 hover:bg-slate-100'
+                    }`}
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    問答
+                  </button>
+                  <button
+                    onClick={() => { if (nodeId) setShowOrphanCoach(true); }}
+                    disabled={!nodeId}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
+                      showOrphanCoach
+                        ? 'bg-violet-100 text-violet-700'
+                        : 'text-slate-400 hover:bg-slate-100'
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    title="蘇格拉底引導模式：AI 透過提問幫你探索未知節點"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    蘇格拉底
+                  </button>
+                  {!showOrphanCoach && isPro199 && (<span className="ml-auto text-[9px] text-amber-500 flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> PRO_PLUS 專屬</span>)}
+                  {!showOrphanCoach && !isProPlus && !isPro199 && (<span className="ml-auto text-[9px] text-slate-400">剩 {freeQueriesLeft}/3</span>)}
                 </div>
+
+                {/* 蘇格拉底 AI 教練面板 */}
+                {showOrphanCoach && nodeId ? (
+                  <OrphanCoachPanel
+                    nodeId={nodeId}
+                    nodeName={nodeLabel || '知識節點'}
+                    onClose={() => setShowOrphanCoach(false)}
+                    onSwitchToQuestion={(questionId) => {
+                      router.push(`/practice?questionId=${questionId}`);
+                    }}
+                  />
+                ) : showOrphanCoach && !nodeId ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-xs text-slate-400">請先選擇一個知識節點</p>
+                  </div>
+                ) : (
+                  // 標準問答 AI 教練（原有邏輯）
+                  <>
                 {!isPro199 && (isProPlus || freeQueriesLeft > 0) && selectedNodeDetail && (
                   <div className="px-2 py-1.5 flex flex-wrap gap-1 shrink-0 border-b border-slate-50">
                     {quickChips.map(chip => (<button key={chip} onClick={() => setChatInput(chip)} className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-200 hover:bg-emerald-100 transition-colors">{chip}</button>))}
@@ -1112,6 +1169,8 @@ function KnowledgeBasePageInner() {
                     <button onClick={() => handleSendChat()} disabled={chatLoading || !chatInput.trim() || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail} className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 bg-emerald-500 text-white rounded flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"><Send className="h-3 w-3" /></button>
                   </div>
                 </div>
+                </>
+                )}
               </div>
             );
 

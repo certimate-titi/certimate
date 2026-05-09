@@ -23,6 +23,10 @@ import AnnouncementBanner from '@/components/AnnouncementBanner';
 import PendingJourneysBanner from '@/components/PendingJourneysBanner';
 import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
+import CompletionProgressBar from '@/components/completion/CompletionProgressBar';
+import BadgeShelf from '@/components/completion/BadgeShelf';
+import MarginalUtilityNudge from '@/components/completion/MarginalUtilityNudge';
+import { calcCompletion, type CompletionNode } from '@/lib/completion-calc';
 
 /**
  * 使用者主控台首頁。
@@ -791,6 +795,66 @@ export default function DashboardPage() {
                 </div>
               )}
             </section>
+
+            {/* ── 完成度框架（#6 Completion Framework） ── */}
+            {(() => {
+              // TODO: backend wire-up — 後端提供 /api/v1/subjects/{id}/completion 後，
+              //       改為從 API 取得 CompletionNode[]，並移除 mock 資料。
+              const completionNodes: CompletionNode[] = (data.domainStrengths || []).map(
+                (d: { domain?: string; score?: number; name?: string }) => ({
+                  id: d.domain || d.name || 'unknown',
+                  subject_id: activeSubjectId,
+                  mastery_rate: Math.round((d.score || 0) * 100),
+                  frequency: 'medium' as const,
+                })
+              );
+              const result = calcCompletion(completionNodes);
+              return (
+                <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-slate-900">知識版圖解鎖進度</h2>
+                    <Link
+                      href="/help/coverage-explained"
+                      className="text-[11px] text-emerald-600 hover:text-emerald-800 underline underline-offset-2"
+                    >
+                      如何計算？
+                    </Link>
+                  </div>
+
+                  {/* 進度條 */}
+                  <div className="mb-4">
+                    <CompletionProgressBar
+                      percent={result.percent}
+                      sweetSpotReached={result.sweetSpotReached}
+                      label={subjects.find(s => s.id === activeSubjectId)?.subjectName}
+                    />
+                  </div>
+
+                  {/* 邊際效益遞減提示（B.4） */}
+                  {result.showMarginalUtilityNudge && (
+                    <div className="mb-4">
+                      <MarginalUtilityNudge
+                        percent={result.percent}
+                        show={result.showMarginalUtilityNudge}
+                      />
+                    </div>
+                  )}
+
+                  {/* 徽章列 */}
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <p className="text-xs text-slate-500 mb-3">里程碑徽章</p>
+                    <BadgeShelf unlockedBadges={result.unlockedBadges} />
+                  </div>
+
+                  {/* 孤立節點提示（B.1 解鎖語言） */}
+                  {result.orphanCount > 0 && (
+                    <p className="text-[11px] text-slate-400 mt-3">
+                      📍 {result.orphanCount} 個關卡尚待解鎖（上傳對應教材後即可開始練習）
+                    </p>
+                  )}
+                </section>
+              );
+            })()}
           </div>
         </div>
       </div>

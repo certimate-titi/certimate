@@ -156,10 +156,10 @@ function TreeNode({
             <span className="text-[10px] text-slate-400 shrink-0">p.{node.source_page}</span>
           )}
 
-          {/* §3: 待補充標籤（優先於 mastery 顯示） */}
+          {/* §3: 待解鎖標籤（B.1 解鎖語言改寫，優先於 mastery 顯示） */}
           {node.needs_supplement && (
-            <span className="text-[10px] font-medium shrink-0 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-              {node.strength_label || '待補充'}
+            <span className="text-[10px] font-medium shrink-0 px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">
+              📍 {node.strength_label || '待解鎖'}
             </span>
           )}
 

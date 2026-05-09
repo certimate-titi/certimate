@@ -1452,3 +1452,13 @@ from .resource.aggregate_given import owned_resource_with_chunks as _f36_res_giv
 from .resource.commands import hard_delete_api as _f36_res_cmd  # noqa: F401
 from .resource.aggregate_then import hard_delete_db as _f36_res_then  # noqa: F401
 from .resource.aggregate_then import hidden_resource_db as _f36_hidden_then  # noqa: F401
+
+# Orphan Scaffold Fill (#2 AI 補洞鷹架) — Sprint 11
+from .orphan_scaffold.aggregate_given import orphan_node_setup  # noqa: F401
+from .orphan_scaffold.commands import orphan_scaffold_api  # noqa: F401
+from .orphan_scaffold.readmodel_then import response_assertions  # noqa: F401
+
+# Orphan Coach (#9 AI 蘇格拉底教練對話) — Sprint 12
+from .orphan_coach.aggregate_given import orphan_nodes  # noqa: F401
+from .orphan_coach.commands import api_calls as orphan_coach_api  # noqa: F401
+from .orphan_coach.readmodel_then import response_body as orphan_coach_response  # noqa: F401

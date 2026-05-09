@@ -1,11 +1,15 @@
 /**
  * @file 學習鷹架教材元件——以快讀 / 深讀兩模式呈現節點對應的 takeaway 與 elaborative 鷹架。
+ *       節點無正式鷹架（orphan）時，自動觸發 AI 補洞鷹架（OrphanScaffoldCard）。
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { BookOpen, Zap, Telescope, Send, Sparkles } from 'lucide-react';
-import { knowledgeService, scaffoldService, type NodeScaffoldItem } from '@/lib/api/services';
+import { knowledgeService, scaffoldService, orphanScaffoldService, type NodeScaffoldItem } from '@/lib/api/services';
+import type { OrphanFillResponse, OrphanFillResult } from '@/types/api';
+import OrphanScaffoldCard from '@/components/scaffold/OrphanScaffoldCard';
+import OrphanScaffoldEmptyState from '@/components/scaffold/OrphanScaffoldEmptyState';
 
 /** 教材閱讀模式（Sprint 10 T92 — 後端 6 類前端歸併 3 類）：
  *  - anchor：讀前定錨（advance_organizer）— Ausubel subsumption
@@ -42,12 +46,58 @@ export interface ScaffoldMaterialProps {
  * @param props.isPro - 是否 PRO
  * @param props.onUpgradeClick - 升級回呼
  */
+/** 最多輪詢 6 次（每次 5 秒，共 30 秒上限） */
+const MAX_POLL_COUNT = 6;
+const POLL_INTERVAL_MS = 5000;
+
 export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, onUpgradeClick }: ScaffoldMaterialProps) {
   const [mode, setMode] = useState<ReadMode>('retrieval');  // 預設「重點檢索」（最常用）
   const [scaffolds, setScaffolds] = useState<NodeScaffoldItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paywall, setPaywall] = useState(false);
+
+  // AI 補洞鷹架狀態
+  const [orphanResult, setOrphanResult] = useState<OrphanFillResult | null>(null);
+  const [orphanHidden, setOrphanHidden] = useState(false);
+  const [orphanLoading, setOrphanLoading] = useState(false);
+  const pollCountRef = useRef(0);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** 停止輪詢計時器 */
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  /** 觸發或輪詢 orphan fill */
+  const fetchOrphanFill = useCallback(async (nId: string, isPolling = false) => {
+    if (!isPolling) {
+      setOrphanLoading(true);
+      pollCountRef.current = 0;
+    }
+    try {
+      const result = await orphanScaffoldService.getOrphanFill(nId);
+      setOrphanResult(result);
+      if ('status' in result && result.status === 'generating') {
+        // 生成中 → 繼續輪詢
+        pollCountRef.current += 1;
+        if (pollCountRef.current < MAX_POLL_COUNT) {
+          pollTimerRef.current = setTimeout(() => {
+            fetchOrphanFill(nId, true);
+          }, POLL_INTERVAL_MS);
+        }
+        // 超過 MAX_POLL_COUNT 就停止，保持 generating 狀態顯示
+      }
+      // ready / insufficient 都停止輪詢
+    } catch {
+      // API 404/403 等錯誤不影響正式鷹架空態
+    } finally {
+      if (!isPolling) setOrphanLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!nodeId && !fallbackResourceId) {
@@ -81,6 +131,28 @@ export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, on
       .catch(handleErr)
       .finally(() => setLoading(false));
   }, [nodeId, fallbackResourceId ?? null, isPro]);
+
+  // 節點切換時重置 orphan 狀態並停止輪詢
+  useEffect(() => {
+    stopPolling();
+    setOrphanResult(null);
+    setOrphanHidden(false);
+    setOrphanLoading(false);
+    pollCountRef.current = 0;
+  }, [nodeId, stopPolling]);
+
+  // Unmount 時清理計時器
+  useEffect(() => {
+    return () => { stopPolling(); };
+  }, [stopPolling]);
+
+  useEffect(() => {
+    // 條件：正式鷹架載入完成 + 結果為空 + 有 nodeId + isPro
+    if (!loading && scaffolds.length === 0 && nodeId && isPro && !paywall) {
+      fetchOrphanFill(nodeId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, scaffolds.length, nodeId, isPro, paywall]);
 
   if (!nodeId && !fallbackResourceId) {
     return (
@@ -122,6 +194,62 @@ export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, on
   }
 
   if (scaffolds.length === 0) {
+    // A.3.4：依 orphan fill 狀態渲染
+    if (orphanLoading) {
+      return (
+        <div className="p-4 flex items-center justify-center">
+          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    if (orphanResult && !orphanHidden) {
+      // 422 佐證不足
+      if ('error' in orphanResult && orphanResult.error) {
+        return (
+          <div className="p-4">
+            <OrphanScaffoldEmptyState
+              mode="insufficient"
+              evidenceCount={orphanResult.evidence_count}
+            />
+          </div>
+        );
+      }
+
+      // 202 生成中
+      if ('status' in orphanResult && orphanResult.status === 'generating') {
+        return (
+          <div className="p-4">
+            <OrphanScaffoldEmptyState
+              mode="generating"
+              estimatedSeconds={(orphanResult as { estimated_seconds?: number }).estimated_seconds}
+            />
+          </div>
+        );
+      }
+
+      // 200 ready：依信心分數決定是否渲染（< 31 顯示佐證不足）
+      if ('status' in orphanResult && orphanResult.status === 'ready') {
+        const ready = orphanResult as OrphanFillResponse;
+        if (ready.confidence_score <= 30) {
+          return (
+            <div className="p-4">
+              <OrphanScaffoldEmptyState mode="insufficient" evidenceCount={ready.evidence_count} />
+            </div>
+          );
+        }
+        return (
+          <div className="p-4 overflow-y-auto">
+            <OrphanScaffoldCard
+              data={ready}
+              onReported={() => setOrphanHidden(true)}
+            />
+          </div>
+        );
+      }
+    }
+
+    // 沒有 orphan 資料（API 失敗或 nodeId 為 null）— 顯示原始空態
     return (
       <div className="p-4 text-xs text-slate-400 text-center">
         <BookOpen className="h-6 w-6 mx-auto mb-2 text-slate-300" />

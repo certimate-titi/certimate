@@ -141,6 +141,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"⚠️ OpenTelemetry 初始化警告: {e}")
 
+    # ── LLM 防火牆初始化（Llama Guard + rule-based fallback）─────────
+    try:
+        from app.core.llm_firewall import get_llm_firewall
+        _fw = get_llm_firewall()
+        print("✅ LLM Firewall 已啟動（intent filter 就緒）")
+    except Exception as e:
+        print(f"⚠️ LLM Firewall 初始化警告: {e}")
+
     engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     set_session_factory(session_local)
