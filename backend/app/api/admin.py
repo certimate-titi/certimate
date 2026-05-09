@@ -1407,8 +1407,7 @@ def health_db_schema():
     不暴露敏感資訊（schema 名稱本身為公開）。
     """
     from sqlalchemy import text
-    from app.core.deps import _engine_singleton  # noqa: F401（讓 SQLAlchemy 連線）
-    from app.models import Base
+    from app.core.deps import get_db
 
     # 期待存在的關鍵 schema 元素（每加新 migration 應更新此清單）
     EXPECTED_TABLES = [
@@ -1424,7 +1423,6 @@ def health_db_schema():
         ("knowledge_nodes", "embedding"): "Sprint 10 T80",
     }
 
-    from app.core.deps import get_db
     db_gen = get_db()
     db = next(db_gen)
     try:
