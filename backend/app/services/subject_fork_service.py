@@ -166,18 +166,75 @@ class SubjectForkService:
                     syllabus_topic_id=pn.syllabus_topic_id,
                     node_source=pn.node_source,
                     source_resource_count=1,
+                    embedding=pn.embedding,  # Sprint 11：複製 embedding 讓 fork 後節點能對應 scaffolds
                 )
                 self.db.add(user_node)
                 nodes_copied += 1
 
+            # Sprint 11 fix：fork 同時複製 resource_scaffolds + scaffold_node_links
+            # 沒這步 fork 後用戶看不到任何學習鷹架（症狀：點節點右側顯示「尚未對應」）
+            from app.models.resource_scaffold import ResourceScaffold
+            from app.models.scaffold_node_link import ScaffoldNodeLink
+            from sqlalchemy import text as sql_text
+
+            scaffold_id_map: dict[uuid.UUID, uuid.UUID] = {}
+            scaffolds_copied = 0
+            for platform_rid, new_rid in resource_id_map.items():
+                rows = self.db.query(ResourceScaffold).filter(
+                    ResourceScaffold.resource_id == platform_rid
+                ).all()
+                for ps in rows:
+                    new_sid = uuid.uuid4()
+                    scaffold_id_map[ps.id] = new_sid
+                    user_scaffold = ResourceScaffold(
+                        id=new_sid,
+                        resource_id=new_rid,
+                        tenant_id=ps.tenant_id,
+                        chapter_heading=ps.chapter_heading,
+                        type=ps.type,
+                        content=ps.content,
+                        page_start=ps.page_start,
+                        page_end=ps.page_end,
+                        reference_answer=ps.reference_answer,
+                        retrieval_prompt=ps.retrieval_prompt,
+                        template_code=ps.template_code,
+                        embedding=ps.embedding,  # 保留 embedding 給 N:M 對應
+                    )
+                    self.db.add(user_scaffold)
+                    scaffolds_copied += 1
+
+            # 複製 scaffold_node_links（新 ID 對應映射）
+            links_copied = 0
+            if scaffold_id_map and node_id_map:
+                old_scaffold_ids = list(scaffold_id_map.keys())
+                old_node_ids = list(node_id_map.keys())
+                links = self.db.execute(sql_text("""
+                    SELECT scaffold_id, node_id, similarity, link_method
+                    FROM scaffold_node_links
+                    WHERE scaffold_id = ANY(:sids) AND node_id = ANY(:nids)
+                """), {
+                    "sids": [str(x) for x in old_scaffold_ids],
+                    "nids": [str(x) for x in old_node_ids],
+                }).fetchall()
+                for r in links:
+                    self.db.add(ScaffoldNodeLink(
+                        scaffold_id=scaffold_id_map[r[0]],
+                        node_id=node_id_map[r[1]],
+                        similarity=float(r[2]),
+                        link_method=r[3],
+                    ))
+                    links_copied += 1
+
             self.db.commit()
             logger.info(
                 "Forked platform subject %s -> user subject %s "
-                "(resources=%d, nodes=%d)",
+                "(resources=%d, nodes=%d, scaffolds=%d, scaffold_node_links=%d)",
                 platform_uuid,
                 user_subject.id,
                 len(resource_id_map),
                 nodes_copied,
+                scaffolds_copied,
+                links_copied,
             )
             return {
                 "user_subject_id": str(user_subject.id),
