@@ -1263,3 +1263,130 @@ def trigger_scaffold_backfill(
 
     background_tasks.add_task(_run_backfill, limit)
     return {"queued": True, "null_count": null_count, "limit": limit}
+
+
+# ── Sprint 10 T81：節點 embedding backfill + 觸發 scaffold relink ──────────
+
+@router.post("/backfill-node-embeddings/{subject_id}")
+def trigger_node_embedding_backfill(
+    subject_id: str,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """為指定科目所有 embedding=NULL 的節點補 voyage embedding，並觸發
+    scaffold_node_links re-link（讓 N:M 對應立即生效，不需等下次 unified
+    extraction）。
+
+    Sprint 10 T81 — 解決 PR #27 已部署但既有節點還沒 embedding 的問題。
+    僅 SUPER_ADMIN 可呼叫。
+    """
+    import uuid as _uuid
+    from sqlalchemy import text
+    from app.models.user import User, UserRole
+
+    try:
+        user_uuid = _uuid.UUID(user_id)
+        sid = _uuid.UUID(subject_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    user = db.query(User).filter_by(id=user_uuid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    null_count = db.execute(
+        text("SELECT COUNT(*) FROM knowledge_nodes WHERE subject_id = :sid AND embedding IS NULL"),
+        {"sid": str(sid)},
+    ).scalar_one()
+
+    def _run_backfill():
+        from app.services.unified_knowledge_extraction_service import UnifiedKnowledgeExtractionService
+        try:
+            svc = UnifiedKnowledgeExtractionService(db)
+            embedded = svc._embed_nodes_for_subject(sid)
+            db.commit()
+            relinked = svc._relink_subject_scaffolds(sid)
+            db.commit()
+            import logging
+            logging.getLogger(__name__).info(
+                "[T81 backfill] subject=%s embedded=%d relinked=%d", sid, embedded, relinked
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("[T81 backfill] failed")
+            db.rollback()
+
+    if null_count == 0:
+        # 仍跑 relink（即使 embedding 都已寫入，可能需要重建 link）
+        background_tasks.add_task(_run_backfill)
+        return {"queued": True, "null_count": 0, "note": "全部已有 embedding，僅執行 relink"}
+
+    background_tasks.add_task(_run_backfill)
+    return {"queued": True, "null_count": null_count, "note": "background task 啟動，預估 1-2 分鐘"}
+
+
+# ── Sprint 10 T87：節點/鷹架 orphan 監控 ──────────────────────────────────
+
+@router.get("/knowledge/orphan-stats")
+def get_orphan_stats(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """節點 ↔ 鷹架關聯品質監控（教育顧問驗收 KPI）。
+
+    回傳：
+      - 該科目節點總數 / orphan node（無任何 link 的節點）
+      - 該科目 scaffold 總數 / orphan scaffold（無任何 link 的鷹架）
+      - 平均 link similarity（0-1）
+      - 每節點平均對應 scaffolds 數
+    """
+    import uuid as _uuid
+    from sqlalchemy import text
+    from app.models.user import User, UserRole
+
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    user = db.query(User).filter_by(id=user_uuid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    rows = db.execute(text("""
+        SELECT
+          s.id AS subject_id, s.name,
+          COUNT(DISTINCT kn.id) FILTER (WHERE kn.depth >= 2) AS depth2_nodes,
+          COUNT(DISTINCT snl.node_id) FILTER (WHERE kn.depth >= 2) AS linked_nodes,
+          COUNT(DISTINCT rs.id) AS scaffolds,
+          COUNT(DISTINCT snl.scaffold_id) AS linked_scaffolds,
+          AVG(snl.similarity)::float AS avg_sim,
+          COUNT(snl.id)::float / NULLIF(COUNT(DISTINCT snl.node_id), 0) AS avg_links_per_node
+        FROM subjects s
+        LEFT JOIN knowledge_nodes kn ON kn.subject_id = s.id
+        LEFT JOIN resources r ON r.subject_id = s.id
+        LEFT JOIN resource_scaffolds rs ON rs.resource_id = r.id
+        LEFT JOIN scaffold_node_links snl ON snl.node_id = kn.id
+        GROUP BY s.id, s.name
+        HAVING COUNT(DISTINCT kn.id) > 0 OR COUNT(DISTINCT rs.id) > 0
+        ORDER BY s.name
+    """)).fetchall()
+
+    return {
+        "subjects": [
+            {
+                "subject_id": str(r[0]),
+                "name": r[1],
+                "depth2_nodes": int(r[2] or 0),
+                "linked_nodes": int(r[3] or 0),
+                "orphan_nodes": int((r[2] or 0) - (r[3] or 0)),
+                "orphan_node_pct": round(100 * (1 - (r[3] or 0) / (r[2] or 1)), 1) if r[2] else 0,
+                "scaffolds": int(r[4] or 0),
+                "linked_scaffolds": int(r[5] or 0),
+                "orphan_scaffolds": int((r[4] or 0) - (r[5] or 0)),
+                "orphan_scaffold_pct": round(100 * (1 - (r[5] or 0) / (r[4] or 1)), 1) if r[4] else 0,
+                "avg_similarity": round(float(r[6]), 3) if r[6] else None,
+                "avg_links_per_node": round(float(r[7]), 2) if r[7] else None,
+            }
+            for r in rows
+        ]
+    }
