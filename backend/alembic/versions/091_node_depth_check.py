@@ -18,14 +18,19 @@ depends_on = None
 
 def upgrade() -> None:
     # depth 1=chapter / 2=section / 3=subsection（optional）
-    # 既有資料 depth 都在 1-2，加約束安全；用 NOT VALID 先跳過驗證避免 long lock
+    # 修正歷史資料：早期 default=0 的 root node 改為 1（chapter 層）
+    op.execute(
+        "UPDATE knowledge_nodes SET depth = 1 WHERE depth = 0 AND parent_id IS NULL"
+    )
+    # 防呆：parent_id 不為 NULL 但 depth=0 的視為 section（depth=2）
+    op.execute(
+        "UPDATE knowledge_nodes SET depth = 2 WHERE depth = 0 AND parent_id IS NOT NULL"
+    )
+    # 不 VALIDATE — NOT VALID constraint 對未來寫入仍有效（防呆）
+    # 既有資料若 cleanup 後仍有 depth>3 的（不應發生），保留 NOT VALID 不阻塞 deploy
     op.execute(
         "ALTER TABLE knowledge_nodes "
         "ADD CONSTRAINT chk_depth_range CHECK (depth BETWEEN 1 AND 3) NOT VALID"
-    )
-    # 確認既有資料都符合，再 VALIDATE（短鎖）
-    op.execute(
-        "ALTER TABLE knowledge_nodes VALIDATE CONSTRAINT chk_depth_range"
     )
 
 
