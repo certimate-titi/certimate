@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen } from 'lucide-react';
+import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles } from 'lucide-react';
 import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
@@ -1017,25 +1017,21 @@ function KnowledgeBasePageInner() {
                       <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
                     </div>
                   )}
-                  {(selectedNodeDetail.citationText || selectedNodeDetail.sourceText) && !(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '').includes('無原文摘要') ? (
-                    <div className="prose prose-slate prose-xs max-w-none">
-                      <div className="whitespace-pre-line text-[11px] text-slate-600 leading-relaxed">
-                        {renderMarkdown(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '')}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 mt-1">
-                      <p className="text-[11px] text-slate-500">此節點尚無詳細說明文字。</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] border border-emerald-200 hover:bg-emerald-100">
-                          📝 節點練習
-                        </button>
-                        <button onClick={() => { setActiveNodeTab('coach'); setChatInput('用簡單的話解釋'); }} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] border border-blue-200 hover:bg-blue-100">
-                          💡 AI 教練解釋
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* sourceText/citationText 大段文字砍除（教育顧問建議：與 takeaway 鷹架重疊，違反 Sweller split-attention）。
+                      改為僅在「節點完全無鷹架對應」時顯示行動按鈕引導。citation badge 已在頂部標示來源。 */}
+                </div>
+                {/* 此節點的學習鷹架（L1 整合：節點驅動鷹架呈現）— ScaffoldMaterial 內部已用 nodeId 篩選 */}
+                <div className="border-t border-slate-100 pt-1">
+                  <div className="px-3 py-1.5 flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3 text-emerald-500" />
+                    <h4 className="text-[11px] font-bold text-slate-700">此節點的學習鷹架</h4>
+                  </div>
+                  <ScaffoldMaterial
+                    nodeId={nodeId}
+                    fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
+                    isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                    onUpgradeClick={() => router.push('/account')}
+                  />
                 </div>
               </div>
             ) : (
@@ -1045,13 +1041,12 @@ function KnowledgeBasePageInner() {
               </div>
             );
 
+            // material tab 收進 info tab；保留 slot 但改為空提示（NodeDetailPanel 4-tab 結構暫不動）
             const materialSlot = (
-              <ScaffoldMaterial
-                nodeId={nodeId}
-                fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
-                isPro={isProPlus || subscriptionTier === 'PRO_199'}
-                onUpgradeClick={() => router.push('/account')}
-              />
+              <div className="px-4 py-6 text-center text-xs text-slate-400">
+                <Sparkles className="h-5 w-5 mx-auto mb-1 text-slate-300" />
+                學習鷹架已整合到「資訊」頁，此頁保留供未來功能延伸。
+              </div>
             );
 
             const notebookSlot = (
