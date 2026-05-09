@@ -328,23 +328,32 @@ class UnifiedKnowledgeExtractionService:
         node_mapping = result.get("node_mapping", {})
         self._node_mapping = node_mapping
 
-        # 6. 清除舊節點（備份 mastery）→ 寫入新節點（含 mastery 遷移）
-        self._clear_old_nodes(sid)
         tree = result.get("knowledge_tree", result)
         question_keywords = result.get("question_keywords", {})
-        nodes_created = self._save_knowledge_tree(sid, tree, question_keywords)
 
-        mastery_migrated = len([b for b in getattr(self, '_mastery_backup', []) if b])
+        # Sprint 11 T99：smart diff merge 取代「全砍重建」
+        # 既有節點以 ID-stable 方式更新（mastery / scaffold_node_links / questions
+        # 全部不動），新節點才 INSERT，沒對應的舊節點才 DELETE（cascade 清 mastery）。
+        # ID 不變的節點 → 用戶按鈕不會失效、學生 mastery 不會丟失。
+        diff_result = self._diff_and_merge_nodes(sid, tree, question_keywords)
+        nodes_created = diff_result["inserted"] + diff_result["updated"]
 
-        # 7.5 重新映射 resource_chunks → 新統一節點
+        log.info(
+            "[diff merge] subject=%s same=%d updated=%d inserted=%d deleted=%d orphan_masteries=%d",
+            sid, diff_result["same"], diff_result["updated"],
+            diff_result["inserted"], diff_result["deleted"], diff_result["orphan_masteries"],
+        )
+
+        mastery_migrated = diff_result["same"] + diff_result["updated"]
+
+        # resource_chunks remap 仍需要（DELETE 節點觸發），保留現有邏輯
         chunks_remapped = self._remap_chunks_to_nodes(sid, question_keywords)
-
-        # 8. 映射考古題到新節點
         self._map_questions_to_nodes(sid, subject_name, question_keywords)
 
         self.db.commit()
 
-        # Sprint 10 T81：節點 embedding 寫入（讓 _link_scaffolds_to_nodes 能對應）
+        # Sprint 10 T81：節點 embedding 寫入（diff merge 已即時 embed 新節點，
+        # 此處補既存節點若 embedding 仍 NULL 的 backfill）
         try:
             self._embed_nodes_for_subject(sid)
             self.db.commit()
@@ -352,9 +361,12 @@ class UnifiedKnowledgeExtractionService:
             log.warning("[統一萃取] node embedding 寫入失敗（non-fatal）: %s", exc)
             self.db.rollback()
 
-        # Sprint 10 T82-D：unified extraction 重跑 → 全 subject scaffolds re-link
+        # Sprint 10 T82-D：scaffold relink 改增量（只對 INSERT 節點重算）
+        # 注意：T99 diff merge 後 SAME/UPDATE 節點 ID 不變，既有 scaffold_node_links 保留有效
         try:
-            self._relink_subject_scaffolds(sid)
+            if diff_result["inserted_node_ids"]:
+                # 對新插入的節點重新連結 scaffolds（避免全 subject 重算浪費 voyage 配額）
+                self._link_scaffolds_to_specific_nodes(sid, diff_result["inserted_node_ids"])
             self.db.commit()
         except Exception as exc:  # noqa: BLE001
             log.warning("[統一萃取] scaffold-node relink 失敗（non-fatal）: %s", exc)
@@ -810,6 +822,321 @@ class UnifiedKnowledgeExtractionService:
         log.info("[scaffold relink] subject=%s scaffolds=%d links=%d",
                  sid, len(scaffold_objs), n)
         return n
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Sprint 11 T99 — Smart Diff Merge（取代全砍重建）
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    def _diff_and_merge_nodes(
+        self, sid: uuid.UUID, tree: dict, question_keywords: dict,
+    ) -> dict:
+        """T99 — 用 embedding cosine 比對既有節點 × 新樹節點，做 smart merge。
+
+        策略：
+        - cosine > 0.85: SAME → 既有節點不動（ID/mastery/links 全保留）
+        - 0.6-0.85:    UPDATE → 名稱/描述更新，但 ID 不變（mastery 保留）
+        - 新樹獨有:    INSERT → 新增節點（mastery 為空，等學生答題）
+        - 既有獨有:    DELETE → cascade 清 mastery + scaffold_node_links
+
+        關鍵：ID 不變的節點，questions.node_id / scaffold_node_links /
+        node_mastery / scaffold_review_schedule 全部不動，按鈕不失效。
+
+        Returns:
+          {"same": N, "updated": N, "inserted": N, "deleted": N,
+           "orphan_masteries": N, "inserted_node_ids": [uuid...]}
+        """
+        from app.services.embedding_service import EmbeddingService
+        from app.models.node_mastery_orphan import NodeMasteryOrphan
+
+        SAME_THRESHOLD = 0.85
+        UPDATE_THRESHOLD = 0.6
+        now = datetime.now(timezone.utc)
+
+        # 1. 取既有節點（含 embedding）
+        old_rows = self.db.execute(text("""
+            SELECT id, parent_id, name, depth, sort_order, source_text, embedding,
+                   exam_frequency
+            FROM knowledge_nodes
+            WHERE subject_id = :sid
+            ORDER BY depth, sort_order
+        """), {"sid": sid}).fetchall()
+        old_nodes = [
+            {"id": r[0], "parent_id": r[1], "name": r[2], "depth": r[3],
+             "sort": r[4], "text": r[5], "embedding": r[6], "freq": r[7],
+             "matched": False}  # 標記是否已被新樹節點對應
+            for r in old_rows
+        ]
+
+        # 2. 展平新樹（ch / sec / sub）並算 embedding
+        flat_new = self._flatten_new_tree(tree)
+        try:
+            emb_svc = EmbeddingService()
+            texts = [(n["name"] + " " + n["description"])[:1000] for n in flat_new]
+            new_embeds = emb_svc.embed_texts(texts, input_type="document") if texts else []
+        except Exception as e:
+            log.warning("[diff merge] voyage embed 失敗，fallback name 比對: %s", e)
+            new_embeds = [None] * len(flat_new)
+        for i, n in enumerate(flat_new):
+            n["embedding"] = new_embeds[i] if i < len(new_embeds) else None
+
+        # 3. 三方比對 — 對每個新樹節點找最相似的舊節點
+        same_count = update_count = insert_count = 0
+        inserted_ids: list[uuid.UUID] = []
+        # parent_chain：新節點 (chapter_idx, sec_idx, sub_idx) → DB id
+        parent_id_for: dict[tuple, uuid.UUID] = {}
+
+        for new in flat_new:
+            best_old, best_sim = self._find_best_match(new, old_nodes)
+            parent_db_id = self._resolve_new_parent(new, parent_id_for)
+
+            if best_old and best_sim > SAME_THRESHOLD and best_old["depth"] == new["depth"]:
+                # SAME — 不動 ID、不動 mastery、僅補 description（如新增）
+                if new["description"] and (not best_old["text"] or len(best_old["text"]) < 100):
+                    self.db.execute(text("""
+                        UPDATE knowledge_nodes
+                        SET source_text = :text, sort_order = :sort
+                        WHERE id = :id
+                    """), {
+                        "text": f"# {new['name']}\n\n{new['description']}",
+                        "sort": new["sort"], "id": str(best_old["id"]),
+                    })
+                best_old["matched"] = True
+                same_count += 1
+                parent_id_for[new["path"]] = best_old["id"]
+
+            elif best_old and best_sim > UPDATE_THRESHOLD and best_old["depth"] == new["depth"]:
+                # UPDATE — 名稱/描述/parent 更新，ID 不變（mastery 保留）
+                self.db.execute(text("""
+                    UPDATE knowledge_nodes
+                    SET name = :name, source_text = :text,
+                        parent_id = :pid, sort_order = :sort,
+                        exam_frequency = :freq
+                    WHERE id = :id
+                """), {
+                    "name": new["name"],
+                    "text": f"# {new['name']}\n\n{new['description']}",
+                    "pid": str(parent_db_id) if parent_db_id else None,
+                    "sort": new["sort"], "freq": new.get("freq", "medium"),
+                    "id": str(best_old["id"]),
+                })
+                best_old["matched"] = True
+                update_count += 1
+                parent_id_for[new["path"]] = best_old["id"]
+
+            else:
+                # INSERT
+                new_id = uuid.uuid4()
+                self.db.execute(text("""
+                    INSERT INTO knowledge_nodes
+                      (id, subject_id, parent_id, name, depth, sort_order,
+                       source_origin, source_text, exam_frequency,
+                       available_questions, created_at)
+                    VALUES (:id, :sid, :pid, :name, :depth, :sort,
+                            'ai_unified', :text, :freq, 0, :now)
+                """), {
+                    "id": new_id, "sid": sid,
+                    "pid": str(parent_db_id) if parent_db_id else None,
+                    "name": new["name"], "depth": new["depth"], "sort": new["sort"],
+                    "text": f"# {new['name']}\n\n{new['description']}",
+                    "freq": new.get("freq", "medium"), "now": now,
+                })
+                # 寫 embedding（已算好）
+                if new.get("embedding") is not None:
+                    vec_str = "[" + ",".join(f"{float(v):.7f}" for v in new["embedding"]) + "]"
+                    self.db.execute(text(
+                        "UPDATE knowledge_nodes SET embedding = CAST(:v AS vector) WHERE id = :id"
+                    ), {"v": vec_str, "id": str(new_id)})
+                inserted_ids.append(new_id)
+                insert_count += 1
+                parent_id_for[new["path"]] = new_id
+
+        # 4. DELETE — 既有節點未被任何新樹對應的，刪除（cascade 清 mastery + links）
+        delete_count = orphan_count = 0
+        unmatched = [o for o in old_nodes if not o["matched"]]
+        for old in unmatched:
+            # 4a. 把該節點的 mastery 寫進 orphan 表（給 admin 手動 mapping）
+            mastery_rows = self.db.execute(text("""
+                SELECT user_id, base_mastery, ease_factor, last_tested_at,
+                       next_review_at, status, correct_count, total_count, mastery_rate
+                FROM node_mastery WHERE node_id = :nid
+            """), {"nid": str(old["id"])}).fetchall()
+            for m in mastery_rows:
+                self.db.add(NodeMasteryOrphan(
+                    subject_id=sid, user_id=m[0],
+                    old_node_name=old["name"],
+                    base_mastery=float(m[1]) if m[1] is not None else None,
+                    ease_factor=float(m[2]) if m[2] is not None else None,
+                    last_tested_at=m[3], next_review_at=m[4], status=m[5],
+                    correct_count=int(m[6]) if m[6] else 0,
+                    total_count=int(m[7]) if m[7] else 0,
+                    mastery_rate=float(m[8]) if m[8] is not None else None,
+                ))
+                orphan_count += 1
+            # 4b. 解 FK 引用
+            self.db.execute(text(
+                "UPDATE questions SET node_id = NULL WHERE node_id = :id"
+            ), {"id": str(old["id"])})
+            self.db.execute(text(
+                "UPDATE questions SET suggested_node_id = NULL WHERE suggested_node_id = :id"
+            ), {"id": str(old["id"])})
+            self.db.execute(text("SAVEPOINT before_chunks_del"))
+            try:
+                self.db.execute(text(
+                    "UPDATE resource_chunks SET node_id = NULL WHERE node_id = :id"
+                ), {"id": str(old["id"])})
+            except Exception:
+                self.db.execute(text("ROLLBACK TO SAVEPOINT before_chunks_del"))
+            # 4c. 刪節點（CASCADE 清 mastery / scaffold_node_links / question_stats）
+            self.db.execute(text(
+                "DELETE FROM knowledge_nodes WHERE id = :id"
+            ), {"id": str(old["id"])})
+            delete_count += 1
+
+        return {
+            "same": same_count,
+            "updated": update_count,
+            "inserted": insert_count,
+            "deleted": delete_count,
+            "orphan_masteries": orphan_count,
+            "inserted_node_ids": inserted_ids,
+        }
+
+    def _flatten_new_tree(self, tree: dict) -> list[dict]:
+        """將新樹三層結構展平成節點 list，附 path 標記階層。"""
+        flat = []
+        chapters = tree.get("chapters", [])
+        for ci, ch in enumerate(chapters):
+            flat.append({
+                "depth": 1, "name": ch["name"],
+                "description": ch.get("description", ""),
+                "sort": ci, "path": (ci, None, None),
+                "freq": "medium",
+            })
+            for si, sec in enumerate(ch.get("sections", [])):
+                flat.append({
+                    "depth": 2, "name": sec["name"],
+                    "description": sec.get("description", ""),
+                    "sort": si, "path": (ci, si, None),
+                    "freq": sec.get("exam_frequency", "medium"),
+                })
+                for ssi, sub in enumerate(sec.get("subsections", [])):
+                    if not isinstance(sub, dict) or not sub.get("name"):
+                        continue
+                    flat.append({
+                        "depth": 3, "name": sub["name"],
+                        "description": sub.get("description", ""),
+                        "sort": ssi, "path": (ci, si, ssi),
+                        "freq": sec.get("exam_frequency", "medium"),
+                    })
+        return flat
+
+    def _resolve_new_parent(
+        self, new_node: dict, parent_id_for: dict
+    ) -> uuid.UUID | None:
+        """從新樹路徑找對應的 DB parent_id（已被前面 SAME/UPDATE/INSERT 寫入）。"""
+        ci, si, ssi = new_node["path"]
+        if new_node["depth"] == 1:
+            return None
+        if new_node["depth"] == 2:
+            return parent_id_for.get((ci, None, None))
+        # depth=3
+        return parent_id_for.get((ci, si, None))
+
+    def _find_best_match(
+        self, new_node: dict, old_nodes: list[dict],
+    ) -> tuple[dict | None, float]:
+        """從未匹配的舊節點中找最相似（embedding cosine + 名稱完全比對 fallback）。"""
+        candidates = [o for o in old_nodes if not o["matched"]]
+        if not candidates:
+            return None, 0.0
+
+        # 1. 名稱完全相同 → 0.95（接近 SAME）
+        for o in candidates:
+            if o["name"] == new_node["name"]:
+                return o, 0.95
+
+        # 2. embedding cosine（如果雙方都有 embedding）
+        if new_node.get("embedding") is None:
+            return None, 0.0
+
+        new_vec = list(new_node["embedding"])
+        best, best_sim = None, 0.0
+        for o in candidates:
+            if o["embedding"] is None:
+                continue
+            old_vec = list(o["embedding"])
+            sim = self._cosine(new_vec, old_vec)
+            if sim > best_sim:
+                best, best_sim = o, sim
+        return best, best_sim
+
+    @staticmethod
+    def _cosine(a: list, b: list) -> float:
+        import math
+        if len(a) != len(b):
+            return 0.0
+        dot = sum(float(x) * float(y) for x, y in zip(a, b))
+        na = math.sqrt(sum(float(x) * float(x) for x in a))
+        nb = math.sqrt(sum(float(y) * float(y) for y in b))
+        if na == 0 or nb == 0:
+            return 0.0
+        return dot / (na * nb)
+
+    def _link_scaffolds_to_specific_nodes(
+        self, sid: uuid.UUID, node_ids: list[uuid.UUID],
+    ) -> int:
+        """T99 增量 relink — 只對新插入的節點計算 scaffold 對應，省 voyage 配額。"""
+        if not node_ids:
+            return 0
+        # 取該 subject 所有 scaffold（embedding 已寫過）
+        from app.models.resource_scaffold import ResourceScaffold
+        scaffolds = self.db.query(ResourceScaffold).join(
+            ResourceScaffold.resource
+        ).filter(
+            text("resources.subject_id = :sid").bindparams(sid=str(sid))
+        ).all() if False else self.db.execute(text("""
+            SELECT s.id FROM resource_scaffolds s
+            JOIN resources r ON s.resource_id = r.id
+            WHERE r.subject_id = :sid AND s.embedding IS NOT NULL
+        """), {"sid": str(sid)}).fetchall()
+        # 只算對新節點的 link（既有節點的 link 已保留）
+        # 用 SQL 直接算 cosine vs 限定 node_ids 集合
+        SIMILARITY_THRESHOLD = 0.45
+        TOP_K = 3
+        written = 0
+        for s_row in scaffolds:
+            scaffold_id = s_row[0]
+            rows = self.db.execute(text(f"""
+                SELECT n.id, 1 - (n.embedding <=> s.embedding) AS sim
+                FROM knowledge_nodes n, resource_scaffolds s
+                WHERE s.id = :sid AND n.id = ANY(:nids)
+                  AND n.embedding IS NOT NULL
+                ORDER BY n.embedding <=> s.embedding
+                LIMIT :k
+            """), {
+                "sid": str(scaffold_id),
+                "nids": [str(nid) for nid in node_ids],
+                "k": TOP_K,
+            }).fetchall()
+            for r in rows:
+                if float(r[1]) < SIMILARITY_THRESHOLD:
+                    continue
+                self.db.execute(text("""
+                    INSERT INTO scaffold_node_links
+                      (id, scaffold_id, node_id, similarity, link_method, created_at)
+                    VALUES (gen_random_uuid(), :sid, :nid, :sim, 'embedding', NOW())
+                    ON CONFLICT (scaffold_id, node_id) DO NOTHING
+                """), {
+                    "sid": str(scaffold_id),
+                    "nid": str(r[0]),
+                    "sim": float(r[1]),
+                })
+                written += 1
+        log.info("[diff merge link] new_nodes=%d scaffolds=%d links=%d",
+                 len(node_ids), len(scaffolds), written)
+        return written
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     def _save_knowledge_tree(self, sid: uuid.UUID, tree: dict, question_keywords: dict) -> int:
         """寫入新的知識樹。回傳建立的節點數。"""

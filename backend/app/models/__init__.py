@@ -68,6 +68,7 @@ from app.models.question_candidate import (  # noqa: F401, E402
 from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType  # noqa: F401, E402
 from app.models.user_email_preferences import UserEmailPreferences, EmailSendLog  # noqa: F401, E402
 from app.models.scaffold_node_link import ScaffoldNodeLink  # noqa: F401, E402
+from app.models.node_mastery_orphan import NodeMasteryOrphan  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -131,4 +132,5 @@ __all__ = [
     "UserEmailPreferences",
     "EmailSendLog",
     "ScaffoldNodeLink",
+    "NodeMasteryOrphan",
 ]
