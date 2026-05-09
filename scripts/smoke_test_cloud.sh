@@ -146,6 +146,26 @@ if [[ "$FILTER" == "all" || "$FILTER" == "today" ]]; then
   _check "GET /dashboard/confidence-calibration" "200" "$CODE"
 fi
 
+# ── knowledge map（migration schema 健康檢查）──────────────────────────────
+# 這個 endpoint 撞 knowledge_nodes 表的 ORM 全 SELECT，能抓到 schema drift
+# （embedding 欄位等）— PR #29 修正後加入此檢查防 regression
+if [[ "$FILTER" == "all" || "$FILTER" == "knowledge" ]]; then
+  _section "Knowledge Map (migration schema 健康檢查)"
+  TEST_SUBJ="b0000003-0001-0001-0000-000000000001"
+  CODE=$(_curl_status "$API_URL/knowledge-map/subjects/$TEST_SUBJ/nodes" -H "$AUTH")
+  NODES_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_smoke_body')); print(len(d.get('nodes',[])))" 2>/dev/null || echo "?")
+  _check "GET /knowledge-map/subjects/.../nodes" "200" "$CODE" "(nodes=$NODES_COUNT)"
+
+  # 取第一個 node 測 N:M 端點
+  if [[ "$NODES_COUNT" != "?" && "$NODES_COUNT" != "0" ]]; then
+    NODE_ID=$(python3 -c "import json; d=json.load(open('/tmp/_smoke_body')); print(d['nodes'][0]['id'])" 2>/dev/null)
+    if [[ -n "$NODE_ID" ]]; then
+      CODE=$(_curl_status "$API_URL/knowledge-map/nodes/$NODE_ID/scaffolds" -H "$AUTH")
+      _check "GET /knowledge-map/nodes/.../scaffolds (T85 N:M)" "200" "$CODE"
+    fi
+  fi
+fi
+
 # ── ai_model_routings (T72 verify, indirect) ────────────────────────────────
 
 if [[ "$FILTER" == "all" || "$FILTER" == "routing" ]]; then
