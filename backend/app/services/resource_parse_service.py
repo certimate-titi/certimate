@@ -767,6 +767,18 @@ def _persist_parsed(
     _embed_scaffolds(new_scaffold_rows)
     db.flush()
 
+    # 3d) Sprint 10 T82：scaffold ↔ knowledge_node 預先算 cosine 寫 N:M 表
+    # 解決「節點和鷹架對不起來」架構斷層問題
+    if resource.subject_id:
+        try:
+            _link_scaffolds_to_nodes(db, new_scaffold_rows, resource.subject_id)
+            db.flush()
+        except Exception:
+            logger.warning(
+                "[scaffold-node-link] failed resource=%s (non-fatal)",
+                resource.id, exc_info=True,
+            )
+
     # 4) 映射 T1 題目到科目知識節點（Voyage cosine similarity）
     if q_created > 0 and resource.subject_id:
         try:
@@ -956,6 +968,64 @@ def _embed_scaffolds(rows: list[ResourceScaffold]) -> None:
         logger.info("[scaffold-embed] %d rows embedded", len(rows))
     except Exception as e:
         logger.warning("[scaffold-embed] failed (non-fatal): %s", e)
+
+
+def _link_scaffolds_to_nodes(
+    db: Session, scaffold_rows: list[ResourceScaffold], subject_id: UUID
+) -> int:
+    """Sprint 10 T82：為新建鷹架計算與該科目所有節點的 cosine similarity，
+    寫入 scaffold_node_links N:M 表。
+
+    策略：
+    - 取該科目所有 unified node（resource_id IS NULL）+ 有 embedding 的
+    - 對每個 scaffold 算 cosine vs all nodes
+    - top-3 且 similarity > 0.55 → 寫入 link
+    - 無命中不寫（教育原則：誤導 > 缺漏）
+
+    成本：voyage embed scaffold 本身已在 _embed_scaffolds 跑過；節點 embedding
+    由 unified extraction 寫入（若無則跳過該節點）。本函式 0 次 voyage call。
+    """
+    from sqlalchemy import text as sql_text
+    from app.models.scaffold_node_link import ScaffoldNodeLink
+
+    if not scaffold_rows:
+        return 0
+
+    SIMILARITY_THRESHOLD = 0.55
+    TOP_K = 3
+    written = 0
+
+    for s in scaffold_rows:
+        if s.embedding is None:
+            continue
+        # cosine similarity via pgvector <=> operator (lower = more similar)
+        # 1 - distance = similarity
+        rows = db.execute(
+            sql_text(
+                """
+                SELECT id, 1 - (embedding <=> CAST(:vec AS vector)) AS sim
+                FROM knowledge_nodes
+                WHERE subject_id = :sid
+                  AND embedding IS NOT NULL
+                ORDER BY embedding <=> CAST(:vec AS vector)
+                LIMIT :k
+                """
+            ),
+            {"vec": str(list(s.embedding)), "sid": str(subject_id), "k": TOP_K},
+        ).fetchall()
+        for r in rows:
+            sim = float(r[1])
+            if sim < SIMILARITY_THRESHOLD:
+                continue
+            db.add(ScaffoldNodeLink(
+                scaffold_id=s.id, node_id=r[0],
+                similarity=sim, link_method="embedding",
+            ))
+            written += 1
+
+    logger.info("[scaffold-node-link] %d links written for %d scaffolds",
+                written, len(scaffold_rows))
+    return written
 
 
 def _generate_reference_answers(rows: list[ResourceScaffold]) -> None:

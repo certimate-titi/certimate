@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -81,6 +82,9 @@ class KnowledgeNode(Base):
         Integer, nullable=False, server_default="1",
         comment="引用計數：此節點被幾份資源引用；cascade 刪除時扣 1、歸零即刪 (PRD-034)",
     )
+    # Sprint 10 T80：節點 embedding（從 source_text 算）— 對應 scaffold embedding
+    # 解決「節點與鷹架對不起來」的關鍵欄位
+    embedding = mapped_column(Vector(1024), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
