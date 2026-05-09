@@ -1392,6 +1392,126 @@ def get_orphan_stats(
     }
 
 
+# ── 既有 fork subject 補抓 scaffolds（PR #37 前 fork 的修復 endpoint） ──────
+
+@router.post("/repair-fork/{subject_id}")
+def repair_fork_subject(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """對 PR #37 前 fork 的 user subject 補抓 scaffolds + scaffold_node_links。
+
+    根因：fork_platform_subject() 在 PR #37 前只複製 resources + nodes，
+    沒帶 resource_scaffolds → 用戶看不到任何學習鷹架。
+
+    修法：
+    1. 從 source_platform_subject_id 找平台原始 subject
+    2. 對應 platform_resource_id → user_resource_id 映射（透過 fork 時建的 GCS path 或 owner+name）
+    3. 從平台 scaffolds 複製過來，新 ID + 重指 user_resource_id
+    4. 建立 scaffold_node_links（embedding 對應 user nodes）
+
+    僅 SUPER_ADMIN 可呼叫；冪等（重複呼叫只新增缺的 scaffolds）。
+    """
+    import uuid as _uuid
+    from sqlalchemy import text
+    from app.models.user import User, UserRole
+    from app.models.subject import Subject
+    from app.models.resource import Resource
+    from app.models.resource_scaffold import ResourceScaffold
+
+    try:
+        user_uuid = _uuid.UUID(user_id)
+        sid = _uuid.UUID(subject_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    user = db.query(User).filter_by(id=user_uuid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    user_subj = db.query(Subject).filter_by(id=sid).first()
+    if not user_subj:
+        raise HTTPException(status_code=404, detail={"message": "subject 不存在"})
+    if not user_subj.source_platform_subject_id:
+        return {"ok": False, "reason": "非 fork 來源科目（無 source_platform_subject_id）"}
+
+    plat_sid = user_subj.source_platform_subject_id
+
+    # 對應 user resources × platform resources（用 name 比對 — fork 時 name 不變）
+    user_resources = db.query(Resource).filter(Resource.subject_id == sid).all()
+    plat_resources = db.query(Resource).filter(Resource.subject_id == plat_sid).all()
+
+    name_to_user_rid = {r.name: r.id for r in user_resources}
+    plat_to_user_rid: dict[_uuid.UUID, _uuid.UUID] = {}
+    for pr in plat_resources:
+        if pr.name in name_to_user_rid:
+            plat_to_user_rid[pr.id] = name_to_user_rid[pr.name]
+
+    if not plat_to_user_rid:
+        return {"ok": False, "reason": "資源 name 對應失敗，無法 repair"}
+
+    scaffold_id_map: dict[_uuid.UUID, _uuid.UUID] = {}
+    scaffolds_created = 0
+    for plat_rid, user_rid in plat_to_user_rid.items():
+        # 該 user resource 已有的 scaffolds（避免重複）
+        existing = db.execute(text(
+            "SELECT chapter_heading, type, content FROM resource_scaffolds WHERE resource_id = :rid"
+        ), {"rid": str(user_rid)}).fetchall()
+        existing_keys = {(r[0], r[1], r[2][:50] if r[2] else "") for r in existing}
+
+        plat_scaffolds = db.query(ResourceScaffold).filter(
+            ResourceScaffold.resource_id == plat_rid
+        ).all()
+        for ps in plat_scaffolds:
+            key = (ps.chapter_heading, ps.type, ps.content[:50] if ps.content else "")
+            if key in existing_keys:
+                continue
+            new_sid = _uuid.uuid4()
+            scaffold_id_map[ps.id] = new_sid
+            db.add(ResourceScaffold(
+                id=new_sid,
+                resource_id=user_rid,
+                tenant_id=ps.tenant_id,
+                chapter_heading=ps.chapter_heading,
+                type=ps.type,
+                content=ps.content,
+                page_start=ps.page_start,
+                page_end=ps.page_end,
+                reference_answer=ps.reference_answer,
+                retrieval_prompt=ps.retrieval_prompt,
+                template_code=ps.template_code,
+                embedding=ps.embedding,
+            ))
+            scaffolds_created += 1
+
+    db.commit()
+
+    # 觸發 relink 用 _link_scaffolds_to_nodes（如果 user nodes 有 embedding）
+    relinked = 0
+    if scaffolds_created > 0:
+        from app.services.unified_knowledge_extraction_service import (
+            UnifiedKnowledgeExtractionService
+        )
+        try:
+            svc = UnifiedKnowledgeExtractionService(db)
+            svc._embed_nodes_for_subject(sid)
+            db.commit()
+            relinked = svc._relink_subject_scaffolds(sid)
+            db.commit()
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("[repair-fork] relink failed")
+            db.rollback()
+
+    return {
+        "ok": True,
+        "subject_id": subject_id,
+        "source_platform_id": str(plat_sid),
+        "scaffolds_created": scaffolds_created,
+        "relinked": relinked,
+    }
+
+
 # ── Deploy 健康檢查 — 主動驗 schema 狀態（不需 auth，CI 可呼） ──────────────
 
 @router.get("/health/db-schema", include_in_schema=False)
