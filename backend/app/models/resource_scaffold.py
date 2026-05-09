@@ -8,8 +8,8 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -60,10 +60,11 @@ class ResourceScaffold(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    resource_id: Mapped[uuid.UUID] = mapped_column(
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("resources.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        comment="來源資源（正式鷹架必填；AI 補洞鷹架 is_orphan_fill=True 時可為 NULL）",
     )
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     chapter_heading: Mapped[str | None] = mapped_column(Text)
@@ -84,6 +85,34 @@ class ResourceScaffold(Base):
     template_code: Mapped[str | None] = mapped_column(String(32))
     # P6 (Sprint 7 T54)：1024 維 voyage embedding（給 /concept-center 語意搜尋用）
     embedding = mapped_column(Vector(1024), nullable=True)
+    # Sprint 11 #2 AI 補洞鷹架（migration 093）
+    trust_level: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+        comment="HUMAN_VERIFIED / SYSTEM_GENERATED / AI_INFERRED / PENDING_REVIEW",
+    )
+    confidence_score: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="AI 補洞信心分數 0-100；正式鷹架為 NULL",
+    )
+    evidence_question_ids: Mapped[list[uuid.UUID] | None] = mapped_column(
+        ARRAY(UUID(as_uuid=True)),
+        nullable=True,
+        comment="佐證考古題 id 陣列（最多 8 題）",
+    )
+    is_orphan_fill: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="FALSE",
+        default=False,
+        comment="是否為 AI 補洞鷹架（K-ORPHAN-01 生成）",
+    )
+    generation_failure_reason: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        comment="evidence_insufficient / semantic_drift / url_detected / llm_error",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

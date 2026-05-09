@@ -47,6 +47,8 @@ from app.api.exam_import import router as exam_import_router
 from app.api.exam_import_async import router as exam_import_async_router
 from app.api.exam_import_monitoring import router as exam_import_monitoring_router
 from app.api.resource_parse import router as resource_parse_router
+from app.api.orphan_scaffold import router as orphan_scaffold_router
+from app.api.orphan_coach import router as orphan_coach_router
 
 router = APIRouter()
 
@@ -93,3 +95,5 @@ router.include_router(exam_import_monitoring_router, tags=["exam-import-monitori
 router.include_router(resource_parse_router, tags=["resource-parse"])
 router.include_router(email_preferences_router, tags=["email"])
 router.include_router(retention_admin_router, tags=["retention"])
+router.include_router(orphan_scaffold_router, tags=["orphan-scaffold"])
+router.include_router(orphan_coach_router, tags=["orphan-coach"])

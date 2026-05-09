@@ -53,6 +53,14 @@ import type {
   AddUserSubjectRequest,
   AddUserSubjectResponse,
   ChatMessage,
+  OrphanFillResult,
+  OrphanReasonCode,
+  ReportInaccurateResponse,
+  OrphanCoachStartResponse,
+  OrphanCoachQuotaError,
+  OrphanCoachMessageResponse,
+  OrphanCoachConversation,
+  OrphanCoachExistingResponse,
 } from '@/types';
 
 // ===========================
@@ -2230,5 +2238,91 @@ export const blindInferenceService = {
   },
   async setConceptNote(questionId: string, note: string): Promise<{ status: string }> {
     return apiClient.post(`/questions/${questionId}/concept-note`, { note });
+  },
+};
+
+/**
+ * AI 補洞鷹架服務（#2 Orphan Auto-Fill Scaffold）
+ *
+ * 取得或觸發生成 orphan 節點的 AI 補洞鷹架，以及回報不準確功能。
+ */
+export const orphanScaffoldService = {
+  /**
+   * 取得 orphan 節點的 AI 補洞鷹架。
+   *
+   * @param nodeId - 知識節點 UUID
+   * @returns 200 ready / 202 generating / 422 insufficient evidence
+   */
+  async getOrphanFill(nodeId: string): Promise<OrphanFillResult> {
+    return apiClient.get(`/scaffolds/orphan-fill/${nodeId}`);
+  },
+
+  /**
+   * 回報鷹架內容不準確。
+   *
+   * @param scaffoldId - 鷹架 UUID
+   * @param reasonCode - 原因代碼
+   * @param note - 選填補充說明（100 字內）
+   */
+  async reportInaccurate(
+    scaffoldId: string,
+    reasonCode: OrphanReasonCode,
+    note?: string,
+  ): Promise<ReportInaccurateResponse> {
+    return apiClient.post(`/scaffolds/${scaffoldId}/report-inaccurate`, {
+      reason_code: reasonCode,
+      ...(note ? { note } : {}),
+    });
+  },
+};
+
+/**
+ * Orphan AI 教練服務（#9 蘇格拉底對話）
+ *
+ * 針對孤立（orphan）知識節點，透過 Socratic 引導模式幫助學生
+ * 從已知概念建構對未知節點的理解，降權計入 mastery（0.4 係數）。
+ */
+export const orphanCoachService = {
+  /**
+   * 查詢是否有現存未完成對話，避免重複建立 session 浪費配額。
+   *
+   * @param nodeId - 知識節點 UUID
+   * @returns existing_conversation_id（null 表示無現存對話）
+   */
+  async findExisting(nodeId: string): Promise<OrphanCoachExistingResponse> {
+    return apiClient.get(`/orphan-coach/conversations?node_id=${encodeURIComponent(nodeId)}`);
+  },
+
+  /**
+   * 啟動新的蘇格拉底對話。
+   *
+   * @param nodeId - 知識節點 UUID
+   * @returns 201 含 conversation_id 與 AI 開場問句
+   * @throws 402 配額不足 | 404 節點不存在
+   */
+  async startConversation(nodeId: string): Promise<OrphanCoachStartResponse | OrphanCoachQuotaError> {
+    return apiClient.post('/orphan-coach/conversations', { node_id: nodeId });
+  },
+
+  /**
+   * 送出學生訊息，取得 AI 回覆與評分。
+   *
+   * @param conversationId - 對話 UUID
+   * @param text - 學生輸入文字（最多 500 字）
+   * @returns AI 回覆、輪數、狀態、評分
+   * @throws 410 對話已結束 | 422 空訊息
+   */
+  async sendMessage(conversationId: string, text: string): Promise<OrphanCoachMessageResponse> {
+    return apiClient.post(`/orphan-coach/conversations/${conversationId}/messages`, { text });
+  },
+
+  /**
+   * 取得對話歷程（用於恢復暫停對話）。
+   *
+   * @param conversationId - 對話 UUID
+   * @returns 完整訊息列表與對話狀態
+   */
+  async getConversation(conversationId: string): Promise<OrphanCoachConversation> {
+    return apiClient.get(`/orphan-coach/conversations/${conversationId}`);
   },
 };

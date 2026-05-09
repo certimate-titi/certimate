@@ -486,3 +486,133 @@ export interface BlindAnswerResponse {
 }
 
 export type InferenceJudgment = 'accept_ai' | 'keep_mine' | 'skip';
+
+// ===========================
+// Orphan Scaffold (AI 補洞鷹架)
+// ===========================
+
+export type OrphanReasonCode =
+  | 'definition_wrong'
+  | 'example_wrong'
+  | 'answer_wrong'
+  | 'unrelated'
+  | 'other';
+
+export interface OrphanFillPracticeQuestion {
+  stem: string;
+  options: { A: string; B: string; C: string; D: string };
+  answer: string;
+  explanation: string;
+}
+
+/** 200 ready — 鷹架已生成 */
+export interface OrphanFillResponse {
+  scaffold_id: string;
+  node_id: string;
+  status: 'ready';
+  definition: string;
+  illustration: string;
+  practice_question: OrphanFillPracticeQuestion;
+  confidence_score: number;
+  evidence_question_ids: string[];
+  evidence_year_range: string;
+  evidence_count: number;
+  trust_level: 'AI_INFERRED';
+}
+
+/** 202 pending — 生成中 */
+export interface OrphanFillPending {
+  status: 'generating';
+  estimated_seconds: number;
+}
+
+/** 422 insufficient evidence — 佐證不足 */
+export interface OrphanFillInsufficient {
+  error: true;
+  message: string;
+  evidence_count: number;
+}
+
+export type OrphanFillResult = OrphanFillResponse | OrphanFillPending | OrphanFillInsufficient;
+
+export interface ReportInaccurateRequest {
+  reason_code: OrphanReasonCode;
+  note?: string;
+}
+
+export interface ReportInaccurateResponse {
+  ok: boolean;
+  message: string;
+}
+
+// ===========================
+// Orphan Coach (蘇格拉底 AI 教練)
+// ===========================
+
+/** 對話結束狀態 */
+export type CoachStatus =
+  | 'continuing'
+  | 'positive_close'
+  | 'transfer_book'
+  | 'switch_to_question'
+  | 'force_end';
+
+/** POST /orphan-coach/conversations → 201 */
+export interface OrphanCoachStartResponse {
+  conversation_id: string;
+  opening_message: string;
+  context_summary: string;
+}
+
+/** 配額不足 → 402 */
+export interface OrphanCoachQuotaError {
+  error: true;
+  message: string;
+  used: number;
+  quota: number;
+}
+
+/** 單輪評分 */
+export interface CoachRoundScores {
+  concept: number;   // 0 / 0.5 / 1
+  reasoning: number; // 0 / 0.5 / 1
+  initiative: number; // 0 / 0.5
+}
+
+/** 書籍推薦 */
+export interface CoachBookRecommendation {
+  title: string;
+  chapter: string;
+}
+
+/** POST /orphan-coach/conversations/{cid}/messages → 200 */
+export interface OrphanCoachMessageResponse {
+  assistant_reply: string;
+  scores: CoachRoundScores;
+  round_number: number;
+  status: CoachStatus;
+  book_recommendation?: CoachBookRecommendation;
+  transition_question_id?: string;
+}
+
+/** 單則訊息 */
+export interface OrphanCoachMessage {
+  role: 'user' | 'assistant';
+  text: string;
+  scores?: CoachRoundScores;
+  created_at: string;
+}
+
+/** GET /orphan-coach/conversations/{cid} → 200 */
+export interface OrphanCoachConversation {
+  messages: OrphanCoachMessage[];
+  status: CoachStatus;
+  mastery_committed: boolean;
+  total_score: number;
+  round_number: number;
+}
+
+/** GET /orphan-coach/conversations?node_id={uuid} → 200 */
+export interface OrphanCoachExistingResponse {
+  existing_conversation_id: string | null;
+}

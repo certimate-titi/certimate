@@ -582,11 +582,22 @@ Table ai_chat_sessions {
   context_id uuid [not null, note: 'nodeId or questionId']
   model_used varchar(50) [note: 'claude-3.5-sonnet | gemini-flash']
   message_count integer [default: 0]
+  tenant_id uuid [note: '多租戶隔離鍵（NULL = public_b2c）']
+  // Migration 094：Orphan Coach 蘇格拉底對話欄位
+  mode varchar(32) [note: 'error_explanation | socratic_orphan；NULL = 舊資料相容']
+  node_id uuid [note: 'socratic_orphan 模式：FK → knowledge_nodes']
+  score_concept float [note: '最新輪概念接觸度（0/0.5/1）']
+  score_reasoning float [note: '最新輪推理連結度（0/0.5/1）']
+  score_initiative float [note: '最新輪主動性（0/0.5，規則判斷）']
+  final_score float [note: '最新輪總分（最高 2.5）']
+  mastery_committed boolean [default: false, note: '蘇格拉底 mastery 降權是否已寫入 node_mastery']
+  paused_at timestamptz [note: 'C.4.4：3 分鐘無回應暫停時間']
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]
 }
 
 Ref: ai_chat_sessions.user_id > users.id [delete: cascade]
+Ref: ai_chat_sessions.node_id > knowledge_nodes.id [delete: cascade]
 
 Table ai_chat_messages {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -594,6 +605,11 @@ Table ai_chat_messages {
   role varchar(10) [not null, note: 'user | assistant | system']
   content text [not null]
   token_count integer
+  // Migration 094：每輪評分（僅 user role 有值）
+  score_concept float [note: '該輪概念接觸度（0/0.5/1）']
+  score_reasoning float [note: '該輪推理連結度（0/0.5/1）']
+  score_initiative float [note: '該輪主動性（0/0.5）']
+  round_score float [note: '該輪總分（最高 2.5）']
   created_at timestamptz [default: `now()`]
 }
 
@@ -1328,4 +1344,31 @@ Table budget_alert_log {
   }
 
   Note: '預算告警歷史紀錄'
+}
+
+// ── Sprint 11 #2 AI 補洞鷹架（migration 093）────────────────────────────
+
+// resource_scaffolds 新增欄位（見 migration 093）
+// trust_level varchar(32) [null, note: 'HUMAN_VERIFIED / SYSTEM_GENERATED / AI_INFERRED / PENDING_REVIEW']
+// confidence_score integer [null, note: 'AI 補洞信心分數 0-100']
+// evidence_question_ids uuid[] [null, note: '佐證考古題 id 陣列（最多 8 題）']
+// is_orphan_fill boolean [not null, default: false, note: '是否為 AI 補洞鷹架（K-ORPHAN-01）']
+// generation_failure_reason varchar(64) [null, note: 'evidence_insufficient / semantic_drift / url_detected / llm_error']
+// resource_id 改為 nullable（orphan scaffold 無對應 resource）
+
+Table scaffold_review_queue {
+  id uuid [pk, default: `gen_random_uuid()`]
+  scaffold_id uuid [not null, ref: > resource_scaffolds.id, note: 'CASCADE 刪除']
+  reporter_user_id uuid [not null, ref: > users.id, note: 'CASCADE 刪除']
+  reason_code varchar(32) [not null, note: 'definition_wrong / example_wrong / answer_wrong / unrelated / other']
+  note varchar(100) [null, note: '自由填寫說明（限 100 字）']
+  tenant_id uuid [null, note: '多租戶隔離鍵（RLS）']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    scaffold_id [name: 'ix_scaffold_review_queue_scaffold_id']
+    tenant_id [name: 'ix_scaffold_review_queue_tenant']
+  }
+
+  Note: 'AI 補洞鷹架不準確回報佇列；RLS 啟用 tenant_id 隔離。≥3 份回報自動 trust_level → PENDING_REVIEW'
 }
