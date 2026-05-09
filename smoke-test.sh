@@ -22,7 +22,7 @@ NC='\033[0m'
 
 PASSED=0
 FAILED=0
-TOTAL=8
+TOTAL=9  # 6.5 schema health 加在 Sprint 11
 
 echo ""
 echo -e "${BOLD}CertiMate Smoke Test${NC}"
@@ -118,6 +118,29 @@ check_endpoint \
   "GET" \
   "/health" \
   "200"
+
+# 6.5 Schema health — Sprint 11：deploy 後主動驗 alembic migration 完整套用
+# 修復 PR #28 事故：deploy success 但 migration fail 導致 schema drift。
+# 此檢查若 status != "healthy" 直接 FAIL deploy gate（PR 不該 merge 進壞版本）。
+SCHEMA_RESP=$(curl -s --max-time 15 "${BASE_URL}/api/v1/admin/health/db-schema" 2>/dev/null)
+SCHEMA_STATUS=$(echo "$SCHEMA_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','unknown'))" 2>/dev/null || echo "unknown")
+SCHEMA_VER=$(echo "$SCHEMA_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('alembic_version','?'))" 2>/dev/null || echo "?")
+if [ "$SCHEMA_STATUS" = "healthy" ]; then
+  echo -e "  ${GREEN}Pass${NC}  GET  /admin/health/db-schema  (alembic=$SCHEMA_VER)"
+  PASSED=$((PASSED + 1))
+else
+  echo -e "  ${RED}FAIL${NC}  GET  /admin/health/db-schema  (status=$SCHEMA_STATUS, alembic=$SCHEMA_VER)"
+  echo -e "  ${RED}      → Migration drift detected. Fix locally + redeploy.${NC}"
+  echo "$SCHEMA_RESP" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+mt = d.get('missing_tables', [])
+mc = d.get('missing_columns', [])
+if mt: print(f'      missing tables: {mt}')
+if mc: print(f'      missing columns: {mc}')
+" 2>/dev/null || true
+  FAILED=$((FAILED + 1))
+fi
 
 # 7. Login with demo account — should return 200 with JWT token
 echo ""
