@@ -3,6 +3,10 @@
 from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
+from app.api.email_preferences import (
+    router as email_preferences_router,
+    admin_router as retention_admin_router,
+)
 from app.api.resource import router as resource_router
 from app.api.knowledge_map import router as knowledge_map_router
 from app.api.exam import router as exam_router
@@ -87,3 +91,5 @@ router.include_router(exam_import_router, tags=["exam-import"])
 router.include_router(exam_import_async_router, tags=["exam-import-async"])
 router.include_router(exam_import_monitoring_router, tags=["exam-import-monitoring"])
 router.include_router(resource_parse_router, tags=["resource-parse"])
+router.include_router(email_preferences_router, tags=["email"])
+router.include_router(retention_admin_router, tags=["retention"])

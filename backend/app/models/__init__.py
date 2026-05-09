@@ -66,6 +66,7 @@ from app.models.question_candidate import (  # noqa: F401, E402
     QuestionCandidateDecision,
 )
 from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType  # noqa: F401, E402
+from app.models.user_email_preferences import UserEmailPreferences, EmailSendLog  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -126,4 +127,6 @@ __all__ = [
     "QuestionCandidateDecision",
     "ResourceScaffold",
     "ResourceScaffoldType",
+    "UserEmailPreferences",
+    "EmailSendLog",
 ]
