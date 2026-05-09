@@ -973,42 +973,49 @@ def _embed_scaffolds(rows: list[ResourceScaffold]) -> None:
 def _link_scaffolds_to_nodes(
     db: Session, scaffold_rows: list[ResourceScaffold], subject_id: UUID
 ) -> int:
-    """Sprint 10 T82：為新建鷹架計算與該科目所有節點的 cosine similarity，
-    寫入 scaffold_node_links N:M 表。
+    """Sprint 10 T82 + Sprint 11 A：兩階段對應 — embedding cosine 取 top-K，
+    再 voyage rerank-2.5 重排，最終 top-3 寫入 scaffold_node_links N:M 表。
 
-    策略：
-    - 取該科目所有 unified node（resource_id IS NULL）+ 有 embedding 的
-    - 對每個 scaffold 算 cosine vs all nodes
-    - top-3 且 similarity > 0.55 → 寫入 link
+    策略（教育顧問依雲端 71% 命中率調整）：
+    - Stage 1：cosine top-10 候選（粗篩）
+    - Stage 2：voyage rerank-2.5 重排取 top-3（精篩）
+    - rerank score > 0.4 → 寫入（rerank 0-1 規模，比 cosine 更具語意辨別力）
+    - rerank 失敗 fallback 純 cosine（保留現有命中率）
     - 無命中不寫（教育原則：誤導 > 缺漏）
 
-    成本：voyage embed scaffold 本身已在 _embed_scaffolds 跑過；節點 embedding
-    由 unified extraction 寫入（若無則跳過該節點）。本函式 0 次 voyage call。
+    成本：scaffold/node embedding 已預先寫入；rerank 每 scaffold 一次 voyage call
+    （rerank-2.5 約 $0.05/1k queries，46 scaffolds × 1 call ≈ $0.0023）。
     """
     from sqlalchemy import text as sql_text
     from app.models.scaffold_node_link import ScaffoldNodeLink
+    from app.services.embedding_service import EmbeddingService
 
     if not scaffold_rows:
         return 0
 
-    # 真實 voyage 資料測試：節點（考綱抽象概念）vs 鷹架（具體章節重點）
-    # 0.55 太嚴 → 命中率 < 5%；降至 0.45 可達 30-40%（仍守「誤導 > 缺漏」原則）
-    # 兩週後依 orphan-stats 數據再調
-    SIMILARITY_THRESHOLD = 0.45
-    TOP_K = 3
+    # Stage 1: cosine candidates 取 top-10（粗篩擴大候選池）
+    # Stage 2: voyage rerank-2.5 重排取 top-3（精篩語意對齊）
+    COSINE_CANDIDATES = 10
+    FINAL_K = 3
+    RERANK_THRESHOLD = 0.4  # rerank score 0-1 規模
+    COSINE_FALLBACK_THRESHOLD = 0.45  # 若 rerank 失敗 fallback 純 cosine
     written = 0
+    emb_svc: EmbeddingService | None = None
+    try:
+        emb_svc = EmbeddingService()
+    except Exception as e:
+        logger.warning("[scaffold-node-link] voyage 初始化失敗 fallback 純 cosine: %s", e)
 
     for s in scaffold_rows:
         if s.embedding is None:
             continue
-        # cosine similarity via pgvector <=> operator (lower = more similar)
-        # 1 - distance = similarity
-        # Fix: numpy float32 array → Python float list（pgvector 不認 np.float32 repr）
+        # Stage 1: cosine top-K 候選
         vec_str = "[" + ",".join(f"{float(v):.7f}" for v in s.embedding) + "]"
         rows = db.execute(
             sql_text(
                 """
-                SELECT id, 1 - (embedding <=> CAST(:vec AS vector)) AS sim
+                SELECT id, name, COALESCE(source_text, '') AS st,
+                       1 - (embedding <=> CAST(:vec AS vector)) AS cos_sim
                 FROM knowledge_nodes
                 WHERE subject_id = :sid
                   AND embedding IS NOT NULL
@@ -1016,11 +1023,41 @@ def _link_scaffolds_to_nodes(
                 LIMIT :k
                 """
             ),
-            {"vec": vec_str, "sid": str(subject_id), "k": TOP_K},
+            {"vec": vec_str, "sid": str(subject_id), "k": COSINE_CANDIDATES},
         ).fetchall()
-        for r in rows:
-            sim = float(r[1])
-            if sim < SIMILARITY_THRESHOLD:
+        if not rows:
+            continue
+
+        # Stage 2: voyage rerank-2.5 重排
+        rerank_results = None
+        if emb_svc is not None:
+            try:
+                query = (s.chapter_heading or "") + " " + (s.content or "")
+                docs = [(r[1] + " " + r[2])[:1000] for r in rows]
+                rerank_results = emb_svc.rerank(query=query[:1000], documents=docs, top_k=FINAL_K)
+            except Exception as e:
+                logger.warning("[scaffold-node-link] rerank 失敗 fallback cosine (scaffold=%s): %s",
+                               s.id, e)
+
+        if rerank_results:
+            # 用 rerank score 寫入
+            for rr in rerank_results:
+                idx = rr["index"]
+                score = rr["relevance_score"]
+                if score < RERANK_THRESHOLD:
+                    continue
+                node_id = rows[idx][0]
+                db.add(ScaffoldNodeLink(
+                    scaffold_id=s.id, node_id=node_id,
+                    similarity=float(score), link_method="embedding+rerank",
+                ))
+                written += 1
+            continue
+
+        # Fallback: 純 cosine top-3（rows 結構: id, name, source_text, cos_sim）
+        for r in rows[:FINAL_K]:
+            sim = float(r[3])
+            if sim < COSINE_FALLBACK_THRESHOLD:
                 continue
             db.add(ScaffoldNodeLink(
                 scaffold_id=s.id, node_id=r[0],
