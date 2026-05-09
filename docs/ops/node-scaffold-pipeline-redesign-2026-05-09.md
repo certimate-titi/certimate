@@ -144,10 +144,84 @@ ALTER TABLE knowledge_nodes ADD COLUMN IF NOT EXISTS embedding vector(1024);
 - ✅ 品質閘門避免誤導（與 L1 原則一致）
 - ✅ 6 種 scaffold 類別不變（takeaway/pitfall/elaborative/advance_organizer/strategy/concept_extract）
 
-## 10. 下一步
+## 10. 補充議題：六大分類 + 分層的合理性審視
+
+教育顧問針對現有強制限制的複審結論。
+
+### 10.1 「Chapter 最多 6 個」（unified_knowledge_extraction_service.py:165）
+
+**現況**：prompt 硬性規定「第一層 Chapter **最多 6 個**（對應雷達圖六軸，嚴禁超過 6 個）」
+
+**問題**：
+
+| 角度 | 問題說明 |
+|------|---------|
+| 學科實況 | iPAS AI 應用規劃師 5 科目 × 各 5-6 章；醫學 / 法律可能 10+ 章；程式類可能 3-4 章。**6 是 UI 反推數字，非教學論依據** |
+| 強迫合併 | 原 8 章硬壓 6 章 → LLM 把不同概念揉一起 → 節點命名變抽象（雲端「AI 基礎概念與發展趨勢」是 4 個小章揉一起的結果）|
+| UI 綁架 | 雷達圖（DomainRadarChart）固定六軸 → 反向約束資料模型，教育設計被視覺工具反咬 |
+
+**建議**：放寬至 **4-8 動態**，加品質閘門（每章必有 ≥ 3 節 + description ≥ 150 字）；雷達圖改 stacked bar / horizontal hex 容納可變軸數。
+
+### 10.2 「強制 2 層深度」
+
+**現況**：prompt 規定「第一層 Chapter / 第二層 Section」，僅 2 層
+
+**問題**：
+
+| 角度 | 問題說明 |
+|------|---------|
+| 太淺 | iPAS 考綱實際 3 層（章→節→細項），壓 2 層丟 30-40% 結構 |
+| 太硬 | 有些章內容簡單不該強拆 2-6 節（湊數量虛胖） |
+| Mastery 顆粒度 | 學生想知道「3.1.2 神經網路反向傳播」掌握度，2 層只能算到「神經網路」整體 |
+
+**建議**：開放 **3 層彈性**，第三層可選（leaf nodes）；prompt 增加 `subsections` 欄位但不強制。
+
+### 10.3 「鷹架 6 類」
+
+**現況**：`ResourceScaffoldType` enum 6 類 — takeaway / elaborative / strategy / pitfall / advance_organizer / concept_extract
+
+**評估**：6 類**都有學習科學支持**：
+
+| 類別 | 教育原則 | 學者 |
+|------|---------|------|
+| takeaway | retrieval cue | Karpicke 2008 |
+| elaborative | Bloom analyze | Anderson-Krathwohl |
+| strategy | self-regulated learning | Pintrich |
+| pitfall | misconception correction | Chi 1994 |
+| advance_organizer | subsumption | Ausubel |
+| concept_extract | testing effect | Roediger |
+
+**問題**：學生不需要分辨「這是 advance_organizer 還是 concept_extract」，UI 暴露過細。
+
+**建議**：**後端保留 6 類**（資料分析價值），**前端歸併 3 類顯示**：
+- 讀前定錨（advance_organizer）
+- 重點檢索（takeaway + concept_extract）
+- 思考延伸（elaborative + strategy + pitfall）
+
+### 10.4 改動清單（補進 Sprint 10 範圍）
+
+| Task | 內容 | 工時 |
+|------|------|------|
+| **T89** | unified extraction prompt 改：章 4-8 動態、第三層 optional、品質閘門 | 0.5 day |
+| **T90** | 雷達圖（DomainRadarChart）改型：支援動態軸數（4-8） | 1 day |
+| **T91** | migration 091：knowledge_nodes 加 `CHECK depth BETWEEN 1 AND 3` | 0.5 day |
+| **T92** | 前端鷹架 6 類 → 3 類顯示歸併（ScaffoldMaterial component） | 1 day |
+| **小計** | | **3 day** |
+
+### 10.5 不動的部分
+
+- ❌ 不刪 6 類 enum（保留分析價值，前端 grouping 即可）
+- ❌ 不強制 3 層（保留可選，避免簡單章被湊數）
+- ❌ 不去掉雷達圖（改型，不刪除 — 用戶習慣）
+
+## 11. 下一步
 
 - 立即動工 **T86**（半天工作量、立刻體感改善）
 - 這個 redesign doc 進入 PR，CEO 簽核後排 Sprint 10 動工
+  - Sprint 10 P1：T80 + T81 + T82（schema + backfill + parse hook）
+  - Sprint 10 P2：T83 + T84 + T85（修復連動）
+  - Sprint 10 P3：T87 + T88（品質監控）
+  - Sprint 10 補充：T89-T92（六大分類複審改動）
 
 ---
 **Owner**：CTO（實作）+ 教育顧問（驗收）+ 財務（voyage 配額成本核對）
