@@ -156,7 +156,7 @@ class RetentionEmailService:
 
     # ── trigger 1: daily_review ────────────────────────────────────────────
     def find_daily_review_recipients(self) -> Iterable[tuple[User, int]]:
-        """有 due 鷹架（scaffold_review_schedule.due_date <= today）的用戶，回 (user, due_count)。"""
+        """有 due 鷹架（scaffold_review_schedule.next_review_at <= now）的用戶，回 (user, due_count)。"""
         rows = self.db.execute(
             text(
                 """
@@ -164,7 +164,7 @@ class RetentionEmailService:
                 FROM users u
                 JOIN scaffold_review_schedule s ON s.user_id = u.id
                 LEFT JOIN user_email_preferences p ON p.user_id = u.id
-                WHERE s.due_date <= CURRENT_DATE
+                WHERE s.next_review_at <= NOW()
                   AND u.status = 'active'
                   AND COALESCE(p.daily_review_enabled, TRUE) = TRUE
                 GROUP BY u.id
