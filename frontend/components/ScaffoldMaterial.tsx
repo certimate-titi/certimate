@@ -7,8 +7,12 @@ import { useEffect, useState } from 'react';
 import { BookOpen, Zap, Telescope, Send, Sparkles } from 'lucide-react';
 import { knowledgeService, scaffoldService, type NodeScaffoldItem } from '@/lib/api/services';
 
-/** 教材閱讀模式：speed（快讀重點）或 deep（深讀提問）。 */
-export type ReadMode = 'speed' | 'deep';
+/** 教材閱讀模式（Sprint 10 T92 — 後端 6 類前端歸併 3 類）：
+ *  - anchor：讀前定錨（advance_organizer）— Ausubel subsumption
+ *  - retrieval：重點檢索（takeaway + concept_extract）— Karpicke retrieval / Roediger testing effect
+ *  - thinking：思考延伸（elaborative + strategy + pitfall）— Bloom analyze / metacognition / misconception correction
+ */
+export type ReadMode = 'anchor' | 'retrieval' | 'thinking';
 
 /**
  * ScaffoldMaterial 的 props。
@@ -39,7 +43,7 @@ export interface ScaffoldMaterialProps {
  * @param props.onUpgradeClick - 升級回呼
  */
 export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, onUpgradeClick }: ScaffoldMaterialProps) {
-  const [mode, setMode] = useState<ReadMode>('speed');
+  const [mode, setMode] = useState<ReadMode>('retrieval');  // 預設「重點檢索」（最常用）
   const [scaffolds, setScaffolds] = useState<NodeScaffoldItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,37 +130,76 @@ export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, on
     );
   }
 
-  const takeaways = scaffolds.filter((s) => s.type === 'takeaway');
-  const elaboratives = scaffolds.filter((s) => s.type === 'elaborative');
+  // Sprint 10 T92：後端 6 類前端歸併 3 類顯示（教育顧問 §10.3）
+  const anchors = scaffolds.filter((s) => s.type === 'advance_organizer');
+  const retrievals = scaffolds.filter((s) => s.type === 'takeaway' || s.type === 'concept_extract');
+  const thinkings = scaffolds.filter((s) =>
+    s.type === 'elaborative' || s.type === 'strategy' || s.type === 'pitfall'
+  );
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex border-b border-slate-200 px-2 pt-2 gap-1 shrink-0">
         <button
-          onClick={() => setMode('speed')}
+          onClick={() => setMode('anchor')}
+          disabled={anchors.length === 0}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-t-md text-[11px] font-medium transition-colors ${
-            mode === 'speed' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'
+            mode === 'anchor' ? 'bg-violet-50 text-violet-700 border-b-2 border-violet-500'
+              : anchors.length === 0 ? 'text-slate-300 cursor-not-allowed'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
+          title="讀前定錨（Ausubel subsumption）"
         >
-          <Zap className="h-3 w-3" /> 快讀
+          🧭 定錨{anchors.length > 0 ? `（${anchors.length}）` : ''}
         </button>
         <button
-          onClick={() => setMode('deep')}
+          onClick={() => setMode('retrieval')}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-t-md text-[11px] font-medium transition-colors ${
-            mode === 'deep' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'
+            mode === 'retrieval' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'
           }`}
+          title="重點檢索（Karpicke retrieval）"
         >
-          <Telescope className="h-3 w-3" /> 深讀
+          <Zap className="h-3 w-3" /> 檢索{retrievals.length > 0 ? `（${retrievals.length}）` : ''}
+        </button>
+        <button
+          onClick={() => setMode('thinking')}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-t-md text-[11px] font-medium transition-colors ${
+            mode === 'thinking' ? 'bg-amber-50 text-amber-700 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-700'
+          }`}
+          title="思考延伸（Bloom analyze + 迷思警示）"
+        >
+          <Telescope className="h-3 w-3" /> 思考{thinkings.length > 0 ? `（${thinkings.length}）` : ''}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3">
-        {mode === 'speed' ? (
-          <SpeedMode items={takeaways} />
+        {mode === 'anchor' ? (
+          <AnchorMode items={anchors} />
+        ) : mode === 'retrieval' ? (
+          <SpeedMode items={retrievals} />
         ) : (
-          <DeepMode items={elaboratives} />
+          <DeepMode items={thinkings} />
         )}
       </div>
     </div>
+  );
+}
+
+/** 讀前定錨模式（Ausubel subsumption）— violet 錨點卡片 */
+function AnchorMode({ items }: { items: NodeScaffoldItem[] }) {
+  if (items.length === 0) {
+    return <p className="text-xs text-slate-400 text-center py-4">無讀前定錨內容</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {items.map((s) => (
+        <li key={s.id} className="rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+          {s.chapter_heading && (
+            <div className="text-[10px] font-semibold text-violet-600 mb-1">🧭 {s.chapter_heading}</div>
+          )}
+          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{s.content}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 

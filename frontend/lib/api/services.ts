@@ -564,8 +564,8 @@ export const dashboardService = {
 export interface NodeScaffoldItem {
   /** Scaffold UUID */
   id: string;
-  /** 鷹架類型 */
-  type: 'takeaway' | 'elaborative' | 'strategy';
+  /** 鷹架類型（後端 6 類，前端歸併 3 顯示類別） */
+  type: 'takeaway' | 'elaborative' | 'strategy' | 'pitfall' | 'advance_organizer' | 'concept_extract';
   chapter_heading: string | null;
   content: string;
   page_start: number | null;
@@ -573,6 +573,8 @@ export interface NodeScaffoldItem {
   user_response: string | null;
   responded_at: string | null;
   reference_answer?: string | null;
+  /** Sprint 10 T85：N:M 表 cosine similarity（節點對應品質）*/
+  similarity?: number;
 }
 
 /**
