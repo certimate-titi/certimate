@@ -162,8 +162,12 @@ def _build_unified_prompt(
 {anchor_block}
 ## 萃取要求
 {anchor_constraint}
-1. **第一層：章（Chapter）** — 核心主題分類，**最多 6 個**（對應雷達圖六軸，嚴禁超過 6 個）
+1. **第一層：章（Chapter）** — 核心主題分類，**4-8 個之間**（依學科實際結構動態，不強制）
+   品質閘門：每章必有 ≥ 3 個 section + description ≥ 150 字
 2. **第二層：節（Section）** — 每章下的子主題，每章 2-6 個
+3. **第三層：子節（Subsection）— 可選** — 僅當 section 內容結構複雜（如 iPAS 考綱「3.1.2 反向傳播演算法」）時填入
+   - 每個 subsection 含 name（必填）+ description（選填）
+   - 簡單 section 不需要硬塞第三層（教育顧問：避免虛胖）
 3. 每個「節」要包含：
    - name：知識點名稱（繁體中文，簡潔明確）
    - description：**150-250 字**的詳細說明，必須涵蓋：
@@ -590,7 +594,8 @@ class UnifiedKnowledgeExtractionService:
         if not _gemini_client:
             raise RuntimeError("GEMINI_API_KEY not configured")
 
-        # T2-C JSON Schema — 六大章節上限硬性約束
+        # Sprint 10 T89：放寬章上限 6 → 4-8 動態，subsections 升級為 nested object（第三層 optional）
+        # 教育顧問建議：依學科實際結構動態，不被 UI 雷達圖反推約束
         response_schema = {
             "type": "object",
             "properties": {
@@ -599,8 +604,8 @@ class UnifiedKnowledgeExtractionService:
                     "properties": {
                         "chapters": {
                             "type": "array",
-                            "maxItems": 6,  # 六大章節上限
-                            "minItems": 1,
+                            "maxItems": 8,  # 放寬 6→8（仍守 Miller's 7±2 上限）
+                            "minItems": 4,  # 下限 4 確保品質（避免太籠統）
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -612,9 +617,19 @@ class UnifiedKnowledgeExtractionService:
                                             "type": "object",
                                             "properties": {
                                                 "name": {"type": "string"},
+                                                "description": {"type": "string"},
+                                                # 第三層升級為 optional nested object（教育顧問 §10.2）
+                                                # iPAS 考綱實際 3 層，第三層僅在結構複雜時填入
                                                 "subsections": {
                                                     "type": "array",
-                                                    "items": {"type": "string"},
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "name": {"type": "string"},
+                                                            "description": {"type": "string"},
+                                                        },
+                                                        "required": ["name"],
+                                                    },
                                                 },
                                             },
                                             "required": ["name"],
@@ -866,6 +881,29 @@ class UnifiedKnowledgeExtractionService:
                     "text": source_text, "freq": freq, "now": now,
                 })
                 total += 1
+
+                # Sprint 10 T89：第三層 subsection（optional）— 僅當 LLM 回傳結構化 object
+                # 簡單 section 不寫第三層（避免虛胖）；舊版 subsection 為 string 時保留作 description hint
+                subsections = section.get("subsections", [])
+                if subsections and isinstance(subsections, list):
+                    for sub_idx, sub in enumerate(subsections):
+                        # 只接受 dict 結構（含 name），string 形式由前面 description 邏輯處理過
+                        if not isinstance(sub, dict) or not sub.get("name"):
+                            continue
+                        sub_name = sub["name"]
+                        sub_desc = sub.get("description", "")
+                        sub_text = f"### {sub_name}\n\n{sub_desc}" if sub_desc else f"### {sub_name}"
+                        sub_id = uuid.uuid4()
+                        self.db.execute(text("""
+                            INSERT INTO knowledge_nodes (id, subject_id, parent_id, name, depth, sort_order,
+                                source_origin, source_text, exam_frequency, available_questions, created_at)
+                            VALUES (:id, :sid, :pid, :name, 3, :sort, 'ai_unified', :text, :freq, 0, :now)
+                        """), {
+                            "id": sub_id, "sid": sid, "pid": section_id,
+                            "name": sub_name, "sort": sub_idx,
+                            "text": sub_text, "freq": freq, "now": now,
+                        })
+                        total += 1
 
         # 遷移 mastery backup 到新節點
         self._restore_mastery_backup(sid)

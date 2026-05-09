@@ -21,7 +21,9 @@ import type { DomainAnalysis } from '@/types';
  * 前端自動平均分組（相容舊版 API）。
  */
 
-const MAX_GROUPS = 6;
+// Sprint 10 T90：放寬 6→8（對應 unified extraction 章節上限 4-8 動態）
+// 教育顧問：依學科實際結構動態，不被 UI 反推約束
+const MAX_GROUPS = 8;
 const EMERALD = '#10b981';
 const EMERALD_LIGHT = 'rgba(16, 185, 129, 0.2)';
 
