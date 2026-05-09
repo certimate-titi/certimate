@@ -33,15 +33,13 @@ def _handle_result(result: dict):
 
 
 def _record_view(db: Session, admin_id, endpoint: str) -> None:
-    db.add(
-        AdminAuditLog(
-            admin_id=admin_id,
-            action=AuditAction.COST_MONITOR_VIEWED,
-            target_type="cost_monitor",
-            details={"endpoint": endpoint},
-        )
-    )
-    db.commit()
+    """No-op — 純讀取的 admin endpoint 不寫 audit log，避免噪音蓋過真正的異動紀錄。
+
+    保留函式 stub 以維持現有 call site 不需改寫；audit log 只記 mutation
+    （budget 變更 / prompt 改版 / 用戶停權等）。
+    歷史 COST_MONITOR_VIEWED 紀錄保留不刪。
+    """
+    return
 
 
 # ---------------------------------------------------------------------------
