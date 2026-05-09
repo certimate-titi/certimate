@@ -375,10 +375,14 @@ class KnowledgeNavService:
     def get_node_scaffolds(self, node_id: str, user_id: str) -> dict:
         """取得節點對應的學習鷹架清單。
 
-        映射規則（優先順序）：
-        1. 若節點 source_page_number 介於某鷹架 [page_start, page_end]，命中。
-        2. 若無 page 資訊，退回以 resource_id + chapter_heading 子字串比對節點名稱。
+        Sprint 10 T85 重寫 — 走 scaffold_node_links N:M 表（embedding cosine）。
+        舊的 page 比對 / chapter_heading 子字串對應已棄用（命中率太低）。
         FREE 用戶 403（TASK-04）。
+
+        策略：
+        - 直接從 scaffold_node_links 取該 node 的所有 link，按 similarity 降冪
+        - 無命中時誠實回空陣列（教育原則：誤導 > 缺漏）
+        - 前端應顯示「此節點尚無對應鷹架」，不再 fallback 到 resource 全集
         """
         try:
             uid = uuid.UUID(user_id)
@@ -410,47 +414,39 @@ class KnowledgeNavService:
         if not node:
             return {"error": True, "status_code": 404, "message": "知識節點不存在"}
 
-        if not node.resource_id:
-            return {"error": False, "node_id": node_id, "scaffolds": []}
-
-        q = self.db.query(ResourceScaffold).filter(
-            ResourceScaffold.resource_id == node.resource_id
-        )
-
-        page = node.source_page_number
-        if page is not None:
-            hits = q.filter(
-                ResourceScaffold.page_start <= page,
-                ResourceScaffold.page_end >= page,
-            ).all()
-        else:
-            hits = q.filter(
-                ResourceScaffold.chapter_heading.isnot(None),
-                ResourceScaffold.chapter_heading != "",
-            ).all()
-            if node.name:
-                hits = [
-                    s for s in hits
-                    if s.chapter_heading and (
-                        s.chapter_heading in node.name or node.name in s.chapter_heading
-                    )
-                ]
+        # Sprint 10 T85：走 scaffold_node_links N:M 表
+        from sqlalchemy import text as sql_text
+        rows = self.db.execute(sql_text(
+            """
+            SELECT s.id, s.type, s.chapter_heading, s.content,
+                   s.page_start, s.page_end,
+                   s.user_response, s.responded_at, s.reference_answer,
+                   l.similarity
+            FROM scaffold_node_links l
+            JOIN resource_scaffolds s ON s.id = l.scaffold_id
+            WHERE l.node_id = :nid
+            ORDER BY l.similarity DESC
+            LIMIT 20
+            """
+        ), {"nid": str(nid)}).fetchall()
 
         return {
             "error": False,
             "node_id": node_id,
             "scaffolds": [
                 {
-                    "id": str(s.id),
-                    "type": s.type.value if hasattr(s.type, "value") else s.type,
-                    "chapter_heading": s.chapter_heading,
-                    "content": s.content,
-                    "page_start": s.page_start,
-                    "page_end": s.page_end,
-                    "user_response": s.user_response,
-                    "responded_at": s.responded_at.isoformat() if s.responded_at else None,
+                    "id": str(r[0]),
+                    "type": r[1].value if hasattr(r[1], "value") else r[1],
+                    "chapter_heading": r[2],
+                    "content": r[3],
+                    "page_start": r[4],
+                    "page_end": r[5],
+                    "user_response": r[6],
+                    "responded_at": r[7].isoformat() if r[7] else None,
+                    "reference_answer": r[8],
+                    "similarity": round(float(r[9]), 3),
                 }
-                for s in hits
+                for r in rows
             ],
         }
 

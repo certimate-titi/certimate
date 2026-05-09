@@ -340,6 +340,22 @@ class UnifiedKnowledgeExtractionService:
 
         self.db.commit()
 
+        # Sprint 10 T81：節點 embedding 寫入（讓 _link_scaffolds_to_nodes 能對應）
+        try:
+            self._embed_nodes_for_subject(sid)
+            self.db.commit()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("[統一萃取] node embedding 寫入失敗（non-fatal）: %s", exc)
+            self.db.rollback()
+
+        # Sprint 10 T82-D：unified extraction 重跑 → 全 subject scaffolds re-link
+        try:
+            self._relink_subject_scaffolds(sid)
+            self.db.commit()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("[統一萃取] scaffold-node relink 失敗（non-fatal）: %s", exc)
+            self.db.rollback()
+
         # Mindmap upgrade §3 — 萃取完成後重算每個節點的 support_strength
         try:
             from app.services.mindmap_strength_service import MindmapStrengthService
@@ -716,6 +732,67 @@ class UnifiedKnowledgeExtractionService:
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     # 寫入新節點
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    # ── Sprint 10 T81-T82：節點 embedding + scaffold relink ────────────────
+
+    def _embed_nodes_for_subject(self, sid: uuid.UUID) -> int:
+        """為該科目所有 embedding IS NULL 的節點寫入 voyage embedding。
+
+        對 (name + source_text) 算 embedding 寫入 knowledge_nodes.embedding。
+        失敗單筆只 log warning。
+        """
+        rows = self.db.execute(text(
+            "SELECT id, name, COALESCE(source_text, '') AS st "
+            "FROM knowledge_nodes WHERE subject_id = :sid AND embedding IS NULL"
+        ), {"sid": sid}).fetchall()
+        if not rows:
+            return 0
+        try:
+            from app.services.embedding_service import EmbeddingService
+            emb = EmbeddingService()
+            texts = [(r[1] + " " + r[2]).strip()[:1000] for r in rows]
+            vecs = emb.embed_texts(texts, input_type="document")
+            for r, vec in zip(rows, vecs):
+                self.db.execute(text(
+                    "UPDATE knowledge_nodes SET embedding = CAST(:v AS vector) WHERE id = :id"
+                ), {"v": str(list(vec)), "id": str(r[0])})
+            log.info("[節點 embedding] 寫入 %d 筆 subject=%s", len(rows), sid)
+            return len(rows)
+        except Exception as e:
+            log.warning("[節點 embedding] voyage 失敗（non-fatal）: %s", e)
+            return 0
+
+    def _relink_subject_scaffolds(self, sid: uuid.UUID) -> int:
+        """unified extraction 重跑 → 該 subject 所有 scaffold ↔ node 關聯重建。
+
+        策略：刪舊 link、批次算 cosine、寫新 link。重用 resource_parse_service
+        的 _link_scaffolds_to_nodes 邏輯（避免邏輯漂移）。
+        """
+        # 取該科目所有 scaffold（join resources.subject_id = sid）
+        from app.models.resource_scaffold import ResourceScaffold
+        from app.models.resource import Resource
+        scaffolds = self.db.execute(text(
+            """
+            SELECT s.id FROM resource_scaffolds s
+            JOIN resources r ON s.resource_id = r.id
+            WHERE r.subject_id = :sid AND s.embedding IS NOT NULL
+            """
+        ), {"sid": sid}).fetchall()
+        if not scaffolds:
+            return 0
+        # 刪除這些 scaffold 既有 link
+        self.db.execute(text(
+            "DELETE FROM scaffold_node_links WHERE scaffold_id = ANY(:ids)"
+        ), {"ids": [r[0] for r in scaffolds]})
+        # 重新算（重用 parse service 的函式）
+        from app.services.resource_parse_service import _link_scaffolds_to_nodes
+        scaffold_objs = self.db.query(ResourceScaffold).filter(
+            ResourceScaffold.id.in_([r[0] for r in scaffolds])
+        ).all()
+        n = _link_scaffolds_to_nodes(self.db, scaffold_objs, sid)
+        log.info("[scaffold relink] subject=%s scaffolds=%d links=%d",
+                 sid, len(scaffold_objs), n)
+        return n
 
     def _save_knowledge_tree(self, sid: uuid.UUID, tree: dict, question_keywords: dict) -> int:
         """寫入新的知識樹。回傳建立的節點數。"""

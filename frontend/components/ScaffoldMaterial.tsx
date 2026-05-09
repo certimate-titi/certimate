@@ -65,14 +65,11 @@ export default function ScaffoldMaterial({ nodeId, fallbackResourceId, isPro, on
       else setError(e.message || '載入教材失敗');
     };
 
-    // 先試 node 層級；空結果且有 fallbackResourceId 時退回資源層級（Spec 11）
+    // Sprint 10 T86：教育顧問鐵律「誤導 > 缺漏」— 節點無對應鷹架時不再 fallback
+    // resource 全集（會顯示無關內容）。寧顯示空態也不誤導。
+    // 例外：完全沒選節點（nodeId=null）時才用 resource 層級顯示總覽。
     const fetchPromise = nodeId
-      ? knowledgeService.getNodeScaffolds(nodeId).then((res) => {
-          if ((res.scaffolds?.length || 0) === 0 && fallbackResourceId) {
-            return knowledgeService.getResourceScaffolds(fallbackResourceId);
-          }
-          return res;
-        })
+      ? knowledgeService.getNodeScaffolds(nodeId)
       : knowledgeService.getResourceScaffolds(fallbackResourceId!);
 
     fetchPromise
