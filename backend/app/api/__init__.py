@@ -49,6 +49,7 @@ from app.api.exam_import_monitoring import router as exam_import_monitoring_rout
 from app.api.resource_parse import router as resource_parse_router
 from app.api.orphan_scaffold import router as orphan_scaffold_router
 from app.api.orphan_coach import router as orphan_coach_router
+from app.api.completion import router as completion_router
 
 router = APIRouter()
 
@@ -97,3 +98,4 @@ router.include_router(email_preferences_router, tags=["email"])
 router.include_router(retention_admin_router, tags=["retention"])
 router.include_router(orphan_scaffold_router, tags=["orphan-scaffold"])
 router.include_router(orphan_coach_router, tags=["orphan-coach"])
+router.include_router(completion_router, tags=["completion"])

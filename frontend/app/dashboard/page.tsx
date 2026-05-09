@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Youtube, FileText, Clock, TrendingUp, BookOpen, AlertCircle, Sparkles, CheckCircle2, XCircle, RefreshCw, MessageSquare, Loader2 } from 'lucide-react';
-import { dashboardService, documentService, subjectService, resourceParseService } from '@/lib/api/services';
+import { dashboardService, documentService, subjectService, resourceParseService, completionService } from '@/lib/api/services';
 import ScheduleWeekCard from '@/components/ScheduleWeekCard';
 import type { GetDashboardResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +27,7 @@ import CompletionProgressBar from '@/components/completion/CompletionProgressBar
 import BadgeShelf from '@/components/completion/BadgeShelf';
 import MarginalUtilityNudge from '@/components/completion/MarginalUtilityNudge';
 import { calcCompletion, type CompletionNode } from '@/lib/completion-calc';
+import type { SubjectCompletionResponse } from '@/types/api';
 
 /**
  * 使用者主控台首頁。
@@ -96,6 +97,23 @@ export default function DashboardPage() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   // L-quota: 上傳配額守門（disable button when blocked）
   const uploadGuard = useQuotaGuard('monthly_uploads');
+
+  // #6 Completion Framework — 後端加權進度
+  const [completion, setCompletion] = useState<SubjectCompletionResponse | null>(null);
+  const [completionLoading, setCompletionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !activeSubjectId) {
+      setCompletion(null);
+      return;
+    }
+    setCompletionLoading(true);
+    completionService
+      .getCompletion(activeSubjectId)
+      .then(setCompletion)
+      .catch(() => setCompletion(null))
+      .finally(() => setCompletionLoading(false));
+  }, [isAuthenticated, activeSubjectId]);
 
   // T63 (Sprint 8 L30)：信心度校準趨勢（Feature 20）
   const [calibration, setCalibration] = useState<{
@@ -798,17 +816,35 @@ export default function DashboardPage() {
 
             {/* ── 完成度框架（#6 Completion Framework） ── */}
             {(() => {
-              // TODO: backend wire-up — 後端提供 /api/v1/subjects/{id}/completion 後，
-              //       改為從 API 取得 CompletionNode[]，並移除 mock 資料。
-              const completionNodes: CompletionNode[] = (data.domainStrengths || []).map(
-                (d: { domain?: string; score?: number; name?: string }) => ({
-                  id: d.domain || d.name || 'unknown',
-                  subject_id: activeSubjectId,
-                  mastery_rate: Math.round((d.score || 0) * 100),
-                  frequency: 'medium' as const,
-                })
-              );
-              const result = calcCompletion(completionNodes);
+              // 優先使用後端 completion API；後端未回應時 fallback 到 client-side mock
+              let percent: number;
+              let sweetSpotReached: boolean;
+              let showMarginalUtilityNudge: boolean;
+              let unlockedBadges: string[];
+
+              if (completion) {
+                // 後端真實計算（B.2/B.3/B.4）
+                percent = completion.sweet_spot_progress;
+                sweetSpotReached = percent >= 85;
+                showMarginalUtilityNudge = completion.should_show_marginal_utility_nudge;
+                unlockedBadges = completion.badges_unlocked;
+              } else {
+                // fallback：client-side mock（舊邏輯）
+                const completionNodes: CompletionNode[] = (data.domainStrengths || []).map(
+                  (d: { domain?: string; score?: number; name?: string }) => ({
+                    id: d.domain || d.name || 'unknown',
+                    subject_id: activeSubjectId,
+                    mastery_rate: Math.round((d.score || 0) * 100),
+                    frequency: 'medium' as const,
+                  })
+                );
+                const result = calcCompletion(completionNodes);
+                percent = result.percent;
+                sweetSpotReached = result.sweetSpotReached;
+                showMarginalUtilityNudge = result.showMarginalUtilityNudge;
+                unlockedBadges = result.unlockedBadges;
+              }
+
               return (
                 <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
                   <div className="flex items-center justify-between mb-4">
@@ -821,36 +857,38 @@ export default function DashboardPage() {
                     </Link>
                   </div>
 
+                  {/* 載入中 skeleton */}
+                  {completionLoading && (
+                    <div className="h-6 bg-slate-100 rounded animate-pulse mb-4" />
+                  )}
+
                   {/* 進度條 */}
-                  <div className="mb-4">
-                    <CompletionProgressBar
-                      percent={result.percent}
-                      sweetSpotReached={result.sweetSpotReached}
-                      label={subjects.find(s => s.id === activeSubjectId)?.subjectName}
-                    />
-                  </div>
+                  {!completionLoading && (
+                    <div className="mb-4">
+                      <CompletionProgressBar
+                        percent={percent}
+                        sweetSpotReached={sweetSpotReached}
+                        label={subjects.find(s => s.id === activeSubjectId)?.subjectName}
+                      />
+                    </div>
+                  )}
 
                   {/* 邊際效益遞減提示（B.4） */}
-                  {result.showMarginalUtilityNudge && (
+                  {!completionLoading && showMarginalUtilityNudge && (
                     <div className="mb-4">
                       <MarginalUtilityNudge
-                        percent={result.percent}
-                        show={result.showMarginalUtilityNudge}
+                        percent={percent}
+                        show={showMarginalUtilityNudge}
                       />
                     </div>
                   )}
 
                   {/* 徽章列 */}
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <p className="text-xs text-slate-500 mb-3">里程碑徽章</p>
-                    <BadgeShelf unlockedBadges={result.unlockedBadges} />
-                  </div>
-
-                  {/* 孤立節點提示（B.1 解鎖語言） */}
-                  {result.orphanCount > 0 && (
-                    <p className="text-[11px] text-slate-400 mt-3">
-                      📍 {result.orphanCount} 個關卡尚待解鎖（上傳對應教材後即可開始練習）
-                    </p>
+                  {!completionLoading && (
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                      <p className="text-xs text-slate-500 mb-3">里程碑徽章</p>
+                      <BadgeShelf unlockedBadges={unlockedBadges as any} />
+                    </div>
                   )}
                 </section>
               );

@@ -1,22 +1,48 @@
 /**
  * @file 路由 `/help/coverage-explained` — 知識版圖解說頁（B.1 文案改寫）
  *
- * 標題：「你已解鎖 N% 的知識版圖」（N 用 mock 值 42）
+ * 標題：「你已解鎖 N% 的知識版圖」
  * 文案語言：解鎖框架，非警告框架
  *
- * TODO: backend wire-up — N 值目前為 mock 42，
- *       後端提供 /api/v1/subjects/{id}/completion 後改為動態值。
+ * Wire-up：從 localStorage 讀取 activeSubjectId 後呼叫後端
+ *   GET /api/v1/subjects/{id}/completion
+ * 若 API 未回應（未登入或無科目），fallback 顯示 mock 42%。
  */
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BookOpen, Target, TrendingUp, Zap, Award, Map } from 'lucide-react';
 import CompletionProgressBar from '@/components/completion/CompletionProgressBar';
+import { completionService } from '@/lib/api/services';
+import type { SubjectCompletionResponse } from '@/types/api';
 
-// TODO: backend wire-up — mock 完成度，待接真實 API
-const MOCK_PERCENT = 42;
+// fallback mock 完成度（未登入 / API 失敗時顯示）
+const FALLBACK_PERCENT = 42;
 
 export default function CoverageExplainedPage() {
+  const [completion, setCompletion] = useState<SubjectCompletionResponse | null>(null);
+  const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    const subjectId =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('certimate_active_subject_id')
+        : null;
+
+    if (!subjectId) return;
+
+    setFetching(true);
+    completionService
+      .getCompletion(subjectId)
+      .then(setCompletion)
+      .catch(() => setCompletion(null))
+      .finally(() => setFetching(false));
+  }, []);
+
+  const percent = completion ? completion.sweet_spot_progress : FALLBACK_PERCENT;
+  const isMock = completion === null && !fetching;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       {/* 麵包屑 */}
@@ -28,7 +54,7 @@ export default function CoverageExplainedPage() {
 
       {/* 主標題（B.1 改寫：解鎖語言） */}
       <h1 className="text-2xl font-bold text-slate-900 mb-2">
-        你已解鎖 {MOCK_PERCENT}% 的知識版圖
+        你已解鎖 {percent}% 的知識版圖
       </h1>
       <p className="text-sm text-slate-500 mb-6">
         每練習一個節點，你的版圖就會擴大。以下說明系統如何計算你的進度。
@@ -37,15 +63,25 @@ export default function CoverageExplainedPage() {
       {/* 進度條展示 */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-8">
         <p className="text-xs text-slate-500 mb-4">你目前的知識解鎖進度</p>
-        <CompletionProgressBar
-          percent={MOCK_PERCENT}
-          sweetSpotReached={MOCK_PERCENT >= 85}
-          label="當前版圖解鎖率"
-        />
-        <p className="text-[11px] text-slate-400 mt-3">
-          {/* TODO: backend wire-up */}
-          此數值為示意，登入後顯示你的實際進度。
-        </p>
+        {fetching ? (
+          <div className="h-6 bg-slate-100 rounded animate-pulse" />
+        ) : (
+          <CompletionProgressBar
+            percent={percent}
+            sweetSpotReached={percent >= 85}
+            label="當前版圖解鎖率"
+          />
+        )}
+        {isMock && (
+          <p className="text-[11px] text-slate-400 mt-3">
+            此數值為示意，登入並選擇科目後顯示你的實際進度。
+          </p>
+        )}
+        {completion && (
+          <p className="text-[11px] text-slate-400 mt-3">
+            全覆蓋進度：{completion.full_coverage_progress}%　衝刺模式：{completion.sprint_mode_progress}%
+          </p>
+        )}
       </div>
 
       {/* 說明清單（B.1 解鎖語言） */}

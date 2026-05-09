@@ -1462,3 +1462,9 @@ from .orphan_scaffold.readmodel_then import response_assertions  # noqa: F401
 from .orphan_coach.aggregate_given import orphan_nodes  # noqa: F401
 from .orphan_coach.commands import api_calls as orphan_coach_api  # noqa: F401
 from .orphan_coach.readmodel_then import response_body as orphan_coach_response  # noqa: F401
+
+# Completion Framework (#6 完成度框架) — B.2/B.3/B.4
+from .completion.aggregate_given import setup as completion_given  # noqa: F401
+from .completion.commands import api_calls as completion_api  # noqa: F401
+from .completion.readmodel_then import assertions as completion_assertions  # noqa: F401
+
