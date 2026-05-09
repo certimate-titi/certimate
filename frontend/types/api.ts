@@ -616,3 +616,35 @@ export interface OrphanCoachConversation {
 export interface OrphanCoachExistingResponse {
   existing_conversation_id: string | null;
 }
+
+// ===========================
+// Completion Framework API
+// ===========================
+
+/** 下一個未解鎖里程碑 */
+export interface CompletionNextMilestone {
+  code: string;
+  remaining_pct: number | null;
+}
+
+/**
+ * GET /subjects/{subject_id}/completion → 200
+ * 科目完成度框架（B.2/B.3/B.4）
+ */
+export interface SubjectCompletionResponse {
+  subject_id: string;
+  /** 甜蜜點進度（0-100），主要顯示 */
+  sweet_spot_progress: number;
+  /** 全覆蓋進度（0-100） */
+  full_coverage_progress: number;
+  /** 衝刺模式進度（0-100，前 30% 高頻節點） */
+  sprint_mode_progress: number;
+  /** 已解鎖的徽章代碼列表 */
+  badges_unlocked: string[];
+  /** 下一個未解鎖里程碑，null 代表全部解鎖 */
+  next_milestone: CompletionNextMilestone | null;
+  /** 是否觸發邊際效益遞減提示（B.4.1） */
+  should_show_marginal_utility_nudge: boolean;
+  /** 計算時間（ISO datetime） */
+  computed_at: string;
+}

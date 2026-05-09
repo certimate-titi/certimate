@@ -2326,3 +2326,25 @@ export const orphanCoachService = {
     return apiClient.get(`/orphan-coach/conversations/${conversationId}`);
   },
 };
+
+// ──────────────────────────────────────────────────────────────────────────
+// Completion Framework Service
+// GET /subjects/{subject_id}/completion
+// ──────────────────────────────────────────────────────────────────────────
+
+import type { SubjectCompletionResponse } from '@/types/api';
+
+export const completionService = {
+  /**
+   * 查詢科目完成度框架資料。
+   *
+   * 回傳三種進度（sweet_spot / full_coverage / sprint_mode）、
+   * 已解鎖徽章、下一個里程碑、邊際效益遞減 nudge 是否觸發。
+   *
+   * @param subjectId - 科目 UUID
+   * @returns SubjectCompletionResponse
+   */
+  async getCompletion(subjectId: string): Promise<SubjectCompletionResponse> {
+    return apiClient.get(`/subjects/${subjectId}/completion`);
+  },
+};
