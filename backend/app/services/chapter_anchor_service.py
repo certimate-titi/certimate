@@ -42,7 +42,7 @@ settings = get_settings()
 MAX_SAMPLE_QUESTIONS = 8
 ADVANCE_ORGANIZER_MAX_CHARS = 80
 TEMPLATE_CODE = "K-RE-01"
-LLM_MAX_TOKENS = 2000  # 含 Gemini reasoning tokens；實際 visible output ~80 字
+LLM_MAX_TOKENS = 4000  # 含 Gemini reasoning tokens；某些章節 reasoning 較長需更大 budget
 
 # Gemini 2.5 Pro 估算（輸入：約 400 tokens，輸出：約 50 tokens）
 APPROX_INPUT_TOKENS_PER_CHAPTER = 400
