@@ -1954,3 +1954,56 @@ def estimate_chapter_anchors_cost(
         status_code = result.get("status_code", 400)
         raise HTTPException(status_code=status_code, detail={"message": result["message"]})
     return result
+
+
+# ── List K-RE-01 chapter anchors for a subject (debug)─────
+
+@router.get("/scaffold-debug/k-re-01/{subject_id}")
+def list_k_re_01_scaffolds(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """SUPER_ADMIN：列指定 subject 的 K-RE-01 章節級定錨 scaffolds（含內容預覽）。"""
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType
+    from app.models.scaffold_node_link import ScaffoldNodeLink
+    from app.models.knowledge_node import KnowledgeNode
+
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    try:
+        sid = _uuid.UUID(subject_id)
+    except ValueError:
+        return {"error": "invalid subject_id"}
+
+    scaffolds = (
+        db.query(ResourceScaffold)
+        .join(ScaffoldNodeLink, ScaffoldNodeLink.scaffold_id == ResourceScaffold.id)
+        .join(KnowledgeNode, KnowledgeNode.id == ScaffoldNodeLink.node_id)
+        .filter(
+            KnowledgeNode.subject_id == sid,
+            ResourceScaffold.template_code == "K-RE-01",
+            ResourceScaffold.type == ResourceScaffoldType.ADVANCE_ORGANIZER.value,
+        )
+        .distinct()
+        .all()
+    )
+
+    out = []
+    for s in scaffolds:
+        link_count = db.query(ScaffoldNodeLink).filter(
+            ScaffoldNodeLink.scaffold_id == s.id
+        ).count()
+        out.append({
+            "scaffold_id": str(s.id),
+            "chapter_heading": s.chapter_heading,
+            "content": s.content,
+            "char_count": len(s.content or ""),
+            "links": link_count,
+        })
+
+    return {"subject_id": subject_id, "k_re_01_count": len(scaffolds), "scaffolds": out}
