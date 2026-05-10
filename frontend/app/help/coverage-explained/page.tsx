@@ -10,7 +10,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { BookOpen, Target, TrendingUp, Zap, Award, Map } from 'lucide-react';
 import CompletionProgressBar from '@/components/completion/CompletionProgressBar';
@@ -20,9 +20,31 @@ import type { SubjectCompletionResponse } from '@/types/api';
 // fallback mock 完成度（未登入 / API 失敗時顯示）
 const FALLBACK_PERCENT = 42;
 
+/** 假 UUID（00000000-0000-0000-0000-000000000000）偵測 */
+const FAKE_UUID_RE = /^0{8}-0{4}-0{4}-0{4}-0{12}$/;
+
 export default function CoverageExplainedPage() {
   const [completion, setCompletion] = useState<SubjectCompletionResponse | null>(null);
   const [fetching, setFetching] = useState(false);
+  // 'none'：無科目 / 'not_found'：API 404 / 'server_error'：API 5xx / null：正常
+  const [fetchError, setFetchError] = useState<'none' | 'not_found' | 'server_error' | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const doFetch = useCallback((subjectId: string) => {
+    setFetching(true);
+    setFetchError(null);
+    completionService
+      .getCompletion(subjectId)
+      .then((res) => { setCompletion(res); setFetchError(null); })
+      .catch((err: any) => {
+        setCompletion(null);
+        const status = err?.response?.status ?? err?.status;
+        if (status === 404) setFetchError('not_found');
+        else if (status >= 500) setFetchError('server_error');
+        // 其他錯誤 fallback 到 mock，不設 fetchError
+      })
+      .finally(() => setFetching(false));
+  }, []);
 
   useEffect(() => {
     const subjectId =
@@ -30,18 +52,17 @@ export default function CoverageExplainedPage() {
         ? localStorage.getItem('certimate_active_subject_id')
         : null;
 
-    if (!subjectId) return;
+    // 守衛：無 subjectId 或假 UUID → 不發 API
+    if (!subjectId || FAKE_UUID_RE.test(subjectId)) {
+      setFetchError('none');
+      return;
+    }
 
-    setFetching(true);
-    completionService
-      .getCompletion(subjectId)
-      .then(setCompletion)
-      .catch(() => setCompletion(null))
-      .finally(() => setFetching(false));
-  }, []);
+    doFetch(subjectId);
+  }, [doFetch, retryKey]);
 
   const percent = completion ? completion.sweet_spot_progress : FALLBACK_PERCENT;
-  const isMock = completion === null && !fetching;
+  const isMock = completion === null && !fetching && !fetchError;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
@@ -60,18 +81,61 @@ export default function CoverageExplainedPage() {
         每練習一個節點，你的版圖就會擴大。以下說明系統如何計算你的進度。
       </p>
 
-      {/* 進度條展示 */}
+      {/* 進度條 / 提示卡區域 */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-8">
         <p className="text-xs text-slate-500 mb-4">你目前的知識解鎖進度</p>
-        {fetching ? (
+
+        {/* 載入中 */}
+        {fetching && (
           <div className="h-6 bg-slate-100 rounded animate-pulse" />
-        ) : (
+        )}
+
+        {/* 無科目提示卡 */}
+        {!fetching && fetchError === 'none' && (
+          <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+            <p className="text-sm font-medium text-slate-700 mb-1">選擇一個科目以查看你的解鎖進度</p>
+            <p className="text-xs text-slate-500 mb-3">登入後前往帳號或 Onboarding 頁選擇備考科目</p>
+            <Link
+              href="/onboarding"
+              className="inline-block px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-full transition-colors"
+            >
+              選擇科目 →
+            </Link>
+          </div>
+        )}
+
+        {/* 5xx 錯誤 + 重試 */}
+        {!fetching && fetchError === 'server_error' && (
+          <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+            <p className="text-xs text-slate-500 mb-2">進度載入失敗，請稍後再試</p>
+            <button
+              onClick={() => setRetryKey(k => k + 1)}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 underline"
+            >
+              重試
+            </button>
+          </div>
+        )}
+
+        {/* 404 提示卡 */}
+        {!fetching && fetchError === 'not_found' && (
+          <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+            <p className="text-sm text-slate-600 mb-2">找不到此科目的進度資料</p>
+            <Link href="/account" className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 underline">
+              前往帳號設定 →
+            </Link>
+          </div>
+        )}
+
+        {/* 正常顯示進度條 */}
+        {!fetching && !fetchError && (
           <CompletionProgressBar
             percent={percent}
             sweetSpotReached={percent >= 85}
             label="當前版圖解鎖率"
           />
         )}
+
         {isMock && (
           <p className="text-[11px] text-slate-400 mt-3">
             此數值為示意，登入並選擇科目後顯示你的實際進度。
