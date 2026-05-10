@@ -84,8 +84,8 @@ function KnowledgeBasePageInner() {
   const isMobile = useIsMobile();
   const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
   const [activeNodeTab, setActiveNodeTab] = useState<NodeDetailTab>(() => {
-    // Spec 11: 「解析內容」連結帶 tab=material 時應預設開教材分頁
-    const valid: NodeDetailTab[] = ['info', 'material', 'notebook', 'coach'];
+    // 鷹架已整合回 info tab，tab=material graceful fallback 為 info
+    const valid: NodeDetailTab[] = ['info', 'notebook', 'coach'];
     return (valid.includes(initialTab as NodeDetailTab) ? initialTab : 'info') as NodeDetailTab;
   });
   // Orphan AI 教練：切換蘇格拉底對話面板
@@ -1041,6 +1041,7 @@ function KnowledgeBasePageInner() {
                       <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
                     </div>
                   )}
+                  {/* ── 概念說明 ── */}
                   {(selectedNodeDetail.citationText || selectedNodeDetail.sourceText) && !(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '').includes('無原文摘要') ? (
                     <div className="prose prose-slate prose-xs max-w-none">
                       <div className="whitespace-pre-line text-[11px] text-slate-600 leading-relaxed">
@@ -1061,21 +1062,25 @@ function KnowledgeBasePageInner() {
                     </div>
                   )}
                 </div>
+                {/* ── 學習鷹架（整合於節點資訊，消除分散注意力） ── */}
+                <div className="border-t border-slate-100">
+                  <div className="px-3 pt-2 pb-1 flex items-center gap-1.5">
+                    <BookOpen className="h-3 w-3 text-emerald-500" />
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">學習鷹架</span>
+                  </div>
+                  <ScaffoldMaterial
+                    nodeId={nodeId}
+                    fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
+                    isPro={isProPlus || subscriptionTier === 'PRO_199'}
+                    onUpgradeClick={() => router.push('/account')}
+                  />
+                </div>
               </div>
             ) : (
               <div className="px-3 py-4 text-center text-slate-400 text-xs">
                 <BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />
                 點擊圖譜節點查看說明
               </div>
-            );
-
-            const materialSlot = (
-              <ScaffoldMaterial
-                nodeId={nodeId}
-                fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
-                isPro={isProPlus || subscriptionTier === 'PRO_199'}
-                onUpgradeClick={() => router.push('/account')}
-              />
             );
 
             const notebookSlot = (
@@ -1187,7 +1192,6 @@ function KnowledgeBasePageInner() {
                   activeTab={activeNodeTab}
                   onTabChange={setActiveNodeTab}
                   infoSlot={infoSlot}
-                  materialSlot={materialSlot}
                   notebookSlot={notebookSlot}
                   coachSlot={coachSlot}
                 />
