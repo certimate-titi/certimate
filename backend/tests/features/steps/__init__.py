@@ -1474,3 +1474,8 @@ from .advance_organizer.aggregate_given import prompt_template_setup  # noqa: F4
 from .advance_organizer.commands import advance_organizer_actions  # noqa: F401
 from .advance_organizer.aggregate_then import assertions as advance_organizer_assertions  # noqa: F401
 
+# Chapter Anchor K-RE-01 — Feature 41b（逆向工程章節級讀前定錨）
+from .chapter_anchor.aggregate_given import setup as chapter_anchor_given  # noqa: F401
+from .chapter_anchor.commands import api_calls as chapter_anchor_api  # noqa: F401
+from .chapter_anchor.aggregate_then import assertions as chapter_anchor_assertions  # noqa: F401
+

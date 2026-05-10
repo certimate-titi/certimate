@@ -1858,3 +1858,99 @@ def list_resources_by_subject_debug(
         "resource_count": len(resource_ids),
         "resources": out,
     }
+
+
+# ── K-RE-01 章節級讀前定錨生成（逆向工程科目）────────────────────────────────
+
+@router.post(
+    "/scaffold-debug/generate-chapter-anchors/{subject_id}",
+    include_in_schema=True,
+    summary="K-RE-01 章節級讀前定錨生成（逆向工程科目，SUPER_ADMIN 限定）",
+    tags=["admin"],
+)
+def generate_chapter_anchors(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """對純逆向工程科目（無教材但有節點 + 考古題）批量生成章節級 advance_organizer。
+
+    設計原理（Ausubel Subsumption Theory）：
+    - 1 個 depth=1 章節 → 1 個 advance_organizer
+    - 80 字 hard limit，日常情境優先
+    - 結合章節底下考古題群組反推主題
+    - scaffold 不掛 resource_id（純逆向工程，無教材）
+
+    Idempotent：若章節已有 template_code='K-RE-01' + type=advance_organizer 則跳過。
+    SUPER_ADMIN 限定。
+    """
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+
+    # 鑑權
+    try:
+        uid = _uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"message": "user_id 格式不合法"})
+
+    user = db.query(User).filter_by(id=uid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    # 驗 subject_id 格式
+    try:
+        _uuid.UUID(subject_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"message": "subject_id 格式不合法"})
+
+    from app.services.chapter_anchor_service import ChapterAnchorService
+    svc = ChapterAnchorService(db)
+    result = svc.generate_for_subject(subject_id)
+
+    if result.get("error"):
+        status_code = result.get("status_code", 400)
+        raise HTTPException(status_code=status_code, detail={"message": result["message"]})
+    return result
+
+
+@router.get(
+    "/scaffold-debug/estimate-chapter-anchors/{subject_id}",
+    include_in_schema=True,
+    summary="K-RE-01 估算 token 成本（不打 LLM，SUPER_ADMIN 限定）",
+    tags=["admin"],
+)
+def estimate_chapter_anchors_cost(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Dry-run：估算對指定 subject 跑 K-RE-01 的 token 成本，含範例 prompt。
+
+    不呼叫 LLM，只計算章節數 × 平均 token 數。
+    SUPER_ADMIN 限定。
+    """
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+
+    try:
+        uid = _uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"message": "user_id 格式不合法"})
+
+    user = db.query(User).filter_by(id=uid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    try:
+        _uuid.UUID(subject_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"message": "subject_id 格式不合法"})
+
+    from app.services.chapter_anchor_service import ChapterAnchorService
+    svc = ChapterAnchorService(db)
+    result = svc.estimate_cost(subject_id)
+
+    if result.get("error"):
+        status_code = result.get("status_code", 400)
+        raise HTTPException(status_code=status_code, detail={"message": result["message"]})
+    return result

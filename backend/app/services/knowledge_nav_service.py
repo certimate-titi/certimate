@@ -415,13 +415,14 @@ class KnowledgeNavService:
             return {"error": True, "status_code": 404, "message": "知識節點不存在"}
 
         # Sprint 10 T85：走 scaffold_node_links N:M 表
+        # K-RE-01（2026-05-10）加入 template_code 供前端 advance_organizer 識別
         from sqlalchemy import text as sql_text
         rows = self.db.execute(sql_text(
             """
             SELECT s.id, s.type, s.chapter_heading, s.content,
                    s.page_start, s.page_end,
                    s.user_response, s.responded_at, s.reference_answer,
-                   l.similarity
+                   l.similarity, s.template_code
             FROM scaffold_node_links l
             JOIN resource_scaffolds s ON s.id = l.scaffold_id
             WHERE l.node_id = :nid
@@ -445,6 +446,7 @@ class KnowledgeNavService:
                     "responded_at": r[7].isoformat() if r[7] else None,
                     "reference_answer": r[8],
                     "similarity": round(float(r[9]), 3),
+                    "template_code": r[10],
                 }
                 for r in rows
             ],
