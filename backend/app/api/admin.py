@@ -1643,18 +1643,44 @@ def regenerate_advance_organizer(
     if not resource:
         raise HTTPException(status_code=404, detail={"message": "找不到資源"})
 
-    # 3) 已有 advance_organizer 則略過（防重複）
-    existing = (
+    # 3) 已有 advance_organizer：若未 link 到 nodes 則僅補 link，否則略過
+    from app.models.scaffold_node_link import ScaffoldNodeLink
+    existing_aos = (
         db.query(ResourceScaffold)
         .filter_by(resource_id=rid, type=ResourceScaffoldType.ADVANCE_ORGANIZER.value)
-        .first()
+        .all()
     )
-    if existing:
+    if existing_aos:
+        ao_ids = [a.id for a in existing_aos]
+        existing_links = db.query(ScaffoldNodeLink).filter(
+            ScaffoldNodeLink.scaffold_id.in_(ao_ids)
+        ).count()
+        if existing_links == 0 and resource.subject_id:
+            try:
+                if not all(a.embedding is not None for a in existing_aos):
+                    _embed_scaffolds(existing_aos)
+                    db.commit()
+            except Exception as exc:
+                _log.warning("[regenerate-anchor] re-embed failed: %s", exc)
+            from app.services.resource_parse_service import _link_scaffolds_to_nodes
+            try:
+                links_created = _link_scaffolds_to_nodes(db, existing_aos, resource.subject_id)
+                db.commit()
+            except Exception as exc:
+                _log.warning("[regenerate-anchor] re-link failed: %s", exc)
+                links_created = 0
+            return {
+                "resource_id": resource_id,
+                "status": "relinked_existing",
+                "advance_organizers_existing": len(existing_aos),
+                "scaffold_node_links_created": links_created,
+            }
         return {
             "resource_id": resource_id,
             "status": "skipped",
-            "reason": "advance_organizer already exists",
-            "scaffold_id": str(existing.id),
+            "reason": "advance_organizer already exists and linked",
+            "scaffold_count": len(existing_aos),
+            "existing_links": existing_links,
         }
 
     # 4) 呼叫 LLM（_call_gemini_with_retry 已有 retry + fallback）
@@ -1719,6 +1745,19 @@ def regenerate_advance_organizer(
     except Exception as exc:
         _log.warning(
             "[scaffold-debug/regenerate-anchor] embedding failed resource=%s (non-fatal): %s",
+            resource_id, exc,
+        )
+
+    # 7b) link scaffolds to nodes（沒這步前端定錨 tab 為 0）
+    links_created = 0
+    try:
+        from app.services.resource_parse_service import _link_scaffolds_to_nodes
+        if resource.subject_id:
+            links_created = _link_scaffolds_to_nodes(db, ao_rows, resource.subject_id)
+            db.commit()
+    except Exception as exc:
+        _log.warning(
+            "[scaffold-debug/regenerate-anchor] link-to-nodes failed resource=%s (non-fatal): %s",
             resource_id, exc,
         )
 
