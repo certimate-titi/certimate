@@ -1777,12 +1777,23 @@ def list_resources_by_subject_debug(
     except ValueError:
         return {"error": "invalid subject_id"}
 
-    # 透過 knowledge_nodes 關聯找出該 subject 的 resources
-    resource_ids_q = db.query(KnowledgeNode.resource_id).filter(
-        KnowledgeNode.subject_id == sid,
-        KnowledgeNode.resource_id.isnot(None),
-    ).distinct()
-    resource_ids = [row[0] for row in resource_ids_q.all() if row[0]]
+    # 透過 knowledge_nodes.resource_id 找；fork subject 的 nodes 多半 resource_id=NULL
+    # → fallback 透過 scaffold_node_links → ResourceScaffold.resource_id
+    from app.models.scaffold_node_link import ScaffoldNodeLink
+
+    rids_via_nodes = {
+        row[0] for row in db.query(KnowledgeNode.resource_id).filter(
+            KnowledgeNode.subject_id == sid,
+            KnowledgeNode.resource_id.isnot(None),
+        ).all() if row[0]
+    }
+    rids_via_links = {
+        row[0] for row in db.query(ResourceScaffold.resource_id)
+        .join(ScaffoldNodeLink, ScaffoldNodeLink.scaffold_id == ResourceScaffold.id)
+        .join(KnowledgeNode, KnowledgeNode.id == ScaffoldNodeLink.node_id)
+        .filter(KnowledgeNode.subject_id == sid).distinct().all() if row[0]
+    }
+    resource_ids = list(rids_via_nodes | rids_via_links)
 
     out = []
     for rid in resource_ids:
