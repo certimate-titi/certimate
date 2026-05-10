@@ -42,7 +42,7 @@ settings = get_settings()
 MAX_SAMPLE_QUESTIONS = 8
 ADVANCE_ORGANIZER_MAX_CHARS = 80
 TEMPLATE_CODE = "K-RE-01"
-LLM_MAX_TOKENS = 200
+LLM_MAX_TOKENS = 2000  # 含 Gemini reasoning tokens；實際 visible output ~80 字
 
 # Gemini 2.5 Pro 估算（輸入：約 400 tokens，輸出：約 50 tokens）
 APPROX_INPUT_TOKENS_PER_CHAPTER = 400
@@ -393,23 +393,32 @@ class ChapterAnchorService(BaseService):
                     "system_instruction": system_prompt,
                     "max_output_tokens": LLM_MAX_TOKENS,
                     "temperature": 0.7,
+                    "response_mime_type": "application/json",
                 },
             )
             raw = (response.text or "").strip()
 
-            # 剝除 markdown fence
+            if not raw:
+                try:
+                    cand = response.candidates[0] if response.candidates else None
+                    fr = getattr(cand, "finish_reason", "?") if cand else "?"
+                    log.warning("K-RE-01 LLM 回傳空 raw text; finish_reason=%s", fr)
+                except Exception:
+                    log.warning("K-RE-01 LLM 回傳空 raw text (no candidates)")
+                return None
+
             if raw.startswith("```"):
                 raw = re.sub(r"```(?:json)?\s*", "", raw).strip().rstrip("`").strip()
 
             parsed = json.loads(raw)
             content = parsed.get("advance_organizer", "")
             if not content:
-                log.warning("K-RE-01 LLM 回傳空 advance_organizer")
+                log.warning("K-RE-01 LLM 回傳空 advance_organizer; raw=%r", raw[:200])
                 return None
             return content
 
         except json.JSONDecodeError as e:
-            log.warning("K-RE-01 LLM 回傳非合法 JSON: %s", e)
+            log.warning("K-RE-01 LLM 回傳非合法 JSON: %s; raw=%r", e, locals().get("raw", "")[:200])
             return None
         except Exception as e:
             log.error("K-RE-01 LLM 呼叫失敗: %s", e)
