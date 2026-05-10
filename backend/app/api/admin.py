@@ -1749,3 +1749,62 @@ def regenerate_advance_organizer(
             "note": "input $1.25/1M + output $10/1M tokens",
         },
     }
+
+
+# ── Admin debug: list resources + scaffold-type counts by subject ───────────
+
+@router.get("/scaffold-debug/by-subject/{subject_id}")
+def list_resources_by_subject_debug(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """SUPER_ADMIN：列指定 subject 的 resources 與每 type scaffold 計數，用於診斷既有 fork 缺哪類 scaffold。"""
+    import uuid as _uuid
+    from collections import Counter
+    from sqlalchemy import func
+    from app.models.user import User, UserRole
+    from app.models.knowledge_node import KnowledgeNode
+    from app.models.resource_scaffold import ResourceScaffold
+    from app.models.resource import Resource
+
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    try:
+        sid = _uuid.UUID(subject_id)
+    except ValueError:
+        return {"error": "invalid subject_id"}
+
+    # 透過 knowledge_nodes 關聯找出該 subject 的 resources
+    resource_ids_q = db.query(KnowledgeNode.resource_id).filter(
+        KnowledgeNode.subject_id == sid,
+        KnowledgeNode.resource_id.isnot(None),
+    ).distinct()
+    resource_ids = [row[0] for row in resource_ids_q.all() if row[0]]
+
+    out = []
+    for rid in resource_ids:
+        res = db.query(Resource).filter(Resource.id == rid).first()
+        if not res:
+            continue
+        scaffolds = db.query(ResourceScaffold).filter(
+            ResourceScaffold.resource_id == rid
+        ).all()
+        type_counter = Counter(s.type for s in scaffolds)
+        out.append({
+            "resource_id": str(rid),
+            "name": res.name or "?",
+            "status": res.status,
+            "owner_user_id": str(res.user_id) if res.user_id else None,
+            "scaffold_total": len(scaffolds),
+            "scaffold_by_type": dict(type_counter),
+            "has_advance_organizer": type_counter.get("advance_organizer", 0) > 0,
+        })
+
+    return {
+        "subject_id": subject_id,
+        "resource_count": len(resource_ids),
+        "resources": out,
+    }
