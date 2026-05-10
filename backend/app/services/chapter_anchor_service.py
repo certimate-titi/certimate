@@ -254,6 +254,13 @@ class ChapterAnchorService(BaseService):
             result.extend(grandchildren)
         return result
 
+    def _get_descendant_node_ids(self, chapter_id: uuid.UUID) -> list[uuid.UUID]:
+        """章節下所有後代節點 ID（含 chapter 自身），給 Question.node_id FK 查題用."""
+        descendants = self._get_all_descendant_nodes(chapter_id)
+        ids = [n.id for n in descendants]
+        ids.append(chapter_id)
+        return ids
+
     def _get_chapter_questions(
         self,
         chapter_id: uuid.UUID,
@@ -275,34 +282,44 @@ class ChapterAnchorService(BaseService):
         if not he_ids:
             return []
 
-        child_names = self._get_child_node_names(chapter_id)
-        if not child_names:
-            # 若無子節點，用章節本身名稱查
-            chapter = self.db.query(KnowledgeNode).filter(KnowledgeNode.id == chapter_id).first()
-            if chapter:
-                child_names = [chapter.name]
-
-        if not child_names:
-            return []
-
-        # 建 OR 過濾條件
-        content_filters = [
-            Question.content.ilike(f"%{name}%")
-            for name in child_names
-            if name and len(name) >= 2
-        ]
-        if not content_filters:
-            return []
-
-        qs = (
-            self.db.query(Question.content)
-            .filter(
-                Question.historical_exam_id.in_(he_ids),
-                or_(*content_filters),
+        # 主路徑：用 Question.node_id FK 找該章後代節點對應的題（與 production
+        # available_questions 計算一致；ai_generation_service 也用這個 path）
+        descendant_ids = self._get_descendant_node_ids(chapter_id)
+        qs = []
+        if descendant_ids:
+            qs = (
+                self.db.query(Question.content)
+                .filter(
+                    Question.historical_exam_id.in_(he_ids),
+                    Question.node_id.in_(descendant_ids),
+                )
+                .limit(MAX_SAMPLE_QUESTIONS)
+                .all()
             )
-            .limit(MAX_SAMPLE_QUESTIONS)
-            .all()
-        )
+
+        # Fallback：若 FK 無 hit（節點還沒 link 到題目），退回 ILIKE 章節+子節點名
+        if not qs:
+            child_names = self._get_child_node_names(chapter_id)
+            if not child_names:
+                chapter = self.db.query(KnowledgeNode).filter(KnowledgeNode.id == chapter_id).first()
+                if chapter:
+                    child_names = [chapter.name]
+            content_filters = [
+                Question.content.ilike(f"%{name}%")
+                for name in child_names
+                if name and len(name) >= 2
+            ]
+            if content_filters:
+                qs = (
+                    self.db.query(Question.content)
+                    .filter(
+                        Question.historical_exam_id.in_(he_ids),
+                        or_(*content_filters),
+                    )
+                    .limit(MAX_SAMPLE_QUESTIONS)
+                    .all()
+                )
+
         # 取前 120 字作為 stem
         stems = [(row[0] or "")[:120] for row in qs]
         return stems
