@@ -50,3 +50,4 @@ Feature: 讀前定錨 + 跨資源概念中心 + 完整 prompt 模板矩陣
       Then 顯示「找不到『不存在的概念』的相關鷹架內容」
 
   # @backend 後端契約見 backend/tests/features/41-讀前定錨與概念中心.feature
+  # K-RE-01 逆向工程章節定錨：backend/tests/features/41b-章節級讀前定錨生成.feature
