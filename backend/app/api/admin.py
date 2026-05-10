@@ -1592,3 +1592,59 @@ def health_db_schema():
             next(db_gen)
         except StopIteration:
             pass
+
+
+# ── 一次性除錯端點：跳過科目所有權的 orphan-fill 觸發（PR #44 加，驗證後刪除）─────
+# 用途：驗證 #2 真實 LLM 0→1 happy path（測試 admin 帳號未加入有 orphan 的 user fork subject）
+# 安全：SUPER_ADMIN 限定 + Cloud Logging 完整稽核 + 用完即砍
+
+@router.get("/orphan-debug/list-eligible/{subject_id}")
+def list_eligible_orphans_debug(
+    subject_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """列出指定科目的 eligible orphan 節點（含佐證題數）。SUPER_ADMIN 限定。"""
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    from app.services.orphan_scaffold_fill_service import OrphanScaffoldFillService
+
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    svc = OrphanScaffoldFillService(db)
+    try:
+        node_ids = svc.eligible_orphan_nodes(subject_id)
+    except Exception as e:
+        return {"error": str(e), "node_ids": []}
+
+    out = []
+    for nid in node_ids[:20]:
+        ev = svc.gather_evidence(str(nid))
+        out.append({"node_id": str(nid), "evidence_count": len(ev)})
+    return {"subject_id": subject_id, "eligible_count": len(node_ids), "samples": out}
+
+
+@router.post("/orphan-debug/generate/{node_id}")
+def generate_orphan_scaffold_debug(
+    node_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """繞過科目所有權直接觸發 LLM 生成（驗證用）。SUPER_ADMIN 限定。"""
+    import uuid as _uuid
+    import logging
+    from app.models.user import User, UserRole
+    from app.services.orphan_scaffold_fill_service import OrphanScaffoldFillService
+
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    logging.getLogger(__name__).warning(
+        "[orphan-debug/generate] super_admin=%s node=%s — bypassing subject ownership for verification",
+        user_id, node_id,
+    )
+    svc = OrphanScaffoldFillService(db)
+    return svc.generate_scaffold(node_id, user_id=user_id)
