@@ -572,6 +572,14 @@ function KnowledgeBasePageInner() {
                 className="pl-9 pr-4 py-1.5 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36 lg:w-48"
               />
             </div>
+            <Link
+              href="/help/study-guide"
+              className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs text-slate-500 hover:text-emerald-600 border border-slate-200 hover:border-emerald-300 transition-colors whitespace-nowrap"
+              title="為何覆蓋率不是 100%？前往學習指南了解更多"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">學習指南</span>
+            </Link>
             <Link href={`/knowledge/wrong-answers${activeSubjectId ? `?subjectId=${activeSubjectId}` : ''}`} className="bg-rose-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-rose-600 transition-colors whitespace-nowrap" data-testid="open-wrong-answer-heatmap" title="錯題地圖">
               🔥<span className="hidden md:inline ml-1">錯題地圖</span>
             </Link>

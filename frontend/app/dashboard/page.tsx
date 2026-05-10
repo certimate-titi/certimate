@@ -101,19 +101,42 @@ export default function DashboardPage() {
   // #6 Completion Framework — 後端加權進度
   const [completion, setCompletion] = useState<SubjectCompletionResponse | null>(null);
   const [completionLoading, setCompletionLoading] = useState(false);
+  // 'none'：無科目 / 'not_found'：API 404 / 'server_error'：API 5xx / null：正常
+  const [completionError, setCompletionError] = useState<'none' | 'not_found' | 'server_error' | null>(null);
+
+  const FAKE_UUID_RE = /^0{8}-0{4}-0{4}-0{4}-0{12}$/;
+
+  const loadCompletion = useCallback((subjectId: string) => {
+    // 守衛：無 subjectId 或假 UUID → 不發 API
+    if (!subjectId || FAKE_UUID_RE.test(subjectId)) {
+      setCompletion(null);
+      setCompletionError('none');
+      setCompletionLoading(false);
+      return;
+    }
+    setCompletionLoading(true);
+    setCompletionError(null);
+    completionService
+      .getCompletion(subjectId)
+      .then((res) => { setCompletion(res); setCompletionError(null); })
+      .catch((err: any) => {
+        setCompletion(null);
+        const status = err?.response?.status ?? err?.status;
+        if (status === 404) setCompletionError('not_found');
+        else if (status >= 500) setCompletionError('server_error');
+        else setCompletionError(null); // 其他錯誤 fallback 到 mock
+      })
+      .finally(() => setCompletionLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !activeSubjectId) {
       setCompletion(null);
+      setCompletionError(activeSubjectId ? null : 'none');
       return;
     }
-    setCompletionLoading(true);
-    completionService
-      .getCompletion(activeSubjectId)
-      .then(setCompletion)
-      .catch(() => setCompletion(null))
-      .finally(() => setCompletionLoading(false));
-  }, [isAuthenticated, activeSubjectId]);
+    loadCompletion(activeSubjectId);
+  }, [isAuthenticated, activeSubjectId, loadCompletion]);
 
   // T63 (Sprint 8 L30)：信心度校準趨勢（Feature 20）
   const [calibration, setCalibration] = useState<{
@@ -851,9 +874,9 @@ export default function DashboardPage() {
                     <h2 className="text-lg font-bold text-slate-900">知識版圖解鎖進度</h2>
                     <Link
                       href="/help/coverage-explained"
-                      className="text-[11px] text-emerald-600 hover:text-emerald-800 underline underline-offset-2"
+                      className="text-[11px] text-slate-500 hover:text-emerald-600 underline underline-offset-2"
                     >
-                      如何計算？
+                      為何不是 100%？
                     </Link>
                   </div>
 
@@ -862,8 +885,31 @@ export default function DashboardPage() {
                     <div className="h-6 bg-slate-100 rounded animate-pulse mb-4" />
                   )}
 
-                  {/* 進度條 */}
-                  {!completionLoading && (
+                  {/* 5xx 錯誤提示 + 重試 */}
+                  {!completionLoading && completionError === 'server_error' && (
+                    <div className="mb-4 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                      <p className="text-xs text-slate-500 mb-2">進度載入失敗，請稍後再試</p>
+                      <button
+                        onClick={() => loadCompletion(activeSubjectId)}
+                        className="text-xs font-medium text-emerald-600 hover:text-emerald-800 underline"
+                      >
+                        重試
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 404 提示卡 */}
+                  {!completionLoading && completionError === 'not_found' && (
+                    <div className="mb-4 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                      <p className="text-sm text-slate-600 mb-2">尚未找到此科目的進度資料</p>
+                      <Link href="/account" className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 underline">
+                        前往帳號設定 →
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* 進度條（無錯誤時顯示） */}
+                  {!completionLoading && completionError !== 'server_error' && completionError !== 'not_found' && (
                     <div className="mb-4">
                       <CompletionProgressBar
                         percent={percent}
@@ -874,7 +920,7 @@ export default function DashboardPage() {
                   )}
 
                   {/* 邊際效益遞減提示（B.4） */}
-                  {!completionLoading && showMarginalUtilityNudge && (
+                  {!completionLoading && !completionError && showMarginalUtilityNudge && (
                     <div className="mb-4">
                       <MarginalUtilityNudge
                         percent={percent}
@@ -884,7 +930,7 @@ export default function DashboardPage() {
                   )}
 
                   {/* 徽章列 */}
-                  {!completionLoading && (
+                  {!completionLoading && !completionError && (
                     <div className="mt-4 pt-4 border-t border-slate-100">
                       <p className="text-xs text-slate-500 mb-3">里程碑徽章</p>
                       <BadgeShelf unlockedBadges={unlockedBadges as any} />
@@ -897,11 +943,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Feedback Link */}
+      {/* Footer Links */}
       <div className="container mx-auto px-4 max-w-6xl pb-8">
-        <div className="flex justify-center">
+        <div className="flex justify-center items-center gap-4 flex-wrap">
           <Link href="/feedback" className="text-sm text-slate-500 hover:text-emerald-600 flex items-center gap-1">
             <MessageSquare className="h-4 w-4" /> 意見反饋
+          </Link>
+          <span className="text-slate-300 text-xs">|</span>
+          <Link href="/help/study-guide" className="text-xs text-slate-500 hover:text-emerald-600 flex items-center gap-1 underline underline-offset-2">
+            <BookOpen className="h-3.5 w-3.5" /> 備考生使用指南
           </Link>
         </div>
       </div>
