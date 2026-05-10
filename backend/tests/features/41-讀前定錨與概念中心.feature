@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_41 @advance_organizer @concept_center @sprint_4_p3 @backend
 Feature: 讀前定錨 + 概念中心（後端契約）
   覆蓋 Sprint 4 P3 T33-T39 後端：
@@ -70,3 +69,16 @@ Feature: 讀前定錨 + 概念中心（後端契約）
         | x.docx           |                    |                      | resource_parser_notes   |
         | x.mp3            |                    |                      | resource_parser_audio   |
         | x.png            |                    |                      | resource_parser_image   |
+
+  @backend
+  Rule: K-06 v6 prompt 對範例章節生成 advance_organizer（mock Gemini stub）
+    Scenario: _persist_parsed 成功寫入 advance_organizer scaffold
+      Given 用戶 "alice@example.com" 擁有資源 "折現率教材-v6測試" 解析狀態為 "success"
+      When _persist_parsed 處理 type=advance_organizer 鷹架
+      Then resource_scaffolds 表新增 type='advance_organizer'
+      And template_code='K-06-study'
+
+    Scenario: advance_organizer 為章節第一個 scaffold
+      Given 用戶 "alice@example.com" 擁有資源 "利率分析教材-排序測試" 解析狀態為 "success"
+      When _persist_parsed 處理 type=advance_organizer 鷹架
+      Then resource_scaffolds 表新增 type='advance_organizer'

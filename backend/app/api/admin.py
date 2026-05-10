@@ -1593,3 +1593,159 @@ def health_db_schema():
         except StopIteration:
             pass
 
+
+# ── Advance Organizer 增量補洞（K-06 v6）────────────────────────────────────
+
+@router.post(
+    "/scaffold-debug/regenerate-anchor/{resource_id}",
+    include_in_schema=True,
+    summary="K-06 v6 advance_organizer 增量補洞（SUPER_ADMIN 限定）",
+    tags=["admin"],
+)
+def regenerate_advance_organizer(
+    resource_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """對指定 resource 增量補齊 advance_organizer scaffold。
+
+    策略：
+    - 只取 K-06 對該 resource 重新呼叫並篩出 advance_organizer 那段
+    - 不刪舊 takeaway / elaborative scaffold（增量寫入）
+    - Cloud Logging 記錄 token 成本
+    - SUPER_ADMIN 限定
+    """
+    import uuid as _uuid
+    import logging
+    from app.models.user import User, UserRole
+    from app.models.resource import Resource
+    from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType
+    from app.services.resource_parse_service import (
+        _call_gemini_with_retry,  # type: ignore[attr-defined]
+        _build_scaffold_row,
+        _embed_scaffolds,
+    )
+
+    _log = logging.getLogger(__name__)
+
+    # 1) 鑑權
+    user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    # 2) 取 resource
+    try:
+        rid = _uuid.UUID(resource_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"message": "resource_id 格式不合法"})
+
+    resource = db.query(Resource).filter_by(id=rid).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail={"message": "找不到資源"})
+
+    # 3) 已有 advance_organizer 則略過（防重複）
+    existing = (
+        db.query(ResourceScaffold)
+        .filter_by(resource_id=rid, type=ResourceScaffoldType.ADVANCE_ORGANIZER.value)
+        .first()
+    )
+    if existing:
+        return {
+            "resource_id": resource_id,
+            "status": "skipped",
+            "reason": "advance_organizer already exists",
+            "scaffold_id": str(existing.id),
+        }
+
+    # 4) 呼叫 LLM（_call_gemini_with_retry 已有 retry + fallback）
+    _log.warning(
+        "[scaffold-debug/regenerate-anchor] super_admin=%s resource=%s — calling LLM for advance_organizer",
+        user_id, resource_id,
+    )
+    try:
+        parsed = _call_gemini_with_retry(resource)
+    except Exception as exc:
+        _log.error(
+            "[scaffold-debug/regenerate-anchor] LLM failed resource=%s: %s",
+            resource_id, exc, exc_info=True,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail={"message": f"LLM 呼叫失敗：{exc}"},
+        )
+
+    # 5) 從 parsed["scaffolds"] 篩出 advance_organizer
+    scaffolds_raw = parsed.get("scaffolds") or []
+    ao_rows = []
+    for s in scaffolds_raw:
+        if (s.get("type") or "").lower() == "advance_organizer":
+            row = _build_scaffold_row(resource, s)
+            if row:
+                # 80 字 hard limit post-processor
+                content = row.content or ""
+                char_count = len([c for c in content if c.strip()])
+                if char_count > 80:
+                    # 截取到「這章學：」結尾位置
+                    anchor_pos = content.find("這章學：")
+                    if anchor_pos != -1:
+                        # 找「這章學：」後的句尾
+                        end_pos = content.find("。", anchor_pos)
+                        if end_pos != -1:
+                            content = content[:end_pos + 1]
+                        else:
+                            content = content[:anchor_pos + 20]
+                    row.content = content
+                ao_rows.append(row)
+
+    if not ao_rows:
+        return {
+            "resource_id": resource_id,
+            "status": "no_advance_organizer",
+            "reason": "LLM output contained no advance_organizer scaffold",
+            "total_scaffolds_in_response": len(scaffolds_raw),
+        }
+
+    # 6) 寫入 DB
+    for row in ao_rows:
+        db.add(row)
+    db.commit()
+    for row in ao_rows:
+        db.refresh(row)
+
+    # 7) embedding（非阻斷）
+    try:
+        _embed_scaffolds(ao_rows)
+        db.commit()
+    except Exception as exc:
+        _log.warning(
+            "[scaffold-debug/regenerate-anchor] embedding failed resource=%s (non-fatal): %s",
+            resource_id, exc,
+        )
+
+    # 8) token 成本記錄（估算）
+    input_tokens = parsed.get("_input_tokens", 0)
+    output_tokens = parsed.get("_output_tokens", 0)
+    _log.info(
+        "[scaffold-debug/regenerate-anchor] done resource=%s created=%d "
+        "input_tokens=%d output_tokens=%d estimated_cost_usd=%.4f",
+        resource_id,
+        len(ao_rows),
+        input_tokens,
+        output_tokens,
+        # Gemini 2.5 Pro：input $1.25/1M tokens，output $10/1M tokens
+        (input_tokens / 1_000_000 * 1.25) + (output_tokens / 1_000_000 * 10.0),
+    )
+
+    return {
+        "resource_id": resource_id,
+        "status": "created",
+        "advance_organizers_created": len(ao_rows),
+        "scaffold_ids": [str(r.id) for r in ao_rows],
+        "sample_content": ao_rows[0].content[:100] if ao_rows else None,
+        "estimated_cost": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "model": "gemini-2.5-pro",
+            "note": "input $1.25/1M + output $10/1M tokens",
+        },
+    }
