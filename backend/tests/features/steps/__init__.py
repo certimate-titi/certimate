@@ -1468,3 +1468,9 @@ from .completion.aggregate_given import setup as completion_given  # noqa: F401
 from .completion.commands import api_calls as completion_api  # noqa: F401
 from .completion.readmodel_then import assertions as completion_assertions  # noqa: F401
 
+# Advance Organizer — Feature 41 (K-06 v6 / Sprint 4 P3)
+from .advance_organizer.aggregate_given import resource_with_parse_status  # noqa: F401
+from .advance_organizer.aggregate_given import prompt_template_setup  # noqa: F401
+from .advance_organizer.commands import advance_organizer_actions  # noqa: F401
+from .advance_organizer.aggregate_then import assertions as advance_organizer_assertions  # noqa: F401
+
