@@ -1601,12 +1601,22 @@ def health_db_schema():
 @router.get("/orphan-debug/list-eligible/{subject_id}")
 def list_eligible_orphans_debug(
     subject_id: str,
+    include_all: bool = False,
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """列出指定科目的 eligible orphan 節點（含佐證題數）。SUPER_ADMIN 限定。"""
+    """列出指定科目的 eligible orphan 節點（含佐證題數）。SUPER_ADMIN 限定。
+
+    Query params:
+        include_all: 若 true，列出所有 depth=2 節點 + 每個節點的 evidence_count + 阻擋原因
+    """
     import uuid as _uuid
     from app.models.user import User, UserRole
+    from app.models.subject import Subject
+    from app.models.knowledge_node import KnowledgeNode
+    from app.models.scaffold_node_link import ScaffoldNodeLink
+    from app.models.question import Question
+    from sqlalchemy import func
     from app.services.orphan_scaffold_fill_service import OrphanScaffoldFillService
 
     user = db.query(User).filter_by(id=_uuid.UUID(user_id)).first()
@@ -1615,15 +1625,53 @@ def list_eligible_orphans_debug(
 
     svc = OrphanScaffoldFillService(db)
     try:
-        node_ids = svc.eligible_orphan_nodes(subject_id)
-    except Exception as e:
-        return {"error": str(e), "node_ids": []}
+        sid = _uuid.UUID(subject_id)
+    except ValueError:
+        return {"error": "invalid subject_id"}
 
+    subj = db.query(Subject).filter(Subject.id == sid).first()
+    he_ids = svc._get_historical_exam_ids(subj) if subj else []
+    q_count = (
+        db.query(func.count(Question.id))
+        .filter(Question.historical_exam_id.in_(he_ids))
+        .scalar() or 0
+    ) if he_ids else 0
+
+    eligible_ids = svc.eligible_orphan_nodes(subject_id)
     out = []
-    for nid in node_ids[:20]:
-        ev = svc.gather_evidence(str(nid))
-        out.append({"node_id": str(nid), "evidence_count": len(ev)})
-    return {"subject_id": subject_id, "eligible_count": len(node_ids), "samples": out}
+    if include_all:
+        all_nodes = db.query(KnowledgeNode).filter(
+            KnowledgeNode.subject_id == sid,
+            KnowledgeNode.depth == 2,
+        ).all()
+        for node in all_nodes:
+            link_n = db.query(func.count(ScaffoldNodeLink.id)).filter(
+                ScaffoldNodeLink.node_id == node.id
+            ).scalar() or 0
+            ev = svc.gather_evidence(str(node.id))
+            out.append({
+                "node_id": str(node.id),
+                "name": node.name,
+                "linked_scaffolds": link_n,
+                "evidence_count": len(ev),
+                "is_eligible": node.id in eligible_ids,
+            })
+        out.sort(key=lambda r: -r["evidence_count"])
+    else:
+        for nid in eligible_ids[:20]:
+            ev = svc.gather_evidence(str(nid))
+            out.append({"node_id": str(nid), "evidence_count": len(ev)})
+
+    return {
+        "subject_id": subject_id,
+        "subject_name": subj.name if subj else None,
+        "exam_subject_codes": subj.exam_subject_codes if subj else None,
+        "historical_exam_count": len(he_ids),
+        "question_count": q_count,
+        "min_questions_required": 30,
+        "eligible_count": len(eligible_ids),
+        "samples": out,
+    }
 
 
 @router.post("/orphan-debug/generate/{node_id}")
