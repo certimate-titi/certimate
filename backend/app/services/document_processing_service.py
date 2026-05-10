@@ -1266,17 +1266,20 @@ class DocumentProcessingService:
         """Create multi-level knowledge node tree (depth 0-3)."""
         nodes: list[KnowledgeNode] = []
 
-        # Root node (depth 0)
+        # Root node — depth=1 per migration 091 chk_depth_range CHECK (1..3).
+        # Root semantically wraps the resource title as a top-level chapter; depth-1
+        # sections from the extractor are siblings of root under parent_id=root.
         root = KnowledgeNode(
             resource_id=resource.id, parent_id=None,
             name=extracted.get("title", resource.name),
-            depth=0, sort_order=0,
+            depth=1, sort_order=0,
         )
         self.db.add(root)
         self.db.flush()
         nodes.append(root)
 
-        # Track parents at each depth level for tree building
+        # Track parents at each depth level for tree building.
+        # parent_stack[0] = root acts as virtual container for depth=1 sections.
         parent_stack = {0: root}  # depth → node
 
         import re
@@ -1296,7 +1299,9 @@ class DocumentProcessingService:
                     continue
                 title = first_line
 
-            depth = section.get("depth", 1)
+            # Clamp to migration 091 range [1,3] — extractor occasionally returns 4
+            raw_depth = section.get("depth", 1)
+            depth = max(1, min(3, int(raw_depth) if isinstance(raw_depth, (int, float)) else 1))
             parent_depth = depth - 1
             parent = parent_stack.get(parent_depth, root)
 
