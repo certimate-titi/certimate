@@ -1035,15 +1035,13 @@ function KnowledgeBasePageInner() {
                   );
                 })()}
                 <div className="px-3 py-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : selectedNodeDetail.node?.masteryLevel === 'weak' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                      {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '精通' : selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分' : selectedNodeDetail.node?.masteryLevel === 'weak' ? '弱' : '未測'}
+                  {selectedNodeDetail.node?.masteryLevel && selectedNodeDetail.node?.masteryLevel !== 'untested' && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                        {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '精通' : selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分' : '弱'}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                      {selectedNodeDetail.citationSource?.type === 'youtube' ? <Youtube className="h-3 w-3 text-red-500" /> : <FileText className="h-3 w-3 text-blue-400" />}
-                      {selectedNodeDetail.citationSource?.type === 'youtube' ? `${Math.floor((selectedNodeDetail.citationSource?.timestampStart || 0) / 60)}:${String((selectedNodeDetail.citationSource?.timestampStart || 0) % 60).padStart(2, '0')}` : `頁 ${selectedNodeDetail.citationSource?.page || '-'}`}
-                    </div>
-                  </div>
+                  )}
                   {selectedNodeDetail.citationSource?.type === 'youtube' && selectedNodeDetail.citationSource?.sourceUrl && (
                     <div className="aspect-video bg-black rounded-lg overflow-hidden mb-2">
                       <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
@@ -1202,6 +1200,41 @@ function KnowledgeBasePageInner() {
                   infoSlot={infoSlot}
                   notebookSlot={notebookSlot}
                   coachSlot={coachSlot}
+                  quickAskSlot={
+                    <div className="px-2 py-1.5">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && chatInput.trim() && !chatLoading && !isPro199 && (isProPlus || freeQueriesLeft > 0) && selectedNodeDetail) {
+                              const text = chatInput.trim();
+                              setActiveNodeTab('coach');
+                              handleSendChat(text);
+                            }
+                          }}
+                          placeholder={isPro199 ? 'AI 教練為 PRO_PLUS 專屬' : !isProPlus && freeQueriesLeft <= 0 ? '已達免費上限' : !selectedNodeDetail ? '點選節點以提問' : '對此節點提問 AI 教練…'}
+                          className="w-full pl-7 pr-8 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs disabled:opacity-50"
+                          disabled={chatLoading || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
+                        />
+                        <MessageCircle className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                        <button
+                          onClick={() => {
+                            const text = chatInput.trim();
+                            if (!text) return;
+                            setActiveNodeTab('coach');
+                            handleSendChat(text);
+                          }}
+                          disabled={chatLoading || !chatInput.trim() || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 bg-emerald-500 text-white rounded flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                          aria-label="送出提問給 AI 教練"
+                        >
+                          <Send className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  }
                 />
               </div>
             );

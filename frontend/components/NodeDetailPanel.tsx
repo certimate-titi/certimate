@@ -30,6 +30,8 @@ export interface NodeDetailPanelProps {
   notebookSlot: React.ReactNode;
   /** AI 教練分頁的內容 */
   coachSlot: React.ReactNode;
+  /** 常駐底部 AI 提問輸入列；僅在 info / notebook 分頁顯示 */
+  quickAskSlot?: React.ReactNode;
 }
 
 const TAB_ORDER: NodeDetailTab[] = ['info', 'notebook', 'coach'];
@@ -64,6 +66,7 @@ export default function NodeDetailPanel({
   infoSlot,
   notebookSlot,
   coachSlot,
+  quickAskSlot,
 }: NodeDetailPanelProps) {
   const tablistRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(Boolean(nodeId));
@@ -140,6 +143,11 @@ export default function NodeDetailPanel({
       >
         {slotMap[activeTab]}
       </div>
+      {quickAskSlot && (activeTab === 'info' || activeTab === 'notebook') && (
+        <div className="shrink-0 border-t border-slate-200 bg-white">
+          {quickAskSlot}
+        </div>
+      )}
     </div>
   );
 }
