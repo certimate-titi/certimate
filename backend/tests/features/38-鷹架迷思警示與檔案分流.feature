@@ -39,7 +39,7 @@ Feature: 學習鷹架迷思警示與檔案分流（後端契約）
         | uploads/x.MOV       |                    |                             | resource_parser_video   |
         |                     |                    | https://youtu.be/abc        | resource_parser_video   |
         |                     |                    |                             | resource_parser_v2      |
-        | uploads/x.jpg       |                    |                             | resource_parser_v2      |
+        | uploads/x.jpg       |                    |                             | resource_parser_image   |
 
   @backend
   Rule: prompt fallback

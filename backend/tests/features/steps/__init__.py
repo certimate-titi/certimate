@@ -1479,3 +1479,9 @@ from .chapter_anchor.aggregate_given import setup as chapter_anchor_given  # noq
 from .chapter_anchor.commands import api_calls as chapter_anchor_api  # noqa: F401
 from .chapter_anchor.aggregate_then import assertions as chapter_anchor_assertions  # noqa: F401
 
+# Pitfall + Prompt Routing — Feature 38 (Sprint 2 P1 T11-T18)
+from .pitfall.aggregate_given import resource_routing_stub as pitfall_routing_given  # noqa: F401
+from .pitfall.aggregate_given import scaffolds_from_llm as pitfall_scaffolds_given  # noqa: F401
+from .pitfall.commands import persist_actions as pitfall_persist  # noqa: F401
+from .pitfall.aggregate_then import assertions as pitfall_assertions  # noqa: F401
+
