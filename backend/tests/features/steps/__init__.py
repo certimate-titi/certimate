@@ -1491,3 +1491,13 @@ from .sm2.commands import actions as sm2_commands  # noqa: F401
 from .sm2.aggregate_then import sm2_assertions as sm2_sched_assertions  # noqa: F401
 from .sm2.readmodel_then import api_assertions as sm2_api_assertions  # noqa: F401
 
+# Voyage semantic search + /today 整合 — Feature 43 (Sprint 6 P5 T47-T49)
+from .semantic_search.aggregate_given import setup as f43_given  # noqa: F401
+from .semantic_search.commands import actions as f43_commands  # noqa: F401
+from .semantic_search.aggregate_then import assertions as f43_assertions  # noqa: F401
+
+# Scaffold embedding 持久化 + 限流豁免 — Feature 44 (Sprint 7 P6 T54-T55)
+from .scaffold_embedding.aggregate_given import setup as f44_given  # noqa: F401
+from .scaffold_embedding.commands import actions as f44_commands  # noqa: F401
+from .scaffold_embedding.aggregate_then import assertions as f44_assertions  # noqa: F401
+
