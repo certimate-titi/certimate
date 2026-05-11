@@ -1501,3 +1501,8 @@ from .scaffold_embedding.aggregate_given import setup as f44_given  # noqa: F401
 from .scaffold_embedding.commands import actions as f44_commands  # noqa: F401
 from .scaffold_embedding.aggregate_then import assertions as f44_assertions  # noqa: F401
 
+# Scaffold retrieval + chapter-practice — Feature 37 (Sprint 1 P0 T08-T09)
+from .scaffold_retrieval.aggregate_given import setup as f37_given  # noqa: F401
+from .scaffold_retrieval.commands import actions as f37_commands  # noqa: F401
+from .scaffold_retrieval.aggregate_then import assertions as f37_assertions  # noqa: F401
+
