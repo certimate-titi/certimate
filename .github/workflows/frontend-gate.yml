@@ -3,8 +3,28 @@ name: Frontend Gate
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'project/specs/**'
+      - 'backend/**'
+      - '.github/workflows/bdd-gate.yml'
+      - '.github/workflows/deploy-gcp.yml'
+      - 'exam-bank/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'project/specs/**'
+      - 'backend/**'
+      - '.github/workflows/bdd-gate.yml'
+      - '.github/workflows/deploy-gcp.yml'
+      - 'exam-bank/**'
+
+concurrency:
+  group: frontend-gate-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tsc:
