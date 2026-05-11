@@ -543,7 +543,7 @@ def log_scaffold_interaction(
     body: ScaffoldInteractionRequest,
     db: Session = Depends(get_db),
     current_user_id: UUID = Depends(get_current_user_id),
-) -> dict[str, str]:
+) -> dict[str, str | None]:
     """記錄一筆 retrieval-first UX 互動事件 → scaffold_interaction_log。
 
     對應 docs/scaffold-redesign-plan.md P0 + Sprint 1 T08。
