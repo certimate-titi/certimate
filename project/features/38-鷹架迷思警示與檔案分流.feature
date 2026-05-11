@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_38 @scaffold_pitfall @prompt_routing @sprint_2_p1
 Feature: 學習鷹架迷思警示與檔案類型分流（端對端 UX）
   作為學習者，我想要在閱讀教材時被警示常見迷思，

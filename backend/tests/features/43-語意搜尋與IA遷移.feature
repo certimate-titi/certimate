@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_43 @semantic_search @ia_migration @sprint_6_p5 @backend
 Feature: Voyage 語意搜尋 + /today 整合 + IA 軟性遷移（後端契約）
   覆蓋 Sprint 6 P5 T47-T49 後端：

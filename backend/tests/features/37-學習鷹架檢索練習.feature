@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_37 @scaffold_retrieval @sprint_1_p0 @backend
 Feature: 學習鷹架檢索練習（後端契約）
   覆蓋 Sprint 1 P0 T08 + T09 後端 endpoint。

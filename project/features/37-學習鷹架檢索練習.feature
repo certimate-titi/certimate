@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_37 @scaffold_retrieval @sprint_1_p0
 Feature: 學習鷹架檢索練習與章節練習（端對端 UX）
   作為學習者，我想要在閱讀學習指引時被引導主動回想，

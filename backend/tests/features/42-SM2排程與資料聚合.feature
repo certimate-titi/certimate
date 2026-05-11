@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_42 @sm2 @today_aggregation @concept_center @sprint_5_p4 @backend
 Feature: SM-2 排程 + /today 聚合 + 概念中心（後端契約）
   覆蓋 Sprint 5 P4 T41-T45 後端：

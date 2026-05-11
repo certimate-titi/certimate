@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_38 @scaffold_pitfall @prompt_routing @sprint_2_p1 @backend
 Feature: 學習鷹架迷思警示與檔案分流（後端契約）
   覆蓋 Sprint 2 P1 T11-T18 後端：
