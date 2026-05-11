@@ -3,7 +3,17 @@ name: Deploy to GCP
 on:
   push:
     branches: [ main, production ]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'project/specs/**'
+      - 'project/features/**'
   workflow_dispatch:  # Manual trigger
+
+# 同 ref 上的舊 deploy 自動取消（避免快速合並時觸發兩次部署，浪費 ~5-6 min/run）
+concurrency:
+  group: deploy-gcp-${{ github.ref }}
+  cancel-in-progress: false  # 部署不可中斷（避免半途死，產生 broken state）
 
 env:
   GCP_PROJECT_ID: certimate-titi
