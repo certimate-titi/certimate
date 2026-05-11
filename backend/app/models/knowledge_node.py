@@ -50,7 +50,9 @@ class KnowledgeNode(Base):
         UUID(as_uuid=True), ForeignKey("knowledge_nodes.id", ondelete="CASCADE")
     )
     name: Mapped[str] = mapped_column(String(300), nullable=False)
-    depth: Mapped[int] = mapped_column(Integer, default=0)
+    # depth=1 default per migration 091 chk_depth_range CHECK (1..3) —
+    # default=0 違反 constraint，全 INSERT 失敗（產線 5/10 calculus_test.md 殷鑑）
+    depth: Mapped[int] = mapped_column(Integer, default=1)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     source_page_number: Mapped[int | None] = mapped_column(Integer)
     source_timestamp_seconds: Mapped[int | None] = mapped_column(Integer)

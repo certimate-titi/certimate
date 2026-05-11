@@ -502,12 +502,13 @@ class KnowledgeMergeService:
             self.db.add(new_node)
 
         elif action == "keep_separate":
-            # Create incoming as standalone node
+            # Create incoming as standalone node — depth=1 per migration 091
+            # chk_depth_range CHECK (1..3); standalone roots act as top-level chapters.
             new_node = KnowledgeNode(
                 subject_id=conflict.subject_id,
                 parent_id=None,
                 name=conflict.incoming_node_name,
-                depth=0,
+                depth=1,
                 sort_order=0,
                 source_origin="document",
             )
