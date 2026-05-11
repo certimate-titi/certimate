@@ -1485,3 +1485,9 @@ from .pitfall.aggregate_given import scaffolds_from_llm as pitfall_scaffolds_giv
 from .pitfall.commands import persist_actions as pitfall_persist  # noqa: F401
 from .pitfall.aggregate_then import assertions as pitfall_assertions  # noqa: F401
 
+# SM-2 + /today + /concept-center — Feature 42 (Sprint 5 P4 T41-T45)
+from .sm2.aggregate_given import setup as sm2_given  # noqa: F401
+from .sm2.commands import actions as sm2_commands  # noqa: F401
+from .sm2.aggregate_then import sm2_assertions as sm2_sched_assertions  # noqa: F401
+from .sm2.readmodel_then import api_assertions as sm2_api_assertions  # noqa: F401
+
