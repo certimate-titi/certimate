@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_44 @scaffold_embedding @rate_limit @sprint_7_p6 @backend
 Feature: Scaffold embedding 持久化 + 互動 log 限流豁免（後端契約）
   覆蓋 Sprint 7 P6 T54-T55 + smoke fix：

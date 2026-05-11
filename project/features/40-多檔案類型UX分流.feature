@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_40 @file_type_routing @sprint_3_p2
 Feature: 多檔案類型 UX 分流（PPT / DOCX / 學習首頁 / 資源卡片）
   作為學習者，我想要根據資源類型看到專屬的視覺與 viewer：

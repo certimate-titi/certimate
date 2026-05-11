@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_41 @advance_organizer @concept_center @sprint_4_p3
 Feature: 讀前定錨 + 跨資源概念中心 + 完整 prompt 模板矩陣
   作為學習者，我想要：

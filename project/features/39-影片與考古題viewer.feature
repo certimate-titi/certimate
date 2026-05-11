@@ -1,4 +1,3 @@
-# language: zh-TW
 @feature_39 @video_viewer @quiz_viewer @sprint_2_5
 Feature: 影片 viewer 與考古題 viewer（端對端 UX）
   作為學習者，我想要不同檔案類型有專屬閱讀體驗：
