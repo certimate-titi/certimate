@@ -21,7 +21,7 @@ Feature: Scaffold embedding 持久化 + 互動 log 限流豁免（後端契約�
       When parse pipeline 跑 _embed_scaffolds
       Then scaffold rows 仍 commit（業務不阻斷）
       And 失敗 scaffold.embedding 為 NULL
-      And log 含 "voyage embed failed, scaffold persisted without embedding"
+      And log 含 "[scaffold-embed] failed (non-fatal)"
 
     Scenario: /concept-center 偏好走 DB embedding
       Given 用戶 alice 有 50+ scaffolds 皆含 embedding

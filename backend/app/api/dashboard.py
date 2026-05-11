@@ -729,11 +729,13 @@ def get_today(
         streak_days = 0
 
     # Review count: 待複習錯題（answers.is_correct=false 且 retired_at IS NULL 的 question 數）
+    # 用 func.count(DISTINCT) 直接拿數字，避免 SQLAlchemy 2.0 ChunkedIteratorResult
+    # 沒有 .rowcount 屬性的相容性問題。
     review_count = 0
     try:
+        from sqlalchemy import func as _func
         review_count = db.execute(
-            select(Answer.question_id)
-            .distinct()
+            select(_func.count(Answer.question_id.distinct()))
             .where(Answer.user_id == user_uuid)
             .where(Answer.is_correct.is_(False))
             .where(
@@ -744,15 +746,7 @@ def get_today(
                     )
                 )
             )
-        ).rowcount or 0
-        # rowcount may be -1 for SELECT in some drivers; do a count fallback
-        if review_count <= 0:
-            from sqlalchemy import func as _func
-            review_count = db.execute(
-                select(_func.count(Answer.question_id.distinct()))
-                .where(Answer.user_id == user_uuid)
-                .where(Answer.is_correct.is_(False))
-            ).scalar() or 0
+        ).scalar() or 0
     except Exception as e:
         logging.getLogger("dashboard.today").warning("review count failed: %s", e)
         review_count = 0
