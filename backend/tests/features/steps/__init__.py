@@ -1506,3 +1506,8 @@ from .scaffold_retrieval.aggregate_given import setup as f37_given  # noqa: F401
 from .scaffold_retrieval.commands import actions as f37_commands  # noqa: F401
 from .scaffold_retrieval.aggregate_then import assertions as f37_assertions  # noqa: F401
 
+# knowledge_nodes depth CHECK 寫入相容性 — Feature 45 (migration 091 regression guard)
+from .depth_check.aggregate_given import setup as f45_given  # noqa: F401
+from .depth_check.commands import actions as f45_commands  # noqa: F401
+from .depth_check.aggregate_then import assertions as f45_assertions  # noqa: F401
+

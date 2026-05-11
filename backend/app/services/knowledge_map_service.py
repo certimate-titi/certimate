@@ -83,12 +83,12 @@ class KnowledgeMapService:
         resource_type = resource.type.value if hasattr(resource.type, 'value') else resource.type
         is_youtube = resource_type == "youtube"
 
-        # 建立根節點
+        # 建立根節點 — depth=1 per migration 091 chk_depth_range CHECK (1..3)
         root = KnowledgeNode(
             resource_id=resource.id,
             parent_id=None,
             name=f"{resource.name} 知識總覽",
-            depth=0,
+            depth=1,
             sort_order=0,
         )
         root = self.node_repo.save(root)

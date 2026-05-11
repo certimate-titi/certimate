@@ -146,11 +146,11 @@ class OnboardingService:
         root_summary += f"\n📊 Bloom 認知層次分佈：{bloom_summary}\n"
         root_summary += f"\n💡 建議先從「記憶」與「理解」層次開始練習，再逐步挑戰「應用」與「分析」題型。"
 
-        # 建立根節點
+        # 建立根節點 — depth=1 per migration 091 chk_depth_range CHECK (1..3)
         root = KnowledgeNode(
             resource_id=resource.id,
             name=f"{subject.name}考古題題庫 知識總覽",
-            depth=0,
+            depth=1,
             sort_order=0,
             available_questions=0,
             source_text=root_summary,
