@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from datetime import datetime, timezone, timedelta
 
 from behave import given
 
@@ -61,3 +62,93 @@ def step_create_resource_with_status(context, res_name, status):
     context.memo["last_resource"] = res
     context.memo["last_resource_id"] = str(res.id)
     context.memo["last_user_id"] = user_id
+
+
+@given('一個 resource_parse_job status=queued 且 created_at 為 {minutes:d} 分鐘前')
+def step_create_parse_job_queued(context, minutes):
+    """建立一個 queued 的 parse_job，created_at 往前推 minutes 分鐘。"""
+    from tests.features.steps.sm2.aggregate_given.setup import (
+        _ensure_user, _ensure_subject,
+    )
+    from app.models.resource_parse_job import ResourceParseJob, ParseJobStatus
+    from sqlalchemy import text
+
+    db = context.db_session
+    user_id = _ensure_user(db, "alice@example.com")
+    subject_id = _ensure_subject(db)
+
+    res = Resource(
+        user_id=user_id,
+        subject_id=subject_id,
+        name="watchdog-test",
+        type="youtube",
+        status="PENDING",
+        youtube_url="https://www.youtube.com/watch?v=WATCHDOG",
+        gcs_path="",
+        file_size_bytes=0,
+    )
+    db.add(res)
+    db.flush()
+
+    created = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    job = ResourceParseJob(
+        resource_id=res.id,
+        status=ParseJobStatus.QUEUED,
+    )
+    db.add(job)
+    db.flush()
+    # 直接更新 created_at 繞過 server_default
+    db.execute(
+        text("UPDATE resource_parse_jobs SET created_at = :ts WHERE id = :jid"),
+        {"ts": created, "jid": job.id},
+    )
+    db.commit()
+    db.refresh(job)
+
+    context.memo["last_parse_job_id"] = str(job.id)
+    context.memo["last_resource_id"] = str(res.id)
+
+
+@given('一個 resource_parse_job status=failed 且 created_at 為 {minutes:d} 分鐘前')
+def step_create_parse_job_failed(context, minutes):
+    """建立一個已 failed 的 parse_job，created_at 往前推 minutes 分鐘。"""
+    from tests.features.steps.sm2.aggregate_given.setup import (
+        _ensure_user, _ensure_subject,
+    )
+    from app.models.resource_parse_job import ResourceParseJob, ParseJobStatus
+    from sqlalchemy import text
+
+    db = context.db_session
+    user_id = _ensure_user(db, "alice@example.com")
+    subject_id = _ensure_subject(db)
+
+    res = Resource(
+        user_id=user_id,
+        subject_id=subject_id,
+        name="watchdog-idempotent-test",
+        type="youtube",
+        status="FAILED",
+        youtube_url="https://www.youtube.com/watch?v=IDEMPOTENT",
+        gcs_path="",
+        file_size_bytes=0,
+    )
+    db.add(res)
+    db.flush()
+
+    created = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    job = ResourceParseJob(
+        resource_id=res.id,
+        status=ParseJobStatus.FAILED,
+        failure_reason="previous failure",
+    )
+    db.add(job)
+    db.flush()
+    db.execute(
+        text("UPDATE resource_parse_jobs SET created_at = :ts WHERE id = :jid"),
+        {"ts": created, "jid": job.id},
+    )
+    db.commit()
+    db.refresh(job)
+
+    context.memo["last_parse_job_id"] = str(job.id)
+    context.memo["last_resource_id"] = str(res.id)

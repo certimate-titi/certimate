@@ -2,7 +2,7 @@
 
 import uuid
 
-from behave import when
+from behave import when, given
 
 
 @when('呼叫 enqueue_process_resource(resource_id, user_id, tenant_id)')
@@ -45,3 +45,11 @@ def step_simulate_endpoint_catch(context):
         db.commit()
         context.memo["endpoint_status"] = 503
         context.memo["endpoint_error"] = str(exc)
+
+
+@when('執行 watchdog_dispatch_timeout()')
+def step_run_watchdog(context):
+    """直接呼叫 watchdog service 函式（繞過 scheduler 時間觸發）。"""
+    from app.services.watchdog_service import run_dispatch_timeout_watchdog
+    db = context.db_session
+    context.memo["watchdog_result"] = run_dispatch_timeout_watchdog(db)
