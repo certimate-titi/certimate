@@ -1522,3 +1522,6 @@ from .enqueue_failure.aggregate_then import assertions as f46_assertions  # noqa
 # F47 YouTube Gemini direct pipeline — 覆蓋 submit_youtube step (加 mock)
 from .yt_pipeline import assertions as f47_assertions  # noqa: F401
 
+# F47 E2E pipeline — tasks/process-resource 端到端（early-skip 修正驗證）
+from .yt_e2e import e2e_pipeline as f47_e2e  # noqa: F401
+
