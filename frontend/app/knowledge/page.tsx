@@ -18,7 +18,7 @@ import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDele
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
-import { useIsMobile } from '@/hooks/use-mobile';
+// useIsMobile 不在此頁使用（已改用 local isCompactLayout，閾值 <1024px）
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MathContent from '@/components/MathContent';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
@@ -82,7 +82,14 @@ function KnowledgeBasePageInner() {
   const [docFullTitle, setDocFullTitle] = useState<string>('');
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
-  const isMobile = useIsMobile();
+  // PR #76 spec: <1024px（含 tablet）回退到抽屜佈局，不動全域 useIsMobile hook
+  const [isCompactLayout, setIsCompactLayout] = useState(false);
+  useEffect(() => {
+    const update = () => setIsCompactLayout(window.innerWidth < 1024);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
   const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
 
   // ── Resizable panels: defaultLayout persisted in localStorage ──
@@ -133,9 +140,9 @@ function KnowledgeBasePageInner() {
   const [scaffoldErrors, setScaffoldErrors] = useState<Record<string, string>>({});
   const docViewRef = useRef<HTMLDivElement>(null);
 
-  // On mobile, collapse both panels by default
+  // <1024px: 收起雙側欄，改用抽屜佈局
   useEffect(() => {
-    if (isMobile) {
+    if (isCompactLayout) {
       setShowLeftPanel(false);
       setShowRightPanel(false);
     } else {
@@ -143,7 +150,7 @@ function KnowledgeBasePageInner() {
       setShowRightPanel(true);
     }
     setMobileDrawer(null);
-  }, [isMobile]);
+  }, [isCompactLayout]);
 
   // Item 3: 章節跳轉 — chapterScrollTarget 設定後，找到含此文字的錨點並 scroll
   useEffect(() => {
@@ -607,7 +614,7 @@ function KnowledgeBasePageInner() {
               />
             )}
             {/* Mobile drawer toggles */}
-            {isMobile && (
+            {isCompactLayout && (
               <>
                 <button
                   onClick={() => setMobileDrawer(mobileDrawer === 'left' ? null : 'left')}
@@ -656,7 +663,7 @@ function KnowledgeBasePageInner() {
         <div className="flex-1 flex overflow-hidden relative">
 
           {/* Mobile overlay backdrop */}
-          {isMobile && mobileDrawer && (
+          {isCompactLayout && mobileDrawer && (
             <div
               className="absolute inset-0 bg-black/30 z-20"
               onClick={() => setMobileDrawer(null)}
@@ -664,7 +671,7 @@ function KnowledgeBasePageInner() {
           )}
 
           {/* ── Mobile left drawer (absolute overlay) ── */}
-          {isMobile && mobileDrawer === 'left' && (
+          {isCompactLayout && mobileDrawer === 'left' && (
             <div className="absolute left-0 top-0 bottom-0 z-30 w-[85vw] max-w-[320px] shadow-xl border-r border-slate-200 bg-white flex flex-col">
               <div className="p-3 border-b border-slate-100 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-emerald-500" />
@@ -719,7 +726,7 @@ function KnowledgeBasePageInner() {
           )}
 
           {/* ── Mobile right drawer (absolute overlay) ── */}
-          {isMobile && mobileDrawer === 'right' && (() => {
+          {isCompactLayout && mobileDrawer === 'right' && (() => {
             const nodeId = selectedNodeDetail ? ((selectedNodeDetail as unknown as Record<string, unknown>).node_id as string) || selectedNodeDetail.node?.id || null : null;
             const nodeLabel = selectedNodeDetail?.node?.label || null;
             const infoSlot = loadingDetail ? (<div className="p-3 flex items-center justify-center"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>) : selectedNodeDetail ? (<div><div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div></div>) : (<div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div>);
@@ -732,7 +739,7 @@ function KnowledgeBasePageInner() {
           })()}
 
           {/* ── Desktop / Tablet: PanelGroup (≥1024px enabled, <1024px disabled) ── */}
-          {!isMobile && (
+          {!isCompactLayout && (
             <PanelGroup
               orientation="horizontal"
               defaultLayout={panelLayout}
@@ -983,7 +990,7 @@ function KnowledgeBasePageInner() {
               {/* Toolbar */}
               <div className="flex items-center justify-between px-2 md:px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-1 overflow-x-auto">
                 <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                  {!isMobile && (
+                  {!isCompactLayout && (
                     <button onClick={() => setShowLeftPanel(!showLeftPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showLeftPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                       {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
                     </button>
@@ -1037,7 +1044,7 @@ function KnowledgeBasePageInner() {
                     <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
                   )}
                 </div>
-                {!isMobile && (
+                {!isCompactLayout && (
                   <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                     {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
                   </button>

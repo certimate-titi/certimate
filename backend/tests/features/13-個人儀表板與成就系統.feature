@@ -57,6 +57,26 @@ Feature: 個人儀表板與成就系統
         | streak            | 連勝天數與凍結剩餘狀態       |
         | activityItems     | 最近可操作事項（錯題/未完考卷/新資源） |
 
+  # ========== Ownership 隔離（issue #74 同類 bug）==========
+
+  Rule: 安全 - activityItems 不應洩漏他人 resource
+
+    Example: 他人在同科目建立的 resource 不出現在 activityItems
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email              | 訂閱方案 | Onboarding |
+        | 10       | userA@example.com  | FREE     | true       |
+        | 11       | userB@example.com  | FREE     | true       |
+      And 使用者 "userA@example.com" 備考以下科目：
+        | 科目       | 考試日期   |
+        | AWS SAA    | 2027-01-01 |
+      And 使用者 "userB@example.com" 備考以下科目：
+        | 科目       | 考試日期   |
+        | AWS SAA    | 2027-01-01 |
+      And 使用者 "userB@example.com" 在科目 "AWS SAA" 上傳了一份資源，ID 存為 "res_b"
+      When 使用者 "userA@example.com" 查看儀表板，科目為 "AWS SAA"
+      Then 操作成功
+      And activityItems 中不應包含 "res_b" 的 resource_id
+
   # ========== 個人資料 ==========
 
   Rule: 後置（狀態）- 編輯個人資料應更新顯示名稱與 AI 教練參考資訊
