@@ -297,8 +297,13 @@ async def upload_resource_file(
     接受實際檔案，存入 Storage Service，設定 gcs_path。
     本地開發存到 uploads/，雲端存到 GCS。
     回傳 202 Accepted：資源已建立，處理工作已送至背景佇列。
+
+    Issue #68：背景排程失敗即標記 FAILED 並回 503（不再 silent PENDING）。
     """
-    from app.services.cloud_tasks_service import enqueue_process_resource
+    from app.services.cloud_tasks_service import (
+        EnqueueFailedError,
+        enqueue_process_resource,
+    )
 
     actual_filename = filename or file.filename or "unnamed"
     file_data = await file.read()
@@ -382,11 +387,19 @@ async def upload_resource_file(
 
     # 送至 Cloud Tasks（或 inline fallback — 依 BACKGROUND_PROCESSOR env 決定）
     # F31 修補：tenant_id 從 JWT 解析（get_tenant_id DI），不再硬編碼 B2C 預設
-    enqueue_process_resource(
-        resource_id=resource_id,
-        user_id=user_id,
-        tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
-    )
+    # Issue #68：失敗即標記 FAILED，避免 silent PENDING
+    try:
+        enqueue_process_resource(
+            resource_id=resource_id,
+            user_id=user_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+        )
+    except EnqueueFailedError as exc:
+        _mark_resource_failed(db, resource_id, str(exc))
+        raise HTTPException(
+            status_code=503,
+            detail={"message": str(exc), "resource_id": resource_id},
+        ) from exc
 
     return result
 
@@ -421,9 +434,17 @@ def submit_youtube(
     user_id: str = Depends(get_current_user_id),
     tenant_id: str = Depends(get_tenant_id),
     service: ResourceService = Depends(_get_resource_service),
+    db: Session = Depends(get_db),
 ):
-    """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。"""
-    from app.services.cloud_tasks_service import enqueue_process_resource
+    """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。
+
+    Issue #68：若背景排程失敗（Cloud Tasks 配置錯誤等），立刻將 resource 標記 FAILED
+    並回 503，避免 silent PENDING 永久卡住。
+    """
+    from app.services.cloud_tasks_service import (
+        EnqueueFailedError,
+        enqueue_process_resource,
+    )
 
     result = service.submit_youtube(
         user_id=user_id,
@@ -434,15 +455,37 @@ def submit_youtube(
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
 
-    # 送至 Cloud Tasks（或 inline fallback）
+    # 送至 Cloud Tasks（或 inline fallback）— 失敗即標記 FAILED 顯式回報
     if result.get("id"):
-        enqueue_process_resource(
-            resource_id=result["id"],
-            user_id=user_id,
-            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
-        )
+        try:
+            enqueue_process_resource(
+                resource_id=result["id"],
+                user_id=user_id,
+                tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+            )
+        except EnqueueFailedError as exc:
+            _mark_resource_failed(db, result["id"], str(exc))
+            raise HTTPException(
+                status_code=503,
+                detail={"message": str(exc), "resource_id": result["id"]},
+            ) from exc
 
     return result
+
+
+def _mark_resource_failed(db: Session, resource_id: str, error_message: str) -> None:
+    """Issue #68：背景排程失敗時把 resource 標記 FAILED 並寫入 error_message，
+    給前端 UI 與後續查詢可見錯誤（避免 silent PENDING）。"""
+    from app.models.resource import Resource, ResourceStatus
+    import uuid as _uuid
+    try:
+        res = db.query(Resource).filter_by(id=_uuid.UUID(resource_id)).first()
+        if res:
+            res.status = ResourceStatus.FAILED
+            res.error_message = error_message
+            db.commit()
+    except Exception:
+        db.rollback()
 
 
 @router.post("/resources/{resource_id}/process")
@@ -464,12 +507,23 @@ def process_resource(
     if resource is None:
         raise HTTPException(status_code=404, detail="資源不存在")
 
-    from app.services.cloud_tasks_service import enqueue_process_resource
-    enqueue_process_resource(
-        resource_id=resource_id,
-        user_id=user_id,
-        tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+    # Issue #68：背景排程失敗即標記 FAILED + 回 503
+    from app.services.cloud_tasks_service import (
+        EnqueueFailedError,
+        enqueue_process_resource,
     )
+    try:
+        enqueue_process_resource(
+            resource_id=resource_id,
+            user_id=user_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+        )
+    except EnqueueFailedError as exc:
+        _mark_resource_failed(db, resource_id, str(exc))
+        raise HTTPException(
+            status_code=503,
+            detail={"message": str(exc), "resource_id": resource_id},
+        ) from exc
     return {"status": "queued", "resource_id": resource_id}
 
 

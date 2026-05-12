@@ -1511,3 +1511,8 @@ from .depth_check.aggregate_given import setup as f45_given  # noqa: F401
 from .depth_check.commands import actions as f45_commands  # noqa: F401
 from .depth_check.aggregate_then import assertions as f45_assertions  # noqa: F401
 
+# 背景排程失敗 → 標記 FAILED — Feature 46 (Issue #68)
+from .enqueue_failure.aggregate_given import setup as f46_given  # noqa: F401
+from .enqueue_failure.commands import actions as f46_commands  # noqa: F401
+from .enqueue_failure.aggregate_then import assertions as f46_assertions  # noqa: F401
+
