@@ -108,12 +108,20 @@ class KnowledgeNavService:
         uid = uuid.UUID(user_id)
         sid = uuid.UUID(subject_id)
 
-        # 檢查使用者是否備考此科目
+        # 檢查使用者是否備考此科目（enrolled 或 owner 任一）
         journey = self.db.query(LearningJourney).filter_by(
             user_id=uid, subject_id=sid
         ).first()
         if not journey:
-            return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
+            # owner bypass：/subjects/mine 列出 owner_user_id=me 的科目，
+            # 但 LearningJourney 可能尚未建立（contract 不一致根因）。
+            # subject owner 視為已加入，不需 LearningJourney row。
+            owned = self.db.query(Subject).filter(
+                Subject.id == sid,
+                Subject.owner_user_id == uid,
+            ).first()
+            if not owned:
+                return {"error": True, "status_code": 403, "message": "您尚未加入此備考科目"}
 
         # 只查詢此科目自己的知識節點，不混入父科目的節點
         # 注意：不在此處自動建 exam_bank Resource。使用者若刪除該 Resource，
