@@ -62,5 +62,7 @@ python-docx>=1.1.0
 python-pptx>=1.0.0
 openpyxl>=3.1.0
 olefile>=0.47
-# yt-dlp 與 ffmpeg-python 已移除 (F47)：YouTube 改用 Gemini File API 直接處理
+# yt-dlp：用於 YouTube metadata probe（CC 偵測）與 VTT 字幕下載（不需 ffmpeg）
+yt-dlp>=2024.1.0
+# ffmpeg-python 不引入（VTT path 不需 audio 轉換）
 psutil>=5.9.0

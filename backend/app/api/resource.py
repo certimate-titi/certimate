@@ -439,9 +439,12 @@ def submit_youtube(
 ):
     """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。
 
-    F47：
-    - 長度前置檢查：超過 30 分鐘回 422
-    - 配額 2 份：reserve_youtube_quota 先佔 2 份，EnqueueFailedError 時 refund
+    F47 雙路徑分流：
+    1. probe metadata（yt-dlp info dict，不下載 audio）取 duration + has_cc
+    2. 依 has_cc 套用對應長度上限（有 CC 60 分 / 無 CC 20 分）
+    3. 依 has_cc reserve 配額（有 CC=1 份 / 無 CC=5 份）
+    4. 無 CC 路徑月度成本封頂檢查（PRO USD 3 / PRO_PLUS USD 12）
+    5. enqueue（EnqueueFailedError → refund）
     Issue #68：若背景排程失敗立刻標記 FAILED 並回 503。
     """
     from app.services.cloud_tasks_service import (
@@ -450,6 +453,8 @@ def submit_youtube(
     )
     from app.services.resource_parse_quota_service import (
         QuotaExceededError,
+        YOUTUBE_QUOTA_COST_WITH_CC,
+        YOUTUBE_QUOTA_COST_WITHOUT_CC,
         reserve_youtube_quota,
         refund_quota,
     )
@@ -460,20 +465,34 @@ def submit_youtube(
     if user_obj is None:
         raise HTTPException(status_code=401, detail={"message": "未授權"})
 
-    # ── YouTube 30 分鐘長度前置檢查 ──────────────────────────────────────
-    duration_minutes = _check_youtube_duration(request.youtube_url)
-    if duration_minutes is not None and duration_minutes > 30:
+    # ── Step 1: probe metadata（yt-dlp 不下載 audio）────────────────────
+    duration_minutes, has_cc = _probe_youtube_metadata(request.youtube_url)
+
+    # ── Step 2: 依 has_cc 套用長度上限（有 CC=60 分 / 無 CC=20 分）────────
+    if has_cc:
+        duration_limit = 60
+    else:
+        duration_limit = 20
+
+    if duration_minutes is not None and duration_minutes > duration_limit:
         raise HTTPException(
             status_code=422,
             detail={
-                "message": f"YouTube 影片不可超過 30 分鐘（{duration_minutes:.0f} 分鐘超過上限）",
+                "message": (
+                    f"YouTube 影片不可超過 {duration_limit} 分鐘"
+                    f"（{'有' if has_cc else '無'} CC 上限 {duration_limit} 分，"
+                    f"影片 {duration_minutes:.0f} 分鐘超過上限）"
+                ),
                 "duration_minutes": duration_minutes,
+                "has_cc": has_cc,
+                "limit_minutes": duration_limit,
             },
         )
 
-    # ── 配額預檢（YouTube = 2 份，只檢查不扣）──────────────────────────
+    # ── Step 3: 配額預檢（依 has_cc 取 1 或 5 份，只檢查不扣）────────────
+    quota_cost = YOUTUBE_QUOTA_COST_WITH_CC if has_cc else YOUTUBE_QUOTA_COST_WITHOUT_CC
     try:
-        reserve_youtube_quota(db, user_obj)  # 不傳 resource_id = 只預檢
+        reserve_youtube_quota(db, user_obj, has_cc=has_cc)  # 不傳 resource_id = 只預檢
     except QuotaExceededError as exc:
         raise HTTPException(
             status_code=402,
@@ -486,6 +505,10 @@ def submit_youtube(
             },
         )
 
+    # ── Step 4: 無 CC 路徑月度成本封頂（PRO USD 3 / PRO_PLUS USD 12）────
+    if not has_cc:
+        _check_monthly_cost_cap(db, user_obj, request.youtube_url)
+
     result = service.submit_youtube(
         user_id=user_id,
         youtube_url=request.youtube_url,
@@ -495,7 +518,7 @@ def submit_youtube(
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
 
-    # ── 配額佔位（插入 2 個 stub ParseJob，計入本月用量）────────────────
+    # ── 配額佔位（插入 stub ParseJob，計入本月用量）────────────────────
     resource_id = result.get("id")
     if resource_id:
         reserve_youtube_quota(
@@ -503,6 +526,7 @@ def submit_youtube(
             resource_id=resource_id,
             tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
             skip_check=True,  # 已在上方預檢，只插入 stub rows
+            has_cc=has_cc,
         )
 
     # 送至 Cloud Tasks（或 inline fallback）— 失敗即標記 FAILED 顯式回報
@@ -515,7 +539,7 @@ def submit_youtube(
             )
         except EnqueueFailedError as exc:
             _mark_resource_failed(db, resource_id, str(exc))
-            # 退回 2 份配額（把 stub jobs 標記 FAILED）
+            # 退回配額（把 stub jobs 標記 FAILED）
             try:
                 refund_quota(db, uuid.UUID(user_id), uuid.UUID(resource_id))
             except Exception:
@@ -528,51 +552,90 @@ def submit_youtube(
     return result
 
 
-def _check_youtube_duration(youtube_url: str) -> float | None:
-    """取得 YouTube 影片時長（分鐘）。
+def _probe_youtube_metadata(youtube_url: str) -> tuple[float | None, bool]:
+    """使用 yt-dlp（download=False）probe YouTube metadata，回傳 (duration_minutes, has_cc)。
 
-    採用最輕量策略：呼叫 YouTube oEmbed API（無需認證，只回傳 metadata 不下載影片）。
-    若無法取得長度（網路失敗 / API 限制），回傳 None 表示跳過長度檢查（寬鬆處理）。
+    has_cc = True 若 subtitles 或 automatic_captions 任一非空。
+    若 yt-dlp 不可用或 probe 失敗，fallback 回 (None, False)（寬鬆放行）。
     """
-    import re
-    import urllib.request
-    import json as _json
+    try:
+        from app.services.media_extractors.youtube_extractor import probe_youtube_metadata
+        meta = probe_youtube_metadata(youtube_url)
+        duration_minutes = (meta.duration_seconds / 60.0) if meta.duration_seconds else None
+        return duration_minutes, meta.has_cc
+    except Exception:
+        return None, False
+
+
+# 月度成本封頂（無 CC 路徑）— 依訂閱方案
+_MONTHLY_COST_CAP_USD: dict[str, float] = {
+    "PRO": 3.0,
+    "PRO_PLUS": 12.0,
+}
+
+# 每分鐘 Gemini Pro 預估成本（粗估；詳細定價見 finance TODO）
+_GEMINI_PRO_COST_PER_MINUTE_USD = 0.03
+
+
+def _check_monthly_cost_cap(db: Session, user: object, youtube_url: str) -> None:
+    """無 CC 路徑月度成本封頂檢查。
+
+    查詢 ai_usage_ledger 本月累積成本，加上本次預估成本，若超過方案上限回 422。
+    若 ai_usage_ledger schema 不支援查詢，記 warning 並放行（best-effort）。
+
+    TODO: finance 確認實際 Gemini Pro 定價後調整 _GEMINI_PRO_COST_PER_MINUTE_USD。
+    """
+    import logging as _logging
+
+    raw_plan = getattr(user, "subscription_plan", None)
+    plan = getattr(raw_plan, "value", raw_plan) or "FREE"
+    cap = _MONTHLY_COST_CAP_USD.get(plan)
+    if cap is None:
+        # FREE / ULTRA 無月度成本封頂（ULTRA 無限，FREE 走配額數量管控）
+        return
 
     try:
-        # 從 URL 擷取 video ID
-        vid_match = re.search(r"[?&]v=([\w-]+)", youtube_url)
-        if not vid_match:
-            return None
-        video_id = vid_match.group(1)
+        from decimal import Decimal
+        from sqlalchemy import text as _text
+        from datetime import datetime, timezone
 
-        # 使用 YouTube Data API（若有 key）取得 duration
-        api_key = (
-            os.environ.get("YOUTUBE_DATA_API_KEY")
-            or os.environ.get("GOOGLE_API_KEY")
+        month_start = datetime.now(timezone.utc).replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        if api_key:
-            api_url = (
-                f"https://www.googleapis.com/youtube/v3/videos"
-                f"?id={video_id}&part=contentDetails&key={api_key}"
+        user_id = getattr(user, "id", None)
+
+        result = db.execute(
+            _text(
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM ai_usage_ledger "
+                "WHERE user_id = :uid AND created_at >= :since"
+            ),
+            {"uid": str(user_id), "since": month_start},
+        ).scalar()
+
+        used_usd = float(result or 0)
+        # 粗估本次成本（以 20 分鐘上限 * 單價）
+        estimated_cost = 20.0 * _GEMINI_PRO_COST_PER_MINUTE_USD
+
+        if used_usd + estimated_cost > cap:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": (
+                        f"本月 AI 成本已接近方案上限（{plan} 上限 USD {cap:.0f}，"
+                        f"已用 USD {used_usd:.2f}），無 CC 影片處理暫時停用"
+                    ),
+                    "used_usd": used_usd,
+                    "cap_usd": cap,
+                    "plan": plan,
+                },
             )
-            with urllib.request.urlopen(api_url, timeout=5) as resp:
-                data = _json.loads(resp.read())
-            items = data.get("items", [])
-            if not items:
-                return None
-            duration_iso = items[0]["contentDetails"]["duration"]
-            # ISO 8601 duration: PT1H2M3S
-            hours = int(re.search(r"(\d+)H", duration_iso).group(1)) if "H" in duration_iso else 0
-            minutes = int(re.search(r"(\d+)M", duration_iso).group(1)) if "M" in duration_iso else 0
-            seconds = int(re.search(r"(\d+)S", duration_iso).group(1)) if "S" in duration_iso else 0
-            return hours * 60 + minutes + seconds / 60
-
-        # 無 API key：跳過長度檢查（寬鬆）
-        return None
-
-    except Exception:
-        # 無法取得長度時寬鬆放行
-        return None
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _logging.getLogger(__name__).warning(
+            "月度成本封頂查詢失敗（best-effort 放行）: %s — TODO: finance 確認 ai_usage_ledger schema",
+            exc,
+        )
 
 
 def _mark_resource_failed(db: Session, resource_id: str, error_message: str) -> None:
