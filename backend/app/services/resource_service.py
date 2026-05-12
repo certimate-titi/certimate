@@ -43,6 +43,33 @@ EXTENSION_TO_RESOURCE_TYPE = {
 
 YOUTUBE_REGEX = re.compile(r"^https?://(www\.)?youtube\.com/watch\?v=[\w-]+")
 
+YOUTUBE_OEMBED_URL = "https://www.youtube.com/oembed?url={url}&format=json"
+
+
+def _fetch_youtube_title_oembed(youtube_url: str) -> str | None:
+    """P0-2：透過 YouTube oEmbed endpoint 取得影片 title。
+
+    oEmbed 無需 API 金鑰，不觸發 bot challenge，回傳 title / author_name。
+    失敗時 return None（由呼叫方決定 fallback）。
+
+    Endpoint: https://www.youtube.com/oembed?url={url}&format=json
+    """
+    import logging
+    import urllib.request
+    import urllib.error
+    import json
+
+    logger = logging.getLogger(__name__)
+    try:
+        api_url = YOUTUBE_OEMBED_URL.format(url=youtube_url)
+        req = urllib.request.Request(api_url, headers={"User-Agent": "certimate/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("title") or None
+    except Exception as exc:
+        logger.warning("oEmbed fetch failed for %s: %s", youtube_url, exc)
+        return None
+
 FILE_SIZE_LIMITS_MB = {
     "FREE": 10,
     "PRO": 100,
@@ -223,11 +250,16 @@ class ResourceService:
             return {"error": True, "status_code": 422, "message": f"不是有效的 YouTube URL: {exc}"}
 
         from app.core.deps import PUBLIC_B2C_TENANT_ID
+
+        # P0-2：用 oEmbed 取 title 當 resource name，避免 yt-dlp bot challenge。
+        # oEmbed 是輕量無認證 endpoint，失敗時 fallback 到 URL。
+        resource_name = _fetch_youtube_title_oembed(youtube_url) or youtube_url
+
         resource = Resource(
             user_id=user_id,
             subject_id=subject_id,
             tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
-            name=youtube_url,
+            name=resource_name,
             type="youtube",
             scope=ResourceScope.PERSONAL,
             status=ResourceStatus.PENDING,
