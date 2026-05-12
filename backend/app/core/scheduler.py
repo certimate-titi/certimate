@@ -106,6 +106,19 @@ def init_scheduler(session_factory: sessionmaker) -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # 7) P0-1 Watchdog — 每 1 分鐘掃 queued parse_job dispatch silent fail
+    if os.environ.get("WATCHDOG_SCHEDULER_ENABLED", "true").lower() == "true":
+        watchdog_interval = int(os.environ.get("WATCHDOG_INTERVAL_MINUTES", "1"))
+        _scheduler.add_job(
+            job_dispatch_timeout_watchdog,
+            IntervalTrigger(minutes=watchdog_interval),
+            id="dispatch_timeout_watchdog",
+            name=f"P0-1 Dispatch Timeout Watchdog（每 {watchdog_interval} 分鐘）",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
     logger.info("Scheduler initialized with %d jobs", len(_scheduler.get_jobs()))
     return _scheduler
 
@@ -239,6 +252,28 @@ async def job_audit_log_cleanup():
     except Exception:
         db.rollback()
         logger.exception("Audit log cleanup failed")
+    finally:
+        db.close()
+
+
+async def job_dispatch_timeout_watchdog():
+    """P0-1 Watchdog — 掃 queued parse_job 超過 timeout 閾值者，標記 FAILED。
+
+    每 WATCHDOG_INTERVAL_MINUTES（預設 1 分鐘）執行，超過 WATCHDOG_TIMEOUT_MINUTES
+    （預設 10 分鐘）且仍是 queued 的 parse_job 標記為 FAILED + dispatch timeout。
+    """
+    db = _get_db()
+    try:
+        from app.services.watchdog_service import run_dispatch_timeout_watchdog
+        result = run_dispatch_timeout_watchdog(db)
+        if result.get("marked", 0) > 0:
+            logger.warning(
+                "Watchdog job: marked %d dispatch-timeout parse_jobs as FAILED",
+                result["marked"],
+            )
+    except Exception:
+        db.rollback()
+        logger.exception("Dispatch timeout watchdog job failed")
     finally:
         db.close()
 
