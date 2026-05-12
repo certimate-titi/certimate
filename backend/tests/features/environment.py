@@ -307,6 +307,13 @@ def after_scenario(context, scenario):
     except Exception:
         pass
 
+    # 停止所有 unittest.mock.patch（P0-2 yt-probe mock 等）
+    for patcher in context.memo.get("_patches", []):
+        try:
+            patcher.stop()
+        except RuntimeError:
+            pass  # 已 stop 不影響
+
     # 清理狀態
     context.last_error = None
     context.last_response = None

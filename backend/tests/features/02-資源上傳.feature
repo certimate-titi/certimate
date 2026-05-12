@@ -116,6 +116,18 @@ Feature: 資源上傳與隱性版權約定
       Then 操作成功
       And 預定使用的解析引擎應為 "gemini_flash"
 
+  Rule: P0-2 — yt-dlp probe bot challenge → oEmbed fallback 取 title
+    @backend
+    Scenario: yt-dlp probe 被 bot challenge 擋 → 走 oEmbed fallback 仍回 202
+      Given 環境變數 BACKGROUND_PROCESSOR=inline
+      And oEmbed API 模擬回傳 title "AWS 解決方案架構師課程"
+      And yt-dlp probe 模擬 bot challenge 失敗
+      When 使用者 "pro@example.com" 提交 YouTube URL "https://www.youtube.com/watch?v=iCvmsMzlF7o"，科目為 1
+      Then 操作成功
+      And 回應狀態碼為 202
+      And 新建立的資源狀態應為 "PENDING"
+      And 新建立資源的 name 應為 "AWS 解決方案架構師課程"
+
   # ========== 分片上傳（ULTRA 大檔案支援）==========
 
   Rule: 前置（參數）- 超過 100MB 的檔案必須使用分片上傳

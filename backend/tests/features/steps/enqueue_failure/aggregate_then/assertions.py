@@ -49,3 +49,45 @@ def step_assert_resource_error_contains(context, snippet):
     assert snippet in msg, (
         f"預期 error_message 含 {snippet!r}，實際: {msg!r}"
     )
+
+
+@then('該 parse_job status 變為 {status}')
+def step_assert_parse_job_status_changed(context, status):
+    from app.models.resource_parse_job import ResourceParseJob
+    db = context.db_session
+    db.expire_all()  # 強制重新讀 DB
+    jid = uuid.UUID(context.memo["last_parse_job_id"])
+    job = db.query(ResourceParseJob).filter_by(id=jid).first()
+    assert job is not None, "找不到 parse_job"
+    actual = job.status.value if hasattr(job.status, "value") else str(job.status)
+    assert actual == status, f"預期 parse_job.status={status}，實際={actual}"
+
+
+@then('該 parse_job failure_reason 為 "{reason}"')
+def step_assert_parse_job_failure_reason(context, reason):
+    from app.models.resource_parse_job import ResourceParseJob
+    db = context.db_session
+    db.expire_all()
+    jid = uuid.UUID(context.memo["last_parse_job_id"])
+    job = db.query(ResourceParseJob).filter_by(id=jid).first()
+    assert job is not None, "找不到 parse_job"
+    assert job.failure_reason == reason, (
+        f"預期 failure_reason={reason!r}，實際={job.failure_reason!r}"
+    )
+
+
+@then('對應 resource status 變為 {status}')
+def step_assert_resource_status_via_parse_job(context, status):
+    db = context.db_session
+    db.expire_all()
+    rid = uuid.UUID(context.memo["last_resource_id"])
+    res = db.query(Resource).filter_by(id=rid).first()
+    assert res is not None, "找不到資源"
+    actual = res.status.value if hasattr(res.status, "value") else str(res.status)
+    assert actual == status, f"預期 resource.status={status}，實際={actual}"
+
+
+@then('該 parse_job status 仍為 {status}')
+def step_assert_parse_job_status_unchanged(context, status):
+    """冪等性與不應修改的斷言 — 使用同一個函式。"""
+    step_assert_parse_job_status_changed(context, status)
