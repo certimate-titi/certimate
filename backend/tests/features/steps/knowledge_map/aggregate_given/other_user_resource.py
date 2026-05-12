@@ -53,7 +53,7 @@ def step_seed_resource(context, subject, resource_name):
             email="seed@system.internal",
             password_hash="unused",
             display_name="Seed User",
-            is_verified=True,
+            agreed_to_terms=True,
         )
         db.add(seed_user)
         db.flush()

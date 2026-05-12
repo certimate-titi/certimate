@@ -2,6 +2,7 @@
 
 import uuid
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.knowledge_node import KnowledgeNode
@@ -128,8 +129,13 @@ class KnowledgeNavService:
             .all()
         }
 
-        # 找此科目下所有資源（排除使用者已隱藏的）
-        resources_q = self.db.query(Resource).filter(Resource.subject_id.in_(subject_ids))
+        # 找此科目下所有資源（ownership filter：只顯示自己或 seed user 的資源，排除已隱藏的）
+        # Issue #74：缺少 user_id filter 導致他人 resource 被洩漏至回應中
+        SEED_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+        resources_q = self.db.query(Resource).filter(
+            Resource.subject_id.in_(subject_ids),
+            or_(Resource.user_id == uid, Resource.user_id == SEED_USER_ID),
+        )
         if hidden_resource_ids:
             resources_q = resources_q.filter(~Resource.id.in_(hidden_resource_ids))
         resources = resources_q.all()
