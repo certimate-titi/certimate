@@ -27,7 +27,7 @@ import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPane
 import ScaffoldMaterial from '@/components/ScaffoldMaterial';
 import ScaffoldNotebook from '@/components/ScaffoldNotebook';
 import ScaffoldReplayCard from '@/components/ScaffoldReplayCard';
-// react-resizable-panels removed — using plain flex layout
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 
 interface ChatMessage {
   role: 'user' | 'ai';
@@ -84,6 +84,34 @@ function KnowledgeBasePageInner() {
   const [showRightPanel, setShowRightPanel] = useState(true);
   const isMobile = useIsMobile();
   const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
+
+  // ── Resizable panels: defaultLayout persisted in localStorage ──
+  // Layout = { 'kp-left': leftPct, 'kp-center': centerPct, 'kp-right': rightPct }, sum = 100
+  const PANEL_STORAGE_KEY = 'knowledge_panel_widths';
+  const DEFAULT_LAYOUT: Record<string, number> = { 'kp-left': 22, 'kp-center': 52, 'kp-right': 26 };
+  const [panelLayout, setPanelLayout] = useState<Record<string, number>>(() => {
+    if (typeof window === 'undefined') return DEFAULT_LAYOUT;
+    try {
+      const saved = localStorage.getItem(PANEL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { left: number; right: number };
+        if (parsed.left && parsed.right) {
+          const center = 100 - parsed.left - parsed.right;
+          if (center > 0) return { 'kp-left': parsed.left, 'kp-center': center, 'kp-right': parsed.right };
+        }
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_LAYOUT;
+  });
+
+  const handlePanelLayoutChange = (layout: Record<string, number>) => {
+    setPanelLayout(layout);
+    try {
+      const left = layout['kp-left'] ?? 22;
+      const right = layout['kp-right'] ?? 26;
+      localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify({ left, right }));
+    } catch { /* ignore */ }
+  };
   const [activeNodeTab, setActiveNodeTab] = useState<NodeDetailTab>(() => {
     // coach tab 已移至底部常駐，tab=coach/material 均 fallback 為 info
     const valid: NodeDetailTab[] = ['info', 'notebook'];
@@ -635,20 +663,97 @@ function KnowledgeBasePageInner() {
             />
           )}
 
-          {/* ── LEFT: Resource List ── */}
-          {(showLeftPanel || (isMobile && mobileDrawer === 'left')) && (
-            <div className={`${isMobile ? 'absolute left-0 top-0 bottom-0 z-30 w-[85vw] max-w-[320px] shadow-xl' : 'w-[240px] lg:w-[280px]'} shrink-0 border-r border-slate-200`}>
-              <div className="h-full flex flex-col bg-white">
-                <div className="p-3 border-b border-slate-100 flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-emerald-500" />
-                  <h2 className="text-sm font-semibold text-slate-700">資料列表</h2>
-                  <span className="ml-auto text-[10px] text-slate-400">{documents.length} 筆</span>
-                  {isMobile && (
-                    <button onClick={() => setMobileDrawer(null)} className="p-1 rounded hover:bg-slate-100">
-                      <X className="h-4 w-4 text-slate-400" />
-                    </button>
-                  )}
-                </div>
+          {/* ── Mobile left drawer (absolute overlay) ── */}
+          {isMobile && mobileDrawer === 'left' && (
+            <div className="absolute left-0 top-0 bottom-0 z-30 w-[85vw] max-w-[320px] shadow-xl border-r border-slate-200 bg-white flex flex-col">
+              <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-emerald-500" />
+                <h2 className="text-sm font-semibold text-slate-700">資料列表</h2>
+                <span className="ml-auto text-[10px] text-slate-400">{documents.length} 筆</span>
+                <button onClick={() => setMobileDrawer(null)} className="p-1 rounded hover:bg-slate-100">
+                  <X className="h-4 w-4 text-slate-400" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {loadingDocs ? (
+                  [1, 2, 3].map(i => <div key={i} className="bg-slate-100 rounded-lg animate-pulse h-12" />)
+                ) : documents.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">
+                    <BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />
+                    尚無資源，請上傳學習教材
+                  </div>
+                ) : (
+                  documents.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => {
+                    const isActive = doc.id === selectedDocId;
+                    const isExpanded = doc.id === expandedDocId;
+                    const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
+                    const chunks = docChunks[doc.id];
+                    return (
+                      <div key={doc.id} className={`rounded-lg border transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200'}`}>
+                        <div onClick={() => { setSelectedDocId(doc.id); handleToggleDocChunks(doc.id); const docNode = nodes.find(n => n.documentId === doc.id); if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id); }} className="group p-2.5 cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`h-4 w-4 shrink-0 ${color}`} />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-xs font-medium truncate">{doc.title}</h3>
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                {doc.sourceType}
+                                {doc.status === 'PROCESSING' && (<span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-medium"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />處理中</span>)}
+                                {doc.status === 'FAILED' && (<span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-medium" title={parseJobFailures[doc.id] || ''}><AlertTriangle className="w-2.5 h-2.5" />{parseJobFailures[doc.id] ? `失敗：${parseJobFailures[doc.id].slice(0, 30)}${parseJobFailures[doc.id].length > 30 ? '...' : ''}` : '失敗'}</span>)}
+                                {doc.status === 'COMPLETED' && (<span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-medium">✓ 完成</span>)}
+                              </p>
+                            </div>
+                            {!doc.id.startsWith('hist:') && (<button onClick={(e) => { e.stopPropagation(); void handleOpenDeleteModal(doc.id); }} className="text-slate-400 hover:text-rose-500 transition-colors shrink-0 p-1" title="刪除資源"><Trash2 className="h-3.5 w-3.5" /></button>)}
+                          </div>
+                        </div>
+                        {isExpanded && chunks && chunks.length > 0 && (
+                          <div className="px-2 pb-2 space-y-0.5 max-h-[200px] overflow-y-auto">
+                            {chunks.map(chunk => (<div key={chunk.id} className="px-2 py-1 rounded text-[10px] bg-slate-50"><p className="font-medium text-slate-700 truncate">{chunk.section_title || `段落 ${chunk.chunk_index + 1}`}</p></div>))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Mobile right drawer (absolute overlay) ── */}
+          {isMobile && mobileDrawer === 'right' && (() => {
+            const nodeId = selectedNodeDetail ? ((selectedNodeDetail as unknown as Record<string, unknown>).node_id as string) || selectedNodeDetail.node?.id || null : null;
+            const nodeLabel = selectedNodeDetail?.node?.label || null;
+            const infoSlot = loadingDetail ? (<div className="p-3 flex items-center justify-center"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>) : selectedNodeDetail ? (<div><div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div></div>) : (<div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div>);
+            return (
+              <div className="absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] shadow-xl border-l border-slate-200 bg-white">
+                <button onClick={() => setMobileDrawer(null)} className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-slate-100"><X className="h-4 w-4 text-slate-400" /></button>
+                <NodeDetailPanel nodeId={nodeId} nodeLabel={nodeLabel} activeTab={activeNodeTab} onTabChange={setActiveNodeTab} infoSlot={infoSlot} notebookSlot={<ScaffoldNotebook nodeId={nodeId} fallbackResourceId={focusResourceId || selectedDocId || null} nodeLabel={nodeLabel} isPro={isProPlus || subscriptionTier === 'PRO_199'} onUpgradeClick={() => router.push('/account')} />} coachSlot={<div className="p-4 text-xs text-slate-400 text-center">請使用桌面版以啟用 AI 教練</div>} quickAskSlot={null} />
+              </div>
+            );
+          })()}
+
+          {/* ── Desktop / Tablet: PanelGroup (≥1024px enabled, <1024px disabled) ── */}
+          {!isMobile && (
+            <PanelGroup
+              orientation="horizontal"
+              defaultLayout={panelLayout}
+              onLayoutChanged={handlePanelLayoutChange}
+              className="flex-1 overflow-hidden"
+              style={{ display: 'flex' }}
+            >
+              {/* ── Desktop LEFT: Resource List ── */}
+              <Panel
+                id="kp-left"
+                minSize="240px"
+                defaultSize={panelLayout['kp-left']}
+                style={{ display: showLeftPanel ? undefined : 'none', overflow: 'hidden' }}
+              >
+                <div className="h-full border-r border-slate-200">
+                  <div className="h-full flex flex-col bg-white">
+                    <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-emerald-500" />
+                      <h2 className="text-sm font-semibold text-slate-700">資料列表</h2>
+                      <span className="ml-auto text-[10px] text-slate-400">{documents.length} 筆</span>
+                    </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {loadingDocs ? (
                     [1, 2, 3].map(i => <div key={i} className="bg-slate-100 rounded-lg animate-pulse h-12" />)
@@ -857,13 +962,23 @@ function KnowledgeBasePageInner() {
                       );
                     })
                   )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            </Panel>
 
-          {/* ── CENTER: 知識圖譜 ── */}
-          <div className="flex-1 min-w-0">
+            {/* Drag handle: left ↔ center */}
+            {showLeftPanel && (
+              <PanelResizeHandle
+                className="w-1 bg-slate-200 hover:bg-emerald-400 hover:w-1 active:bg-emerald-500 transition-colors cursor-col-resize shrink-0 group relative"
+                style={{ cursor: 'col-resize' }}
+              >
+                <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-emerald-400/20" />
+              </PanelResizeHandle>
+            )}
+
+            {/* ── Desktop CENTER: 知識圖譜 ── */}
+            <Panel id="kp-center" minSize="400px" defaultSize={panelLayout['kp-center']}>
             <div className="h-full flex flex-col overflow-hidden bg-white">
               {/* Toolbar */}
               <div className="flex items-center justify-between px-2 md:px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-1 overflow-x-auto">
@@ -1082,10 +1197,20 @@ function KnowledgeBasePageInner() {
                 )}
               </div>
             </div>
-          </div>
+            </Panel>
 
-          {/* ── RIGHT: 節點詳情（4-Tab） ── */}
-          {(showRightPanel || (isMobile && mobileDrawer === 'right')) && (() => {
+            {/* Drag handle: center ↔ right */}
+            {showRightPanel && (
+              <PanelResizeHandle
+                className="w-1 bg-slate-200 hover:bg-emerald-400 active:bg-emerald-500 transition-colors cursor-col-resize shrink-0 group relative"
+                style={{ cursor: 'col-resize' }}
+              >
+                <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-emerald-400/20" />
+              </PanelResizeHandle>
+            )}
+
+            {/* ── Desktop RIGHT: 節點詳情（4-Tab） ── */}
+            {showRightPanel && (() => {
             const nodeId = selectedNodeDetail ? ((selectedNodeDetail as unknown as Record<string, unknown>).node_id as string) || selectedNodeDetail.node?.id || null : null;
             const nodeLabel = selectedNodeDetail?.node?.label || null;
 
@@ -1284,12 +1409,8 @@ function KnowledgeBasePageInner() {
             );
 
             return (
-              <div className={`${isMobile ? 'absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] shadow-xl' : 'w-[320px] lg:w-[360px]'} shrink-0 border-l border-slate-200 bg-white`}>
-                {isMobile && (
-                  <button onClick={() => setMobileDrawer(null)} className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-slate-100">
-                    <X className="h-4 w-4 text-slate-400" />
-                  </button>
-                )}
+              <Panel id="kp-right" minSize="280px" defaultSize={panelLayout['kp-right']} style={{ overflow: 'hidden' }}>
+              <div className="h-full border-l border-slate-200 bg-white">
                 <NodeDetailPanel
                   nodeId={nodeId}
                   nodeLabel={nodeLabel}
@@ -1429,8 +1550,12 @@ function KnowledgeBasePageInner() {
                   }
                 />
               </div>
+              </Panel>
             );
           })()}
+
+            </PanelGroup>
+          )}
 
         </div>
       </div>
