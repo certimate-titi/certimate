@@ -11,7 +11,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles } from 'lucide-react';
-import { knowledgeService, subjectService, documentService, resourceParseService } from '@/lib/api/services';
+import { knowledgeService, subjectService, documentService, resourceParseService, type NodeScaffoldItem } from '@/lib/api/services';
 import OrphanCoachPanel from '@/components/coach/OrphanCoachPanel';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
@@ -84,13 +84,21 @@ function KnowledgeBasePageInner() {
   const isMobile = useIsMobile();
   const [mobileDrawer, setMobileDrawer] = useState<'left' | 'right' | null>(null);
   const [activeNodeTab, setActiveNodeTab] = useState<NodeDetailTab>(() => {
-    // 鷹架已整合回 info tab，tab=material graceful fallback 為 info
-    const valid: NodeDetailTab[] = ['info', 'notebook', 'coach'];
+    // coach tab 已移至底部常駐，tab=coach/material 均 fallback 為 info
+    const valid: NodeDetailTab[] = ['info', 'notebook'];
     return (valid.includes(initialTab as NodeDetailTab) ? initialTab : 'info') as NodeDetailTab;
   });
   // Orphan AI 教練：切換蘇格拉底對話面板
   const [showOrphanCoach, setShowOrphanCoach] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // Item 2: AI 教練底部常駐展開狀態
+  const [chatExpanded, setChatExpanded] = useState(false);
+  // Item 3: 章節導覽
+  const [expandedChaptersDocId, setExpandedChaptersDocId] = useState<string | null>(null);
+  const [docScaffolds, setDocScaffolds] = useState<Record<string, NodeScaffoldItem[]>>({});
+  const [loadingScaffolds, setLoadingScaffolds] = useState<string | null>(null);
+  const [chapterScrollTarget, setChapterScrollTarget] = useState<string | null>(null);
+  const docViewRef = useRef<HTMLDivElement>(null);
 
   // On mobile, collapse both panels by default
   useEffect(() => {
@@ -103,6 +111,28 @@ function KnowledgeBasePageInner() {
     }
     setMobileDrawer(null);
   }, [isMobile]);
+
+  // Item 3: 章節跳轉 — chapterScrollTarget 設定後，找到含此文字的錨點並 scroll
+  useEffect(() => {
+    if (!chapterScrollTarget || centerView !== 'document') return;
+    // 找 id="chapter-<slug>" 的錨點
+    const slug = chapterScrollTarget.replace(/\s+/g, '-').toLowerCase().slice(0, 30);
+    const el = docViewRef.current?.querySelector(`[data-chapter-heading]`);
+    // 掃所有 chapter anchor
+    const anchors = docViewRef.current?.querySelectorAll('[data-chapter-heading]');
+    if (anchors) {
+      for (const anchor of Array.from(anchors)) {
+        if ((anchor as HTMLElement).dataset.chapterHeading === chapterScrollTarget) {
+          (anchor as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+          break;
+        }
+      }
+    } else if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    void slug; // suppress lint
+    setChapterScrollTarget(null);
+  }, [chapterScrollTarget, centerView]);
 
   // V3: 轉換 MindMapNode[] → GraphNode[] for ForceGraph
   const graphNodes: GraphNode[] = (() => {
@@ -625,11 +655,86 @@ function KnowledgeBasePageInner() {
                   ) : (
                     documents.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => {
                       const isActive = doc.id === selectedDocId;
-                      const isExpanded = doc.id === expandedDocId;
                       const { icon: Icon, color } = sourceTypeIcons[doc.sourceType] || sourceTypeIcons.PDF;
-                      const chunks = docChunks[doc.id];
+                      // Item 3: 章節導覽 state
+                      const isChaptersExpanded = doc.id === expandedChaptersDocId;
+                      const scaffolds = docScaffolds[doc.id];
+                      // group by chapter_heading（去重，保持首次出現順序）
+                      const chapters: Array<{ heading: string; page_start: number | null; page_end: number | null }> = [];
+                      if (scaffolds) {
+                        const seen = new Set<string>();
+                        for (const s of scaffolds) {
+                          if (s.chapter_heading && !seen.has(s.chapter_heading)) {
+                            seen.add(s.chapter_heading);
+                            chapters.push({ heading: s.chapter_heading, page_start: s.page_start, page_end: s.page_end });
+                          }
+                        }
+                      }
                       return (
                         <div key={doc.id} className={`rounded-lg border transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200'}`}>
+                          {/* Item 3: 章節導覽折疊按鈕 */}
+                          {doc.status === 'COMPLETED' && !doc.id.startsWith('hist:') && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (isChaptersExpanded) {
+                                  setExpandedChaptersDocId(null);
+                                  return;
+                                }
+                                setExpandedChaptersDocId(doc.id);
+                                if (docScaffolds[doc.id]) return;
+                                setLoadingScaffolds(doc.id);
+                                try {
+                                  const res = await knowledgeService.getResourceScaffolds(doc.id);
+                                  setDocScaffolds(prev => ({ ...prev, [doc.id]: res.scaffolds || [] }));
+                                } catch {
+                                  setDocScaffolds(prev => ({ ...prev, [doc.id]: [] }));
+                                } finally {
+                                  setLoadingScaffolds(null);
+                                }
+                              }}
+                              className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] text-slate-500 hover:bg-slate-50 border-b border-slate-100 rounded-t-lg"
+                            >
+                              <span>📑</span>
+                              <span className="font-medium">章節導覽</span>
+                              {scaffolds && chapters.length > 0 && <span className="text-slate-400">({chapters.length} 章)</span>}
+                              {isChaptersExpanded ? <ChevronDown className="h-3 w-3 ml-auto" /> : <ChevronRight className="h-3 w-3 ml-auto" />}
+                            </button>
+                          )}
+                          {/* 章節導覽展開列表 */}
+                          {isChaptersExpanded && (
+                            <div className="px-2 pb-1.5 border-b border-slate-100">
+                              {loadingScaffolds === doc.id ? (
+                                <div className="flex items-center justify-center py-2">
+                                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              ) : chapters.length > 0 ? (
+                                <div className="space-y-0.5 max-h-[200px] overflow-y-auto pt-1">
+                                  {chapters.map((ch, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={() => {
+                                        setSelectedDocId(doc.id);
+                                        // 切到文件視圖並 scroll 到對應章節
+                                        void handleToggleDocChunks(doc.id);
+                                        setChapterScrollTarget(ch.heading);
+                                      }}
+                                      className="w-full text-left px-2 py-1 rounded text-[10px] text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 flex items-start gap-1.5"
+                                    >
+                                      <span className="shrink-0 text-slate-300 font-mono">
+                                        {doc.sourceType === 'YOUTUBE_URL'
+                                          ? (ch.page_start != null ? `${Math.floor(ch.page_start / 60)}:${String(ch.page_start % 60).padStart(2, '0')}` : '—')
+                                          : (ch.page_start != null ? `p.${ch.page_start}${ch.page_end && ch.page_end !== ch.page_start ? `-${ch.page_end}` : ''}` : '—')}
+                                      </span>
+                                      <span className="flex-1 truncate">{ch.heading}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-center py-2 text-[10px] text-slate-400 bg-slate-50 rounded">無章節資訊</p>
+                              )}
+                            </div>
+                          )}
                           <div
                             onClick={() => { setSelectedDocId(doc.id); handleToggleDocChunks(doc.id); const docNode = nodes.find(n => n.documentId === doc.id); if (docNode) handleNodeClick(docNode.children?.[0]?.id || docNode.id); }}
                             className="group p-2.5 cursor-pointer"
@@ -732,59 +837,6 @@ function KnowledgeBasePageInner() {
                               )}
                             </div>
                           </div>
-                          {isExpanded && (
-                            <div className="px-2 pb-2">
-                              {loadingChunks === doc.id ? (
-                                <div className="flex items-center justify-center py-3">
-                                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                </div>
-                              ) : chunks && chunks.length > 0 ? (
-                                <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
-                                  {chunks.map(chunk => (
-                                    <div
-                                      key={chunk.id}
-                                      className={`px-2 py-1.5 rounded text-[10px] leading-relaxed ${
-                                        chunk.chunk_type === 'exam_questions'
-                                          ? 'bg-amber-50 border border-amber-100'
-                                          : chunk.chunk_type === 'image_analysis'
-                                            ? 'bg-purple-50 border border-purple-100'
-                                            : 'bg-slate-50 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      <div className="flex items-start gap-1.5">
-                                        {chunk.chunk_type === 'exam_questions' ? (
-                                          <ClipboardList className="h-3 w-3 shrink-0 text-amber-600 mt-0.5" />
-                                        ) : chunk.chunk_type === 'image_analysis' ? (
-                                          <Image className="h-3 w-3 shrink-0 text-purple-500 mt-0.5" />
-                                        ) : (
-                                          <FileText className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                          {chunk.chunk_type === 'exam_questions' && (
-                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-amber-700 bg-amber-100 mb-0.5">考古題</span>
-                                          )}
-                                          {chunk.chunk_type === 'image_analysis' && (
-                                            <span className="inline-block px-1 py-0 rounded text-[8px] font-semibold text-purple-600 bg-purple-100 mb-0.5">圖片分析</span>
-                                          )}
-                                          <p className="font-medium text-slate-700 truncate">
-                                            {chunk.section_title || `段落 ${chunk.chunk_index + 1}`}
-                                          </p>
-                                          <p className="text-slate-500 line-clamp-2 mt-0.5">{chunk.content.slice(0, 120)}{chunk.content.length > 120 ? '...' : ''}</p>
-                                          {chunk.chunk_type !== 'exam_questions' && chunk.source_page_start && (
-                                            <span className="text-[9px] text-slate-400 mt-0.5 inline-block">p.{chunk.source_page_start}{chunk.source_page_end && chunk.source_page_end !== chunk.source_page_start ? `-${chunk.source_page_end}` : ''}</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : chunkErrors[doc.id] ? (
-                                <div className="text-center py-2 text-[10px] text-rose-500">{chunkErrors[doc.id]}</div>
-                              ) : (
-                                <div className="text-center py-2 text-[10px] text-slate-400">尚無內容分塊</div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       );
                     })
@@ -863,10 +915,40 @@ function KnowledgeBasePageInner() {
               {/* Graph / Document */}
               <div className="flex-1 overflow-hidden">
                 {centerView === 'document' ? (
-                  <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
+                  <div ref={docViewRef} className="h-full overflow-y-auto px-4 md:px-8 py-4">
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                      {docFullText}
+                    <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700">
+                      {/* Item 3: 渲染含章節錨點的段落 */}
+                      {(() => {
+                        const lines = docFullText.split('\n');
+                        // 取得當前文件的章節 headings（若已載入 scaffolds）
+                        const activeScaffolds = selectedDocId ? docScaffolds[selectedDocId] : undefined;
+                        const headingSet = new Set<string>();
+                        if (activeScaffolds) {
+                          for (const s of activeScaffolds) {
+                            if (s.chapter_heading) headingSet.add(s.chapter_heading);
+                          }
+                        }
+                        return lines.map((line, idx) => {
+                          // 找出對應 chapter_heading 的行（寬鬆 includes 匹配）
+                          let matchedHeading: string | undefined;
+                          for (const h of headingSet) {
+                            if (line.includes(h)) { matchedHeading = h; break; }
+                          }
+                          return (
+                            <p key={idx} className={line.trim() === '' ? 'my-2' : 'my-0.5'}>
+                              {matchedHeading && (
+                                <span
+                                  data-chapter-heading={matchedHeading}
+                                  className="inline-block w-0 h-0 overflow-hidden"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              {line || ' '}
+                            </p>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 ) : !loadingDocs && mindMapNodes.length === 0 ? (
@@ -1061,7 +1143,7 @@ function KnowledgeBasePageInner() {
                         <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded text-[10px] border border-emerald-200 hover:bg-emerald-100">
                           📝 節點練習
                         </button>
-                        <button onClick={() => { setActiveNodeTab('coach'); setChatInput('用簡單的話解釋'); }} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] border border-blue-200 hover:bg-blue-100">
+                        <button onClick={() => { setChatInput('用簡單的話解釋'); setChatExpanded(true); setShowOrphanCoach(false); }} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] border border-blue-200 hover:bg-blue-100">
                           💡 AI 教練解釋
                         </button>
                       </div>
@@ -1201,37 +1283,131 @@ function KnowledgeBasePageInner() {
                   notebookSlot={notebookSlot}
                   coachSlot={coachSlot}
                   quickAskSlot={
-                    <div className="px-2 py-1.5">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && chatInput.trim() && !chatLoading && !isPro199 && (isProPlus || freeQueriesLeft > 0) && selectedNodeDetail) {
+                    <div>
+                      {/* 展開的完整 AI 教練對話區 */}
+                      {chatExpanded && (
+                        <div className="border-b border-slate-100" style={{ maxHeight: '340px', display: 'flex', flexDirection: 'column' }}>
+                          {/* 模式切換列 */}
+                          <div className="px-3 py-1.5 flex items-center gap-2 bg-slate-50/50 border-b border-slate-100 shrink-0">
+                            <button
+                              onClick={() => setShowOrphanCoach(false)}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors ${!showOrphanCoach ? 'bg-emerald-100 text-emerald-700' : 'text-slate-400 hover:bg-slate-100'}`}
+                            >
+                              <MessageCircle className="h-3 w-3" />問答
+                            </button>
+                            <button
+                              onClick={() => { if (nodeId) setShowOrphanCoach(true); }}
+                              disabled={!nodeId}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors ${showOrphanCoach ? 'bg-violet-100 text-violet-700' : 'text-slate-400 hover:bg-slate-100'} disabled:opacity-40`}
+                              title="蘇格拉底引導模式"
+                            >
+                              <Sparkles className="h-3 w-3" />蘇格拉底
+                            </button>
+                            {!showOrphanCoach && isPro199 && <span className="ml-auto text-[9px] text-amber-500 flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> PRO_PLUS 專屬</span>}
+                            {!showOrphanCoach && !isProPlus && !isPro199 && <span className="ml-auto text-[9px] text-slate-400">剩 {freeQueriesLeft}/3</span>}
+                            <button onClick={() => setChatExpanded(false)} className="ml-auto p-0.5 rounded hover:bg-slate-100" aria-label="收折 AI 教練">
+                              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                            </button>
+                          </div>
+                          {/* 對話內容 */}
+                          <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2" style={{ minHeight: 0 }}>
+                            {showOrphanCoach && nodeId ? (
+                              <OrphanCoachPanel
+                                nodeId={nodeId}
+                                nodeName={nodeLabel || '知識節點'}
+                                onClose={() => setShowOrphanCoach(false)}
+                                onSwitchToQuestion={(questionId) => { router.push(`/practice?questionId=${questionId}`); }}
+                              />
+                            ) : (
+                              <>
+                                {!isPro199 && (isProPlus || freeQueriesLeft > 0) && selectedNodeDetail && (
+                                  <div className="flex flex-wrap gap-1 shrink-0">
+                                    {quickChips.map(chip => (
+                                      <button key={chip} onClick={() => setChatInput(chip)} className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-200 hover:bg-emerald-100">{chip}</button>
+                                    ))}
+                                  </div>
+                                )}
+                                {chatMessages.length === 0 && !isPro199 && selectedNodeDetail && (
+                                  <div className="text-center py-3 text-[10px] text-slate-400">對所選節點提問，AI 教練為你解答</div>
+                                )}
+                                {chatMessages.map((msg, i) => (
+                                  <div key={i} className={`flex gap-1.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                    <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-[9px] ${msg.role === 'ai' ? 'bg-emerald-100' : 'bg-slate-200'}`}>
+                                      {msg.role === 'ai' ? <MessageCircle className="h-3 w-3 text-emerald-600" /> : <span className="font-bold text-slate-600">U</span>}
+                                    </div>
+                                    <div className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}>
+                                      {msg.role === 'ai' ? (
+                                        <div className="prose prose-xs max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                                          <MathContent>{msg.content}</MathContent>
+                                        </div>
+                                      ) : msg.content}
+                                    </div>
+                                  </div>
+                                ))}
+                                {chatLoading && (
+                                  <div className="flex gap-1.5">
+                                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><MessageCircle className="h-3 w-3 text-emerald-600" /></div>
+                                    <div className="bg-white border border-slate-200 p-2 rounded-xl rounded-tl-none">
+                                      <div className="flex gap-1"><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" /><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.1s]" /><div className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]" /></div>
+                                    </div>
+                                  </div>
+                                )}
+                                {isPro199 && (
+                                  <div className="p-3 text-center rounded-xl bg-white/50 border border-white/50">
+                                    <Lock className="h-5 w-5 text-indigo-500 mx-auto mb-1" />
+                                    <p className="text-[10px] text-slate-500 mb-2">AI 教練為 PRO_PLUS 專屬</p>
+                                    <Link href="/account" className="inline-flex items-center gap-1 bg-emerald-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-emerald-600">升級 (NT$399/月)</Link>
+                                  </div>
+                                )}
+                                {!isProPlus && !isPro199 && freeQueriesLeft <= 0 && (
+                                  <div className="p-3 text-center rounded-xl bg-white/50 border border-white/50">
+                                    <Lock className="h-5 w-5 text-indigo-500 mx-auto mb-1" />
+                                    <p className="text-[10px] text-slate-500 mb-2">已達免費上限</p>
+                                    <Link href="/account" className="inline-flex items-center gap-1 bg-emerald-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-emerald-600">解鎖無限 AI 教練</Link>
+                                  </div>
+                                )}
+                                <div ref={chatEndRef} />
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* 常駐輸入列 */}
+                      <div className="px-2 py-1.5">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onFocus={() => setChatExpanded(true)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && chatInput.trim() && !chatLoading && !isPro199 && (isProPlus || freeQueriesLeft > 0) && selectedNodeDetail) {
+                                const text = chatInput.trim();
+                                setChatExpanded(true);
+                                setShowOrphanCoach(false);
+                                handleSendChat(text);
+                              }
+                            }}
+                            placeholder={isPro199 ? 'AI 教練為 PRO_PLUS 專屬' : !isProPlus && freeQueriesLeft <= 0 ? '已達免費上限' : !selectedNodeDetail ? '點選節點以提問' : '對此節點提問 AI 教練…'}
+                            className="w-full pl-7 pr-8 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs disabled:opacity-50"
+                            disabled={chatLoading || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
+                          />
+                          <MessageCircle className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
+                          <button
+                            onClick={() => {
                               const text = chatInput.trim();
-                              setActiveNodeTab('coach');
+                              if (!text) return;
+                              setChatExpanded(true);
+                              setShowOrphanCoach(false);
                               handleSendChat(text);
-                            }
-                          }}
-                          placeholder={isPro199 ? 'AI 教練為 PRO_PLUS 專屬' : !isProPlus && freeQueriesLeft <= 0 ? '已達免費上限' : !selectedNodeDetail ? '點選節點以提問' : '對此節點提問 AI 教練…'}
-                          className="w-full pl-7 pr-8 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs disabled:opacity-50"
-                          disabled={chatLoading || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
-                        />
-                        <MessageCircle className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-emerald-500" />
-                        <button
-                          onClick={() => {
-                            const text = chatInput.trim();
-                            if (!text) return;
-                            setActiveNodeTab('coach');
-                            handleSendChat(text);
-                          }}
-                          disabled={chatLoading || !chatInput.trim() || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 bg-emerald-500 text-white rounded flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                          aria-label="送出提問給 AI 教練"
-                        >
-                          <Send className="h-3 w-3" />
-                        </button>
+                            }}
+                            disabled={chatLoading || !chatInput.trim() || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 bg-emerald-500 text-white rounded flex items-center justify-center hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                            aria-label="送出提問給 AI 教練"
+                          >
+                            <Send className="h-3 w-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   }
