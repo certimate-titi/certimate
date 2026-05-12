@@ -116,8 +116,14 @@ class OrphanCoachService(BaseService):
         if isinstance(quota_check, dict) and quota_check.get("error"):
             return quota_check
 
-        # 建 Session
+        # 方案 B：先組 context（純讀取，含 pgvector，可能失敗）
+        # 必須在 AiChatSession.add+flush 之前執行，避免 pgvector
+        # 拋出 InternalError 後 rollback 清掉已 flush 的 session 記錄。
         model = self._select_llm(user_uuid)
+        context = self._build_context(node_uuid, user_uuid)
+        opening_message = self._call_llm_opening(model, context)
+
+        # 純讀取完成後才開寫入 transaction
         session = AiChatSession(
             user_id=user_uuid,
             context_type="knowledge_node",
@@ -130,10 +136,6 @@ class OrphanCoachService(BaseService):
         )
         self.db.add(session)
         self.db.flush()
-
-        # 組 context + 呼叫 LLM
-        context = self._build_context(node_uuid, user_uuid)
-        opening_message = self._call_llm_opening(model, context)
 
         # 寫 assistant 第一則訊息
         msg = AiChatMessage(
@@ -549,6 +551,7 @@ class OrphanCoachService(BaseService):
             ).fetchall()
         except Exception as e:
             log.warning("鄰居節點查詢失敗: %s", e)
+            self.db.rollback()  # 防 pgvector InternalError 讓 transaction 進入 aborted 狀態
             return []
 
         neighbors = []
@@ -579,7 +582,9 @@ class OrphanCoachService(BaseService):
                 Exam.subject_id == subject_id
             ).scalar()
             return count or 0
-        except Exception:
+        except Exception as e:
+            log.warning("科目題數統計失敗: %s", e)
+            self.db.rollback()  # 防 transaction aborted 連鎖
             return 0
 
     def _compute_frequency_percentile(
@@ -602,7 +607,9 @@ class OrphanCoachService(BaseService):
             counts = sorted([r[0] for r in all_nodes])
             rank = sum(1 for c in counts if c <= target_count)
             return int(rank / len(counts) * 100)
-        except Exception:
+        except Exception as e:
+            log.warning("頻率百分位計算失敗: %s", e)
+            self.db.rollback()  # 防 transaction aborted 連鎖
             return 0
 
     def _build_context_summary(self, context: dict) -> dict:
