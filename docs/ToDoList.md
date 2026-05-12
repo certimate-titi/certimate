@@ -26,6 +26,18 @@
 
 **待補稽核**（次要）：`/super-admin/settings/*`、`/super-admin/prompt-templates/`、`/super-admin/cost-monitor/`、`/super-admin/settings/flags`、`/super-admin/settings/plans` 等高等設定頁應改用 `isSuperAdmin` 守衛（目前皆用 `isAdmin`）。後端 `require_super_admin` 已存在，需 audit endpoint 一致性。
 
+## 🟢 Scale 防呆 — Proxy 池接入（2026-05-12 新增，非緊急）
+
+- [ ] **YT 字幕抽取 Proxy 池**（觸發條件：>1k MAU 或 transcript-api 月度 429 比率 > 5%）
+  - **根因**：transcript-api 仍走 YouTube player timedtext，Cloud Run 共享 NAT 池在多用戶場景仍有 IP 連坐封鎖風險（雖配額比 yt-dlp 寬鬆 ~10x）
+  - **方案**：接 Smartproxy / IPRoyal residential proxy（YT scraping 友善供應商），yt-dlp + transcript-api 都支援 `--proxy` / `proxies` 參數
+  - **成本**：USD 5–15/月（1k 用戶 × 5 支 × 100KB ≈ 0.5GB residential 流量）
+  - **工時**：~2 天（SDK 接入 0.5d + rotation 策略 0.5d + 監控 0.5d + KYC/帳號 0.5d）
+  - **法律**：YT ToS 對 scraping 灰色 → B2B/學校場景**改走 YouTube Data API v3 OAuth**（白名單、免費 10k units/day）
+  - **硬上限**：proxy 帳號設月度自動斷供（USD 20 上限），超出 fallback 回 transcript-api → yt-dlp → Pro 直餵
+  - **不做的時機**：alpha + 1k 用戶以內，免費路徑足夠
+  - **參考**：commit 3fcc36d 根因報告（CEO/CTO 會議 2026-05-12）
+
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-08 新增）
 
 - [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08）
