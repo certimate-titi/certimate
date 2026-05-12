@@ -1,5 +1,6 @@
 """Resource API router."""
 
+import os
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -438,13 +439,75 @@ def submit_youtube(
 ):
     """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。
 
-    Issue #68：若背景排程失敗（Cloud Tasks 配置錯誤等），立刻將 resource 標記 FAILED
-    並回 503，避免 silent PENDING 永久卡住。
+    F47 雙路徑分流：
+    1. probe metadata（yt-dlp info dict，不下載 audio）取 duration + has_cc
+    2. 依 has_cc 套用對應長度上限（有 CC 60 分 / 無 CC 20 分）
+    3. 依 has_cc reserve 配額（有 CC=1 份 / 無 CC=5 份）
+    4. 無 CC 路徑月度成本封頂檢查（PRO USD 3 / PRO_PLUS USD 12）
+    5. enqueue（EnqueueFailedError → refund）
+    Issue #68：若背景排程失敗立刻標記 FAILED 並回 503。
     """
     from app.services.cloud_tasks_service import (
         EnqueueFailedError,
         enqueue_process_resource,
     )
+    from app.services.resource_parse_quota_service import (
+        QuotaExceededError,
+        YOUTUBE_QUOTA_COST_WITH_CC,
+        YOUTUBE_QUOTA_COST_WITHOUT_CC,
+        reserve_youtube_quota,
+        refund_quota,
+    )
+    from app.models.user import User
+
+    # ── 載入 user obj（配額需要） ────────────────────────────────────────
+    user_obj = db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+    if user_obj is None:
+        raise HTTPException(status_code=401, detail={"message": "未授權"})
+
+    # ── Step 1: probe metadata（yt-dlp 不下載 audio）────────────────────
+    duration_minutes, has_cc = _probe_youtube_metadata(request.youtube_url)
+
+    # ── Step 2: 依 has_cc 套用長度上限（有 CC=60 分 / 無 CC=20 分）────────
+    if has_cc:
+        duration_limit = 60
+    else:
+        duration_limit = 20
+
+    if duration_minutes is not None and duration_minutes > duration_limit:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": (
+                    f"YouTube 影片不可超過 {duration_limit} 分鐘"
+                    f"（{'有' if has_cc else '無'} CC 上限 {duration_limit} 分，"
+                    f"影片 {duration_minutes:.0f} 分鐘超過上限）"
+                ),
+                "duration_minutes": duration_minutes,
+                "has_cc": has_cc,
+                "limit_minutes": duration_limit,
+            },
+        )
+
+    # ── Step 3: 配額預檢（依 has_cc 取 1 或 5 份，只檢查不扣）────────────
+    quota_cost = YOUTUBE_QUOTA_COST_WITH_CC if has_cc else YOUTUBE_QUOTA_COST_WITHOUT_CC
+    try:
+        reserve_youtube_quota(db, user_obj, has_cc=has_cc)  # 不傳 resource_id = 只預檢
+    except QuotaExceededError as exc:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "message": str(exc),
+                "limit": exc.limit,
+                "used": exc.used,
+                "plan": exc.plan,
+                "upgrade_hint": "升級 PRO 可用 50 份 / 月",
+            },
+        )
+
+    # ── Step 4: 無 CC 路徑月度成本封頂（PRO USD 3 / PRO_PLUS USD 12）────
+    if not has_cc:
+        _check_monthly_cost_cap(db, user_obj, request.youtube_url)
 
     result = service.submit_youtube(
         user_id=user_id,
@@ -455,22 +518,124 @@ def submit_youtube(
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
 
+    # ── 配額佔位（插入 stub ParseJob，計入本月用量）────────────────────
+    resource_id = result.get("id")
+    if resource_id:
+        reserve_youtube_quota(
+            db, user_obj,
+            resource_id=resource_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+            skip_check=True,  # 已在上方預檢，只插入 stub rows
+            has_cc=has_cc,
+        )
+
     # 送至 Cloud Tasks（或 inline fallback）— 失敗即標記 FAILED 顯式回報
-    if result.get("id"):
+    if resource_id:
         try:
             enqueue_process_resource(
-                resource_id=result["id"],
+                resource_id=resource_id,
                 user_id=user_id,
                 tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
             )
         except EnqueueFailedError as exc:
-            _mark_resource_failed(db, result["id"], str(exc))
+            _mark_resource_failed(db, resource_id, str(exc))
+            # 退回配額（把 stub jobs 標記 FAILED）
+            try:
+                refund_quota(db, uuid.UUID(user_id), uuid.UUID(resource_id))
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=503,
-                detail={"message": str(exc), "resource_id": result["id"]},
+                detail={"message": str(exc), "resource_id": resource_id},
             ) from exc
 
     return result
+
+
+def _probe_youtube_metadata(youtube_url: str) -> tuple[float | None, bool]:
+    """使用 yt-dlp（download=False）probe YouTube metadata，回傳 (duration_minutes, has_cc)。
+
+    has_cc = True 若 subtitles 或 automatic_captions 任一非空。
+    若 yt-dlp 不可用或 probe 失敗，fallback 回 (None, False)（寬鬆放行）。
+    """
+    try:
+        from app.services.media_extractors.youtube_extractor import probe_youtube_metadata
+        meta = probe_youtube_metadata(youtube_url)
+        duration_minutes = (meta.duration_seconds / 60.0) if meta.duration_seconds else None
+        return duration_minutes, meta.has_cc
+    except Exception:
+        return None, False
+
+
+# 月度成本封頂（無 CC 路徑）— 依訂閱方案
+_MONTHLY_COST_CAP_USD: dict[str, float] = {
+    "PRO": 3.0,
+    "PRO_PLUS": 12.0,
+}
+
+# 每分鐘 Gemini Pro 預估成本（粗估；詳細定價見 finance TODO）
+_GEMINI_PRO_COST_PER_MINUTE_USD = 0.03
+
+
+def _check_monthly_cost_cap(db: Session, user: object, youtube_url: str) -> None:
+    """無 CC 路徑月度成本封頂檢查。
+
+    查詢 ai_usage_ledger 本月累積成本，加上本次預估成本，若超過方案上限回 422。
+    若 ai_usage_ledger schema 不支援查詢，記 warning 並放行（best-effort）。
+
+    TODO: finance 確認實際 Gemini Pro 定價後調整 _GEMINI_PRO_COST_PER_MINUTE_USD。
+    """
+    import logging as _logging
+
+    raw_plan = getattr(user, "subscription_plan", None)
+    plan = getattr(raw_plan, "value", raw_plan) or "FREE"
+    cap = _MONTHLY_COST_CAP_USD.get(plan)
+    if cap is None:
+        # FREE / ULTRA 無月度成本封頂（ULTRA 無限，FREE 走配額數量管控）
+        return
+
+    try:
+        from decimal import Decimal
+        from sqlalchemy import text as _text
+        from datetime import datetime, timezone
+
+        month_start = datetime.now(timezone.utc).replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        user_id = getattr(user, "id", None)
+
+        result = db.execute(
+            _text(
+                "SELECT COALESCE(SUM(cost_usd), 0) FROM ai_usage_ledger "
+                "WHERE user_id = :uid AND created_at >= :since"
+            ),
+            {"uid": str(user_id), "since": month_start},
+        ).scalar()
+
+        used_usd = float(result or 0)
+        # 粗估本次成本（以 20 分鐘上限 * 單價）
+        estimated_cost = 20.0 * _GEMINI_PRO_COST_PER_MINUTE_USD
+
+        if used_usd + estimated_cost > cap:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": (
+                        f"本月 AI 成本已接近方案上限（{plan} 上限 USD {cap:.0f}，"
+                        f"已用 USD {used_usd:.2f}），無 CC 影片處理暫時停用"
+                    ),
+                    "used_usd": used_usd,
+                    "cap_usd": cap,
+                    "plan": plan,
+                },
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _logging.getLogger(__name__).warning(
+            "月度成本封頂查詢失敗（best-effort 放行）: %s — TODO: finance 確認 ai_usage_ledger schema",
+            exc,
+        )
 
 
 def _mark_resource_failed(db: Session, resource_id: str, error_message: str) -> None:

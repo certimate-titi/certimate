@@ -1516,3 +1516,6 @@ from .enqueue_failure.aggregate_given import setup as f46_given  # noqa: F401
 from .enqueue_failure.commands import actions as f46_commands  # noqa: F401
 from .enqueue_failure.aggregate_then import assertions as f46_assertions  # noqa: F401
 
+# F47 YouTube Gemini direct pipeline — 覆蓋 submit_youtube step (加 mock)
+from .yt_pipeline import assertions as f47_assertions  # noqa: F401
+

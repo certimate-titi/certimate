@@ -62,6 +62,10 @@ python-docx>=1.1.0
 python-pptx>=1.0.0
 openpyxl>=3.1.0
 olefile>=0.47
-yt-dlp>=2024.0.0
-ffmpeg-python>=0.2.0
+# yt-dlp：YouTube metadata probe（CC 偵測）與 VTT fallback（不需 ffmpeg）
+yt-dlp>=2024.1.0
+# youtube-transcript-api：CC 抽取主路徑（player timedtext endpoint，配額比 yt-dlp 寬鬆）
+# 多用戶 scaling 降低 IP 429 風險，根因：yt-dlp 撞 IP rate limit
+youtube-transcript-api>=1.2.0
+# ffmpeg-python 不引入（VTT path 不需 audio 轉換）
 psutil>=5.9.0

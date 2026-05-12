@@ -141,15 +141,31 @@ BATCH_SIZE_PAGES = 25
 
 
 def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
-    """智慧分流：≤30 頁直接 multimodal，>30 頁切批並行（D 方案）。
+    """智慧分流：YT (text-only) / 小 PDF multimodal / 大 PDF 切批（D 方案）。
 
+    - YT：無 gcs_path 但有 youtube_url → 讀 normalized markdown 跑 text-only K-06
     - 小 PDF 保留 multimodal Pro 對掃描型/特殊編碼 PDF 的視覺辨識能力
     - 大 PDF 切 25 頁/批，避免 32K output token 上限導致 markdown 截斷為空
     """
     logger.info(
-        "[D-dispatch] _call_gemini_with_retry entry resource=%s gcs_path=%s",
-        resource.id, bool(resource.gcs_path),
+        "[D-dispatch] _call_gemini_with_retry entry resource=%s gcs_path=%s youtube_url=%s",
+        resource.id, bool(resource.gcs_path), bool(resource.youtube_url),
     )
+
+    # YT path：無 PDF 但有已抽取的 markdown（YouTube extractor 已先跑）
+    if not resource.gcs_path and resource.youtube_url:
+        markdown_text = _load_youtube_markdown(resource)
+        if not markdown_text:
+            raise RuntimeError(
+                f"YT resource={resource.id} 無 parsed markdown — "
+                f"先確認 _save_normalized_markdown 已執行"
+            )
+        logger.info(
+            "[D-dispatch] YT text-only K-06 resource=%s md_len=%d",
+            resource.id, len(markdown_text),
+        )
+        return _call_gemini_text_only(resource, markdown_text)
+
     page_count = 0
     local_pdf: str | None = None
     if resource.gcs_path:
@@ -173,6 +189,184 @@ def _call_gemini_with_retry(resource: Resource) -> dict[str, Any]:
 
     logger.info("[D-dispatch] using single-call path resource=%s", resource.id)
     return _call_gemini_with_retry_single(resource)
+
+
+def _load_youtube_markdown(resource: Resource) -> str | None:
+    """讀 YouTube 資源的 normalized markdown（已由 document_processing_service 寫到本地）。
+
+    優先順序：
+      1. resource.parsed_markdown DB column
+      2. uploads/{user_id}/{resource_id}.md 本地檔
+      3. 從 chunks 表組合（fallback）
+    """
+    import os as _os
+    # 1) DB column
+    pm = getattr(resource, "parsed_markdown", None) or ""
+    if pm.strip():
+        return pm
+    # 2) Local file
+    md_path = f"uploads/{resource.user_id}/{resource.id}.md"
+    if _os.path.exists(md_path):
+        try:
+            with open(md_path, encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            pass
+    # 3) Chunks fallback
+    try:
+        from app.core.deps import _SessionLocal
+        from app.models.resource_chunk import ResourceChunk
+        if _SessionLocal is not None:
+            _db = _SessionLocal()
+            try:
+                chunks = (
+                    _db.query(ResourceChunk)
+                    .filter_by(resource_id=resource.id)
+                    .order_by(ResourceChunk.chunk_index.asc())
+                    .all()
+                )
+                if chunks:
+                    return "\n\n".join(c.content or "" for c in chunks)
+            finally:
+                _db.close()
+    except Exception as exc:
+        logger.warning(
+            "[yt-md-load] chunks fallback failed resource=%s: %s",
+            resource.id, exc,
+        )
+    return None
+
+
+def _call_gemini_text_only(resource: Resource, markdown_text: str) -> dict[str, Any]:
+    """text-only K-06 呼叫（YT 等已抽 markdown 的資源用）。
+
+    與 _call_gemini_once 同樣的 prompt 模板 + Output Contract，但不上傳 file，
+    把 markdown 直接放在 user_prompt 裡。
+    """
+    try:
+        from google import genai
+    except ImportError as e:
+        raise RuntimeError("google-genai SDK not installed") from e
+
+    from app.core.config import get_settings
+    from app.services.prompt_template_service import PromptTemplateService
+
+    settings = get_settings()
+    api_key = (
+        getattr(settings, "GEMINI_API_KEY", None)
+        or getattr(settings, "gemini_api_key", None)
+        or ""
+    )
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not configured")
+    client = genai.Client(api_key=api_key)
+
+    template_name = _select_prompt_template(resource)
+    logger.info(
+        "[prompt-routing] (text-only) resource=%s template=%s",
+        resource.id, template_name,
+    )
+    template = None
+    try:
+        from app.core.deps import _SessionLocal
+        if _SessionLocal is not None:
+            _tmp_db = _SessionLocal()
+            try:
+                prompt_service = PromptTemplateService(_tmp_db)
+                template = prompt_service.get_prompt_for_ai(template_name)
+                if template is None and template_name != "resource_parser_v2":
+                    template = prompt_service.get_prompt_for_ai("resource_parser_v2")
+            finally:
+                _tmp_db.close()
+    except Exception as _e:
+        logger.warning("prompt template lookup failed: %s", _e)
+
+    def _tget(obj, key):
+        if obj is None:
+            return None
+        if isinstance(obj, dict):
+            return obj.get(key)
+        return getattr(obj, key, None)
+
+    system_prompt = (
+        _tget(template, "system_prompt")
+        or "（fallback）將資源解析為 Output Contract 指定的 JSON。"
+    )
+    raw_user_prompt = _tget(template, "user_prompt") or ""
+    if raw_user_prompt:
+        user_prompt = raw_user_prompt
+        for var, val in (
+            ("filename", resource.name),
+            ("source_type", resource.source_type or "user_other"),
+            ("declared_exam_code", resource.exam_code or ""),
+        ):
+            user_prompt = user_prompt.replace("{" + var + "}", str(val))
+    else:
+        user_prompt = f"請解析此資源為符合 Output Contract 的 JSON，檔名={resource.name}。"
+
+    schema_hammer = (
+        "\n\n# Output Contract — 必須返回 JSON，頂層欄位**僅限**：\n"
+        '`markdown`, `detected_content_type`, `critical_pages`, `questions`, `scaffolds`\n\n'
+        "**重要**：\n"
+        "- `markdown` 欄位必須**原樣回填**輸入的「待解析的 markdown 內容」，**禁止濃縮、摘要、重寫**\n"
+        "  （此欄位用於後續 RAG 檢索，需保留完整逐字稿）\n"
+        "- 影片逐字稿的章節結構放入 `scaffolds[].chapter_heading`\n\n"
+        "scaffolds 內每筆物件必填：`chapter_heading`, `type` (takeaway|elaborative|strategy), `content`。\n"
+        "**必須**為每個有意義段落（影片每 3-5 分鐘為一個段落）各產出 takeaway + elaborative + strategy 三筆。\n"
+        "影片總長 N 分鐘 → 預期 scaffold 數 ≈ ceil(N/4) × 3，最少 12 筆。"
+    )
+
+    # 把 markdown 內容嵌進 user_prompt
+    user_prompt_full = (
+        f"{user_prompt}{schema_hammer}\n\n"
+        f"# 待解析的 markdown 內容（請原樣回填到 `markdown` 欄位）：\n\n{markdown_text[:120000]}"
+    )
+
+    try:
+        resp = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[user_prompt_full],
+            config={
+                "system_instruction": system_prompt,
+                "temperature": 0.1,
+                "response_mime_type": "application/json",
+                "max_output_tokens": 65536,
+            },
+        )
+    except Exception as e:
+        msg = str(e).lower()
+        if "429" in msg or "quota" in msg or "timeout" in msg or "unavailable" in msg:
+            raise _RetryableError(str(e)) from e
+        raise
+
+    text = getattr(resp, "text", None) or ""
+    text_to_parse = text.strip()
+    if text_to_parse.startswith("```"):
+        text_to_parse = re.sub(r"^```(?:json)?\s*\n?", "", text_to_parse, flags=re.IGNORECASE)
+        text_to_parse = re.sub(r"\n?```\s*$", "", text_to_parse)
+    try:
+        parsed = json.loads(text_to_parse, strict=False)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"gemini returned non-JSON: {text_to_parse[:500]}") from e
+
+    if isinstance(parsed, dict):
+        # Text-only safeguard：若 LLM 仍把 markdown 濃縮（< 70% 原長），強制以原文覆蓋
+        # （避免後續 RAG 檢索拿到摘要而非逐字稿）
+        out_md = parsed.get("markdown") or ""
+        if len(out_md) < len(markdown_text) * 0.7:
+            logger.warning(
+                "[text-only safeguard] LLM 濃縮了 markdown (%d → %d chars)，回填原文",
+                len(markdown_text), len(out_md),
+            )
+            parsed["markdown"] = markdown_text
+        scaffolds = parsed.get("scaffolds") or []
+        if len(scaffolds) < 6:
+            logger.warning(
+                "[text-only safeguard] scaffold 數量過少 (%d < 6) resource=%s",
+                len(scaffolds), resource.id,
+            )
+        return parsed
+    raise RuntimeError(f"gemini returned non-dict: {type(parsed).__name__}")
 
 
 def _call_gemini_with_retry_single(resource: Resource) -> dict[str, Any]:
