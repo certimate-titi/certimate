@@ -28,18 +28,19 @@ export interface NodeDetailPanelProps {
   infoSlot: React.ReactNode;
   /** 我的筆記分頁的內容 */
   notebookSlot: React.ReactNode;
-  /** AI 教練分頁的內容 */
+  /** AI 教練分頁的內容（已移至底部常駐區，保留 prop 相容性） */
   coachSlot: React.ReactNode;
-  /** 常駐底部 AI 提問輸入列；僅在 info / notebook 分頁顯示 */
+  /** 底部常駐 AI 教練輸入列與對話展開區（所有 tab 均顯示） */
   quickAskSlot?: React.ReactNode;
 }
 
-const TAB_ORDER: NodeDetailTab[] = ['info', 'notebook', 'coach'];
+/** 右側面板只剩 info / notebook 兩個 tab；AI 教練改為底部常駐 */
+const TAB_ORDER: NodeDetailTab[] = ['info', 'notebook'];
 
 const TAB_META: Record<NodeDetailTab, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
   info: { label: '節點資訊', Icon: FileText },
   notebook: { label: '我的筆記', Icon: NotebookPen },
-  coach: { label: 'AI 教練', Icon: Sparkles },
+  coach: { label: 'AI 教練', Icon: Sparkles }, // coach 已移至底部常駐，保留以相容型別
 };
 
 /**
@@ -143,7 +144,7 @@ export default function NodeDetailPanel({
       >
         {slotMap[activeTab]}
       </div>
-      {quickAskSlot && (activeTab === 'info' || activeTab === 'notebook') && (
+      {quickAskSlot && (
         <div className="shrink-0 border-t border-slate-200 bg-white">
           {quickAskSlot}
         </div>
