@@ -104,7 +104,12 @@ def probe_youtube_metadata(youtube_url: str) -> YouTubeMetadata:
 
 
 def _download_vtt(youtube_url: str, tmpdir: str) -> str | None:
-    """下載最佳 CC 字幕到 tmpdir，回傳 VTT 文字內容（或 None）。"""
+    """下載最佳 CC 字幕到 tmpdir，回傳 VTT 文字內容（或 None）。
+
+    遇 YouTube 429 throttle 走 exponential backoff retry（最多 3 次）。
+    """
+    import time as _time
+
     try:
         import yt_dlp  # type: ignore[import]
     except ImportError:
@@ -122,11 +127,30 @@ def _download_vtt(youtube_url: str, tmpdir: str) -> str | None:
         "outtmpl": os.path.join(tmpdir, "sub"),
         "no_warnings": True,
     }
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([youtube_url])
-    except Exception as exc:
-        logger.warning("yt-dlp VTT 下載失敗: %s", exc)
+
+    # Retry：429 throttle 用 exponential backoff
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([youtube_url])
+            break  # success
+        except Exception as exc:
+            last_exc = exc
+            msg = str(exc).lower()
+            if "429" in msg or "too many requests" in msg:
+                wait = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                logger.warning(
+                    "yt-dlp 429 throttle (attempt %d/3), wait %ds: %s",
+                    attempt + 1, wait, exc,
+                )
+                _time.sleep(wait)
+                continue
+            # 非 429 失敗直接放棄
+            logger.warning("yt-dlp VTT 下載失敗（非 429）: %s", exc)
+            return None
+    else:
+        logger.warning("yt-dlp 429 retry 耗盡，放棄 VTT 下載: %s", last_exc)
         return None
 
     # 尋找第一個 .vtt 檔
