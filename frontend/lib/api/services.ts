@@ -124,15 +124,18 @@ export const documentService = {
     const wrapFlat = (raw: Record<string, unknown>): UploadDocumentResponse => ({
       document: {
         id: (raw.id as string) || '',
-        filename: (raw.name as string) || '',
-        resource_type: (raw.type as string) || '',
-        status: (raw.status as string) || 'PENDING',
-        subject_id: (raw.subject_id as string) || null,
-        file_size_mb: (raw.file_size_mb as number) ?? null,
-        youtube_url: (raw.youtube_url as string) || '',
-        created_at: (raw.created_at as string) || new Date().toISOString(),
-        error_message: (raw.error_message as string) || null,
-      } as UploadDocumentResponse['document'],
+        userId: (raw.user_id as string) || '',
+        subjectId: (raw.subject_id as string) || '',
+        sourceType: ((raw.type as string) || 'PDF') as DocumentSourceType,
+        title: (raw.name as string) || '',
+        sourceUrl: (raw.source_url as string) || (raw.youtube_url as string) || '',
+        mcpParsedTranscriptUrl: (raw.mcp_parsed_transcript_url as string) || null,
+        status: ((raw.status as string) || 'PENDING') as DocumentStatus,
+        fileSizeBytes: (raw.file_size_bytes as number) ?? 0,
+        visionRequired: (raw.vision_required as boolean) ?? false,
+        createdAt: (raw.created_at as string) || new Date().toISOString(),
+        errorMessage: (raw.error_message as string) || null,
+      },
       taskId: (raw.task_id as string) || '',
     });
 
