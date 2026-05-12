@@ -238,3 +238,19 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
       When 使用者 "user-c@example.com" 查看科目 "AI 應用規劃師 Pro" 的知識節點樹
       Then 回應狀態碼為 200
       And 回應的 "resources" 清單包含 "default_pdf" 的 resource_id
+
+  # ========== Owner Bypass（Issue #nodes-owner）==========
+  # 根因：/subjects/mine 列出 scope='personal' AND owner_user_id=me 的科目，
+  # 但 get_nodes_by_subject 只檢查 LearningJourney 導致 owner 的 subject 403。
+
+  Rule: 前置（守門）- subject owner 不需 LearningJourney 仍可讀取自己 subject 的 nodes
+
+    @backend
+    Scenario: subject owner 無 LearningJourney 仍可讀 nodes（owner bypass）
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                | 訂閱方案  |
+        | 30       | owner@example.com    | PRO_199   |
+      And 使用者 "owner@example.com" 擁有 personal subject "個人自建科目"（無 LearningJourney）
+      When 使用者 "owner@example.com" 查看科目 "個人自建科目" 的知識節點樹
+      Then 回應狀態碼為 200
+      And 回應包含 nodes 陣列

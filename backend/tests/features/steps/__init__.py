@@ -157,6 +157,7 @@ from .knowledge_map.aggregate_given import user_coach_quota  # noqa: F401
 from .knowledge_map.aggregate_given import basic_coach_quota  # noqa: F401
 from .knowledge_map.aggregate_given import resource_scaffolds  # noqa: F401
 from .knowledge_map.aggregate_given import other_user_resource  # noqa: F401
+from .knowledge_map.aggregate_given import owner_personal_subject  # noqa: F401
 
 # Knowledge Map — commands
 from .knowledge_map.commands import ai_coach_input  # noqa: F401
@@ -219,6 +220,7 @@ from .knowledge_map.readmodel_then import basic_coach_response  # noqa: F401
 from .knowledge_map.readmodel_then import safety_classification  # noqa: F401
 from .knowledge_map.readmodel_then import ai_coach_reply  # noqa: F401
 from .knowledge_map.readmodel_then import ownership_filter  # noqa: F401
+from .knowledge_map.readmodel_then import nodes_array  # noqa: F401
 
 # Exam — aggregate_given
 from .exam.aggregate_given import resources  # noqa: F401
