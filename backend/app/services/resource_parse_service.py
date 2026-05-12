@@ -307,15 +307,19 @@ def _call_gemini_text_only(resource: Resource, markdown_text: str) -> dict[str, 
     schema_hammer = (
         "\n\n# Output Contract — 必須返回 JSON，頂層欄位**僅限**：\n"
         '`markdown`, `detected_content_type`, `critical_pages`, `questions`, `scaffolds`\n\n'
-        "若資源是影片逐字稿，章節結構應放入 `scaffolds[].chapter_heading`。\n\n"
+        "**重要**：\n"
+        "- `markdown` 欄位必須**原樣回填**輸入的「待解析的 markdown 內容」，**禁止濃縮、摘要、重寫**\n"
+        "  （此欄位用於後續 RAG 檢索，需保留完整逐字稿）\n"
+        "- 影片逐字稿的章節結構放入 `scaffolds[].chapter_heading`\n\n"
         "scaffolds 內每筆物件必填：`chapter_heading`, `type` (takeaway|elaborative|strategy), `content`。\n"
-        "至少為前 10 個有意義段落各產出 takeaway + elaborative + strategy 三筆。"
+        "**必須**為每個有意義段落（影片每 3-5 分鐘為一個段落）各產出 takeaway + elaborative + strategy 三筆。\n"
+        "影片總長 N 分鐘 → 預期 scaffold 數 ≈ ceil(N/4) × 3，最少 12 筆。"
     )
 
     # 把 markdown 內容嵌進 user_prompt
     user_prompt_full = (
         f"{user_prompt}{schema_hammer}\n\n"
-        f"# 待解析的 markdown 內容：\n\n{markdown_text[:120000]}"
+        f"# 待解析的 markdown 內容（請原樣回填到 `markdown` 欄位）：\n\n{markdown_text[:120000]}"
     )
 
     try:
@@ -346,6 +350,21 @@ def _call_gemini_text_only(resource: Resource, markdown_text: str) -> dict[str, 
         raise RuntimeError(f"gemini returned non-JSON: {text_to_parse[:500]}") from e
 
     if isinstance(parsed, dict):
+        # Text-only safeguard：若 LLM 仍把 markdown 濃縮（< 70% 原長），強制以原文覆蓋
+        # （避免後續 RAG 檢索拿到摘要而非逐字稿）
+        out_md = parsed.get("markdown") or ""
+        if len(out_md) < len(markdown_text) * 0.7:
+            logger.warning(
+                "[text-only safeguard] LLM 濃縮了 markdown (%d → %d chars)，回填原文",
+                len(markdown_text), len(out_md),
+            )
+            parsed["markdown"] = markdown_text
+        scaffolds = parsed.get("scaffolds") or []
+        if len(scaffolds) < 6:
+            logger.warning(
+                "[text-only safeguard] scaffold 數量過少 (%d < 6) resource=%s",
+                len(scaffolds), resource.id,
+            )
         return parsed
     raise RuntimeError(f"gemini returned non-dict: {type(parsed).__name__}")
 
