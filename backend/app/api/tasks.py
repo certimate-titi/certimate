@@ -287,11 +287,15 @@ def process_resource_task(
             detail={"message": f"資源不存在: {resource_id}"},
         )
 
-    # 3. 若 resource 缺 gcs_path（永久狀態），直接 200 success-skipped 不重試
-    if not getattr(resource, "gcs_path", None):
+    # 3. 若 resource 缺 gcs_path（永久狀態），直接 200 success-skipped 不重試。
+    #    例外：YouTube 資源（type=youtube）不使用 gcs_path，改用 youtube_url，
+    #    因此必須豁免此檢查，讓後續 pipeline 繼續執行。
+    from app.models.resource import ResourceType as _ResourceType
+    if resource.type != _ResourceType.YOUTUBE.value and not getattr(resource, "gcs_path", None):
         logger.warning(
-            "[pipeline] resource=%s skipped: no gcs_path (permanent state, no retry)",
+            "[pipeline] resource=%s type=%s skipped: no gcs_path (permanent state, no retry)",
             resource_id,
+            resource.type,
         )
         return {
             "ok": True,
