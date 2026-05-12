@@ -95,6 +95,16 @@ function buildLoginRedirect(): string {
   return '/login?expired=1';
 }
 
+/**
+ * HTTP 錯誤型別，帶有 `status` HTTP 狀態碼，方便呼叫端判斷 403 / 404 等。
+ */
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '');
@@ -105,7 +115,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         window.location.href = buildLoginRedirect();
       }
-      throw new Error('登入已過期，請重新登入');
+      throw new ApiError('登入已過期，請重新登入', 401);
     }
 
     // 解析後端錯誤訊息
@@ -117,7 +127,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       message = errorBody || message;
     }
 
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
   return response.json() as Promise<T>;
 }
