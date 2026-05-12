@@ -22,9 +22,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BookOpen, Repeat, Target, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BookOpen, Repeat, Target, Zap } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth-context';
+import { documentService, resourceParseService } from '@/lib/api/services';
 // dashboardService removed in T42; using /dashboard/today via apiClient
 
 interface TodaySnapshot {
@@ -41,6 +42,9 @@ export default function TodayPage() {
   const router = useRouter();
   const [snapshot, setSnapshot] = useState<TodaySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Layer 3：空態時主動查 resource_parse_jobs 確認是否為解析失敗
+  const [parseJobFailures, setParseJobFailures] = useState<Array<{ title: string; reason: string }>>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -76,6 +80,31 @@ export default function TodayPage() {
       setLoading(false);
     }
   };
+
+  // Layer 3：snapshot 載入後，若有空態（resume 為 null 或 reviewCount === 0），主動查 FAILED 資源
+  useEffect(() => {
+    if (!snapshot || loading) return;
+    const hasEmptyState = !snapshot.resume || snapshot.reviewCount === 0;
+    if (!hasEmptyState) { setParseJobFailures([]); return; }
+
+    documentService.list().then(async (res) => {
+      const failedDocs = (res.documents || []).filter(
+        (d: { status?: string }) => d.status === 'FAILED'
+      );
+      if (failedDocs.length === 0) { setParseJobFailures([]); return; }
+      const failures = await Promise.all(
+        failedDocs.slice(0, 5).map(async (doc: { id: string; title?: string }) => {
+          try {
+            const status = await resourceParseService.getStatus(doc.id);
+            return { title: doc.title || '未命名資源', reason: status.failure_reason || '解析失敗（無詳細原因）' };
+          } catch {
+            return { title: doc.title || '未命名資源', reason: '解析失敗（查詢狀態失敗）' };
+          }
+        })
+      );
+      setParseJobFailures(failures);
+    }).catch(() => { /* 查詢失敗時靜默 */ });
+  }, [snapshot, loading]);
 
   if (authLoading || loading) {
     return (
@@ -162,6 +191,23 @@ export default function TodayPage() {
                   >
                     去學習庫上傳資源 →
                   </Link>
+                  {/* Layer 3：繼續讀空態時顯示 FAILED 資源警示 */}
+                  {parseJobFailures.length > 0 && (
+                    <div className="mt-2 bg-rose-50 border border-rose-200 rounded-lg p-2" data-testid="resume-empty-parse-failures">
+                      <p className="text-xs font-semibold text-rose-700 flex items-center gap-1 mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        偵測到 {parseJobFailures.length} 個資源解析失敗
+                      </p>
+                      <ul className="text-xs text-rose-600 space-y-0.5">
+                        {parseJobFailures.slice(0, 3).map((f, i) => (
+                          <li key={i}>• <span className="font-medium">{f.title}</span>：{f.reason}</li>
+                        ))}
+                        {parseJobFailures.length > 3 && (
+                          <li className="italic">…另 {parseJobFailures.length - 3} 個（請至學習庫查看）</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -183,6 +229,11 @@ export default function TodayPage() {
                     {snapshot.reviewCount} 題待複習
                   </h3>
                   <p className="text-xs text-slate-500">遺忘曲線提醒，現在複習效果最好</p>
+                  {snapshot.scaffoldDueCount > 0 && (
+                    <p className="text-xs text-violet-600 mt-1">
+                      📚 另有 {snapshot.scaffoldDueCount} 個學習鷹架到期，建議一併複習
+                    </p>
+                  )}
                 </div>
                 <ArrowRight className="shrink-0 w-4 h-4 text-slate-400 group-hover:text-amber-600 mt-3" />
               </div>
@@ -196,6 +247,31 @@ export default function TodayPage() {
                 <div className="flex-1">
                   <p className="text-xs font-bold text-slate-400 mb-0.5">⓶ 複習錯題</p>
                   <p className="text-sm text-slate-500">目前沒有待複習的題目，繼續累積吧</p>
+                  {snapshot && snapshot.scaffoldDueCount > 0 && (
+                    <Link
+                      href="/knowledge"
+                      className="text-xs text-violet-600 hover:underline mt-1 inline-block"
+                    >
+                      📚 {snapshot.scaffoldDueCount} 個學習鷹架到期 →
+                    </Link>
+                  )}
+                  {/* Layer 3：複習空態時顯示 FAILED 資源警示 */}
+                  {parseJobFailures.length > 0 && (
+                    <div className="mt-2 bg-rose-50 border border-rose-200 rounded-lg p-2" data-testid="review-empty-parse-failures">
+                      <p className="text-xs font-semibold text-rose-700 flex items-center gap-1 mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        偵測到 {parseJobFailures.length} 個資源解析失敗
+                      </p>
+                      <ul className="text-xs text-rose-600 space-y-0.5">
+                        {parseJobFailures.slice(0, 3).map((f, i) => (
+                          <li key={i}>• <span className="font-medium">{f.title}</span>：{f.reason}</li>
+                        ))}
+                        {parseJobFailures.length > 3 && (
+                          <li className="italic">…另 {parseJobFailures.length - 3} 個（請至學習庫查看）</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

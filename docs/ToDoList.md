@@ -458,3 +458,15 @@ feature_conflicts.md 中標註需 /titi-commander 評估的衝突項目（衝突
 **處理結果：**
 - 更新 `docs/feature_conflicts.md`：補全 6 個 CEO 決議
 - 詳見 `docs/todo-processing-2026-04-06T01-08-22.md`
+
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-13 新增）
+
+- [x] `/today` — ~~**整頁無對應 Feature File**~~ 已新建 `project/features/42-今日學習首頁.feature`，覆蓋 greeting 顯示、三卡片有資料/空態渲染、streak badge、examDaysLeft 倒數、鷹架到期提示、Layer 3 空態查 Job 表、快速連結共 14 個 Example Scenario（修復：2026-05-13 TiTi Commander 排程巡檢）
+
+## 🟠 實作缺失 — 需補前端功能（2026-05-13 新增）
+
+- [x] `/today` — ~~**`scaffold_due_count` 靜默丟失**~~ 已修復：複習卡片（有資料時）下方新增紫色提示「📚 另有 N 個學習鷹架到期，建議一併複習」；複習空態時顯示「📚 N 個學習鷹架到期 →」連結至 /knowledge；scaffoldDueCount 為 0 時不顯示；TypeScript 編譯零錯誤（修復：2026-05-13 TiTi Commander 排程巡檢）
+
+## 🟡 空態補強 — 需查 Job 表（2026-05-13 新增）
+
+- [x] `/today` — ~~**Layer 3 違規**~~ 已修復：snapshot 載入後若有空態（resume === null 或 reviewCount === 0），useEffect 自動查 documentService.list() 過濾 FAILED 文件，逐個呼叫 resourceParseService.getStatus() 取得 failure_reason；「繼續讀」空態與「複習錯題」空態各自顯示紅色警示卡（data-testid="resume-empty-parse-failures" / "review-empty-parse-failures"），最多顯示 3 個失敗原因；TypeScript 編譯零錯誤（修復：2026-05-13 TiTi Commander 排程巡檢）
