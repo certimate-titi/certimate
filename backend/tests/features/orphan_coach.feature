@@ -113,6 +113,17 @@ Feature: AI 蘇格拉底教練對話（Orphan 節點）
 
   # ── 需要真實 LLM 的 Scenario（@ignore，CI 跳過）─────────────────
 
+  # ── pgvector 失敗防禦（Issue: 蘇格拉底 500 hot-fix）────────────────
+
+  @backend
+  Scenario: pgvector 查詢失敗時 start_conversation 仍應成功（issue 蘇格拉底 500）
+    Given 使用者 pro_user@example.com 已認證
+    And mock pgvector cosine 查詢拋出 InternalError
+    When 我啟動節點「零信任架構」的蘇格拉底對話（含 pgvector mock）
+    Then HTTP 狀態碼應為 201
+    And 回應應包含 conversation_id
+    And 回應應包含 opening_message
+
   @backend @ignore
   Scenario: 多輪正向收尾 — 3 輪且兩輪 ≥ 1.5/2.5 → mastery 降權更新
     # 需要真實 Anthropic API key
