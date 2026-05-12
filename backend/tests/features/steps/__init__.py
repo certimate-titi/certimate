@@ -772,6 +772,7 @@ from .admin_settings.readmodel_then import announcement_count_and_title  # noqa:
 # Dashboard — aggregate_given
 from .dashboard.aggregate_given import user_subjects  # noqa: F401
 from .dashboard.aggregate_given import dashboard_ui_state  # noqa: F401
+from .dashboard.aggregate_given import other_user_resource  # noqa: F401
 
 # Dashboard — commands
 from .dashboard.commands import view_dashboard  # noqa: F401
@@ -789,6 +790,7 @@ from .dashboard.readmodel_then import dashboard_ui  # noqa: F401
 from .dashboard.readmodel_then import subject_switcher  # noqa: F401
 from .dashboard.readmodel_then import countdown  # noqa: F401
 from .dashboard.readmodel_then import components  # noqa: F401
+from .dashboard.readmodel_then import activity_isolation  # noqa: F401
 
 # ECPay — aggregate_given
 from .ecpay.aggregate_given import ecpay_config  # noqa: F401

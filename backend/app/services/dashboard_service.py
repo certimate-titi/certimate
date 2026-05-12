@@ -3,8 +3,10 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
+
+SEED_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 from app.models.user import User
 from app.models.subject import Subject
@@ -175,7 +177,10 @@ class DashboardService:
             .limit(5)
             .all()
         )
-        resources = self.db.query(Resource).filter_by(subject_id=active_subject_id).all()
+        resources = self.db.query(Resource).filter(
+            Resource.subject_id == active_subject_id,
+            or_(Resource.user_id == user_uuid, Resource.user_id == SEED_USER_ID),
+        ).all()
         resource_ids = [r.id for r in resources]
 
         # --- Study mode & today's tasks (per 動態任務模式與學習權重策略.md) ---
@@ -337,11 +342,14 @@ class DashboardService:
             .all()
         )
 
-        # 也查 resource-based 節點（使用者上傳文件產生的）
+        # 也查 resource-based 節點（使用者上傳文件產生的，僅限自己 + seed user）
         if not all_nodes:
             resource_ids = [
                 r.id for r in
-                self.db.query(Resource.id).filter_by(subject_id=subject_id).all()
+                self.db.query(Resource.id).filter(
+                    Resource.subject_id == subject_id,
+                    or_(Resource.user_id == user_uuid, Resource.user_id == SEED_USER_ID),
+                ).all()
             ]
             if resource_ids:
                 all_nodes = (
