@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles } from 'lucide-react';
 import { knowledgeService, subjectService, documentService, resourceParseService, type NodeScaffoldItem } from '@/lib/api/services';
+import { ApiError } from '@/lib/api/client';
 import OrphanCoachPanel from '@/components/coach/OrphanCoachPanel';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
@@ -98,6 +99,10 @@ function KnowledgeBasePageInner() {
   const [docScaffolds, setDocScaffolds] = useState<Record<string, NodeScaffoldItem[]>>({});
   const [loadingScaffolds, setLoadingScaffolds] = useState<string | null>(null);
   const [chapterScrollTarget, setChapterScrollTarget] = useState<string | null>(null);
+  // 章節導覽：403 孤兒資源 — 該卡片完全隱藏章節導覽按鈕
+  const [chapterUnavailable, setChapterUnavailable] = useState<Set<string>>(new Set());
+  // 章節導覽：其他 4xx/5xx — 顯示「載入失敗」提示
+  const [scaffoldErrors, setScaffoldErrors] = useState<Record<string, string>>({});
   const docViewRef = useRef<HTMLDivElement>(null);
 
   // On mobile, collapse both panels by default
@@ -672,8 +677,9 @@ function KnowledgeBasePageInner() {
                       }
                       return (
                         <div key={doc.id} className={`rounded-lg border transition-colors ${isActive ? 'border-emerald-200 bg-emerald-50/50' : 'border-transparent hover:border-slate-200'}`}>
-                          {/* Item 3: 章節導覽折疊按鈕 */}
-                          {doc.status === 'COMPLETED' && !doc.id.startsWith('hist:') && (
+                          {/* Item 3: 章節導覽折疊按鈕
+                              條件：COMPLETED + 非 HISTORICAL_EXAM + 非 403 孤兒資源 */}
+                          {doc.status === 'COMPLETED' && doc.sourceType !== 'HISTORICAL_EXAM' && doc.sourceType !== 'historical_exam' && !chapterUnavailable.has(doc.id) && (
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
@@ -687,8 +693,16 @@ function KnowledgeBasePageInner() {
                                 try {
                                   const res = await knowledgeService.getResourceScaffolds(doc.id);
                                   setDocScaffolds(prev => ({ ...prev, [doc.id]: res.scaffolds || [] }));
-                                } catch {
-                                  setDocScaffolds(prev => ({ ...prev, [doc.id]: [] }));
+                                } catch (err) {
+                                  if (err instanceof ApiError && err.status === 403) {
+                                    // 孤兒資源：後端尚未建立 scaffold 關聯 — 隱藏按鈕並收起
+                                    setChapterUnavailable(prev => new Set([...prev, doc.id]));
+                                    setExpandedChaptersDocId(null);
+                                  } else {
+                                    // 其他 4xx/5xx：顯示「載入失敗」提示
+                                    setScaffoldErrors(prev => ({ ...prev, [doc.id]: '載入失敗' }));
+                                    setDocScaffolds(prev => ({ ...prev, [doc.id]: [] }));
+                                  }
                                 } finally {
                                   setLoadingScaffolds(null);
                                 }
@@ -708,6 +722,8 @@ function KnowledgeBasePageInner() {
                                 <div className="flex items-center justify-center py-2">
                                   <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                 </div>
+                              ) : scaffoldErrors[doc.id] ? (
+                                <p className="text-center py-2 text-[10px] text-rose-500 bg-rose-50 rounded">{scaffoldErrors[doc.id]}</p>
                               ) : chapters.length > 0 ? (
                                 <div className="space-y-0.5 max-h-[200px] overflow-y-auto pt-1">
                                   {chapters.map((ch, idx) => (

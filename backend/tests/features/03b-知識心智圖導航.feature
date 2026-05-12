@@ -205,3 +205,36 @@ Feature: 知識心智圖 API 測試規格（節點查詢、教練對話與付費
     Example: FREE 用戶被擋在鷹架 endpoint 前
       When 使用者 "free@example.com" 查詢節點 101 的學習鷹架
       Then 操作失敗，錯誤為「學習教材為 PRO 以上方案功能」
+
+  # ========== Ownership Filter（Issue #74）==========
+
+  Rule: 後置（安全）- nodes API 不得洩漏他人 resource_id（issue #74 regression）
+
+    @backend
+    Scenario: nodes API 不回傳他人 resource 的 resource_id
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                    | 訂閱方案  |
+        | 10       | user-a@example.com       | PRO_199   |
+        | 11       | user-b@example.com       | PRO_199   |
+      And 系統中有以下備考科目：
+        | 科目 ID | 名稱             |
+        | 20      | AI 應用規劃師    |
+      And 使用者 "user-a@example.com" 僅備考 "AI 應用規劃師"
+      And 使用者 "user-b@example.com" 在科目 "AI 應用規劃師" 下建立了資源 "user_b_pdf"
+      When 使用者 "user-a@example.com" 查看科目 "AI 應用規劃師" 的知識節點樹
+      Then 回應狀態碼為 200
+      And 回應的 "resources" 清單不包含 "user_b_pdf" 的 resource_id
+
+    @backend
+    Scenario: nodes API 仍回傳 seed user 建立的科目預設資源
+      Given 系統中有以下使用者帳號：
+        | 使用者 ID | Email                    | 訂閱方案  |
+        | 12       | user-c@example.com       | PRO_199   |
+      And 系統中有以下備考科目：
+        | 科目 ID | 名稱              |
+        | 21      | AI 應用規劃師 Pro  |
+      And 使用者 "user-c@example.com" 僅備考 "AI 應用規劃師 Pro"
+      And seed user 在科目 "AI 應用規劃師 Pro" 下建立了預設資源 "default_pdf"
+      When 使用者 "user-c@example.com" 查看科目 "AI 應用規劃師 Pro" 的知識節點樹
+      Then 回應狀態碼為 200
+      And 回應的 "resources" 清單包含 "default_pdf" 的 resource_id
