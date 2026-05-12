@@ -1,5 +1,6 @@
 """Resource API router."""
 
+import os
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -438,13 +439,52 @@ def submit_youtube(
 ):
     """提交 YouTube URL 資源。回傳 202 Accepted，處理工作已送至背景佇列。
 
-    Issue #68：若背景排程失敗（Cloud Tasks 配置錯誤等），立刻將 resource 標記 FAILED
-    並回 503，避免 silent PENDING 永久卡住。
+    F47：
+    - 長度前置檢查：超過 30 分鐘回 422
+    - 配額 2 份：reserve_youtube_quota 先佔 2 份，EnqueueFailedError 時 refund
+    Issue #68：若背景排程失敗立刻標記 FAILED 並回 503。
     """
     from app.services.cloud_tasks_service import (
         EnqueueFailedError,
         enqueue_process_resource,
     )
+    from app.services.resource_parse_quota_service import (
+        QuotaExceededError,
+        reserve_youtube_quota,
+        refund_quota,
+    )
+    from app.models.user import User
+
+    # ── 載入 user obj（配額需要） ────────────────────────────────────────
+    user_obj = db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+    if user_obj is None:
+        raise HTTPException(status_code=401, detail={"message": "未授權"})
+
+    # ── YouTube 30 分鐘長度前置檢查 ──────────────────────────────────────
+    duration_minutes = _check_youtube_duration(request.youtube_url)
+    if duration_minutes is not None and duration_minutes > 30:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": f"YouTube 影片不可超過 30 分鐘（{duration_minutes:.0f} 分鐘超過上限）",
+                "duration_minutes": duration_minutes,
+            },
+        )
+
+    # ── 配額預檢（YouTube = 2 份，只檢查不扣）──────────────────────────
+    try:
+        reserve_youtube_quota(db, user_obj)  # 不傳 resource_id = 只預檢
+    except QuotaExceededError as exc:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "message": str(exc),
+                "limit": exc.limit,
+                "used": exc.used,
+                "plan": exc.plan,
+                "upgrade_hint": "升級 PRO 可用 50 份 / 月",
+            },
+        )
 
     result = service.submit_youtube(
         user_id=user_id,
@@ -455,22 +495,84 @@ def submit_youtube(
     if result.get("error"):
         raise HTTPException(status_code=result["status_code"], detail=result["message"])
 
+    # ── 配額佔位（插入 2 個 stub ParseJob，計入本月用量）────────────────
+    resource_id = result.get("id")
+    if resource_id:
+        reserve_youtube_quota(
+            db, user_obj,
+            resource_id=resource_id,
+            tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
+            skip_check=True,  # 已在上方預檢，只插入 stub rows
+        )
+
     # 送至 Cloud Tasks（或 inline fallback）— 失敗即標記 FAILED 顯式回報
-    if result.get("id"):
+    if resource_id:
         try:
             enqueue_process_resource(
-                resource_id=result["id"],
+                resource_id=resource_id,
                 user_id=user_id,
                 tenant_id=tenant_id or PUBLIC_B2C_TENANT_ID,
             )
         except EnqueueFailedError as exc:
-            _mark_resource_failed(db, result["id"], str(exc))
+            _mark_resource_failed(db, resource_id, str(exc))
+            # 退回 2 份配額（把 stub jobs 標記 FAILED）
+            try:
+                refund_quota(db, uuid.UUID(user_id), uuid.UUID(resource_id))
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=503,
-                detail={"message": str(exc), "resource_id": result["id"]},
+                detail={"message": str(exc), "resource_id": resource_id},
             ) from exc
 
     return result
+
+
+def _check_youtube_duration(youtube_url: str) -> float | None:
+    """取得 YouTube 影片時長（分鐘）。
+
+    採用最輕量策略：呼叫 YouTube oEmbed API（無需認證，只回傳 metadata 不下載影片）。
+    若無法取得長度（網路失敗 / API 限制），回傳 None 表示跳過長度檢查（寬鬆處理）。
+    """
+    import re
+    import urllib.request
+    import json as _json
+
+    try:
+        # 從 URL 擷取 video ID
+        vid_match = re.search(r"[?&]v=([\w-]+)", youtube_url)
+        if not vid_match:
+            return None
+        video_id = vid_match.group(1)
+
+        # 使用 YouTube Data API（若有 key）取得 duration
+        api_key = (
+            os.environ.get("YOUTUBE_DATA_API_KEY")
+            or os.environ.get("GOOGLE_API_KEY")
+        )
+        if api_key:
+            api_url = (
+                f"https://www.googleapis.com/youtube/v3/videos"
+                f"?id={video_id}&part=contentDetails&key={api_key}"
+            )
+            with urllib.request.urlopen(api_url, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            items = data.get("items", [])
+            if not items:
+                return None
+            duration_iso = items[0]["contentDetails"]["duration"]
+            # ISO 8601 duration: PT1H2M3S
+            hours = int(re.search(r"(\d+)H", duration_iso).group(1)) if "H" in duration_iso else 0
+            minutes = int(re.search(r"(\d+)M", duration_iso).group(1)) if "M" in duration_iso else 0
+            seconds = int(re.search(r"(\d+)S", duration_iso).group(1)) if "S" in duration_iso else 0
+            return hours * 60 + minutes + seconds / 60
+
+        # 無 API key：跳過長度檢查（寬鬆）
+        return None
+
+    except Exception:
+        # 無法取得長度時寬鬆放行
+        return None
 
 
 def _mark_resource_failed(db: Session, resource_id: str, error_message: str) -> None:

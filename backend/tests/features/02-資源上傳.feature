@@ -103,7 +103,7 @@ Feature: 資源上傳與隱性版權約定
 
   # ========== YouTube URL ==========
 
-  Rule: 後置（狀態）- YouTube URL 各方案皆可提交且無時長限制
+  Rule: 後置（狀態）- YouTube URL 各方案皆可提交（影片長度須在 30 分鐘以內）
 
     Example: FREE 用戶提交 YouTube URL 成功
       When 使用者 "free@example.com" 提交 YouTube URL "https://www.youtube.com/watch?v=abc123"，科目為 1
@@ -111,8 +111,8 @@ Feature: 資源上傳與隱性版權約定
       And 新建立的資源類型應為 "youtube"
       And 新建立的資源狀態應為 "PENDING"
 
-    Example: PRO 用戶提交長時間 YouTube 影片成功
-      When 使用者 "pro@example.com" 提交 YouTube URL "https://www.youtube.com/watch?v=10hour_course"，科目為 1
+    Example: PRO 用戶提交 YouTube 影片成功（30 分鐘以內）
+      When 使用者 "pro@example.com" 提交 YouTube URL "https://www.youtube.com/watch?v=short_course"，科目為 1
       Then 操作成功
       And 預定使用的解析引擎應為 "gemini_flash"
 
