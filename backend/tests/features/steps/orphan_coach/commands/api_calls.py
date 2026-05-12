@@ -125,6 +125,41 @@ def step_pause_conversation(context):
     )
 
 
+@when('我啟動節點「{node_name}」的蘇格拉底對話（含 pgvector mock）')
+def step_start_conversation_with_pgvector_mock(context, node_name):
+    """模擬 pgvector cosine 查詢在 db.execute 層拋出 InternalError。
+
+    patch sqlalchemy Session.execute：當 SQL 含 <=> 時拋出
+    psycopg.errors.InternalError，模擬 production 真實失敗路徑。
+    """
+    from unittest.mock import patch, MagicMock
+    from psycopg.errors import InternalError
+    from sqlalchemy.orm import Session
+
+    node_id = context.memo.get("node_id")
+    token = _get_token(context)
+    mock_client = _make_mock_anthropic()
+
+    _real_execute = Session.execute
+
+    def _execute_raises_on_pgvector(self_session, statement, *args, **kwargs):
+        stmt_str = str(statement)
+        if "<=>" in stmt_str:
+            raise InternalError("pgvector operator failed (test mock)")
+        return _real_execute(self_session, statement, *args, **kwargs)
+
+    with patch("app.services.orphan_coach_service._get_anthropic", return_value=mock_client), \
+         patch.object(Session, "execute", _execute_raises_on_pgvector):
+        context.last_response = context.api_client.post(
+            "/api/v1/orphan-coach/conversations",
+            json={"node_id": node_id},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    if context.last_response.status_code == 201:
+        data = context.last_response.json()
+        context.memo["conversation_id"] = data.get("conversation_id")
+
+
 @when('我以其他使用者身分查詢此蘇格拉底對話')
 def step_get_conversation_other_user(context):
     conv_id = context.memo.get("conversation_id")

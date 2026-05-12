@@ -122,6 +122,15 @@ def step_existing_conversation(context, rounds):
     context.db_session.commit()
 
 
+@given('mock pgvector cosine 查詢拋出 InternalError')
+def step_mock_pgvector_raises(context):
+    """標記：測試時 _get_neighbor_nodes 將被 patch 為拋出 InternalError。
+    實際 patch 在 When 步驟（含 pgvector mock）中套用。
+    此 Given 只做旗標記錄，讓 Scenario 文意清晰。
+    """
+    context.memo["pgvector_should_raise"] = True
+
+
 @given('對話已暫停（paused_at 設置）')
 def step_conversation_paused(context):
     from datetime import datetime, timezone
