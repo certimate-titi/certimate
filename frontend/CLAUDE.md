@@ -63,10 +63,16 @@ npm run dev    # http://localhost:3005
 `/exam/setup`, `/exam/workspace`, `/exam/results`, `/practice`
 
 ### 資源 / 學習庫
-- `/account/resource-library` — 學習庫總覽（素材 + 知識地圖 Tab）
+- `/library/[stub]/reading?docId=X&subjectId=Y` — 章節閱讀頁（含 AdvanceOrganizer + PitfallAlert + RetrievalCard）
+- `/library/[stub]/watch?docId=X` — 影片 viewer（YouTube + 時間戳）
+- `/library/[stub]/quiz?docId=X` — 考古題 viewer
+- `/library/[stub]/slides?docId=X` — PPT/Slides viewer
+- `/library/[stub]/concept?subjectId=Y` — 跨資源概念搜尋（聚合鷹架/迷思）
 - `/resources/[id]/` — 資源詳情
 - `/resources/[id]/candidates/` — 題目抽取確認（T2/T3）
 - 學習鷹架（解析內容）整合於 `/knowledge?resourceId=...` — 知識地圖右側欄
+- ~~`/account/resource-library`~~ — **已廢除**（2026-05-12 UI sweep 確認 404）
+- ~~`/concept-center`~~（頂層）— **已廢除**，實際入口為 `/library/[stub]/concept`
 
 ### B2B
 `/edu-console`
