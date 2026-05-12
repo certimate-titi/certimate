@@ -103,10 +103,82 @@ def probe_youtube_metadata(youtube_url: str) -> YouTubeMetadata:
     return YouTubeMetadata(duration_seconds=duration, has_cc=has_cc, title=title)
 
 
+_PREFERRED_LANGS = ["zh-TW", "zh-Hant", "zh-CN", "zh-Hans", "zh", "en"]
+
+
+def _extract_video_id(youtube_url: str) -> str | None:
+    """從 YouTube URL 抽 video_id（11 字英數+_- 串）。"""
+    import re
+
+    # 涵蓋 watch?v=ID / youtu.be/ID / shorts/ID / embed/ID
+    m = re.search(
+        r"(?:v=|youtu\.be/|/shorts/|/embed/)([A-Za-z0-9_-]{11})",
+        youtube_url,
+    )
+    return m.group(1) if m else None
+
+
+def _download_transcript_via_api(youtube_url: str) -> str | None:
+    """主路徑：用 youtube-transcript-api 抽字幕。
+
+    走 player timedtext endpoint（非 yt-dlp 的 IP rate-limited 端點），
+    多用戶 scaling 時 429 風險顯著降低。失敗回 None 讓上層 fallback。
+
+    回傳：純文字（已 join，去時間碼），可直接餵 K-01 結構化。
+    """
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi  # type: ignore[import]
+        from youtube_transcript_api._errors import (  # type: ignore[import]
+            TranscriptsDisabled,
+            NoTranscriptFound,
+            VideoUnavailable,
+        )
+    except ImportError:
+        logger.warning("youtube-transcript-api 未安裝，fallback 到 yt-dlp")
+        return None
+
+    video_id = _extract_video_id(youtube_url)
+    if not video_id:
+        logger.warning("無法從 URL 抽 video_id: %s", youtube_url)
+        return None
+
+    try:
+        api = YouTubeTranscriptApi()
+        # fetch() 自動嘗試所有 preferred langs，找到第一個可用就回
+        fetched = api.fetch(video_id, languages=_PREFERRED_LANGS)
+    except (TranscriptsDisabled, NoTranscriptFound) as exc:
+        logger.info("transcript-api 無字幕（video=%s）: %s", video_id, exc)
+        return None
+    except VideoUnavailable as exc:
+        logger.warning("transcript-api 影片不可用: %s", exc)
+        return None
+    except Exception as exc:  # 含 429 / IP block / proxy error
+        logger.warning(
+            "transcript-api 失敗（fallback yt-dlp）: %s",
+            exc,
+        )
+        return None
+
+    # FetchedTranscript supports iter → FetchedTranscriptSnippet(text, start, duration)
+    pieces = [s.text.strip() for s in fetched if getattr(s, "text", "").strip()]
+    if not pieces:
+        return None
+
+    # 用 _parse_vtt 級別的去重邏輯，再 join
+    seen: set[str] = set()
+    unique: list[str] = []
+    for p in pieces:
+        if p not in seen:
+            seen.add(p)
+            unique.append(p)
+    return " ".join(unique)
+
+
 def _download_vtt(youtube_url: str, tmpdir: str) -> str | None:
-    """下載最佳 CC 字幕到 tmpdir，回傳 VTT 文字內容（或 None）。
+    """yt-dlp fallback：下載最佳 CC 字幕到 tmpdir，回傳 VTT 文字內容（或 None）。
 
     遇 YouTube 429 throttle 走 exponential backoff retry（最多 3 次）。
+    主路徑 _download_transcript_via_api 失敗才會進來。
     """
     import time as _time
 
@@ -331,12 +403,31 @@ class YouTubeExtractor:
             return _gemini_direct_extract(youtube_url, resource_name or meta.title)
 
     def _extract_with_cc(self, youtube_url: str, resource_name: str = "") -> ExtractionResult:
-        """有 CC 路徑：下載 VTT → Gemini Flash 結構化。"""
+        """有 CC 路徑：
+        1. 主路徑 youtube-transcript-api（player endpoint，配額寬鬆）→ 已是純文字
+        2. fallback 1 yt-dlp VTT（429 風險高，仍保留作後盾）
+        3. fallback 2 Gemini Pro 直餵（成本最高）→ Flash 結構化
+        """
+        # 主路徑：transcript-api 直回純文字（無 VTT 中介）
+        transcript_text = _download_transcript_via_api(youtube_url)
+        if transcript_text:
+            logger.info(
+                "[yt-cc] transcript-api 成功，text_len=%d url=%s",
+                len(transcript_text), youtube_url,
+            )
+            # _apply_k01_structuring 內部會 _parse_vtt — 對純文字無害（無時間碼行可剝）
+            # 但為了避免 50KB 截斷處時間語意被切，這裡直接組成單行 VTT-like 文字
+            return _apply_k01_structuring(
+                transcript_text, title=resource_name, youtube_url=youtube_url,
+            )
+
+        # fallback 1：yt-dlp VTT（IP 429 風險）
         with tempfile.TemporaryDirectory() as tmpdir:
             vtt_text = _download_vtt(youtube_url, tmpdir)
+        if vtt_text:
+            logger.info("[yt-cc] yt-dlp VTT fallback 成功 url=%s", youtube_url)
+            return _apply_k01_structuring(vtt_text, title=resource_name, youtube_url=youtube_url)
 
-        if not vtt_text:
-            logger.warning("VTT 下載失敗，fallback 到 Gemini Pro 直餵; url=%s", youtube_url)
-            return _gemini_direct_extract(youtube_url, resource_name)
-
-        return _apply_k01_structuring(vtt_text, title=resource_name, youtube_url=youtube_url)
+        # fallback 2：Gemini Pro 直餵（最貴）
+        logger.warning("VTT 雙路徑均失敗，fallback 到 Gemini Pro 直餵; url=%s", youtube_url)
+        return _gemini_direct_extract(youtube_url, resource_name)
