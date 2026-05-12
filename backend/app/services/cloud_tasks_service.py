@@ -38,6 +38,14 @@ def _get_processor_mode() -> BackgroundProcessor:
         return BackgroundProcessor.WORKER
 
 
+class EnqueueFailedError(RuntimeError):
+    """背景處理排程失敗（Cloud Tasks 與 inline fallback 均無法成功）。
+
+    上游 API endpoint 應 catch 此例外，將 resource 標記為 FAILED 並設 error_message，
+    避免 silent PENDING 永遠卡住（Issue #68）。
+    """
+
+
 def enqueue_process_resource(
     resource_id: str,
     user_id: str,
@@ -53,6 +61,10 @@ def enqueue_process_resource(
     Behaviour:
         - BACKGROUND_PROCESSOR=worker（預設）：送 Cloud Tasks，POST 到 worker URL。
         - BACKGROUND_PROCESSOR=inline：直接在背景 thread 執行 _process_resource_background。
+
+    Raises:
+        EnqueueFailedError: 排程失敗（worker 模式下 WORKER_SERVICE_URL 缺失或
+            Cloud Tasks 異常）。Issue #68 防止 silent PENDING。
     """
     mode = _get_processor_mode()
 
@@ -108,12 +120,18 @@ def _enqueue_cloud_tasks(
     """
     worker_url = os.environ.get("WORKER_SERVICE_URL", "")
     if not worker_url:
-        logger.warning(
-            "[cloud_tasks] WORKER_SERVICE_URL 未設定，fallback 至 inline 模式（resource=%s）",
+        # Issue #68：worker 模式下 WORKER_SERVICE_URL 必須設定，否則無 silent fallback
+        # （inline thread 失敗無觀測性，最終 resource 卡 PENDING 永久）
+        logger.error(
+            "[cloud_tasks] WORKER_SERVICE_URL 未設定（CRITICAL）— "
+            "worker 模式必須在 deploy env 設此變數。raise EnqueueFailedError "
+            "讓 API 標記 resource FAILED 給用戶可見錯誤（resource=%s）",
             resource_id,
         )
-        _enqueue_inline(resource_id, user_id)
-        return
+        raise EnqueueFailedError(
+            "背景處理排程失敗：WORKER_SERVICE_URL 未設定。"
+            "請聯絡管理員檢查 Cloud Run 環境變數配置。"
+        )
 
     queue_name = os.environ.get("CLOUD_TASKS_QUEUE_NAME", "resource-processing")
     location = os.environ.get("CLOUD_TASKS_LOCATION", "asia-east1")
@@ -158,19 +176,26 @@ def _enqueue_cloud_tasks(
         )
 
     except ImportError as ie:
-        # 升級為 ERROR：production 必須裝 SDK，靜默 fallback 會隱藏部署問題（RC1 經驗）
+        # Issue #68：worker 模式 SDK 缺失即視為部署問題，不再 silent inline fallback
         logger.error(
             "[cloud_tasks] google-cloud-tasks SDK 未安裝（CRITICAL）— "
-            "production 必須在 requirements.txt 含 google-cloud-tasks。"
-            "暫時 fallback 至 inline 模式但管線會塞住 main service（resource=%s）: %s",
+            "production 必須在 requirements.txt 含 google-cloud-tasks（resource=%s）: %s",
             resource_id, ie,
         )
-        _enqueue_inline(resource_id, user_id)
+        raise EnqueueFailedError(
+            "背景處理排程失敗：google-cloud-tasks SDK 未安裝。"
+            "請聯絡管理員檢查後端依賴。"
+        ) from ie
 
     except Exception as exc:
+        # Issue #68：Cloud Tasks API 失敗（queue 不存在、IAM 拒絕、網路）也應顯式失敗，
+        # 不再 fallback 到 inline（fallback 的 thread 失敗無觀測性，最終 PENDING 永久）
         logger.exception(
-            "[cloud_tasks] enqueue 失敗，fallback 至 inline 模式（resource=%s）: %s",
+            "[cloud_tasks] enqueue 失敗（resource=%s）: %s",
             resource_id,
             exc,
         )
-        _enqueue_inline(resource_id, user_id)
+        raise EnqueueFailedError(
+            f"背景處理排程失敗：Cloud Tasks 異常（{type(exc).__name__}）。"
+            "請聯絡管理員檢查 Cloud Tasks queue 設定與 IAM 權限。"
+        ) from exc
