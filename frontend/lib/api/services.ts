@@ -119,18 +119,37 @@ export const authService = {
  */
 export const documentService = {
   async upload(req: UploadDocumentRequest): Promise<UploadDocumentResponse> {
+    // Backend 回 flat `{id, name, type, status, ...}`；前端 contract 期待
+    // `{document: {id, ...}, taskId}`。在 service 層 wrap 對齊 UploadDocumentResponse。
+    const wrapFlat = (raw: Record<string, unknown>): UploadDocumentResponse => ({
+      document: {
+        id: (raw.id as string) || '',
+        filename: (raw.name as string) || '',
+        resource_type: (raw.type as string) || '',
+        status: (raw.status as string) || 'PENDING',
+        subject_id: (raw.subject_id as string) || null,
+        file_size_mb: (raw.file_size_mb as number) ?? null,
+        youtube_url: (raw.youtube_url as string) || '',
+        created_at: (raw.created_at as string) || new Date().toISOString(),
+        error_message: (raw.error_message as string) || null,
+      } as UploadDocumentResponse['document'],
+      taskId: (raw.task_id as string) || '',
+    });
+
     if (req.youtubeUrl) {
-      return apiClient.post<UploadDocumentResponse>('/resources/youtube', {
+      const raw = await apiClient.post<Record<string, unknown>>('/resources/youtube', {
         youtube_url: req.youtubeUrl,
         subject_id: req.subjectId,
       });
+      return wrapFlat(raw);
     }
     // File upload
     const formData = new FormData();
     if (req.file) formData.append('file', req.file);
     if (req.subjectId) formData.append('subject_id', req.subjectId);
     if (req.title) formData.append('filename', req.title);
-    return apiClient.upload<UploadDocumentResponse>('/resources/upload-file', formData);
+    const raw = await apiClient.upload<Record<string, unknown>>('/resources/upload-file', formData);
+    return wrapFlat(raw);
   },
 
   async list(): Promise<GetDocumentsResponse> {

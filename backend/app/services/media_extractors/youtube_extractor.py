@@ -115,7 +115,9 @@ def _download_vtt(youtube_url: str, tmpdir: str) -> str | None:
         "skip_download": True,
         "writesubtitles": True,
         "writeautomaticsub": True,
-        "subtitleslangs": ["zh-Hant", "zh-Hans", "zh", "en"],
+        # YouTube subtitle 語言碼差異：TED 用 zh-TW，部分平台用 zh-Hant，
+        # 大陸用 zh-CN/zh-Hans，未指定地區用 zh。fallback 到 en。
+        "subtitleslangs": ["zh-TW", "zh-Hant", "zh-CN", "zh-Hans", "zh", "en"],
         "subtitlesformat": "vtt",
         "outtmpl": os.path.join(tmpdir, "sub"),
         "no_warnings": True,

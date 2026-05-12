@@ -338,7 +338,11 @@ def process_resource_task(
             bool(resource_fresh and resource_fresh.gcs_path),
             payload.tenant_id,
         )
-        if resource_fresh and resource_fresh.gcs_path:
+        # YT 沒 gcs_path（用 youtube_url），但仍需跑 K-06 scaffold parse_job
+        has_content = resource_fresh and (
+            resource_fresh.gcs_path or resource_fresh.youtube_url
+        )
+        if has_content:
             job = create_parse_job(db, resource_fresh)
             db.commit()
             outcome = run_parse_job(db, job.id)
@@ -350,10 +354,11 @@ def process_resource_task(
             )
         else:
             logger.warning(
-                "[parse-trigger] SKIPPED Step 3: resource_fresh=%s gcs_path_present=%s — "
-                "可能 RLS 過濾或 gcs_path 未寫入",
+                "[parse-trigger] SKIPPED Step 3: resource_fresh=%s gcs_path=%s youtube_url=%s — "
+                "可能 RLS 過濾或內容欄位未寫入",
                 bool(resource_fresh),
                 bool(resource_fresh and resource_fresh.gcs_path),
+                bool(resource_fresh and resource_fresh.youtube_url),
             )
     except Exception as parse_exc:
         logger.exception(

@@ -77,7 +77,12 @@ def enqueue_process_resource(
 # ── inline fallback ──────────────────────────────────────────────────────────
 
 def _enqueue_inline(resource_id: str, user_id: str) -> None:
-    """在背景 thread 直接執行 pipeline（本地 dev 用）。"""
+    """在背景 thread 直接執行完整 pipeline（本地 dev 用）。
+
+    包含 step 1（chunk+embed+knowledge）+ step 2（K-06 scaffold parse_job），
+    與 Cloud Tasks worker handler 對齊；避免 inline 模式漏 step 2 導致本地
+    驗收時 scaffold/markdown 沒生成（2026-05-12 YT Layer 2 驗收揭露）。
+    """
     import threading
 
     def _run():
@@ -88,14 +93,60 @@ def _enqueue_inline(resource_id: str, user_id: str) -> None:
                 return
             db = _SessionLocal()
             try:
-                import uuid
+                import uuid as _uuid
+                from app.models.resource import Resource
                 from app.services.document_processing_service import DocumentProcessingService
+
+                # Step 1：chunk + embed + knowledge
                 svc = DocumentProcessingService(db)
-                result = svc.process_resource(uuid.UUID(resource_id))
+                result = svc.process_resource(_uuid.UUID(resource_id))
                 if result.get("error"):
-                    logger.error("[inline] resource=%s failed: %s", resource_id, result.get("message"))
-                else:
-                    logger.info("[inline] resource=%s completed: %s chunks", resource_id, result.get("chunks_created", 0))
+                    logger.error(
+                        "[inline] resource=%s step1 failed: %s",
+                        resource_id, result.get("message"),
+                    )
+                    return
+                logger.info(
+                    "[inline] resource=%s step1 completed: %s chunks",
+                    resource_id, result.get("chunks_created", 0),
+                )
+
+                # Step 2：K-06 scaffold parse_job（對齊 tasks.py handler）
+                try:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+                    from app.services.resource_parse_service import (
+                        create_parse_job, run_parse_job,
+                    )
+                    res = db.query(Resource).filter_by(
+                        id=_uuid.UUID(resource_id)
+                    ).first()
+                    has_content = res and (res.gcs_path or res.youtube_url)
+                    if has_content:
+                        job = create_parse_job(db, res)
+                        db.commit()
+                        outcome = run_parse_job(db, job.id)
+                        db.commit()
+                        logger.info(
+                            "[inline] resource=%s step2 parse_job=%s status=%s",
+                            resource_id, job.id, outcome.status,
+                        )
+                    else:
+                        logger.warning(
+                            "[inline] resource=%s step2 SKIPPED (no gcs_path/youtube_url)",
+                            resource_id,
+                        )
+                except Exception as p_exc:
+                    logger.exception(
+                        "[inline] resource=%s step2 parse_job failed (non-fatal): %s",
+                        resource_id, p_exc,
+                    )
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
             finally:
                 db.close()
         except Exception as exc:
