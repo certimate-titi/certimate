@@ -4,6 +4,7 @@ Endpoints:
   POST   /api/v1/user-notes           201 建立筆記
   GET    /api/v1/user-notes           200 列出自己的筆記
   PATCH  /api/v1/user-notes/{id}      200 更新自己的筆記
+  DELETE /api/v1/user-notes/all       200 刪除自己所有筆記 {deleted: N}
   DELETE /api/v1/user-notes/{id}      204 刪除自己的筆記
 """
 
@@ -82,6 +83,22 @@ def list_notes(
     )
     _handle(result)
     return {"items": result["items"], "total": result["total"]}
+
+
+@router.delete("/all")
+def delete_all_notes(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """刪除當前 user 所有筆記。
+
+    - 需登入（JWT）
+    - 無資料時回 {deleted: 0}，不報錯
+    """
+    svc = UserNoteService(db)
+    result = svc.delete_all_for_user(user_id=UUID(user_id))
+    _handle(result)
+    return {"deleted": result["deleted"]}
 
 
 @router.patch("/{note_id}", response_model=UserNoteResponse)

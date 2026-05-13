@@ -143,6 +143,18 @@ class UserNoteService(BaseService):
         self.db.refresh(note)
         return self.ok({"note": note})
 
+    # ── Delete All ──────────────────────────────────────────────────
+
+    def delete_all_for_user(self, *, user_id: UUID) -> dict:
+        """刪除指定 user 的所有筆記，回傳刪除筆數。"""
+        deleted = (
+            self.db.query(UserNote)
+            .filter(UserNote.user_id == user_id)
+            .delete(synchronize_session=False)
+        )
+        self.db.commit()
+        return self.ok({"deleted": deleted})
+
     # ── Delete ──────────────────────────────────────────────────────
 
     def delete(self, *, note_id: UUID, user_id: UUID) -> dict:
