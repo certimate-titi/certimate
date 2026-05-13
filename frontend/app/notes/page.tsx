@@ -326,6 +326,9 @@ function NotesPage() {
                       placeholder="筆記內容（必填）"
                       className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-300 resize-none bg-white"
                     />
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      💡 在內容中打 <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">#標籤</code> 即可標記重點（例：<code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">#深度學習</code> <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">#應用</code>），標籤自動出現在「🕸️ 標籤圖譜」並連結 AI 對話 / 鷹架深讀同名 tag
+                    </p>
                     {createError && (
                       <p className="text-xs text-rose-500">{createError}</p>
                     )}
