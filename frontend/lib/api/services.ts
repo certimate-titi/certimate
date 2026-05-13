@@ -2505,6 +2505,7 @@ import type {
   UserNoteCreate,
   UserNoteUpdate,
   UserNoteListResponse,
+  UserTagListResponse,
 } from '@/types/api';
 
 export const userNoteService = {
@@ -2524,14 +2525,28 @@ export const userNoteService = {
    * @param params - subject_id / node_id / limit / offset
    * @returns items 陣列 + total
    */
-  async list(params: { subject_id?: string; node_id?: string; limit?: number; offset?: number } = {}): Promise<UserNoteListResponse> {
+  async list(params: { subject_id?: string; node_id?: string; tag?: string; limit?: number; offset?: number } = {}): Promise<UserNoteListResponse> {
     const query = new URLSearchParams();
     if (params.subject_id) query.set('subject_id', params.subject_id);
     if (params.node_id) query.set('node_id', params.node_id);
+    if (params.tag) query.set('tag', params.tag);
     if (params.limit !== undefined) query.set('limit', String(params.limit));
     if (params.offset !== undefined) query.set('offset', String(params.offset));
     const qs = query.toString();
     return apiClient.get<UserNoteListResponse>(`/user-notes${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * 列出此使用者所有 hashtags（後端自動從 content 解析）。
+   *
+   * @param params - subject_id 可選（過濾到特定科目）
+   * @returns items 陣列（normalized / display / count）+ total
+   */
+  async listTags(params: { subject_id?: string } = {}): Promise<UserTagListResponse> {
+    const query = new URLSearchParams();
+    if (params.subject_id) query.set('subject_id', params.subject_id);
+    const qs = query.toString();
+    return apiClient.get<UserTagListResponse>(`/user-notes/tags${qs ? `?${qs}` : ''}`);
   },
 
   /**
