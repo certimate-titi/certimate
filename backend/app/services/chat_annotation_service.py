@@ -184,6 +184,18 @@ class ChatAnnotationService(BaseService):
         self.db.refresh(annotation)
         return self.ok({"annotation": annotation})
 
+    # ── Delete All ──────────────────────────────────────────────────
+
+    def delete_all_for_user(self, *, user_id: UUID) -> dict:
+        """刪除指定 user 的所有 chat_message_annotations，回傳刪除筆數。"""
+        deleted = (
+            self.db.query(ChatMessageAnnotation)
+            .filter(ChatMessageAnnotation.user_id == user_id)
+            .delete(synchronize_session=False)
+        )
+        self.db.commit()
+        return self.ok({"deleted": deleted})
+
     # ── Delete ──────────────────────────────────────────────────────
 
     def delete_annotation(self, *, annotation_id: UUID, user_id: UUID) -> dict:
