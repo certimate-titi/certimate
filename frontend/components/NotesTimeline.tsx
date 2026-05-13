@@ -26,9 +26,10 @@ import {
   chatAnnotationService,
   knowledgeService,
   userNoteService,
-  type NodeScaffoldItem,
+  userTagService,
 } from '@/lib/api/services';
-import type { AnnotationType, ChatAnnotation, UserNote, UserTag } from '@/types/api';
+import type { NodeScaffoldItem } from '@/lib/api/services';
+import type { AnnotationType, AggregatedTag, ChatAnnotation, TaggedItem, UserNote } from '@/types/api';
 import type { NoteKind, SortOrder } from '@/hooks/use-notes-filter';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -463,8 +464,11 @@ export default function NotesTimeline({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [tags, setTags] = useState<UserTag[]>([]);
+  const [tags, setTags] = useState<AggregatedTag[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
+  // 3 sources tag items（點選 tag 後從 /user-tags/items 拿）
+  const [taggedItems, setTaggedItems] = useState<TaggedItem[]>([]);
+  const [tagItemsLoading, setTagItemsLoading] = useState(false);
 
   // 穩定 onCountsUpdate ref，避免因外層每次 render 產新 function 而觸發 fetchData 無限 loop
   const onCountsUpdateRef = useRef(onCountsUpdate);
@@ -484,7 +488,7 @@ export default function NotesTimeline({
         userNoteService.list({ subject_id: subjectId, limit: 100 }),
         chatAnnotationService.list({ limit: 100 }),
         knowledgeService.getSubjectScaffolds(subjectId, { user_response_only: true, limit: 100 }),
-        userNoteService.listTags({ subject_id: subjectId }),
+        userTagService.aggregate({ subject_id: subjectId }),
       ]);
 
       if (tagRes.status === 'fulfilled') {
@@ -549,18 +553,72 @@ export default function NotesTimeline({
     fetchData();
   }, [fetchData]);
 
+  // 當 activeTag 改變時，呼叫 /user-tags/items 拿 3 sources 混合結果
+  useEffect(() => {
+    if (!activeTag || !subjectId) {
+      setTaggedItems([]);
+      return;
+    }
+    setTagItemsLoading(true);
+    userTagService.items({ tag: activeTag, subject_id: subjectId, limit: 100 })
+      .then((res) => setTaggedItems(res.items))
+      .catch(() => setTaggedItems([]))
+      .finally(() => setTagItemsLoading(false));
+  }, [activeTag, subjectId]);
+
   // ─ Filter ──────────────────────────────────────────────────────────────────
 
-  const filtered = items.filter((item) => {
+  // 當有 activeTag 時，以 taggedItems 作為資料源（3 sources 混合）
+  // 否則沿用原本的 items（全量 fetch）
+  const baseItems: TimelineItem[] = activeTag
+    ? taggedItems.map((ti): TimelineItem => {
+        if (ti.kind === 'note') {
+          return {
+            _id: ti.id,
+            _kind: 'note',
+            _sortTime: new Date(ti.updated_at ?? ti.created_at).getTime(),
+            data: {
+              id: ti.id,
+              user_id: '',
+              subject_id: ti.subject_id ?? '',
+              node_id: null,
+              title: ti.title ?? null,
+              content: ti.content,
+              created_at: ti.created_at,
+              updated_at: ti.updated_at ?? ti.created_at,
+            } as UserNote,
+          };
+        }
+        if (ti.kind === 'annotation') {
+          return {
+            _id: ti.id,
+            _kind: 'annotation',
+            _sortTime: new Date(ti.created_at).getTime(),
+            data: {
+              id: ti.id,
+              user_annotation: ti.content,
+              annotation_type: 'note' as AnnotationType,
+              created_at: ti.created_at,
+            } as ChatAnnotation,
+          };
+        }
+        // scaffold
+        return {
+          _id: ti.id,
+          _kind: 'scaffold',
+          _sortTime: new Date(ti.updated_at ?? ti.created_at).getTime(),
+          data: {
+            id: ti.id,
+            content: ti.content,
+            user_response: null,
+            responded_at: ti.updated_at ?? null,
+          } as NodeScaffoldItem & { resource_id?: string | null },
+        };
+      })
+    : items;
+
+  const filtered = baseItems.filter((item) => {
     if (kindFilter && item._kind !== kindFilter) return false;
-    // Tag filter: only applies to notes (annotations/scaffolds don't have hashtag content)
-    if (activeTag && item._kind === 'note') {
-      const tagPattern = new RegExp(`#${activeTag}(?:\\b|$)`, 'i');
-      if (!tagPattern.test(item.data.content)) return false;
-    } else if (activeTag && item._kind !== 'note') {
-      // Non-notes are hidden when a tag filter is active
-      return false;
-    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       if (item._kind === 'note') {
@@ -746,11 +804,12 @@ export default function NotesTimeline({
         )}
         {activeTag && onTagFilterChange && (
           <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-sky-50 text-sky-700 border-sky-200">
-            #{activeTag}
+            Tag: #{activeTag}
             <button
               type="button"
               onClick={() => onTagFilterChange(null)}
               className="ml-0.5 hover:opacity-70"
+              title="清除標籤篩選"
             >
               <X className="h-3 w-3" />
             </button>
@@ -803,17 +862,17 @@ export default function NotesTimeline({
 
       {/* Timeline list */}
       <div className="flex-1 overflow-y-auto p-4">
-        {loading && (
+        {(loading || tagItemsLoading) && (
           <div className="flex items-center justify-center py-24">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-        {!loading && error && (
+        {!loading && !tagItemsLoading && error && (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-rose-500">{error}</p>
           </div>
         )}
-        {!loading && !error && sorted.length === 0 && (
+        {!loading && !tagItemsLoading && !error && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
             <NotebookPen className="h-10 w-10 text-slate-300" />
             <p className="text-sm text-slate-500 font-medium">
@@ -830,7 +889,7 @@ export default function NotesTimeline({
             )}
           </div>
         )}
-        {!loading && !error && sorted.length > 0 && (
+        {!loading && !tagItemsLoading && !error && sorted.length > 0 && (
           <div className="space-y-3">
             {/* Group headers for 'group' sort */}
             {sortOrder === 'group' ? (
