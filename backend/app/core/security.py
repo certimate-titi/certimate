@@ -40,6 +40,8 @@ _BLOCKED_HOSTNAMES = {
 _ALLOWED_DOMAINS_WHITELIST = {
     "youtube.com",
     "www.youtube.com",
+    "m.youtube.com",             # mobile web
+    "music.youtube.com",         # YouTube Music
     "youtu.be",
     "storage.googleapis.com",    # GCS
     "s3.amazonaws.com",          # AWS S3
