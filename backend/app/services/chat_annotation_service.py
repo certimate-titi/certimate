@@ -137,6 +137,53 @@ class ChatAnnotationService(BaseService):
         )
         return self.ok({"items": items, "total": total})
 
+    # ── Update ──────────────────────────────────────────────────────
+
+    def update_annotation(
+        self,
+        *,
+        annotation_id: UUID,
+        user_id: UUID,
+        user_annotation: str | None = None,
+        annotation_type: str | None = None,
+    ) -> dict:
+        """更新自己的 annotation（user_annotation / annotation_type 至少一個）。
+
+        - 不存在 → 404
+        - 他人的 → 403
+        - user_annotation 若提供必須 ≥ 10 字
+        - annotation_type 若提供必須在合法 enum 範圍
+        """
+        if user_annotation is None and annotation_type is None:
+            return self.error("至少提供 user_annotation 或 annotation_type 其中之一", 422)
+
+        annotation = (
+            self.db.query(ChatMessageAnnotation)
+            .filter(ChatMessageAnnotation.id == annotation_id)
+            .first()
+        )
+        if not annotation:
+            return self.error("annotation 不存在", 404)
+        if annotation.user_id != user_id:
+            return self.error("無權限修改他人的 annotation", 403)
+
+        if user_annotation is not None:
+            if len(user_annotation) < 10:
+                return self.error("user_annotation 最少 10 個字元", 422)
+            annotation.user_annotation = user_annotation
+
+        if annotation_type is not None:
+            if annotation_type not in VALID_ANNOTATION_TYPES:
+                return self.error(
+                    f"annotation_type 無效：{annotation_type}，合法值為 {sorted(VALID_ANNOTATION_TYPES)}",
+                    422,
+                )
+            annotation.annotation_type = annotation_type
+
+        self.db.commit()
+        self.db.refresh(annotation)
+        return self.ok({"annotation": annotation})
+
     # ── Delete ──────────────────────────────────────────────────────
 
     def delete_annotation(self, *, annotation_id: UUID, user_id: UUID) -> dict:

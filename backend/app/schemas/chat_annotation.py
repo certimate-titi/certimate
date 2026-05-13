@@ -38,6 +38,18 @@ class ChatAnnotationResponse(BaseModel):
     created_at: datetime
 
 
+class ChatAnnotationUpdate(BaseModel):
+    """PATCH /api/v1/chat-annotations/{id} request body.
+
+    至少提供 user_annotation 或 annotation_type 其中之一。
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_annotation: str | None = Field(None, min_length=10, max_length=2000)
+    annotation_type: AnnotationType | None = None
+
+
 class ChatAnnotationListResponse(BaseModel):
     """GET /api/v1/chat-annotations response."""
 
