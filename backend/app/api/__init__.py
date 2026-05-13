@@ -52,6 +52,7 @@ from app.api.orphan_coach import router as orphan_coach_router
 from app.api.completion import router as completion_router
 from app.api.chat_annotations import router as chat_annotations_router
 from app.api.user_notes import router as user_notes_router
+from app.api.user_tags import router as user_tags_router
 
 router = APIRouter()
 
@@ -103,3 +104,4 @@ router.include_router(orphan_coach_router, tags=["orphan-coach"])
 router.include_router(completion_router, tags=["completion"])
 router.include_router(chat_annotations_router, tags=["chat-annotations"])
 router.include_router(user_notes_router, tags=["user-notes"])
+router.include_router(user_tags_router, tags=["user-tags"])
