@@ -2350,6 +2350,55 @@ export const orphanCoachService = {
 };
 
 // ──────────────────────────────────────────────────────────────────────────
+// Chat Annotation Service
+// POST/GET/DELETE /chat-annotations
+// ──────────────────────────────────────────────────────────────────────────
+
+import type {
+  ChatAnnotationCreate,
+  ChatAnnotationListResponse,
+  ChatAnnotation,
+} from '@/types/api';
+
+export const chatAnnotationService = {
+  /**
+   * 建立 AI 訊息 highlight 筆記。
+   *
+   * @param req - 含 message_id / session_id / highlighted_text / user_annotation / annotation_type
+   * @returns 建立完成的 ChatAnnotation
+   * @throws 422 評語不足 10 字 | 409 達 5 筆上限 | 403 跨用戶
+   */
+  async create(req: ChatAnnotationCreate): Promise<ChatAnnotation> {
+    return apiClient.post<ChatAnnotation>('/chat-annotations', req);
+  },
+
+  /**
+   * 列出自己的 annotations（可 filter by session）。
+   *
+   * @param params - session_id / limit / offset
+   * @returns items 陣列 + total 計數
+   */
+  async list(params: { session_id?: string; limit?: number; offset?: number } = {}): Promise<ChatAnnotationListResponse> {
+    const query = new URLSearchParams();
+    if (params.session_id) query.set('session_id', params.session_id);
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.offset !== undefined) query.set('offset', String(params.offset));
+    const qs = query.toString();
+    return apiClient.get<ChatAnnotationListResponse>(`/chat-annotations${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * 刪除自己的 annotation。
+   *
+   * @param id - annotation UUID
+   * @throws 403 他人的 | 404 不存在
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete(`/chat-annotations/${id}`);
+  },
+};
+
+// ──────────────────────────────────────────────────────────────────────────
 // Completion Framework Service
 // GET /subjects/{subject_id}/completion
 // ──────────────────────────────────────────────────────────────────────────

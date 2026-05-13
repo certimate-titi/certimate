@@ -638,6 +638,9 @@ class KnowledgeNavService:
                 "content": reply_text,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },
+            # Chat annotation 所需欄位（前端 highlight 功能用）
+            "session_id": str(session.id),
+            "message_id": str(assistant_msg.id),
             "model_used": "gemini-2.5-flash",
             "quota_used": 1,
             "remaining_quota": 49,

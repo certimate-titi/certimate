@@ -10,9 +10,10 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles } from 'lucide-react';
-import { knowledgeService, subjectService, documentService, resourceParseService, type NodeScaffoldItem } from '@/lib/api/services';
+import { FileText, Youtube, Search, Network, Send, Lock, Trash2, AlertTriangle, MessageCircle, ExternalLink, BookOpen, RefreshCw, Image, ChevronDown, ChevronRight, ClipboardList, X, NotebookPen, Sparkles, Highlighter, CheckCircle2 } from 'lucide-react';
+import { knowledgeService, subjectService, documentService, resourceParseService, chatAnnotationService, type NodeScaffoldItem } from '@/lib/api/services';
 import { ApiError } from '@/lib/api/client';
+import type { ChatAnnotation, AnnotationType } from '@/types/api';
 import OrphanCoachPanel from '@/components/coach/OrphanCoachPanel';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
@@ -29,9 +30,22 @@ import ScaffoldNotebook from '@/components/ScaffoldNotebook';
 import ScaffoldReplayCard from '@/components/ScaffoldReplayCard';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 
+interface AnnotationPopover {
+  messageIdx: number;
+  selectedText: string;
+  messageId: string;
+  sessionId: string;
+  x: number;
+  y: number;
+}
+
 interface ChatMessage {
   role: 'user' | 'ai';
   content: string;
+  /** AI 訊息對應的 DB message UUID（用於 annotation） */
+  message_id?: string;
+  /** AI 訊息對應的 session UUID（用於 annotation） */
+  session_id?: string;
 }
 
 function KnowledgeBasePageInner() {
@@ -139,6 +153,20 @@ function KnowledgeBasePageInner() {
   // 章節導覽：其他 4xx/5xx — 顯示「載入失敗」提示
   const [scaffoldErrors, setScaffoldErrors] = useState<Record<string, string>>({});
   const docViewRef = useRef<HTMLDivElement>(null);
+
+  // ── Chat Annotation 相關 state ──────────────────────────────────────────
+  // 當前 session 的 annotation 計數（含已儲存清單）
+  const [annotations, setAnnotations] = useState<ChatAnnotation[]>([]);
+  const [annotationsLoaded, setAnnotationsLoaded] = useState(false);
+  const [annotationPopover, setAnnotationPopover] = useState<AnnotationPopover | null>(null);
+  const [annotationType, setAnnotationType] = useState<AnnotationType>('note');
+  const [annotationText, setAnnotationText] = useState('');
+  const [annotationSaving, setAnnotationSaving] = useState(false);
+  const [annotationToast, setAnnotationToast] = useState<string | null>(null);
+  // 已儲存 annotations 展開/收合
+  const [showAnnotationList, setShowAnnotationList] = useState(false);
+  // 當前 chat session_id（第一則 AI 回覆後設定）
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // <1024px: 收起雙側欄，改用抽屜佈局
   useEffect(() => {
@@ -414,12 +442,109 @@ function KnowledgeBasePageInner() {
     });
     try {
       const { apiClient } = await import('@/lib/api/client');
-      const res = await apiClient.post<{ message: string }>(`/knowledge-map/nodes/${selectedNodeDetail?.node.id}/chat`, { message: text });
-      setChatMessages(prev => [...prev, { role: 'ai', content: res.message }]);
+      const res = await apiClient.post<{ message: string; session_id?: string; message_id?: string }>(`/knowledge-map/nodes/${selectedNodeDetail?.node.id}/chat`, { message: text });
+      // 儲存 session_id 供 annotation 使用
+      if (res.session_id) setCurrentSessionId(res.session_id);
+      setChatMessages(prev => [...prev, {
+        role: 'ai',
+        content: res.message,
+        message_id: res.message_id,
+        session_id: res.session_id,
+      }]);
     } catch {
       setChatMessages(prev => [...prev, { role: 'ai', content: '抱歉，暫時無法回覆。請稍後再試。' }]);
     }
     setChatLoading(false);
+  };
+
+  // 切換 session 時重新載入 annotations
+  useEffect(() => {
+    if (!currentSessionId) return;
+    setAnnotationsLoaded(false);
+    chatAnnotationService.list({ session_id: currentSessionId, limit: 5 })
+      .then(res => {
+        setAnnotations(res.items);
+        setAnnotationsLoaded(true);
+      })
+      .catch(() => setAnnotationsLoaded(true));
+  }, [currentSessionId]);
+
+  // 切換節點時重置 chat session
+  useEffect(() => {
+    setCurrentSessionId(null);
+    setAnnotations([]);
+    setAnnotationsLoaded(false);
+    setAnnotationPopover(null);
+  }, [selectedNodeDetail?.node.id]);
+
+  // Toast 自動消失
+  useEffect(() => {
+    if (!annotationToast) return;
+    const t = setTimeout(() => setAnnotationToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [annotationToast]);
+
+  // Annotation handler: mouseup on AI message
+  const handleAiMessageMouseUp = (
+    e: React.MouseEvent,
+    msgIdx: number,
+    messageId: string | undefined,
+    sessionId: string | undefined,
+  ) => {
+    if (!messageId || !sessionId) return;
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() ?? '';
+    if (text.length === 0) {
+      setAnnotationPopover(null);
+      return;
+    }
+    if (annotations.length >= 5) {
+      // 達上限：顯示 inline 提示（透過 popover state 標記上限）
+      setAnnotationPopover({ messageIdx: msgIdx, selectedText: text, messageId, sessionId, x: e.clientX, y: e.clientY });
+      return;
+    }
+    setAnnotationType('note');
+    setAnnotationText('');
+    setAnnotationPopover({ messageIdx: msgIdx, selectedText: text, messageId, sessionId, x: e.clientX, y: e.clientY });
+  };
+
+  const handleSaveAnnotation = async () => {
+    if (!annotationPopover) return;
+    if (annotationText.length < 10) return;
+    setAnnotationSaving(true);
+    try {
+      const created = await chatAnnotationService.create({
+        message_id: annotationPopover.messageId,
+        session_id: annotationPopover.sessionId,
+        highlighted_text: annotationPopover.selectedText,
+        user_annotation: annotationText,
+        annotation_type: annotationType,
+      });
+      setAnnotations(prev => [...prev, created]);
+      setAnnotationPopover(null);
+      setAnnotationText('');
+      setAnnotationToast('已存入筆記');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (/422|10/.test(msg)) {
+        setAnnotationToast('評語至少需 10 字');
+      } else if (/409/.test(msg)) {
+        setAnnotationToast('此對話已達 5 筆上限');
+        setAnnotationPopover(null);
+      } else {
+        setAnnotationToast('儲存失敗，請稍後再試');
+      }
+    }
+    setAnnotationSaving(false);
+  };
+
+  const handleDeleteAnnotation = async (id: string) => {
+    try {
+      await chatAnnotationService.remove(id);
+      setAnnotations(prev => prev.filter(a => a.id !== id));
+    } catch {
+      setAnnotationToast('刪除失敗');
+    }
   };
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -1355,8 +1480,18 @@ function KnowledgeBasePageInner() {
                     <Sparkles className="h-3 w-3" />
                     蘇格拉底
                   </button>
-                  {!showOrphanCoach && isPro199 && (<span className="ml-auto text-[9px] text-amber-500 flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> PRO_PLUS 專屬</span>)}
-                  {!showOrphanCoach && !isProPlus && !isPro199 && (<span className="ml-auto text-[9px] text-slate-400">剩 {freeQueriesLeft}/3</span>)}
+                  {/* 已標記計數 badge */}
+                  {!showOrphanCoach && annotations.length > 0 && (
+                    <button
+                      onClick={() => setShowAnnotationList(v => !v)}
+                      className="ml-auto flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[9px] font-semibold border border-amber-200 hover:bg-amber-100 transition-colors"
+                    >
+                      <Highlighter className="h-2.5 w-2.5" />
+                      已標記 {annotations.length}/5
+                    </button>
+                  )}
+                  {!showOrphanCoach && annotations.length === 0 && isPro199 && (<span className="ml-auto text-[9px] text-amber-500 flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> PRO_PLUS 專屬</span>)}
+                  {!showOrphanCoach && annotations.length === 0 && !isProPlus && !isPro199 && (<span className="ml-auto text-[9px] text-slate-400">剩 {freeQueriesLeft}/3</span>)}
                 </div>
 
                 {/* 蘇格拉底 AI 教練面板 */}
@@ -1388,12 +1523,21 @@ function KnowledgeBasePageInner() {
                       <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-[9px] ${msg.role === 'ai' ? 'bg-emerald-100' : 'bg-slate-200'}`}>
                         {msg.role === 'ai' ? <MessageCircle className="h-3 w-3 text-emerald-600" /> : <span className="font-bold text-slate-600">U</span>}
                       </div>
-                      <div className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}>
+                      <div
+                        onMouseUp={msg.role === 'ai' ? (e) => handleAiMessageMouseUp(e, i, msg.message_id, msg.session_id) : undefined}
+                        className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none select-text cursor-text' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}
+                      >
                         {msg.role === 'ai' ? (
                           <div className="prose prose-xs max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-strong:text-slate-900 prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                             <MathContent>{msg.content}</MathContent>
                           </div>
                         ) : msg.content}
+                        {msg.role === 'ai' && msg.message_id && (
+                          <div className="mt-1 pt-1 border-t border-slate-100 flex items-center gap-1">
+                            <Highlighter className="h-2.5 w-2.5 text-slate-300" />
+                            <span className="text-[9px] text-slate-300">選取文字可新增筆記</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1402,6 +1546,39 @@ function KnowledgeBasePageInner() {
                   {!isProPlus && !isPro199 && freeQueriesLeft <= 0 && (<div className="p-3 backdrop-blur-md bg-white/50 border border-white/50 text-center rounded-xl"><Lock className="h-5 w-5 text-indigo-500 mx-auto mb-1" /><p className="text-[10px] text-slate-500 mb-2">已達免費上限</p><Link href="/account" className="inline-flex items-center gap-1 bg-emerald-500 text-white px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-emerald-600">解鎖無限 AI 教練</Link></div>)}
                   <div ref={chatEndRef} />
                 </div>
+                {/* 已標記 annotations 收合區 */}
+                {annotationsLoaded && annotations.length > 0 && showAnnotationList && (
+                  <div className="shrink-0 border-t border-amber-100 bg-amber-50/50 max-h-48 overflow-y-auto">
+                    <div className="px-2 py-1.5 flex items-center gap-1">
+                      <Highlighter className="h-3 w-3 text-amber-500" />
+                      <span className="text-[10px] font-semibold text-amber-700">已標記筆記 ({annotations.length}/5)</span>
+                      <button onClick={() => setShowAnnotationList(false)} className="ml-auto text-slate-400 hover:text-slate-600"><X className="h-3 w-3" /></button>
+                    </div>
+                    <div className="px-2 pb-2 space-y-2">
+                      {annotations.map(ann => (
+                        <div key={ann.id} className="bg-white rounded-lg border border-amber-200 p-2 text-[10px]">
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
+                              ann.annotation_type === 'key_insight' ? 'bg-violet-100 text-violet-700' :
+                              ann.annotation_type === 'challenge' ? 'bg-rose-100 text-rose-700' :
+                              ann.annotation_type === 'example' ? 'bg-blue-100 text-blue-700' :
+                              ann.annotation_type === 'application' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              {ann.annotation_type === 'key_insight' ? '重點洞察' :
+                               ann.annotation_type === 'challenge' ? '疑難' :
+                               ann.annotation_type === 'example' ? '範例' :
+                               ann.annotation_type === 'application' ? '應用' : '筆記'}
+                            </span>
+                            <button onClick={() => handleDeleteAnnotation(ann.id)} className="ml-auto text-slate-300 hover:text-rose-500 transition-colors"><Trash2 className="h-2.5 w-2.5" /></button>
+                          </div>
+                          <p className="italic text-slate-400 bg-slate-50 rounded px-1 py-0.5 mb-1 line-clamp-2">&quot;{ann.highlighted_text}&quot;</p>
+                          <p className="font-semibold text-slate-700">{ann.user_annotation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="px-2 pb-2 shrink-0">
                   <div className="relative">
                     <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendChat()} placeholder={isPro199 ? 'PRO_PLUS 專屬' : !isProPlus && freeQueriesLeft <= 0 ? '已達上限' : '提問...'} className="w-full pl-3 pr-8 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs disabled:opacity-50" disabled={chatLoading || isPro199 || (!isProPlus && freeQueriesLeft <= 0) || !selectedNodeDetail} />
@@ -1564,6 +1741,77 @@ function KnowledgeBasePageInner() {
 
         </div>
       </div>
+
+      {/* Annotation Popover */}
+      {annotationPopover && (
+        <div
+          className="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-3 w-72"
+          style={{ top: Math.min(annotationPopover.y + 8, window.innerHeight - 300), left: Math.min(annotationPopover.x - 36, window.innerWidth - 300) }}
+        >
+          {annotations.length >= 5 ? (
+            <div className="text-center py-2">
+              <p className="text-xs text-slate-600 mb-2">此對話已達 5 筆標記上限</p>
+              <button onClick={() => { setShowAnnotationList(true); setAnnotationPopover(null); }} className="text-xs text-emerald-600 underline">查看已標記</button>
+              <button onClick={() => setAnnotationPopover(null)} className="absolute top-2 right-2 text-slate-400 hover:text-slate-600"><X className="h-3.5 w-3.5" /></button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-[10px] text-slate-500 font-medium">為此段落新增筆記</p>
+                <button onClick={() => setAnnotationPopover(null)} className="text-slate-400 hover:text-slate-600"><X className="h-3.5 w-3.5" /></button>
+              </div>
+              <p className="text-[10px] text-slate-400 italic bg-slate-50 rounded px-2 py-1 mb-2 line-clamp-2">&quot;{annotationPopover.selectedText}&quot;</p>
+              {/* annotation_type chips */}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {([
+                  { value: 'note', label: '筆記', color: 'bg-slate-100 text-slate-600 border-slate-300' },
+                  { value: 'key_insight', label: '重點洞察', color: 'bg-violet-100 text-violet-700 border-violet-300' },
+                  { value: 'challenge', label: '疑難', color: 'bg-rose-100 text-rose-700 border-rose-300' },
+                  { value: 'example', label: '範例', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+                  { value: 'application', label: '應用', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+                ] as { value: AnnotationType; label: string; color: string }[]).map(t => (
+                  <button
+                    key={t.value}
+                    onClick={() => setAnnotationType(t.value)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${t.color} ${annotationType === t.value ? 'ring-2 ring-offset-1 ring-slate-400' : 'opacity-70 hover:opacity-100'}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={annotationText}
+                onChange={e => setAnnotationText(e.target.value)}
+                placeholder="你的評語（至少 10 字）"
+                rows={3}
+                className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <span className={`text-[10px] ${annotationText.length >= 10 ? 'text-emerald-600' : 'text-slate-400'}`}>{annotationText.length}/10</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setAnnotationPopover(null)} className="text-[11px] text-slate-400 hover:text-slate-600 px-2 py-1">取消</button>
+                  <button
+                    onClick={handleSaveAnnotation}
+                    disabled={annotationText.length < 10 || annotationSaving}
+                    className="text-[11px] bg-emerald-500 text-white px-3 py-1 rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    {annotationSaving ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                    儲存
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Annotation Toast */}
+      {annotationToast && (
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+          {annotationToast.includes('已存') ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />}
+          {annotationToast}
+        </div>
+      )}
 
       {/* Hard Delete Confirmation Modal */}
       {deleteError && (
