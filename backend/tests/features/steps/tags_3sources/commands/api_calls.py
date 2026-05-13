@@ -3,9 +3,13 @@
 from behave import when
 
 
-@when('alice POST /api/v1/chat-annotations 含 user_annotation "{user_annotation}" 和 highlighted_text "{highlighted_text}"')
-def step_alice_post_annotation(context, user_annotation, highlighted_text):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
+def _token(context, email: str) -> str:
+    return context.jwt_helper.generate_token(context.ids[email])
+
+
+@when('alice POST /api/v1/chat-annotations with annotation text "{user_annotation}"')
+def step_alice_post_annotation_f54(context, user_annotation):
+    token = _token(context, "alice@example.com")
     session_id = context.memo["session_id"]
     message_id = context.memo["message_id"]
     resp = context.api_client.post(
@@ -13,7 +17,7 @@ def step_alice_post_annotation(context, user_annotation, highlighted_text):
         json={
             "session_id": session_id,
             "message_id": message_id,
-            "highlighted_text": highlighted_text,
+            "highlighted_text": "重要片段",
             "user_annotation": user_annotation,
             "annotation_type": "note",
         },
@@ -26,10 +30,10 @@ def step_alice_post_annotation(context, user_annotation, highlighted_text):
         context.memo["annotation_id"] = ann.get("id", context.memo.get("annotation_id"))
 
 
-@when('alice PATCH /api/v1/chat-annotations/{annotation_id} 更新 user_annotation 為 "{user_annotation}"')
-def step_alice_patch_annotation(context, annotation_id, user_annotation):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
-    ann_id = context.memo.get("annotation_id", annotation_id)
+@when('alice 更新 annotation user_annotation 為 "{user_annotation}"')
+def step_alice_patch_annotation_f54(context, user_annotation):
+    token = _token(context, "alice@example.com")
+    ann_id = context.memo["annotation_id"]
     resp = context.api_client.patch(
         f"/api/v1/chat-annotations/{ann_id}",
         json={"user_annotation": user_annotation},
@@ -38,10 +42,10 @@ def step_alice_patch_annotation(context, annotation_id, user_annotation):
     context.last_response = resp
 
 
-@when('alice DELETE /api/v1/chat-annotations/{annotation_id}')
-def step_alice_delete_annotation(context, annotation_id):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
-    ann_id = context.memo.get("annotation_id", annotation_id)
+@when('alice 刪除 memo["annotation_id"] 的 annotation')
+def step_alice_delete_annotation_f54(context):
+    token = _token(context, "alice@example.com")
+    ann_id = context.memo["annotation_id"]
     resp = context.api_client.delete(
         f"/api/v1/chat-annotations/{ann_id}",
         headers={"Authorization": f"Bearer {token}"},
@@ -49,10 +53,10 @@ def step_alice_delete_annotation(context, annotation_id):
     context.last_response = resp
 
 
-@when('alice PATCH /api/v1/knowledge-map/scaffolds/{scaffold_id} 更新 user_response 為 "{user_response}"')
-def step_alice_patch_scaffold_response(context, scaffold_id, user_response):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
-    sc_id = context.memo.get("scaffold_id", scaffold_id)
+@when('alice 更新 scaffold user_response 為 "{user_response}" via API')
+def step_alice_patch_scaffold_response_f54(context, user_response):
+    token = _token(context, "alice@example.com")
+    sc_id = context.memo["scaffold_id"]
     resp = context.api_client.patch(
         f"/api/v1/knowledge-map/scaffolds/{sc_id}",
         json={"user_response": user_response},
@@ -63,7 +67,7 @@ def step_alice_patch_scaffold_response(context, scaffold_id, user_response):
 
 @when('alice GET /api/v1/user-tags/aggregate')
 def step_alice_get_aggregate(context):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
+    token = _token(context, "alice@example.com")
     resp = context.api_client.get(
         "/api/v1/user-tags/aggregate",
         headers={"Authorization": f"Bearer {token}"},
@@ -73,7 +77,7 @@ def step_alice_get_aggregate(context):
 
 @when('alice GET /api/v1/user-tags/aggregate?subject_id={subject_id}')
 def step_alice_get_aggregate_with_subject(context, subject_id):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
+    token = _token(context, "alice@example.com")
     actual_subject_id = context.memo.get("subject_id", subject_id)
     resp = context.api_client.get(
         f"/api/v1/user-tags/aggregate?subject_id={actual_subject_id}",
@@ -84,7 +88,7 @@ def step_alice_get_aggregate_with_subject(context, subject_id):
 
 @when('bob GET /api/v1/user-tags/aggregate')
 def step_bob_get_aggregate(context):
-    token = context.jwt_helper.generate(context.ids["bob@example.com"])
+    token = _token(context, "bob@example.com")
     resp = context.api_client.get(
         "/api/v1/user-tags/aggregate",
         headers={"Authorization": f"Bearer {token}"},
@@ -94,7 +98,7 @@ def step_bob_get_aggregate(context):
 
 @when('alice GET /api/v1/user-tags/items?tag=ai')
 def step_alice_get_items_tag_ai(context):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
+    token = _token(context, "alice@example.com")
     resp = context.api_client.get(
         "/api/v1/user-tags/items?tag=ai",
         headers={"Authorization": f"Bearer {token}"},
@@ -102,11 +106,4 @@ def step_alice_get_items_tag_ai(context):
     context.last_response = resp
 
 
-@when('alice GET /api/v1/user-notes/export/obsidian?force=true')
-def step_alice_get_export_obsidian(context):
-    token = context.jwt_helper.generate(context.ids["alice@example.com"])
-    resp = context.api_client.get(
-        "/api/v1/user-notes/export/obsidian?force=true",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    context.last_response = resp
+# Note: alice GET /api/v1/user-notes/export/obsidian?force=true 已在 obsidian_export steps 定義

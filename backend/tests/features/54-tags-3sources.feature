@@ -16,14 +16,14 @@ Feature: Tag 系統涵蓋 3 sources 後端契約
 
     Scenario: create annotation 含 #深度學習 → chat_annotation_tags 寫入
       Given alice 已有 AI 對話 session_id 存於 memo["session_id"]，含一則訊息 message_id 存於 memo["message_id"]
-      When alice POST /api/v1/chat-annotations 含 user_annotation "這段提到 #深度學習 的概念" 和 highlighted_text "重要概念"
+      When alice POST /api/v1/chat-annotations with annotation text "這段提到 #深度學習 的概念"
       Then response status 為 201
       And DB 中 chat_annotation_tags 包含 annotation_id 對應的 tag_normalized "深度學習"
 
     Scenario: update annotation 改 user_annotation → tag diff 更新
       Given alice 已有 AI 對話 session_id 存於 memo["session_id"]，含一則訊息 message_id 存於 memo["message_id"]
       And alice 已建立含 "#舊標籤 是舊的內容" 的 annotation annotation_id 存於 memo["annotation_id"]
-      When alice PATCH /api/v1/chat-annotations/{annotation_id} 更新 user_annotation 為 "改成 #新標籤 的內容在這裡"
+      When alice 更新 annotation user_annotation 為 "改成 #新標籤 的內容在這裡"
       Then response status 為 200
       And DB 中 chat_annotation_tags 包含 tag "新標籤"
       And DB 中 chat_annotation_tags 不含 tag "舊標籤"
@@ -31,7 +31,7 @@ Feature: Tag 系統涵蓋 3 sources 後端契約
     Scenario: delete annotation → cascade delete annotation tags
       Given alice 已有 AI 對話 session_id 存於 memo["session_id"]，含一則訊息 message_id 存於 memo["message_id"]
       And alice 已建立含 "#要刪除的標籤 annotation 測試內容" 的 annotation annotation_id 存於 memo["annotation_id"]
-      When alice DELETE /api/v1/chat-annotations/{annotation_id}
+      When alice 刪除 memo["annotation_id"] 的 annotation
       Then response status 為 204
       And DB 中 chat_annotation_tags 對此 annotation_id 共 0 筆
 
@@ -40,14 +40,14 @@ Feature: Tag 系統涵蓋 3 sources 後端契約
 
     Scenario: scaffold PATCH user_response 含 #線性代數 → scaffold_tags 寫入（含 user_id）
       Given alice 已有 resource_id 存於 memo["resource_id"]，含一個 scaffold scaffold_id 存於 memo["scaffold_id"]
-      When alice PATCH /api/v1/knowledge-map/scaffolds/{scaffold_id} 更新 user_response 為 "我學到 #線性代數 的應用"
+      When alice 更新 scaffold user_response 為 "我學到 #線性代數 的應用" via API
       Then response status 為 200
       And DB 中 scaffold_tags 包含 scaffold_id 對應的 tag_normalized "線性代數" 且 user_id 為 alice
 
     Scenario: scaffold PATCH 更新 user_response → tag diff 更新
       Given alice 已有 resource_id 存於 memo["resource_id"]，含一個 scaffold scaffold_id 存於 memo["scaffold_id"]
       And alice 已 PATCH scaffold user_response 為 "#舊題目 的舊回答內容"
-      When alice PATCH /api/v1/knowledge-map/scaffolds/{scaffold_id} 更新 user_response 為 "新回答 #新題目 完全不同"
+      When alice 更新 scaffold user_response 為 "新回答 #新題目 完全不同" via API
       Then response status 為 200
       And DB 中 scaffold_tags 包含 tag "新題目"
       And DB 中 scaffold_tags 不含 tag "舊題目"
@@ -55,7 +55,7 @@ Feature: Tag 系統涵蓋 3 sources 後端契約
     Scenario: delete scaffold → cascade delete scaffold tags
       Given alice 已有 resource_id 存於 memo["resource_id"]，含一個 scaffold scaffold_id 存於 memo["scaffold_id"]
       And alice 已 PATCH scaffold user_response 為 "#要刪除 scaffold cascade 測試"
-      When DB 中刪除該 scaffold
+      And DB 中已刪除該 scaffold
       Then DB 中 scaffold_tags 對此 scaffold_id 共 0 筆
 
   @backend

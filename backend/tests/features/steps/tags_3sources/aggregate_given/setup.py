@@ -107,8 +107,8 @@ def _create_resource_with_scaffold(db, user_id: uuid.UUID, subject_id: uuid.UUID
     resource = Resource(
         user_id=user_id,
         subject_id=subject_id,
-        title="測試資源",
-        type=ResourceType.pdf,
+        name="測試資源 F54",
+        type=ResourceType.PDF,
         status=ResourceStatus.COMPLETED,
     )
     db.add(resource)
@@ -307,7 +307,7 @@ def step_alice_has_note_plain_f54(context, content):
 
 # ── Given: DB delete scaffold ────────────────────────────────────────────────
 
-@given('DB 中刪除該 scaffold')
+@given('DB 中已刪除該 scaffold')
 def step_delete_scaffold_from_db(context):
     db = context.db_session
     scaffold_id = uuid.UUID(context.memo["scaffold_id"])
