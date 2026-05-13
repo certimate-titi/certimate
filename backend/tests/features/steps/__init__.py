@@ -1539,6 +1539,8 @@ from .chat_annotations.readmodel_then import response_checks as f49_readmodel  #
 
 # 我的筆記整合 — Feature 50 (Migration 096)
 from .user_notes.aggregate_given import setup as f50_given  # noqa: F401
+from .user_notes.aggregate_given import subject_scaffolds as f50_subject_scaffolds_given  # noqa: F401
 from .user_notes.commands import api_calls as f50_commands  # noqa: F401
+from .user_notes.commands import subject_scaffolds_api as f50_subject_scaffolds_commands  # noqa: F401
 from .user_notes.readmodel_then import response_assertions as f50_readmodel  # noqa: F401
 
