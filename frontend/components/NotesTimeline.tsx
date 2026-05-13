@@ -466,7 +466,7 @@ export default function NotesTimeline({
     try {
       const [noteRes, annRes, scaffoldRes] = await Promise.allSettled([
         userNoteService.list({ subject_id: subjectId, limit: 100 }),
-        chatAnnotationService.list({ limit: 200 }),
+        chatAnnotationService.list({ limit: 100 }),
         knowledgeService.getSubjectScaffolds(subjectId, { user_response_only: true, limit: 100 }),
       ]);
 
