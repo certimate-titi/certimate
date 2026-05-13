@@ -678,3 +678,40 @@ export interface SubjectCompletionResponse {
   /** 計算時間（ISO datetime） */
   computed_at: string;
 }
+
+// ===========================
+// User Notes API
+// ===========================
+
+export interface UserNote {
+  id: string;
+  user_id: string;
+  subject_id: string;
+  node_id: string | null;
+  title: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserNoteCreate {
+  subject_id: string;
+  node_id?: string | null;
+  title?: string | null;
+  content: string;
+}
+
+export interface UserNoteUpdate {
+  title?: string | null;
+  content?: string;
+}
+
+export interface UserNoteListResponse {
+  items: UserNote[];
+  total: number;
+}
+
+export interface ChatAnnotationUpdate {
+  user_annotation?: string;
+  annotation_type?: AnnotationType;
+}
