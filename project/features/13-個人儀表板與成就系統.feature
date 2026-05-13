@@ -377,6 +377,24 @@ Feature: 個人儀表板與成就系統
       Then 雷達圖應顯示 N 個軸
       And 每個軸的標籤應與 depth=1 節點的名稱一致
 
+  Rule: 後置（UI）- 備考模式 tooltip 說明按鈕
+
+    # 落地紀錄（2026-05-14 TiTi Commander 排程巡檢）：
+    # dashboard/page.tsx L82 showModeTooltip state + L495 onClick toggle + L500 彈窗渲染
+    # 三個模式各有策略說明文字（Sprint 衝刺、Standard 正常、Mastery 精熟）
+
+    Example: 點擊模式 tooltip 按鈕顯示策略說明彈窗
+      Given 使用者 "alice@example.com" 的備考模式為 "sprint"
+      When 使用者進入儀表板
+      And 使用者點擊備考模式 tooltip 說明按鈕
+      Then 應顯示策略說明彈窗
+      And 彈窗應包含 Sprint / Standard / Mastery 三種模式的策略文字
+
+    Example: 再次點擊 tooltip 按鈕收合彈窗
+      Given 使用者已開啟策略說明彈窗
+      When 使用者再次點擊 tooltip 按鈕
+      Then 策略說明彈窗應收合隱藏
+
   Rule: 後置（UI）- 儀表板應顯示備考模式標籤 (Sprint / Standard / Mastery)
 
     # 落地紀錄（自動巡檢 2026-04-28）：dashboard 顯示「Standard 正常」等備考模式標籤，
@@ -426,3 +444,23 @@ Feature: 個人儀表板與成就系統
       When 使用者進入儀表板
       Then 學習排程卡應顯示空態提示「尚無備考科目排程」
       And 應提供「前往設定」連結
+
+  # ========== 儀表板行內新增科目 modal ==========
+
+  Rule: 後置（UI）- 儀表板無科目時應提供行內新增科目入口
+
+    # 落地紀錄（2026-05-14 TiTi Commander 排程巡檢）：
+    # dashboard/page.tsx L424-427 顯示「開始選擇科目」按鈕
+    # Feature 15 僅覆蓋 /onboarding 首次引導流程，未涵蓋此 dashboard-level 路徑
+
+    Example: 無科目使用者在儀表板看到「開始選擇科目」入口
+      Given 使用者 "alice@example.com" 尚未設定任何備考科目
+      When 使用者進入儀表板
+      Then 儀表板應顯示「開始選擇科目」按鈕
+      And 頁面應引導使用者進入科目選擇流程
+
+    Example: 點擊「開始選擇科目」後進入科目選擇
+      Given 使用者 "alice@example.com" 尚未設定任何備考科目
+      When 使用者進入儀表板
+      And 使用者點擊「開始選擇科目」按鈕
+      Then 應進入科目選擇流程（modal 或導向 /onboarding）

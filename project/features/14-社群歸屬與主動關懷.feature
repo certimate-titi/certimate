@@ -78,6 +78,13 @@ Feature: 社群歸屬與主動關懷
         | exams_completed    | 完成考試數        |
         | progress_summary   | AI 生成的進步摘要 |
 
+    Example: 週報列表為空時顯示引導說明
+      Given 使用者 "alice@example.com" 尚無任何歷史週報
+      When 使用者 "alice@example.com" 查看週報列表
+      Then 操作成功
+      And 頁面應顯示「尚無週報」標題
+      And 頁面應說明「活躍用戶（每週至少做 1 份測驗）會在週日自動收到報告」
+
   # ========== 低谷偵測與喚回 ==========
 
   Rule: 後置（狀態）- 超過 3 天未登入時系統應發送溫暖喚回通知

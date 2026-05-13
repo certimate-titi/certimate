@@ -128,3 +128,36 @@ Feature: 信心度校準
       Then 題目 101 的題號應帶有綠色底框（confident）
       And 題目 102 的題號應帶有橘色底框（guessing）
       And 題目 103 的題號應為灰色（未作答）
+
+  # ── AI Inference 判斷按鈕（EPIC-035）────────────────
+
+  Rule: 後置（UI）- 作答後應顯示 AI inference 判斷按鈕
+
+    # 落地紀錄（2026-05-14 TiTi Commander 排程巡檢）：
+    # practice/page.tsx L776-784 實作三按鈕（保留我的答案/採信 AI/略過）
+    # 呼叫 blindInferenceService.submitJudgment(questionId, judgment)
+    # /exam/workspace 目前未整合此 UI（僅 practice 有）
+
+    Example: 練習頁作答後顯示 AI inference 判斷選項
+      Given 使用者 "pro@example.com" 正在進行節點練習
+      And 使用者已提交某題答案
+      When AI inference 結果與使用者答案不同
+      Then 應顯示三個判斷按鈕：「保留我的答案」、「採信 AI」、「略過」
+
+    Example: 使用者選擇「保留我的答案」
+      Given 使用者看到 AI inference 判斷按鈕
+      When 使用者點擊「保留我的答案」
+      Then 系統應呼叫 blindInferenceService.submitJudgment 傳送 judgment 為 "keep_mine"
+      And 判斷按鈕應消失
+
+    Example: 使用者選擇「採信 AI」
+      Given 使用者看到 AI inference 判斷按鈕
+      When 使用者點擊「採信 AI」
+      Then 系統應呼叫 blindInferenceService.submitJudgment 傳送 judgment 為 "accept_ai"
+      And 判斷按鈕應消失
+
+    Example: 使用者選擇「略過」
+      Given 使用者看到 AI inference 判斷按鈕
+      When 使用者點擊「略過」
+      Then 系統應呼叫 blindInferenceService.submitJudgment 傳送 judgment 為 "skip"
+      And 判斷按鈕應消失

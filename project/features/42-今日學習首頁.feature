@@ -115,3 +115,56 @@ Feature: 42 今日學習首頁
     Example: 顯示快速連結
       When 使用者開啟 /today 頁面
       Then 應顯示「完整儀表板」、「知識圖譜」、「自由練習」、「帳號設定」四個快速連結
+
+  # ── /today/reviews SM-2 鷹架複習清單 ─────────────────
+
+  Rule: SM-2 鷹架複習清單應顯示到期項目的詳細資訊
+
+    Example: 顯示到期複習項目清單
+      Given 使用者有 3 個 SM-2 鷹架到期
+      When 使用者開啟 /today/reviews 頁面
+      Then 應顯示 3 張複習卡片
+      And 每張卡片應顯示章節標題（chapter_heading）
+      And 每張卡片應顯示「連對 N 次」（repetitions）與「下次 Nd」（interval_days）
+
+    Example: 複習卡片應顯示類型標籤
+      Given 使用者有到期鷹架，類型為「takeaway」
+      When 使用者開啟 /today/reviews 頁面
+      Then 卡片應顯示類型標籤「重點」
+
+    Example: 複習卡片應提供「現在複習」連結
+      Given 使用者有到期鷹架，resource_id 為「res-001」
+      When 使用者開啟 /today/reviews 頁面
+      Then 「現在複習」按鈕應連結至對應的閱讀頁面
+
+  Rule: 逐項作答流程與複習回饋
+
+    Example: 點擊「現在複習」導向閱讀頁
+      Given 使用者有 1 個到期鷹架
+      When 使用者點擊該鷹架的「現在複習」按鈕
+      Then 應跳轉至對應資源的閱讀頁面
+      And 頁面應自動高亮對應的 RetrievalCard
+
+  Rule: 複習清單空態應提供引導文字
+
+    Example: 無到期項目時顯示空態引導
+      Given 使用者無任何 SM-2 鷹架到期
+      When 使用者開啟 /today/reviews 頁面
+      Then 應顯示「今日無到期複習」標題
+      And 應提供「回今日首頁」連結
+
+  Rule: 複習清單空態應主動查詢 resource_parse_jobs 確認是否為解析失敗
+
+    Example: 空清單偵測到資源解析失敗
+      Given 使用者有 2 份資源狀態為 FAILED，failure_reason 為「PDF 格式不支援」
+      And 使用者無任何 SM-2 鷹架到期
+      When 使用者開啟 /today/reviews 頁面
+      Then 應顯示紅色警示卡（data-testid="reviews-empty-parse-failures"）
+      And 警示卡應包含失敗資源名稱與 failure_reason
+      And 應提供「前往學習庫重新解析」連結
+
+    Example: 空清單無解析失敗時不顯示警示
+      Given 使用者無 FAILED 狀態的資源
+      And 使用者無任何 SM-2 鷹架到期
+      When 使用者開啟 /today/reviews 頁面
+      Then 不應顯示紅色警示卡

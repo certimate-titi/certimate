@@ -17,9 +17,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, AlertTriangle, Lightbulb, Brain } from 'lucide-react';
+import { ArrowLeft, BookOpen, AlertTriangle, Lightbulb, Brain, XCircle } from 'lucide-react';
 
 import { useAuth } from '@/lib/auth-context';
+import { documentService, resourceParseService } from '@/lib/api/services';
 
 interface DueReviewItem {
   schedule_id: string;
@@ -47,6 +48,9 @@ export default function TodayReviewsPage() {
   const [items, setItems] = useState<DueReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Layer 3：空態時主動查 resource_parse_jobs 確認是否為解析失敗
+  const [parseJobFailures, setParseJobFailures] = useState<Array<{ title: string; reason: string }>>([]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
@@ -72,6 +76,30 @@ export default function TodayReviewsPage() {
     }
   };
 
+  // Layer 3：items 載入後若為空，主動查 FAILED 資源確認是否為解析失敗
+  useEffect(() => {
+    if (loading) return;
+    if (items.length > 0) { setParseJobFailures([]); return; }
+
+    documentService.list().then(async (res) => {
+      const failedDocs = (res.documents || []).filter(
+        (d: { status?: string }) => d.status === 'FAILED'
+      );
+      if (failedDocs.length === 0) { setParseJobFailures([]); return; }
+      const failures = await Promise.all(
+        failedDocs.slice(0, 3).map(async (doc: { id: string; title?: string }) => {
+          try {
+            const status = await resourceParseService.getStatus(doc.id);
+            return { title: doc.title || '未命名資源', reason: status.failure_reason || '解析失敗（無詳細原因）' };
+          } catch {
+            return { title: doc.title || '未命名資源', reason: '解析失敗（查詢狀態失敗）' };
+          }
+        })
+      );
+      setParseJobFailures(failures);
+    }).catch(() => { /* 查詢失敗時靜默 */ });
+  }, [items, loading]);
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -92,18 +120,43 @@ export default function TodayReviewsPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-6">
         {items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-            <div className="text-3xl mb-3">✨</div>
-            <h2 className="text-lg font-bold text-slate-800 mb-2">今日無到期複習</h2>
-            <p className="text-sm text-slate-500 mb-4">
-              繼續閱讀新章節 + 點「我已揭曉」自評，未來會自動安排複習時間。
-            </p>
-            <Link
-              href="/today"
-              className="inline-block px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm"
-            >
-              回今日首頁
-            </Link>
+          <div className="space-y-4">
+            {parseJobFailures.length > 0 && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4" data-testid="reviews-empty-parse-failures">
+                <div className="flex items-start gap-2 mb-2">
+                  <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium text-rose-700">
+                    部分資源解析失敗，可能導致鷹架未生成
+                  </p>
+                </div>
+                <ul className="ml-7 space-y-1">
+                  {parseJobFailures.map((f, i) => (
+                    <li key={i} className="text-xs text-rose-600">
+                      <span className="font-medium">{f.title}</span>：{f.reason}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/account/resource-library"
+                  className="inline-block ml-7 mt-2 text-xs text-rose-600 underline hover:text-rose-800"
+                >
+                  前往學習庫重新解析 →
+                </Link>
+              </div>
+            )}
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+              <div className="text-3xl mb-3">✨</div>
+              <h2 className="text-lg font-bold text-slate-800 mb-2">今日無到期複習</h2>
+              <p className="text-sm text-slate-500 mb-4">
+                繼續閱讀新章節 + 點「我已揭曉」自評，未來會自動安排複習時間。
+              </p>
+              <Link
+                href="/today"
+                className="inline-block px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm"
+              >
+                回今日首頁
+              </Link>
+            </div>
           </div>
         ) : (
           <>
