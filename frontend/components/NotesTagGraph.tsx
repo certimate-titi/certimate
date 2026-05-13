@@ -13,8 +13,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { userNoteService } from '@/lib/api/services';
-import type { UserTag } from '@/types/api';
+import { userTagService, userNoteService } from '@/lib/api/services';
+import type { AggregatedTag } from '@/types/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,10 +55,10 @@ function extractHashtags(content: string): string[] {
 export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: NotesTagGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [tags, setTags] = useState<UserTag[]>([]);
+  const [tags, setTags] = useState<AggregatedTag[]>([]);
   const [edges, setEdges] = useState<{ source: string; target: string; weight: number }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; tag: UserTag } | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; tag: AggregatedTag } | null>(null);
   const [dimensions, setDimensions] = useState({ width: 700, height: 500 });
 
   // Measure container
@@ -77,7 +77,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     return () => obs.disconnect();
   }, []);
 
-  // Fetch tags + notes for co-occurrence
+  // Fetch tags (aggregate 3 sources) + notes for co-occurrence edges
   useEffect(() => {
     if (!subjectId) {
       setTags([]);
@@ -86,15 +86,17 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     }
     setLoading(true);
 
+    // aggregate endpoint 提供 3 sources 合併的 tag list
+    // user-notes list 仍用於計算共現邊（只有 note 有自由文字 hashtag）
     Promise.allSettled([
-      userNoteService.listTags({ subject_id: subjectId }),
+      userTagService.aggregate({ subject_id: subjectId, limit: 200 }),
       userNoteService.list({ subject_id: subjectId, limit: 200 }),
     ]).then(([tagRes, noteRes]) => {
       const tagItems = tagRes.status === 'fulfilled' ? tagRes.value.items : [];
       setTags(tagItems);
 
       if (noteRes.status === 'fulfilled') {
-        // Build co-occurrence map
+        // Build co-occurrence map from notes content
         const coMap: Record<string, number> = {};
         noteRes.value.items.forEach((note) => {
           const noteTags = extractHashtags(note.content);
@@ -300,11 +302,25 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="absolute bg-white text-slate-800 px-3 py-2 rounded-lg text-xs shadow-lg pointer-events-none z-10 border border-slate-200"
+          className="absolute bg-white text-slate-800 px-3 py-2 rounded-lg text-xs shadow-lg pointer-events-none z-10 border border-slate-200 min-w-[160px]"
           style={{ left: tooltip.x, top: tooltip.y, transform: 'translate(-50%, -100%)' }}
         >
-          <p className="font-bold text-sky-700">{tooltip.tag.display}</p>
-          <p className="text-slate-500">出現 {tooltip.tag.count} 次 · 點擊篩選</p>
+          <p className="font-bold text-sky-700 mb-1">{tooltip.tag.display}</p>
+          <p className="text-slate-500 mb-1.5">共 {tooltip.tag.count} 次 · 點擊篩選</p>
+          <div className="border-t border-slate-100 pt-1.5 space-y-0.5">
+            <p className="text-[10px] text-slate-400 font-medium">來源分佈</p>
+            <div className="flex flex-col gap-0.5 text-[10px]">
+              {tooltip.tag.sources.note > 0 && (
+                <span className="text-emerald-600">📝 筆記：{tooltip.tag.sources.note}</span>
+              )}
+              {tooltip.tag.sources.annotation > 0 && (
+                <span className="text-violet-600">✨ AI 標記：{tooltip.tag.sources.annotation}</span>
+              )}
+              {tooltip.tag.sources.scaffold > 0 && (
+                <span className="text-amber-600">🦅 鷹架深讀：{tooltip.tag.sources.scaffold}</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
       {/* Legend */}
