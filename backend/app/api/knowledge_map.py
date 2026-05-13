@@ -298,6 +298,47 @@ def submit_answers(
 # PATCH /knowledge-map/scaffolds/{scaffold_id} — 更新 user_response（Feature 50）
 # ---------------------------------------------------------------------------
 
+@router.post("/scaffolds/reset-responses")
+def reset_scaffold_user_responses(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """將當前 user 擁有的所有 resource 的 scaffold.user_response 全部 NULL 化。
+
+    - 只清該 user 自己 resource 的 scaffolds（resource.user_id == user）
+    - 不刪 scaffold row（鷹架本身是系統資產）
+    - 無資料時回 {cleared: 0}，不報錯
+    - 需登入（JWT）
+    """
+    from sqlalchemy import update
+    from app.models.resource import Resource
+    from app.models.resource_scaffold import ResourceScaffold
+
+    uid = UUID(user_id)
+
+    # 取得該 user 所有 resource id
+    resource_ids = [
+        r.id
+        for r in db.query(Resource.id).filter(Resource.user_id == uid).all()
+    ]
+
+    if not resource_ids:
+        return {"cleared": 0}
+
+    # 只清有 user_response 的 scaffolds（有效範圍：user 擁有的 resources）
+    result = db.execute(
+        update(ResourceScaffold)
+        .where(
+            ResourceScaffold.resource_id.in_(resource_ids),
+            ResourceScaffold.user_response.isnot(None),
+        )
+        .values(user_response=None, responded_at=None)
+    )
+    db.commit()
+
+    return {"cleared": result.rowcount}
+
+
 class ScaffoldUserResponseUpdate(BaseModel):
     """PATCH scaffold user_response request body。"""
 
