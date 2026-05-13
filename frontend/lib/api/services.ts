@@ -696,6 +696,15 @@ export const knowledgeService = {
   async updateScaffold(scaffoldId: string, body: { user_response: string }): Promise<NodeScaffoldItem> {
     return apiClient.patch<NodeScaffoldItem>(`/knowledge-map/scaffolds/${scaffoldId}`, body);
   },
+
+  /**
+   * 重置所有鷹架深讀回答（user_response NULL 化）。
+   *
+   * @returns { cleared: number } 清空的筆數
+   */
+  async resetAllScaffoldResponses(): Promise<{ cleared: number }> {
+    return apiClient.post<{ cleared: number }>('/knowledge-map/scaffolds/reset-responses', {});
+  },
 };
 
 // ===========================
@@ -2453,6 +2462,15 @@ export const chatAnnotationService = {
   async remove(id: string): Promise<void> {
     return apiClient.delete(`/chat-annotations/${id}`);
   },
+
+  /**
+   * 清空自己所有的 AI 對話標記。
+   *
+   * @returns { deleted: number } 刪除的筆數
+   */
+  async resetAll(): Promise<{ deleted: number }> {
+    return apiClient.delete<{ deleted: number }>('/chat-annotations/all');
+  },
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -2534,5 +2552,14 @@ export const userNoteService = {
    */
   async remove(id: string): Promise<void> {
     return apiClient.delete(`/user-notes/${id}`);
+  },
+
+  /**
+   * 清空自己所有的自由筆記。
+   *
+   * @returns { deleted: number } 刪除的筆數
+   */
+  async resetAll(): Promise<{ deleted: number }> {
+    return apiClient.delete<{ deleted: number }>('/user-notes/all');
   },
 };

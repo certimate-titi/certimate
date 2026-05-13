@@ -3,6 +3,7 @@
 Endpoints:
   POST   /api/v1/chat-annotations        201 建立一筆 annotation
   GET    /api/v1/chat-annotations        200 列出自己的 annotations
+  DELETE /api/v1/chat-annotations/all    200 刪除自己所有 annotations {deleted: N}
   DELETE /api/v1/chat-annotations/{id}   204 刪除自己的 annotation
 """
 
@@ -80,6 +81,22 @@ def list_annotations(
     )
     _handle_result(result)
     return {"items": result["items"], "total": result["total"]}
+
+
+@router.delete("/all")
+def delete_all_annotations(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """刪除當前 user 所有 chat_message_annotations。
+
+    - 需登入（JWT）
+    - 無資料時回 {deleted: 0}，不報錯
+    """
+    svc = ChatAnnotationService(db)
+    result = svc.delete_all_for_user(user_id=UUID(user_id))
+    _handle_result(result)
+    return {"deleted": result["deleted"]}
 
 
 @router.patch("/{annotation_id}", response_model=ChatAnnotationResponse)
