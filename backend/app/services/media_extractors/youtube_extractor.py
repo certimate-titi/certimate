@@ -110,9 +110,9 @@ def _extract_video_id(youtube_url: str) -> str | None:
     """從 YouTube URL 抽 video_id（11 字英數+_- 串）。"""
     import re
 
-    # 涵蓋 watch?v=ID / youtu.be/ID / shorts/ID / embed/ID
+    # 涵蓋 watch?v=ID / youtu.be/ID / shorts/ID / embed/ID / live/ID
     m = re.search(
-        r"(?:v=|youtu\.be/|/shorts/|/embed/)([A-Za-z0-9_-]{11})",
+        r"(?:v=|youtu\.be/|/shorts/|/embed/|/live/)([A-Za-z0-9_-]{11})",
         youtube_url,
     )
     return m.group(1) if m else None

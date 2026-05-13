@@ -42,7 +42,7 @@ EXTENSION_TO_RESOURCE_TYPE = {
 }
 
 YOUTUBE_REGEX = re.compile(
-    r"^https?://(?:(?:www\.)?youtube\.com/(?:watch\?v=|shorts/|embed/)|youtu\.be/)[\w-]+"
+    r"^https?://(?:(?:www\.|m\.|music\.)?youtube\.com/(?:watch\?v=|shorts/|embed/|live/)|youtu\.be/)[\w-]+"
 )
 
 YOUTUBE_OEMBED_URL = "https://www.youtube.com/oembed?url={url}&format=json"
