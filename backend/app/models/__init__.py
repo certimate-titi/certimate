@@ -70,6 +70,7 @@ from app.models.user_email_preferences import UserEmailPreferences, EmailSendLog
 from app.models.scaffold_node_link import ScaffoldNodeLink  # noqa: F401, E402
 from app.models.node_mastery_orphan import NodeMasteryOrphan  # noqa: F401, E402
 from app.models.user_note import UserNote  # noqa: F401, E402
+from app.models.user_note_tag import UserNoteTag  # noqa: F401, E402
 
 __all__ = [
     "Base",

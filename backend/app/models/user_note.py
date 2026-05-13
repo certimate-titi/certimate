@@ -91,3 +91,9 @@ class UserNote(Base):
     knowledge_node = relationship(
         "KnowledgeNode", foreign_keys=[node_id], lazy="select"
     )
+    tags = relationship(
+        "UserNoteTag",
+        back_populates="note",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )

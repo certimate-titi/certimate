@@ -1549,3 +1549,9 @@ from .notes_reset.aggregate_given import setup as f51_given  # noqa: F401
 from .notes_reset.commands import api_calls as f51_commands  # noqa: F401
 from .notes_reset.aggregate_then import assertions as f51_assertions  # noqa: F401
 
+# 筆記 hashtag 系統 — Feature 52 (Migration 097)
+from .note_hashtags.aggregate_given import setup as f52_given  # noqa: F401
+from .note_hashtags.commands import api_calls as f52_commands  # noqa: F401
+from .note_hashtags.aggregate_then import db_assertions as f52_db  # noqa: F401
+from .note_hashtags.readmodel_then import response_assertions as f52_readmodel  # noqa: F401
+
