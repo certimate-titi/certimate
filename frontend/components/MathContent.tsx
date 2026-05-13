@@ -7,6 +7,7 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -28,7 +29,7 @@ export default function MathContent({ children, className = '' }: MathContentPro
   return (
     <div className={`prose prose-sm max-w-none whitespace-pre-line ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           // 移除預設 wrapping <p> 對 prose 的影響
