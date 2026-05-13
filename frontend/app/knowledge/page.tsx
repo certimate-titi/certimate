@@ -26,7 +26,7 @@ import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
 import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
 import ScaffoldMaterial from '@/components/ScaffoldMaterial';
-import ScaffoldNotebook from '@/components/ScaffoldNotebook';
+import IntegratedNotebook from '@/components/IntegratedNotebook';
 import ScaffoldReplayCard from '@/components/ScaffoldReplayCard';
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 
@@ -858,7 +858,7 @@ function KnowledgeBasePageInner() {
             return (
               <div className="absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] overflow-hidden shadow-xl border-l border-slate-200 bg-white">
                 <button onClick={() => setMobileDrawer(null)} className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-slate-100"><X className="h-4 w-4 text-slate-400" /></button>
-                <NodeDetailPanel nodeId={nodeId} nodeLabel={nodeLabel} activeTab={activeNodeTab} onTabChange={setActiveNodeTab} infoSlot={infoSlot} notebookSlot={<ScaffoldNotebook nodeId={nodeId} fallbackResourceId={focusResourceId || selectedDocId || null} nodeLabel={nodeLabel} isPro={isProPlus || subscriptionTier === 'PRO_199'} onUpgradeClick={() => router.push('/account')} />} coachSlot={<div className="p-4 text-xs text-slate-400 text-center">請使用桌面版以啟用 AI 教練</div>} quickAskSlot={null} />
+                <NodeDetailPanel nodeId={nodeId} nodeLabel={nodeLabel} activeTab={activeNodeTab} onTabChange={setActiveNodeTab} infoSlot={infoSlot} notebookSlot={<IntegratedNotebook nodeId={nodeId} fallbackResourceId={focusResourceId || selectedDocId || null} nodeLabel={nodeLabel} subjectId={subjects.find(s => s.id === activeSubjectId)?.subjectId || activeSubjectId || null} isPro={isProPlus || subscriptionTier === 'PRO_199'} onUpgradeClick={() => router.push('/account')} />} coachSlot={<div className="p-4 text-xs text-slate-400 text-center">請使用桌面版以啟用 AI 教練</div>} quickAskSlot={null} />
               </div>
             );
           })()}
@@ -1443,10 +1443,11 @@ function KnowledgeBasePageInner() {
             );
 
             const notebookSlot = (
-              <ScaffoldNotebook
+              <IntegratedNotebook
                 nodeId={nodeId}
                 fallbackResourceId={focusResourceId || selectedDocId || (selectedNodeDetail?.node as { documentId?: string })?.documentId || null}
                 nodeLabel={nodeLabel}
+                subjectId={subjects.find(s => s.id === activeSubjectId)?.subjectId || activeSubjectId || null}
                 isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 onUpgradeClick={() => router.push('/account')}
               />

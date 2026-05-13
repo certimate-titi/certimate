@@ -651,6 +651,17 @@ export const knowledgeService = {
   async getResourceChunks(resourceId: string): Promise<Record<string, unknown>> {
     return apiClient.get<Record<string, unknown>>(`/resources/${resourceId}/chunks`);
   },
+
+  /**
+   * 更新鷹架的使用者回應（user_response）。
+   *
+   * @param scaffoldId - 鷹架 UUID
+   * @param body - { user_response: string }
+   * @returns 更新後的鷹架資料
+   */
+  async updateScaffold(scaffoldId: string, body: { user_response: string }): Promise<NodeScaffoldItem> {
+    return apiClient.patch<NodeScaffoldItem>(`/knowledge-map/scaffolds/${scaffoldId}`, body);
+  },
 };
 
 // ===========================
@@ -2358,6 +2369,7 @@ import type {
   ChatAnnotationCreate,
   ChatAnnotationListResponse,
   ChatAnnotation,
+  ChatAnnotationUpdate,
 } from '@/types/api';
 
 export const chatAnnotationService = {
@@ -2385,6 +2397,17 @@ export const chatAnnotationService = {
     if (params.offset !== undefined) query.set('offset', String(params.offset));
     const qs = query.toString();
     return apiClient.get<ChatAnnotationListResponse>(`/chat-annotations${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * 更新自己的 annotation（評語 / 類型）。
+   *
+   * @param id - annotation UUID
+   * @param body - 可更新欄位
+   * @throws 403 他人的 | 404 不存在 | 422 評語不足 10 字
+   */
+  async update(id: string, body: ChatAnnotationUpdate): Promise<ChatAnnotation> {
+    return apiClient.patch<ChatAnnotation>(`/chat-annotations/${id}`, body);
   },
 
   /**
@@ -2417,5 +2440,65 @@ export const completionService = {
    */
   async getCompletion(subjectId: string): Promise<SubjectCompletionResponse> {
     return apiClient.get(`/subjects/${subjectId}/completion`);
+  },
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// User Notes Service
+// POST/GET/PATCH/DELETE /user-notes
+// ──────────────────────────────────────────────────────────────────────────
+
+import type {
+  UserNote,
+  UserNoteCreate,
+  UserNoteUpdate,
+  UserNoteListResponse,
+} from '@/types/api';
+
+export const userNoteService = {
+  /**
+   * 建立自由筆記。
+   *
+   * @param body - { subject_id, node_id?, title?, content }
+   * @returns 建立完成的 UserNote
+   */
+  async create(body: UserNoteCreate): Promise<UserNote> {
+    return apiClient.post<UserNote>('/user-notes', body);
+  },
+
+  /**
+   * 列出自己的筆記（可 filter by subject_id / node_id）。
+   *
+   * @param params - subject_id / node_id / limit / offset
+   * @returns items 陣列 + total
+   */
+  async list(params: { subject_id?: string; node_id?: string; limit?: number; offset?: number } = {}): Promise<UserNoteListResponse> {
+    const query = new URLSearchParams();
+    if (params.subject_id) query.set('subject_id', params.subject_id);
+    if (params.node_id) query.set('node_id', params.node_id);
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.offset !== undefined) query.set('offset', String(params.offset));
+    const qs = query.toString();
+    return apiClient.get<UserNoteListResponse>(`/user-notes${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * 更新筆記標題或內容。
+   *
+   * @param id - 筆記 UUID
+   * @param body - { title?, content? }
+   * @returns 更新後的 UserNote
+   */
+  async update(id: string, body: UserNoteUpdate): Promise<UserNote> {
+    return apiClient.patch<UserNote>(`/user-notes/${id}`, body);
+  },
+
+  /**
+   * 刪除自己的筆記。
+   *
+   * @param id - 筆記 UUID
+   */
+  async remove(id: string): Promise<void> {
+    return apiClient.delete(`/user-notes/${id}`);
   },
 };
