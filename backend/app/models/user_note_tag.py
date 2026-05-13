@@ -4,6 +4,8 @@ Feature 52：筆記 hashtag 系統。
 Migration 097：user_note_tags table。
 """
 
+import uuid as _uuid
+
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,8 +32,8 @@ class UserNoteTag(Base):
 
     __tablename__ = "user_note_tags"
 
-    note_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+    note_id: Mapped[_uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("user_notes.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,

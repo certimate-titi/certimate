@@ -31,7 +31,7 @@ Feature: 筆記 hashtag 系統後端契約
     Scenario: Unicode tag — #深度學習 #machine_learning #dl-101 全有效
       When alice POST /api/v1/user-notes 含 content "#深度學習 #machine_learning #dl-101 三種 tag"
       Then response status 為 201
-      And DB 中 user_note_tags 包含 tag_normalized "深度學習" 與 "machine_learning" 與 "dl-101"
+      And DB 中 user_note_tags 包含 tag "深度學習"、"machine_learning"、"dl-101" 三個 normalized tag
 
   @backend
   Rule: update note 增量 diff hashtag

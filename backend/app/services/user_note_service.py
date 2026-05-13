@@ -52,10 +52,10 @@ class UserNoteService(BaseService):
         new_normalized_set = {n for n, _ in new_tag_pairs}
         new_display_map = {n: d for n, d in new_tag_pairs}
 
-        # 查詢現有 tags
+        # 查詢現有 tags（note_id 為 UUID 類型）
         existing_tags = (
             self.db.query(UserNoteTag)
-            .filter(UserNoteTag.note_id == str(note.id))
+            .filter(UserNoteTag.note_id == note.id)
             .all()
         )
         existing_normalized_set = {t.tag_normalized for t in existing_tags}
@@ -72,7 +72,7 @@ class UserNoteService(BaseService):
         for normalized in to_add:
             display = new_display_map[normalized]
             new_tag = UserNoteTag(
-                note_id=str(note.id),
+                note_id=note.id,
                 tag_normalized=normalized,
                 tag_display=display,
             )
@@ -155,12 +155,10 @@ class UserNoteService(BaseService):
         if node_id is not None:
             query = query.filter(UserNote.node_id == node_id)
         if tag is not None:
-            import sqlalchemy as sa
-
-            # 只回含此 tag 的 notes
+            # 只回含此 tag 的 notes（UserNote.id 和 UserNoteTag.note_id 都是 UUID）
             query = query.join(
                 UserNoteTag,
-                sa.cast(UserNote.id, sa.String) == UserNoteTag.note_id,
+                UserNote.id == UserNoteTag.note_id,
             ).filter(UserNoteTag.tag_normalized == tag.lower().strip())
 
         total = query.count()
@@ -265,15 +263,14 @@ class UserNoteService(BaseService):
         """
         from sqlalchemy import func
 
-        import sqlalchemy as sa
-
+        # UserNote.id 和 UserNoteTag.note_id 都是 UUID(as_uuid=True)，直接比較
         query = (
             self.db.query(
                 UserNoteTag.tag_normalized,
                 UserNoteTag.tag_display,
                 func.count(UserNoteTag.note_id).label("count"),
             )
-            .join(UserNote, sa.cast(UserNote.id, sa.String) == UserNoteTag.note_id)
+            .join(UserNote, UserNote.id == UserNoteTag.note_id)
             .filter(UserNote.user_id == user_id)
         )
 
@@ -312,13 +309,11 @@ class UserNoteService(BaseService):
         Returns:
             {items: [UserNote], total: int}
         """
-        import sqlalchemy as sa
-
         query = (
             self.db.query(UserNote)
             .join(
                 UserNoteTag,
-                sa.cast(UserNote.id, sa.String) == UserNoteTag.note_id,
+                UserNote.id == UserNoteTag.note_id,
             )
             .filter(UserNote.user_id == user_id)
             .filter(UserNoteTag.tag_normalized == tag_normalized.lower().strip())
