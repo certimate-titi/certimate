@@ -26,16 +26,16 @@ export interface NodeDetailPanelProps {
   onTabChange: (tab: NodeDetailTab) => void;
   /** 節點資訊分頁的內容（含概念說明 + 學習鷹架 + 練習動作） */
   infoSlot: React.ReactNode;
-  /** 我的筆記分頁的內容 */
-  notebookSlot: React.ReactNode;
+  /** 我的筆記分頁的內容（已移至 /notes 獨立頁，保留 prop 相容性，optional） */
+  notebookSlot?: React.ReactNode;
   /** AI 教練分頁的內容（已移至底部常駐區，保留 prop 相容性） */
   coachSlot: React.ReactNode;
   /** 底部常駐 AI 教練輸入列與對話展開區（所有 tab 均顯示） */
   quickAskSlot?: React.ReactNode;
 }
 
-/** 右側面板只剩 info / notebook 兩個 tab；AI 教練改為底部常駐 */
-const TAB_ORDER: NodeDetailTab[] = ['info', 'notebook'];
+/** 右側面板只剩 info 一個 tab；筆記已移至 /notes 獨立頁，AI 教練為底部常駐 */
+const TAB_ORDER: NodeDetailTab[] = ['info'];
 
 const TAB_META: Record<NodeDetailTab, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
   info: { label: '節點資訊', Icon: FileText },
@@ -107,36 +107,38 @@ export default function NodeDetailPanel({
           {nodeLabel || '節點詳情'}
         </h2>
       </header>
-      <div
-        ref={tablistRef}
-        role="tablist"
-        aria-label="節點詳情分頁"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto focus:outline-none"
-      >
-        {TAB_ORDER.map((tab) => {
-          const { label, Icon } = TAB_META[tab];
-          const active = tab === activeTab;
-          return (
-            <button
-              key={tab}
-              role="tab"
-              aria-selected={active}
-              aria-controls={`tab-panel-${tab}`}
-              onClick={() => onTabChange(tab)}
-              className={`flex flex-1 min-w-[72px] items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                active
-                  ? 'border-b-2 border-emerald-500 bg-white text-slate-900'
-                  : 'border-b-2 border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {TAB_ORDER.length > 1 && (
+        <div
+          ref={tablistRef}
+          role="tablist"
+          aria-label="節點詳情分頁"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto focus:outline-none"
+        >
+          {TAB_ORDER.map((tab) => {
+            const { label, Icon } = TAB_META[tab];
+            const active = tab === activeTab;
+            return (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={active}
+                aria-controls={`tab-panel-${tab}`}
+                onClick={() => onTabChange(tab)}
+                className={`flex flex-1 min-w-[72px] items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
+                  active
+                    ? 'border-b-2 border-emerald-500 bg-white text-slate-900'
+                    : 'border-b-2 border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div
         id={`tab-panel-${activeTab}`}
         role="tabpanel"
