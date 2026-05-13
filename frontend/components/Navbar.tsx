@@ -22,10 +22,9 @@ export default function Navbar() {
   const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
 
   const navLinks = [
-    // UX redesign Q1+Q3 對齊 wireframe（5.1 學習首頁）— 主導航
-    // /today（學習首頁）→ /knowledge（學習庫）→ /exam/setup（測驗）→ /practice（練習）→ /notes（筆記）→ /review（AI 教練）
-    // /dashboard 降為 /today footer chip「📊 完整儀表板」
-    { href: '/today', label: '今日', icon: LayoutDashboard },
+    // /dashboard（儀表板）→ /knowledge（學習庫）→ /exam/setup（測驗）→ /practice（練習）→ /notes（筆記）→ /review（AI 教練）
+    // /today 已廢除（2026-05-13），登入後直接進 /dashboard
+    { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
     { href: '/knowledge', label: '學習庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/practice', label: '練習', icon: Dumbbell },

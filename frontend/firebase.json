@@ -6,6 +6,11 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      { "source": "/today", "destination": "/dashboard", "type": 301 },
+      { "source": "/today/", "destination": "/dashboard", "type": 301 },
+      { "source": "/today/**", "destination": "/dashboard", "type": 301 }
+    ],
     "rewrites": [
       {
         "source": "/api/v1/**",

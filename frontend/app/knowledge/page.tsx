@@ -16,6 +16,7 @@ import { ApiError } from '@/lib/api/client';
 import type { ChatAnnotation, AnnotationType } from '@/types/api';
 import OrphanCoachPanel from '@/components/coach/OrphanCoachPanel';
 import HardDeleteConfirmModal, { type CascadeCount } from '@/components/HardDeleteConfirmModal';
+import UploadResourceModal from '@/components/UploadResourceModal';
 import type { Document, KnowledgeNode, GetNodeDetailResponse, UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { useIsEmbedded } from '@/lib/embed-context';
@@ -57,6 +58,7 @@ function KnowledgeBasePageInner() {
   const focusResourceId = searchParams.get('resourceId');
   const focusSubjectId = searchParams.get('subjectId');
   const initialTab = searchParams.get('tab');
+  const openUploadParam = searchParams.get('openUpload');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<GetNodeDetailResponse | null>(null);
@@ -82,6 +84,7 @@ function KnowledgeBasePageInner() {
   const [docChunks, setDocChunks] = useState<Record<string, Array<{ id: string; chunk_index: number; content: string; section_title: string; depth: number; chunk_type: string; source_page_start: number | null; source_page_end: number | null }>>>({});
   const [loadingChunks, setLoadingChunks] = useState<string | null>(null);
   const [chunkErrors, setChunkErrors] = useState<Record<string, string>>({});
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletePreviewCascade, setDeletePreviewCascade] = useState<CascadeCount>({});
   const [deletePreviewLoading, setDeletePreviewLoading] = useState(false);
@@ -167,6 +170,11 @@ function KnowledgeBasePageInner() {
   const [showAnnotationList, setShowAnnotationList] = useState(false);
   // 當前 chat session_id（第一則 AI 回覆後設定）
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
+  // ?openUpload=1 自動開啟上傳 modal（從 dashboard 空態 CTA 導入）
+  useEffect(() => {
+    if (openUploadParam === '1') setUploadModalOpen(true);
+  }, [openUploadParam]);
 
   // <1024px: 收起雙側欄，改用抽屜佈局
   useEffect(() => {
@@ -778,9 +786,13 @@ function KnowledgeBasePageInner() {
             <Link href={`/knowledge/wrong-answers${activeSubjectId ? `?subjectId=${activeSubjectId}` : ''}`} className="bg-rose-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-rose-600 transition-colors whitespace-nowrap" data-testid="open-wrong-answer-heatmap" title="錯題地圖">
               🔥<span className="hidden md:inline ml-1">錯題地圖</span>
             </Link>
-            <Link href="/dashboard" className="bg-emerald-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap" title="新增資源">
+            <button
+              onClick={() => setUploadModalOpen(true)}
+              className="bg-emerald-500 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium hover:bg-emerald-600 transition-colors whitespace-nowrap"
+              title="新增資源"
+            >
               +<span className="hidden md:inline ml-1">新增資源</span>
-            </Link>
+            </button>
           </div>
         </header>
 
@@ -1227,7 +1239,7 @@ function KnowledgeBasePageInner() {
                             上傳第一份學習資源，AI 自動建構知識心智圖、生成題目、追蹤掌握度。
                           </p>
                           <Link
-                            href="/dashboard?openUpload=1"
+                            href="/knowledge?openUpload=1"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200"
                           >
                             📤 上傳第一份資源
@@ -1831,6 +1843,18 @@ function KnowledgeBasePageInner() {
         entityName={documents.find(d => d.id === deleteConfirmId)?.title ?? deleteConfirmId ?? ''}
         cascadeCount={deletePreviewLoading ? {} : deletePreviewCascade}
         loading={deletePreviewLoading || deleteConfirmLoading}
+      />
+      <UploadResourceModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        activeSubjectId={activeSubjectId || null}
+        subjects={subjects}
+        onUploadComplete={() => {
+          // 重新載入文件列表
+          documentService.list().then((res: { documents?: Document[] }) => {
+            setDocuments(res.documents || []);
+          }).catch(() => {});
+        }}
       />
     </>
   );
