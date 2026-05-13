@@ -593,7 +593,7 @@ function KnowledgeBasePageInner() {
 
   return (
     <>
-      <div className={`flex-1 flex flex-col ${containerHeightClass} overflow-hidden bg-slate-50`}>
+      <div className={`flex flex-col ${containerHeightClass} overflow-hidden bg-slate-50`}>
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shrink-0 gap-2">
           {!embedded && (
@@ -731,7 +731,7 @@ function KnowledgeBasePageInner() {
             const nodeLabel = selectedNodeDetail?.node?.label || null;
             const infoSlot = loadingDetail ? (<div className="p-3 flex items-center justify-center"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>) : selectedNodeDetail ? (<div><div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div></div>) : (<div className="px-3 py-4 text-center text-slate-400 text-xs"><BookOpen className="h-5 w-5 mx-auto mb-1 text-slate-300" />點擊圖譜節點查看說明</div>);
             return (
-              <div className="absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] shadow-xl border-l border-slate-200 bg-white">
+              <div className="absolute right-0 top-0 bottom-0 z-30 w-[85vw] max-w-[360px] overflow-hidden shadow-xl border-l border-slate-200 bg-white">
                 <button onClick={() => setMobileDrawer(null)} className="absolute top-2 right-2 z-10 p-1 rounded hover:bg-slate-100"><X className="h-4 w-4 text-slate-400" /></button>
                 <NodeDetailPanel nodeId={nodeId} nodeLabel={nodeLabel} activeTab={activeNodeTab} onTabChange={setActiveNodeTab} infoSlot={infoSlot} notebookSlot={<ScaffoldNotebook nodeId={nodeId} fallbackResourceId={focusResourceId || selectedDocId || null} nodeLabel={nodeLabel} isPro={isProPlus || subscriptionTier === 'PRO_199'} onUpgradeClick={() => router.push('/account')} />} coachSlot={<div className="p-4 text-xs text-slate-400 text-center">請使用桌面版以啟用 AI 教練</div>} quickAskSlot={null} />
               </div>
@@ -1248,13 +1248,11 @@ function KnowledgeBasePageInner() {
                   const avail = nodeId ? (findAvail(mindMapNodes) ?? 0) : 0;
                   const noQ = avail === 0;
                   return (
-                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-blue-500" />
-                      <h3 className="text-xs font-bold text-slate-700 truncate">{nodeLabel || '節點說明'}</h3>
+                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
                       {noQ ? (
-                        <span className="ml-auto text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">練習</span>
+                        <span className="text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">練習</span>
                       ) : (
-                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="ml-auto text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
+                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
                       )}
                       {noQ ? (
                         <span className="text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">測驗</span>
@@ -1266,10 +1264,10 @@ function KnowledgeBasePageInner() {
                 })()}
                 <div className="px-3 py-2">
                   {selectedNodeDetail.node?.masteryLevel && selectedNodeDetail.node?.masteryLevel !== 'untested' && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                    <div className="mb-2">
+                      <span className={`inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                         {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '精通' : selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分' : '弱'}
-                      </div>
+                      </span>
                     </div>
                   )}
                   {selectedNodeDetail.citationSource?.type === 'youtube' && selectedNodeDetail.citationSource?.sourceUrl && (
@@ -1417,7 +1415,7 @@ function KnowledgeBasePageInner() {
 
             return (
               <Panel id="kp-right" minSize="280px" defaultSize={panelLayout['kp-right']} style={{ overflow: 'hidden' }}>
-              <div className="h-full border-l border-slate-200 bg-white">
+              <div className="h-full overflow-hidden border-l border-slate-200 bg-white">
                 <NodeDetailPanel
                   nodeId={nodeId}
                   nodeLabel={nodeLabel}
