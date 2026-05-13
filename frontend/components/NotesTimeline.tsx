@@ -9,7 +9,7 @@
  *  - Inline edit mode（自由筆記 & AI 標記 & 鷹架只可編輯不可刪）
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   Check,
@@ -451,6 +451,10 @@ export default function NotesTimeline({
   const [error, setError] = useState<string | null>(null);
   const [showSortMenu, setShowSortMenu] = useState(false);
 
+  // 穩定 onCountsUpdate ref，避免因外層每次 render 產新 function 而觸發 fetchData 無限 loop
+  const onCountsUpdateRef = useRef(onCountsUpdate);
+  useEffect(() => { onCountsUpdateRef.current = onCountsUpdate; });
+
   const fetchData = useCallback(async () => {
     if (!subjectId) {
       setItems([]);
@@ -503,9 +507,9 @@ export default function NotesTimeline({
 
       setItems(merged);
 
-      // 回報 counts
-      if (onCountsUpdate) {
-        onCountsUpdate({
+      // 回報 counts（用 ref 避免觸發 loop）
+      if (onCountsUpdateRef.current) {
+        onCountsUpdateRef.current({
           note: noteRes.status === 'fulfilled' ? noteRes.value.items.length : 0,
           annotation: annRes.status === 'fulfilled' ? annRes.value.items.length : 0,
           scaffold: scaffoldRes.status === 'fulfilled' ? (scaffoldRes.value.scaffolds?.length ?? 0) : 0,
@@ -517,7 +521,7 @@ export default function NotesTimeline({
     } finally {
       setLoading(false);
     }
-  }, [subjectId, onCountsUpdate]);
+  }, [subjectId]); // onCountsUpdate 透過 ref 存取，不列入 dep 以免 loop
 
   useEffect(() => {
     fetchData();

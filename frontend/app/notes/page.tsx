@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { subjectService } from '@/lib/api/services';
@@ -32,9 +32,8 @@ export default function NotesPageWrapper() {
 }
 
 function NotesPage() {
-  const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, subscriptionTier } = useAuth();
+  const { isAuthenticated, loading: authLoading, onboardingCompleted, isPro } = useAuth();
   const router = useRouter();
-  const isPro = isProPlus || subscriptionTier === 'PRO_199';
 
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
@@ -70,11 +69,15 @@ function NotesPage() {
   const activeUserSubject = subjects.find((s) => s.id === filter.activeUserSubjectId);
   const subjectIdForApi = activeUserSubject?.subjectId ?? null;
 
-  function handleCountsUpdate(counts: { note: number; annotation: number; scaffold: number }) {
-    if (filter.activeUserSubjectId) {
-      setKindCounts((prev) => ({ ...prev, [filter.activeUserSubjectId]: counts }));
-    }
-  }
+  const handleCountsUpdate = useCallback((counts: { note: number; annotation: number; scaffold: number }) => {
+    setKindCounts((prev) => {
+      const key = filter.activeUserSubjectId;
+      if (!key) return prev;
+      const existing = prev[key];
+      if (existing?.note === counts.note && existing?.annotation === counts.annotation && existing?.scaffold === counts.scaffold) return prev;
+      return { ...prev, [key]: counts };
+    });
+  }, [filter.activeUserSubjectId]);
 
   if (authLoading) {
     return (
