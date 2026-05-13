@@ -1531,3 +1531,9 @@ from .yt_pipeline import assertions as f47_assertions  # noqa: F401
 # F47 E2E pipeline — tasks/process-resource 端到端（early-skip 修正驗證）
 from .yt_e2e import e2e_pipeline as f47_e2e  # noqa: F401
 
+# AI 教練對話 highlight + 評語 — Feature 49 (Migration 095)
+from .chat_annotations.aggregate_given import setup as f49_given  # noqa: F401
+from .chat_annotations.commands import api_calls as f49_commands  # noqa: F401
+from .chat_annotations.aggregate_then import assertions as f49_assertions  # noqa: F401
+from .chat_annotations.readmodel_then import response_checks as f49_readmodel  # noqa: F401
+

@@ -1,0 +1,156 @@
+"""ChatAnnotationService — AI 教練對話 highlight + 評語管理。
+
+業務規則：
+- user_annotation 最少 10 字（API 層 + service 層雙重防護）
+- annotation_type 必須在合法 enum 範圍
+- 只能對自己的 session 標記（session.user_id == user_id）
+- message_id 必須存在且屬於 session_id
+- 同 session 同 user 最多 5 筆，超過 409
+- 只能刪除自己的 annotation（非自己 → 403）
+"""
+
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.models.ai_chat import AiChatMessage, AiChatSession
+from app.models.chat_message_annotation import ChatMessageAnnotation
+from app.schemas.chat_annotation import VALID_ANNOTATION_TYPES
+from app.services.base import BaseService
+
+MAX_ANNOTATIONS_PER_SESSION = 5
+
+
+class ChatAnnotationService(BaseService):
+    """管理 chat_message_annotations 的 CRUD 操作。"""
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+
+    # ── Create ──────────────────────────────────────────────────────
+
+    def create_annotation(
+        self,
+        *,
+        message_id: UUID,
+        user_id: UUID,
+        session_id: UUID,
+        highlighted_text: str,
+        user_annotation: str,
+        annotation_type: str = "note",
+    ) -> dict:
+        """建立一筆 annotation。
+
+        Validations (按順序):
+        1. annotation_type 合法性
+        2. user_annotation 長度 ≥ 10
+        3. session 存在 + 屬於此 user
+        4. message 存在 + 屬於此 session
+        5. max=5 per (session, user) 守門
+        """
+        # 1. annotation_type 合法性
+        if annotation_type not in VALID_ANNOTATION_TYPES:
+            return self.error(
+                f"annotation_type 無效：{annotation_type}，合法值為 {sorted(VALID_ANNOTATION_TYPES)}",
+                422,
+            )
+
+        # 2. user_annotation 長度（service 二次防護）
+        if len(user_annotation) < 10:
+            return self.error("user_annotation 最少 10 個字元", 422)
+
+        # 3. 驗 session 存在 + 屬於 user
+        session = (
+            self.db.query(AiChatSession)
+            .filter(AiChatSession.id == session_id)
+            .first()
+        )
+        if not session:
+            return self.error("對話 session 不存在", 404)
+        if session.user_id != user_id:
+            return self.error("無權限標記他人的對話", 403)
+
+        # 4. 驗 message 存在 + 屬於此 session
+        message = (
+            self.db.query(AiChatMessage)
+            .filter(
+                AiChatMessage.id == message_id,
+                AiChatMessage.session_id == session_id,
+            )
+            .first()
+        )
+        if not message:
+            return self.error("訊息不存在或不屬於此 session", 404)
+
+        # 5. max=5 守門
+        count = (
+            self.db.query(ChatMessageAnnotation)
+            .filter(
+                ChatMessageAnnotation.session_id == session_id,
+                ChatMessageAnnotation.user_id == user_id,
+            )
+            .count()
+        )
+        if count >= MAX_ANNOTATIONS_PER_SESSION:
+            return self.error(
+                f"該對話已標記上限（最多 {MAX_ANNOTATIONS_PER_SESSION} 筆）",
+                409,
+            )
+
+        # 建立
+        annotation = ChatMessageAnnotation(
+            message_id=message_id,
+            user_id=user_id,
+            session_id=session_id,
+            highlighted_text=highlighted_text,
+            user_annotation=user_annotation,
+            annotation_type=annotation_type,
+        )
+        self.db.add(annotation)
+        self.db.commit()
+        self.db.refresh(annotation)
+        return self.ok({"annotation": annotation})
+
+    # ── List ────────────────────────────────────────────────────────
+
+    def list_annotations(
+        self,
+        *,
+        user_id: UUID,
+        session_id: UUID | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> dict:
+        """列出自己的 annotations（可選 filter by session）。"""
+        query = self.db.query(ChatMessageAnnotation).filter(
+            ChatMessageAnnotation.user_id == user_id
+        )
+        if session_id is not None:
+            query = query.filter(ChatMessageAnnotation.session_id == session_id)
+
+        total = query.count()
+        items = (
+            query.order_by(ChatMessageAnnotation.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        return self.ok({"items": items, "total": total})
+
+    # ── Delete ──────────────────────────────────────────────────────
+
+    def delete_annotation(self, *, annotation_id: UUID, user_id: UUID) -> dict:
+        """刪除自己的 annotation（他人的 → 403）。"""
+        annotation = (
+            self.db.query(ChatMessageAnnotation)
+            .filter(ChatMessageAnnotation.id == annotation_id)
+            .first()
+        )
+        if not annotation:
+            return self.error("annotation 不存在", 404)
+        if annotation.user_id != user_id:
+            return self.error("無權限刪除他人的 annotation", 403)
+
+        self.db.delete(annotation)
+        self.db.commit()
+        return self.ok()
