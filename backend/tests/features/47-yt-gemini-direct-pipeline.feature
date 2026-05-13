@@ -113,3 +113,29 @@ Feature: F47 — YouTube 雙路徑分流 Pipeline
     When 使用者 "pro_user@example.com" 提交無 CC 且排程失敗的 YouTube URL，科目為 1
     Then 操作失敗，狀態碼為 503
     And 使用者 "pro_user@example.com" 本月 YouTube 配額已退回（用量為 0）
+
+  # Rule 7: URL 格式 variants matrix（PR #91 / #92 YOUTUBE_REGEX 修補回歸測）
+  Rule: submit_youtube 接受常見 YT URL 變體並拒絕非 YT / playlist / channel
+
+  @backend
+  Scenario Outline: submit_youtube 接受常見 YT URL 格式 variants（B14 input format variants matrix）
+    Given 環境變數 BACKGROUND_PROCESSOR=inline
+    And oEmbed API 模擬回傳 title "Test Video"
+    And yt-dlp probe 模擬 bot challenge 失敗
+    When 使用者 "pro_user@example.com" 提交 YouTube URL "<url>"，科目為 1
+    Then 回應狀態碼為 <code>
+
+    Examples:
+      | url | code |
+      | https://www.youtube.com/watch?v=dPZaD_yd6Jg | 202 |
+      | https://youtube.com/watch?v=dPZaD_yd6Jg | 202 |
+      | https://youtu.be/dPZaD_yd6Jg | 202 |
+      | https://youtu.be/dPZaD_yd6Jg?si=mqGqRhqekZfhFGz4 | 202 |
+      | https://www.youtube.com/shorts/dPZaD_yd6Jg | 202 |
+      | https://www.youtube.com/embed/dPZaD_yd6Jg | 202 |
+      | https://m.youtube.com/watch?v=dPZaD_yd6Jg | 202 |
+      | https://music.youtube.com/watch?v=dPZaD_yd6Jg | 202 |
+      | https://www.youtube.com/live/dPZaD_yd6Jg | 202 |
+      | https://www.youtube.com/playlist?list=PLabc | 422 |
+      | https://vimeo.com/123456 | 422 |
+      | https://www.youtube.com/@channelname | 422 |
