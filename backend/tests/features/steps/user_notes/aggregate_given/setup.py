@@ -62,7 +62,6 @@ def _make_node(db, name: str, subject_id: uuid.UUID) -> KnowledgeNode:
         name=name,
         subject_id=subject_id,
         depth=1,
-        importance_score=0.5,
     )
     db.add(node)
     db.flush()
@@ -195,9 +194,8 @@ def step_resource_has_scaffold(context):
 
     scaffold = ResourceScaffold(
         resource_id=resource_id,
-        scaffold_type=ResourceScaffoldType.elaborative,
-        title="測試鷹架",
-        takeaway="測試鷹架的核心要點",
+        type=ResourceScaffoldType.ELABORATIVE,
+        content="測試鷹架的核心要點內容",
     )
     db.add(scaffold)
     db.commit()

@@ -23,7 +23,7 @@ Feature: 我的筆記整合後端契約
       And response body node_id 不為 null
 
     Scenario: content 為空字串 → 422
-      When alice POST /api/v1/user-notes 含 subject_id 和 content ""
+      When alice POST /api/v1/user-notes 含空 content
       Then response status 為 422
 
     Scenario: subject_id 不存在 → 404
@@ -47,7 +47,7 @@ Feature: 我的筆記整合後端契約
       And 所有 items 的 subject_id 均相同
 
     Scenario: bob 無法看到 alice 的筆記
-      Given alice 已建立 1 筆筆記
+      Given alice 已建立 1 筆筆記 id 存於 memo["note_id"]
       When bob GET /api/v1/user-notes
       Then response status 為 200
       And items 筆數 = 0

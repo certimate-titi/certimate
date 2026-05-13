@@ -53,6 +53,21 @@ def step_alice_create_note_with_node(context, content):
         context.memo["note_id"] = data.get("id")
 
 
+@when('alice POST /api/v1/user-notes 含空 content')
+def step_alice_create_note_empty_content(context):
+    subject_id = context.memo["subject_id"]
+    token = _token(context, "alice@example.com")
+
+    context.last_response = context.api_client.post(
+        "/api/v1/user-notes",
+        json={
+            "subject_id": subject_id,
+            "content": "",  # 空字串
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
 @when('alice POST /api/v1/user-notes 含不存在的 subject_id 和 content "{content}"')
 def step_alice_create_note_invalid_subject(context, content):
     token = _token(context, "alice@example.com")
