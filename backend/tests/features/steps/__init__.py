@@ -1544,3 +1544,8 @@ from .user_notes.commands import api_calls as f50_commands  # noqa: F401
 from .user_notes.commands import subject_scaffolds_api as f50_subject_scaffolds_commands  # noqa: F401
 from .user_notes.readmodel_then import response_assertions as f50_readmodel  # noqa: F401
 
+# 筆記重置 — Feature 51
+from .notes_reset.aggregate_given import setup as f51_given  # noqa: F401
+from .notes_reset.commands import api_calls as f51_commands  # noqa: F401
+from .notes_reset.aggregate_then import assertions as f51_assertions  # noqa: F401
+
