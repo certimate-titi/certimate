@@ -88,10 +88,12 @@ function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onToggle}
-      className="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition-colors border-b border-slate-200 text-left"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
+      className="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition-colors border-b border-slate-200 text-left cursor-pointer select-none"
     >
       {open ? (
         <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -111,7 +113,7 @@ function SectionHeader({
           {action}
         </span>
       )}
-    </button>
+    </div>
   );
 }
 
