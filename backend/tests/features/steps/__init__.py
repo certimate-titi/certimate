@@ -1555,3 +1555,8 @@ from .note_hashtags.commands import api_calls as f52_commands  # noqa: F401
 from .note_hashtags.aggregate_then import db_assertions as f52_db  # noqa: F401
 from .note_hashtags.readmodel_then import response_assertions as f52_readmodel  # noqa: F401
 
+# Obsidian-compat markdown export — Feature 53
+from .obsidian_export.aggregate_given import setup as f53_given  # noqa: F401
+from .obsidian_export.commands import api_calls as f53_commands  # noqa: F401
+from .obsidian_export.aggregate_then import assertions as f53_assertions  # noqa: F401
+

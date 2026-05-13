@@ -1,18 +1,20 @@
-"""User Notes API — 使用者自由格式筆記管理（Feature 50 + 52）。
+"""User Notes API — 使用者自由格式筆記管理（Feature 50 + 52 + 53）。
 
 Endpoints:
-  POST   /api/v1/user-notes           201 建立筆記
-  GET    /api/v1/user-notes           200 列出自己的筆記（支援 ?tag= filter）
-  GET    /api/v1/user-notes/tags      200 列出自己所有 hashtag tags + count
-  PATCH  /api/v1/user-notes/{id}      200 更新自己的筆記
-  DELETE /api/v1/user-notes/all       200 刪除自己所有筆記 {deleted: N}
-  DELETE /api/v1/user-notes/{id}      204 刪除自己的筆記
+  POST   /api/v1/user-notes                     201 建立筆記
+  GET    /api/v1/user-notes                     200 列出自己的筆記（支援 ?tag= filter）
+  GET    /api/v1/user-notes/tags                200 列出自己所有 hashtag tags + count
+  GET    /api/v1/user-notes/export/obsidian     200 匯出 Obsidian-compatible ZIP
+  PATCH  /api/v1/user-notes/{id}                200 更新自己的筆記
+  DELETE /api/v1/user-notes/all                 200 刪除自己所有筆記 {deleted: N}
+  DELETE /api/v1/user-notes/{id}                204 刪除自己的筆記
 """
 
 import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user_id
@@ -85,6 +87,36 @@ def list_tags(
     )
     _handle(result)
     return {"items": result["items"], "total": result["total"]}
+
+
+@router.get("/export/obsidian")
+def export_obsidian(
+    force: bool = Query(False, description="force=true 可繞過備考期限制"),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """匯出 user 所有筆記為 Obsidian-compatible ZIP 壓縮檔。
+
+    B2 限制：只有考後 30 天才能匯出（避免影響當下複習）。
+    例外：?force=true 可繞過此限制。
+
+    回應：
+    - 200 + application/zip stream
+    - 403 + {message: "考後 30 天才能匯出避免影響當下複習"}（備考期間且未帶 force=true）
+    """
+    svc = UserNoteService(db)
+    result = svc.export_obsidian_zip(user_id=UUID(user_id), force=force)
+    if result.get("error"):
+        raise HTTPException(
+            status_code=result.get("status_code", 403),
+            detail={"message": result.get("message", "匯出失敗")},
+        )
+    zip_bytes: bytes = result["zip_bytes"]
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=notes-obsidian.zip"},
+    )
 
 
 @router.get("", response_model=UserNoteListResponse)
