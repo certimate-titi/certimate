@@ -627,6 +627,36 @@ export interface CompletionNextMilestone {
   remaining_pct: number | null;
 }
 
+// ===========================
+// Chat Annotations
+// ===========================
+
+export type AnnotationType = 'note' | 'key_insight' | 'challenge' | 'example' | 'application';
+
+export interface ChatAnnotation {
+  id: string;
+  message_id: string;
+  user_id: string;
+  session_id: string;
+  highlighted_text: string;
+  user_annotation: string;
+  annotation_type: AnnotationType;
+  created_at: string;
+}
+
+export interface ChatAnnotationCreate {
+  message_id: string;
+  session_id: string;
+  highlighted_text: string;
+  user_annotation: string;
+  annotation_type: AnnotationType;
+}
+
+export interface ChatAnnotationListResponse {
+  items: ChatAnnotation[];
+  total: number;
+}
+
 /**
  * GET /subjects/{subject_id}/completion → 200
  * 科目完成度框架（B.2/B.3/B.4）
