@@ -1537,3 +1537,8 @@ from .chat_annotations.commands import api_calls as f49_commands  # noqa: F401
 from .chat_annotations.aggregate_then import assertions as f49_assertions  # noqa: F401
 from .chat_annotations.readmodel_then import response_checks as f49_readmodel  # noqa: F401
 
+# 我的筆記整合 — Feature 50 (Migration 096)
+from .user_notes.aggregate_given import setup as f50_given  # noqa: F401
+from .user_notes.commands import api_calls as f50_commands  # noqa: F401
+from .user_notes.readmodel_then import response_assertions as f50_readmodel  # noqa: F401
+
