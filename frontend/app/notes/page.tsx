@@ -14,6 +14,7 @@ import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import NotesClassifyTree from '@/components/NotesClassifyTree';
 import NotesTimeline from '@/components/NotesTimeline';
+import NotesTagGraph from '@/components/NotesTagGraph';
 import { useNotesFilter } from '@/hooks/use-notes-filter';
 import type { NoteKind } from '@/hooks/use-notes-filter';
 
@@ -39,6 +40,8 @@ function NotesPage() {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [kindCounts, setKindCounts] = useState<Record<string, { note: number; annotation: number; scaffold: number }>>({});
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [notesView, setNotesView] = useState<'timeline' | 'graph'>('timeline');
 
   // Auth guard
   useEffect(() => {
@@ -151,6 +154,31 @@ function NotesPage() {
             <h1 className="text-lg font-bold text-slate-900 leading-tight">我的筆記</h1>
             <p className="text-xs text-slate-500">Timeline · 三合一筆記中心</p>
           </div>
+          {/* View toggle — desktop */}
+          <div className="ml-auto hidden md:flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setNotesView('timeline')}
+              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                notesView === 'timeline'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📋 Timeline
+            </button>
+            <button
+              type="button"
+              onClick={() => setNotesView('graph')}
+              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                notesView === 'graph'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              🕸️ 標籤圖譜
+            </button>
+          </div>
         </div>
 
         {/* Loading state */}
@@ -169,7 +197,29 @@ function NotesPage() {
             </button>
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Mobile view toggle */}
+            <div className="md:hidden flex items-center gap-1 p-2 bg-white border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setNotesView('timeline')}
+                className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-colors ${
+                  notesView === 'timeline' ? 'bg-slate-100 text-slate-900' : 'text-slate-500'
+                }`}
+              >
+                📋 Timeline
+              </button>
+              <button
+                type="button"
+                onClick={() => setNotesView('graph')}
+                className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-colors ${
+                  notesView === 'graph' ? 'bg-slate-100 text-slate-900' : 'text-slate-500'
+                }`}
+              >
+                🕸️ 標籤圖譜
+              </button>
+            </div>
+
             {/* Mobile active filter chip */}
             <div className="md:hidden">
               {(filter.kindFilter || filter.searchQuery.trim()) && (
@@ -194,18 +244,33 @@ function NotesPage() {
               )}
             </div>
 
-            <NotesTimeline
-              subjectId={subjectIdForApi}
-              kindFilter={filter.kindFilter}
-              searchQuery={filter.searchQuery}
-              sortOrder={filter.sortOrder}
-              onSortChange={filter.setSortOrder}
-              onKindFilterChange={(kind: NoteKind | null) => filter.setKindFilter(kind)}
-              onResetFilters={filter.resetFilters}
-              onCountsUpdate={handleCountsUpdate}
-              isPro={isPro}
-              onUpgradeClick={() => router.push('/account')}
-            />
+            <div className="flex-1 overflow-hidden">
+              {notesView === 'timeline' ? (
+                <NotesTimeline
+                  subjectId={subjectIdForApi}
+                  kindFilter={filter.kindFilter}
+                  searchQuery={filter.searchQuery}
+                  sortOrder={filter.sortOrder}
+                  onSortChange={filter.setSortOrder}
+                  onKindFilterChange={(kind: NoteKind | null) => filter.setKindFilter(kind)}
+                  onResetFilters={filter.resetFilters}
+                  onCountsUpdate={handleCountsUpdate}
+                  isPro={isPro}
+                  onUpgradeClick={() => router.push('/account')}
+                  activeTag={activeTag}
+                  onTagFilterChange={setActiveTag}
+                />
+              ) : (
+                <NotesTagGraph
+                  subjectId={subjectIdForApi}
+                  activeTag={activeTag}
+                  onTagClick={(tag) => {
+                    setActiveTag(tag);
+                    setNotesView('timeline');
+                  }}
+                />
+              )}
+            </div>
           </div>
         )}
       </main>
