@@ -1654,7 +1654,10 @@ function KnowledgeBasePageInner() {
                                     <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-[9px] ${msg.role === 'ai' ? 'bg-emerald-100' : 'bg-slate-200'}`}>
                                       {msg.role === 'ai' ? <MessageCircle className="h-3 w-3 text-emerald-600" /> : <span className="font-bold text-slate-600">U</span>}
                                     </div>
-                                    <div className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}>
+                                    <div
+                                      className={`max-w-[85%] p-2 rounded-xl text-xs leading-relaxed ${msg.role === 'ai' ? 'bg-white border border-slate-200 text-slate-700 rounded-tl-none cursor-text' : 'bg-emerald-500 text-white rounded-tr-none whitespace-pre-line'}`}
+                                      onMouseUp={msg.role === 'ai' && msg.message_id && msg.session_id ? (e) => handleAiMessageMouseUp(e, i, msg.message_id!, msg.session_id!) : undefined}
+                                    >
                                       {msg.role === 'ai' ? (
                                         <div className="prose prose-xs max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                                           <MathContent>{msg.content}</MathContent>
