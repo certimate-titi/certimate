@@ -711,6 +711,21 @@ export interface UserNoteListResponse {
   total: number;
 }
 
+// ===========================
+// User Notes — Tags API
+// ===========================
+
+export interface UserTag {
+  normalized: string;
+  display: string;
+  count: number;
+}
+
+export interface UserTagListResponse {
+  items: UserTag[];
+  total: number;
+}
+
 export interface ChatAnnotationUpdate {
   user_annotation?: string;
   annotation_type?: AnnotationType;

@@ -27,7 +27,7 @@ import {
   userNoteService,
   type NodeScaffoldItem,
 } from '@/lib/api/services';
-import type { AnnotationType, ChatAnnotation, UserNote } from '@/types/api';
+import type { AnnotationType, ChatAnnotation, UserNote, UserTag } from '@/types/api';
 import type { NoteKind, SortOrder } from '@/hooks/use-notes-filter';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -71,6 +71,10 @@ export interface NotesTimelineProps {
   onCountsUpdate?: (counts: { note: number; annotation: number; scaffold: number }) => void;
   isPro: boolean;
   onUpgradeClick: () => void;
+  /** 外部傳入的 tag filter（normalized 字串），null 表示不篩選 */
+  activeTag?: string | null;
+  /** tag filter 變更 callback */
+  onTagFilterChange?: (tag: string | null) => void;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -445,11 +449,15 @@ export default function NotesTimeline({
   onCountsUpdate,
   isPro,
   onUpgradeClick,
+  activeTag = null,
+  onTagFilterChange,
 }: NotesTimelineProps) {
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [tags, setTags] = useState<UserTag[]>([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
 
   // 穩定 onCountsUpdate ref，避免因外層每次 render 產新 function 而觸發 fetchData 無限 loop
   const onCountsUpdateRef = useRef(onCountsUpdate);
@@ -464,11 +472,16 @@ export default function NotesTimeline({
     setError(null);
 
     try {
-      const [noteRes, annRes, scaffoldRes] = await Promise.allSettled([
+      const [noteRes, annRes, scaffoldRes, tagRes] = await Promise.allSettled([
         userNoteService.list({ subject_id: subjectId, limit: 100 }),
         chatAnnotationService.list({ limit: 100 }),
         knowledgeService.getSubjectScaffolds(subjectId, { user_response_only: true, limit: 100 }),
+        userNoteService.listTags({ subject_id: subjectId }),
       ]);
+
+      if (tagRes.status === 'fulfilled') {
+        setTags(tagRes.value.items);
+      }
 
       const merged: TimelineItem[] = [];
 
@@ -531,6 +544,14 @@ export default function NotesTimeline({
 
   const filtered = items.filter((item) => {
     if (kindFilter && item._kind !== kindFilter) return false;
+    // Tag filter: only applies to notes (annotations/scaffolds don't have hashtag content)
+    if (activeTag && item._kind === 'note') {
+      const tagPattern = new RegExp(`#${activeTag}(?:\\b|$)`, 'i');
+      if (!tagPattern.test(item.data.content)) return false;
+    } else if (activeTag && item._kind !== 'note') {
+      // Non-notes are hidden when a tag filter is active
+      return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       if (item._kind === 'note') {
@@ -628,7 +649,7 @@ export default function NotesTimeline({
 
   // ─ Render ──────────────────────────────────────────────────────────────────
 
-  const isFiltered = kindFilter !== null || searchQuery.trim() !== '';
+  const isFiltered = kindFilter !== null || searchQuery.trim() !== '' || activeTag !== null;
 
   return (
     <div className="flex flex-col h-full">
@@ -664,6 +685,43 @@ export default function NotesTimeline({
           )}
         </div>
 
+        {/* Tag filter dropdown — only shown when tags exist */}
+        {tags.length > 0 && onTagFilterChange && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowTagDropdown((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium transition-colors"
+            >
+              <span>#</span>
+              <span>標籤</span>
+              <ChevronDown className="h-3 w-3 text-slate-400" />
+            </button>
+            {showTagDropdown && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden min-w-[160px] max-h-48 overflow-y-auto">
+                {tags.map((tag) => (
+                  <button
+                    key={tag.normalized}
+                    type="button"
+                    onClick={() => {
+                      onTagFilterChange(activeTag === tag.normalized ? null : tag.normalized);
+                      setShowTagDropdown(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between gap-2 ${
+                      activeTag === tag.normalized
+                        ? 'bg-sky-50 text-sky-700 font-semibold'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>{tag.display}</span>
+                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{tag.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Active filter chips */}
         {kindFilter && (
           <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border ${KIND_META[kindFilter].chip}`}>
@@ -671,6 +729,18 @@ export default function NotesTimeline({
             <button
               type="button"
               onClick={() => onKindFilterChange(null)}
+              className="ml-0.5 hover:opacity-70"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        )}
+        {activeTag && onTagFilterChange && (
+          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-sky-50 text-sky-700 border-sky-200">
+            #{activeTag}
+            <button
+              type="button"
+              onClick={() => onTagFilterChange(null)}
               className="ml-0.5 hover:opacity-70"
             >
               <X className="h-3 w-3" />
@@ -694,7 +764,7 @@ export default function NotesTimeline({
         {isFiltered && (
           <button
             type="button"
-            onClick={onResetFilters}
+            onClick={() => { onResetFilters(); onTagFilterChange?.(null); }}
             className="ml-auto inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200"
           >
             <RotateCcw className="h-3 w-3" />
