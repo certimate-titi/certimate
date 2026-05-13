@@ -116,3 +116,12 @@ class ResourceScaffold(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+    # Relationships
+    tags = relationship(
+        "ScaffoldTag",
+        foreign_keys="[ScaffoldTag.scaffold_id]",
+        back_populates="scaffold",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
