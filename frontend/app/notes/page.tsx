@@ -1,26 +1,31 @@
 /**
- * @file 路由 `/notes` — 我的筆記獨立頁。
+ * @file 路由 `/notes` — 我的筆記中心（Timeline + 左側分類樹）。
  *
- * 從 /knowledge 右側 tab 移出，作為全站頂層筆記中心；
- * 整合 IntegratedNotebook（不綁 nodeId），以科目為單位列出所有筆記。
+ * Layout：左 sidebar（分類樹 240px）+ 右 main（unified timeline）
+ * Mobile < 768px：sidebar 改為 drawer（漢堡按鈕開啟）
  */
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 import { subjectService } from '@/lib/api/services';
 import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
-import SubjectSwitcher from '@/components/SubjectSwitcher';
-import IntegratedNotebook from '@/components/IntegratedNotebook';
+import NotesClassifyTree from '@/components/NotesClassifyTree';
+import NotesTimeline from '@/components/NotesTimeline';
+import { useNotesFilter } from '@/hooks/use-notes-filter';
+import type { NoteKind } from '@/hooks/use-notes-filter';
 
 export default function NotesPageWrapper() {
   return (
-    <Suspense fallback={
-      <div className="flex-1 flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-screen">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
       <NotesPage />
     </Suspense>
   );
@@ -29,12 +34,12 @@ export default function NotesPageWrapper() {
 function NotesPage() {
   const { isAuthenticated, loading: authLoading, onboardingCompleted, isProPlus, subscriptionTier } = useAuth();
   const router = useRouter();
+  const isPro = isProPlus || subscriptionTier === 'PRO_199';
 
   const [subjects, setSubjects] = useState<UserSubject[]>([]);
-  const [activeSubjectId, setActiveSubjectId] = useState<string>('');
   const [loadingSubjects, setLoadingSubjects] = useState(true);
-
-  const isPro = isProPlus || subscriptionTier === 'PRO_199';
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [kindCounts, setKindCounts] = useState<Record<string, { note: number; annotation: number; scaffold: number }>>({});
 
   // Auth guard
   useEffect(() => {
@@ -47,16 +52,29 @@ function NotesPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     subjectService.getUserSubjects()
-      .then((res) => {
-        const list = res.subjects ?? [];
-        setSubjects(list);
-        if (list.length > 0 && !activeSubjectId) {
-          setActiveSubjectId(list[0].id);
-        }
-      })
-      .catch(() => {/* silently ignore */})
+      .then((res) => { setSubjects(res.subjects ?? []); })
+      .catch(() => { /* silently ignore */ })
       .finally(() => setLoadingSubjects(false));
-  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // subjects shape for useNotesFilter
+  const subjectsForFilter = subjects.map((s) => ({
+    id: s.id,
+    subjectId: s.subjectId,
+    subjectName: s.subjectName,
+  }));
+
+  const filter = useNotesFilter(subjectsForFilter);
+
+  // subjectId (後端 UUID) for API
+  const activeUserSubject = subjects.find((s) => s.id === filter.activeUserSubjectId);
+  const subjectIdForApi = activeUserSubject?.subjectId ?? null;
+
+  function handleCountsUpdate(counts: { note: number; annotation: number; scaffold: number }) {
+    if (filter.activeUserSubjectId) {
+      setKindCounts((prev) => ({ ...prev, [filter.activeUserSubjectId]: counts }));
+    }
+  }
 
   if (authLoading) {
     return (
@@ -68,36 +86,77 @@ function NotesPage() {
 
   if (!isAuthenticated) return null;
 
-  const activeSubject = subjects.find((s) => s.id === activeSubjectId);
-  const subjectIdForApi = activeSubject?.subjectId || activeSubjectId || null;
+  const sidebarContent = (
+    <NotesClassifyTree
+      subjects={subjectsForFilter}
+      filterState={filter}
+      filterActions={filter}
+      counts={kindCounts}
+    />
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900">我的筆記</h1>
-            <p className="text-sm text-slate-500 mt-1">跨節點筆記、AI 對話標記與鷹架深讀整合檢視</p>
+    <div className="flex h-[calc(100vh-64px)] bg-slate-50 overflow-hidden">
+      {/* ── Desktop sidebar ─────────────────────────────────────── */}
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-slate-200 overflow-hidden">
+        {sidebarContent}
+      </aside>
+
+      {/* ── Mobile drawer backdrop ───────────────────────────────── */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* ── Mobile drawer ────────────────────────────────────────── */}
+      <aside
+        className={`fixed top-16 left-0 bottom-0 w-72 z-50 flex flex-col bg-white shadow-xl transition-transform duration-200 md:hidden ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <span className="text-sm font-semibold text-slate-700">分類</span>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          {sidebarContent}
+        </div>
+      </aside>
+
+      {/* ── Main area ────────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-200 shrink-0">
+          {/* Hamburger — mobile only */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            aria-label="開啟分類選單"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">我的筆記</h1>
+            <p className="text-xs text-slate-500">Timeline · 三合一筆記中心</p>
           </div>
-          {/* Subject Switcher */}
-          {subjects.length > 0 && (
-            <SubjectSwitcher
-              subjects={subjects}
-              activeSubjectId={activeSubjectId}
-              onSwitch={setActiveSubjectId}
-              onAddSubject={() => router.push('/onboarding')}
-            />
-          )}
         </div>
 
-        {/* Content */}
+        {/* Loading state */}
         {loadingSubjects ? (
-          <div className="flex items-center justify-center py-24">
+          <div className="flex items-center justify-center flex-1">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : subjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+          <div className="flex flex-col items-center justify-center flex-1 gap-3 text-center px-4">
             <p className="text-slate-500 text-sm">尚未加入任何科目</p>
             <button
               onClick={() => router.push('/onboarding')}
@@ -107,18 +166,46 @@ function NotesPage() {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <IntegratedNotebook
-              nodeId={null}
-              fallbackResourceId={null}
-              nodeLabel={null}
+          <div className="flex-1 overflow-hidden">
+            {/* Mobile active filter chip */}
+            <div className="md:hidden">
+              {(filter.kindFilter || filter.searchQuery.trim()) && (
+                <div className="flex flex-wrap gap-1.5 px-4 py-2 bg-white border-b border-slate-200">
+                  {filter.kindFilter && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                      {filter.kindFilter}
+                      <button type="button" onClick={() => filter.setKindFilter(null)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {filter.searchQuery.trim() && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border bg-slate-50 text-slate-700 border-slate-200">
+                      「{filter.searchQuery}」
+                      <button type="button" onClick={filter.resetFilters}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <NotesTimeline
               subjectId={subjectIdForApi}
+              kindFilter={filter.kindFilter}
+              searchQuery={filter.searchQuery}
+              sortOrder={filter.sortOrder}
+              onSortChange={filter.setSortOrder}
+              onKindFilterChange={(kind: NoteKind | null) => filter.setKindFilter(kind)}
+              onResetFilters={filter.resetFilters}
+              onCountsUpdate={handleCountsUpdate}
               isPro={isPro}
               onUpgradeClick={() => router.push('/account')}
             />
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
