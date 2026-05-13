@@ -1,8 +1,11 @@
 """Knowledge Map API — 知識心智圖導航與 AI 教練。"""
 
+from datetime import datetime, timezone
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
 from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.knowledge_nav_service import KnowledgeNavService
@@ -264,3 +267,44 @@ def submit_answers(
     service = KnowledgeNavService(db)
     result = service.submit_answers(node_id, user_id, body.correct_count, body.total_count)
     return _handle_result(result)
+
+
+# ---------------------------------------------------------------------------
+# PATCH /knowledge-map/scaffolds/{scaffold_id} — 更新 user_response（Feature 50）
+# ---------------------------------------------------------------------------
+
+class ScaffoldUserResponseUpdate(BaseModel):
+    """PATCH scaffold user_response request body。"""
+
+    user_response: str = Field(..., min_length=1, max_length=10000)
+
+
+@router.patch("/scaffolds/{scaffold_id}")
+def patch_scaffold_user_response(
+    scaffold_id: UUID,
+    body: ScaffoldUserResponseUpdate,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """更新 scaffold 的 user_response（使用者練習作答）。
+
+    - 不存在 → 404
+    - 不屬於自己的 resource → 403
+    - user_response 不可為空（Pydantic min_length=1）
+    """
+    from app.models.resource import Resource
+    from app.models.resource_scaffold import ResourceScaffold
+
+    scaffold = db.get(ResourceScaffold, scaffold_id)
+    if not scaffold:
+        raise HTTPException(status_code=404, detail="scaffold 不存在")
+
+    resource = db.get(Resource, scaffold.resource_id)
+    if not resource or resource.user_id != UUID(user_id):
+        raise HTTPException(status_code=403, detail="無權限修改此 scaffold")
+
+    scaffold.user_response = body.user_response.strip()
+    scaffold.responded_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(scaffold)
+    return {"status": "ok", "scaffold_id": str(scaffold_id)}

@@ -17,6 +17,7 @@ from app.schemas.chat_annotation import (
     ChatAnnotationCreate,
     ChatAnnotationListResponse,
     ChatAnnotationResponse,
+    ChatAnnotationUpdate,
 )
 from app.services.chat_annotation_service import ChatAnnotationService
 
@@ -79,6 +80,33 @@ def list_annotations(
     )
     _handle_result(result)
     return {"items": result["items"], "total": result["total"]}
+
+
+@router.patch("/{annotation_id}", response_model=ChatAnnotationResponse)
+def update_annotation(
+    annotation_id: UUID,
+    body: ChatAnnotationUpdate,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """更新自己的 annotation（user_annotation / annotation_type 至少一個）。
+
+    - 不存在 → 404
+    - 他人的 → 403
+    - user_annotation 若提供必須 ≥ 10 字
+    """
+    if body.user_annotation is None and body.annotation_type is None:
+        raise HTTPException(status_code=422, detail="至少提供 user_annotation 或 annotation_type 其中之一")
+
+    svc = ChatAnnotationService(db)
+    result = svc.update_annotation(
+        annotation_id=annotation_id,
+        user_id=UUID(user_id),
+        user_annotation=body.user_annotation,
+        annotation_type=body.annotation_type,
+    )
+    _handle_result(result)
+    return result["annotation"]
 
 
 @router.delete("/{annotation_id}", status_code=204)

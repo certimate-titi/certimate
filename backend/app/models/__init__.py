@@ -69,6 +69,7 @@ from app.models.resource_scaffold import ResourceScaffold, ResourceScaffoldType 
 from app.models.user_email_preferences import UserEmailPreferences, EmailSendLog  # noqa: F401, E402
 from app.models.scaffold_node_link import ScaffoldNodeLink  # noqa: F401, E402
 from app.models.node_mastery_orphan import NodeMasteryOrphan  # noqa: F401, E402
+from app.models.user_note import UserNote  # noqa: F401, E402
 
 __all__ = [
     "Base",
@@ -133,4 +134,5 @@ __all__ = [
     "EmailSendLog",
     "ScaffoldNodeLink",
     "NodeMasteryOrphan",
+    "UserNote",
 ]
