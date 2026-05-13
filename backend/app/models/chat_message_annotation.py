@@ -87,3 +87,10 @@ class ChatMessageAnnotation(Base):
     message = relationship("AiChatMessage", foreign_keys=[message_id], lazy="select")
     user = relationship("User", foreign_keys=[user_id], lazy="select")
     session = relationship("AiChatSession", foreign_keys=[session_id], lazy="select")
+    tags = relationship(
+        "ChatAnnotationTag",
+        foreign_keys="[ChatAnnotationTag.annotation_id]",
+        back_populates="annotation",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )

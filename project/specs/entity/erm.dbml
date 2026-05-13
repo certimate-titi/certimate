@@ -1418,3 +1418,40 @@ Table user_note_tags {
 }
 
 Ref: user_note_tags.note_id > user_notes.id [delete: cascade]
+
+// ============================================================
+// Chat Annotation Tags (Feature 54 — 3 sources hashtag 系統)
+// ============================================================
+
+Table chat_annotation_tags {
+  annotation_id uuid [not null]
+  tag_normalized varchar(64) [not null, note: 'lowercase trimmed for index/dedup']
+  tag_display varchar(80) [not null, note: 'user 原始輸入（first occurrence preserved）']
+
+  indexes {
+    (annotation_id, tag_normalized) [pk]
+    (annotation_id) [name: 'ix_cat_annotation']
+    (tag_normalized) [name: 'ix_cat_tag']
+  }
+}
+
+Ref: chat_annotation_tags.annotation_id > chat_message_annotations.id [delete: cascade]
+
+// ============================================================
+// Scaffold Tags (Feature 54 — 3 sources hashtag 系統)
+// ============================================================
+
+Table scaffold_tags {
+  scaffold_id uuid [not null]
+  user_id uuid [not null, note: '冗餘但便利 cross-user filter（resource_scaffolds 無 user_id）']
+  tag_normalized varchar(64) [not null, note: 'lowercase trimmed for index/dedup']
+  tag_display varchar(80) [not null, note: 'user 原始輸入（first occurrence preserved）']
+
+  indexes {
+    (scaffold_id, user_id, tag_normalized) [pk]
+    (user_id, tag_normalized) [name: 'ix_st_user_tag']
+  }
+}
+
+Ref: scaffold_tags.scaffold_id > resource_scaffolds.id [delete: cascade]
+Ref: scaffold_tags.user_id > users.id [delete: cascade]

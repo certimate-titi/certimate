@@ -10,7 +10,7 @@ from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
 
@@ -115,4 +115,13 @@ class ResourceScaffold(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relationships
+    tags = relationship(
+        "ScaffoldTag",
+        foreign_keys="[ScaffoldTag.scaffold_id]",
+        back_populates="scaffold",
+        cascade="all, delete-orphan",
+        lazy="select",
     )

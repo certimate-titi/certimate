@@ -14,18 +14,62 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.models.ai_chat import AiChatMessage, AiChatSession
+from app.models.chat_annotation_tag import ChatAnnotationTag
 from app.models.chat_message_annotation import ChatMessageAnnotation
 from app.schemas.chat_annotation import VALID_ANNOTATION_TYPES
 from app.services.base import BaseService
+from app.utils.markdown_hashtags import extract_hashtags
 
 MAX_ANNOTATIONS_PER_SESSION = 5
 
 
 class ChatAnnotationService(BaseService):
-    """管理 chat_message_annotations 的 CRUD 操作。"""
+    """管理 chat_message_annotations 的 CRUD 操作（含 hashtag tag 同步）。"""
 
     def __init__(self, db: Session):
         super().__init__(db)
+
+    # ── Private: tag sync ───────────────────────────────────────────
+
+    def _sync_annotation_tags(self, annotation: ChatMessageAnnotation, user_annotation_text: str) -> None:
+        """從 user_annotation 解析 hashtag 並增量同步 chat_annotation_tags。
+
+        增量策略：
+        1. 計算 new_tags set（normalized）
+        2. 刪除不再出現的 tags（old - new）
+        3. 新增新出現的 tags（new - old）
+        4. 已存在的 tags 不修改 tag_display（保留首次輸入）
+        """
+        new_pairs = extract_hashtags(user_annotation_text)
+        new_normalized: set[str] = {n for n, _ in new_pairs}
+
+        # 取得現有 tags
+        existing = (
+            self.db.query(ChatAnnotationTag)
+            .filter(ChatAnnotationTag.annotation_id == annotation.id)
+            .all()
+        )
+        old_normalized: set[str] = {t.tag_normalized for t in existing}
+
+        # 刪除消失的 tags
+        to_delete = old_normalized - new_normalized
+        if to_delete:
+            self.db.query(ChatAnnotationTag).filter(
+                ChatAnnotationTag.annotation_id == annotation.id,
+                ChatAnnotationTag.tag_normalized.in_(to_delete),
+            ).delete(synchronize_session=False)
+
+        # 新增出現的 tags
+        to_add = new_normalized - old_normalized
+        for normalized, display in new_pairs:
+            if normalized in to_add:
+                self.db.add(
+                    ChatAnnotationTag(
+                        annotation_id=annotation.id,
+                        tag_normalized=normalized,
+                        tag_display=display,
+                    )
+                )
 
     # ── Create ──────────────────────────────────────────────────────
 
@@ -107,6 +151,11 @@ class ChatAnnotationService(BaseService):
             annotation_type=annotation_type,
         )
         self.db.add(annotation)
+        self.db.flush()  # 取得 annotation.id 後再同步 tags
+
+        # 解析並同步 hashtag tags
+        self._sync_annotation_tags(annotation, user_annotation)
+
         self.db.commit()
         self.db.refresh(annotation)
         return self.ok({"annotation": annotation})
@@ -179,6 +228,10 @@ class ChatAnnotationService(BaseService):
                     422,
                 )
             annotation.annotation_type = annotation_type
+
+        # 若 user_annotation 有更新，重新同步 hashtag tags
+        if user_annotation is not None:
+            self._sync_annotation_tags(annotation, annotation.user_annotation)
 
         self.db.commit()
         self.db.refresh(annotation)

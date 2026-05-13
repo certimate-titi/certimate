@@ -10,6 +10,54 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_db_with_tenant, get_current_user_id
 from app.services.knowledge_nav_service import KnowledgeNavService
 
+
+def _sync_scaffold_tags(db: Session, scaffold_id: UUID, user_id: UUID, user_response: str) -> None:
+    """從 scaffold user_response 解析 hashtag 並增量同步 scaffold_tags。
+
+    增量策略：
+    1. 計算 new_tags set（normalized）
+    2. 刪除不再出現的 tags（old - new）
+    3. 新增新出現的 tags（new - old）
+    """
+    from app.models.scaffold_tag import ScaffoldTag
+    from app.utils.markdown_hashtags import extract_hashtags
+
+    new_pairs = extract_hashtags(user_response)
+    new_normalized: set[str] = {n for n, _ in new_pairs}
+
+    # 取得現有 tags
+    existing = (
+        db.query(ScaffoldTag)
+        .filter(
+            ScaffoldTag.scaffold_id == scaffold_id,
+            ScaffoldTag.user_id == user_id,
+        )
+        .all()
+    )
+    old_normalized: set[str] = {t.tag_normalized for t in existing}
+
+    # 刪除消失的 tags
+    to_delete = old_normalized - new_normalized
+    if to_delete:
+        db.query(ScaffoldTag).filter(
+            ScaffoldTag.scaffold_id == scaffold_id,
+            ScaffoldTag.user_id == user_id,
+            ScaffoldTag.tag_normalized.in_(to_delete),
+        ).delete(synchronize_session=False)
+
+    # 新增出現的 tags
+    to_add = new_normalized - old_normalized
+    for normalized, display in new_pairs:
+        if normalized in to_add:
+            db.add(
+                ScaffoldTag(
+                    scaffold_id=scaffold_id,
+                    user_id=user_id,
+                    tag_normalized=normalized,
+                    tag_display=display,
+                )
+            )
+
 router = APIRouter(prefix="/knowledge-map")
 
 
@@ -371,6 +419,11 @@ def patch_scaffold_user_response(
 
     scaffold.user_response = body.user_response.strip()
     scaffold.responded_at = datetime.now(timezone.utc)
+    db.flush()  # 確保 scaffold.id 可用
+
+    # 解析 user_response 中的 hashtag 並同步 scaffold_tags
+    _sync_scaffold_tags(db, scaffold_id, UUID(user_id), scaffold.user_response)
+
     db.commit()
     db.refresh(scaffold)
     return {"status": "ok", "scaffold_id": str(scaffold_id)}

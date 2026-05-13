@@ -1560,3 +1560,9 @@ from .obsidian_export.aggregate_given import setup as f53_given  # noqa: F401
 from .obsidian_export.commands import api_calls as f53_commands  # noqa: F401
 from .obsidian_export.aggregate_then import assertions as f53_assertions  # noqa: F401
 
+# Tags 3 sources — Feature 54 (Migrations 098+099)
+from .tags_3sources.aggregate_given import setup as f54_given  # noqa: F401
+from .tags_3sources.commands import api_calls as f54_commands  # noqa: F401
+from .tags_3sources.aggregate_then import assertions as f54_assertions  # noqa: F401
+from .tags_3sources.readmodel_then import response_assertions as f54_readmodel  # noqa: F401
+
