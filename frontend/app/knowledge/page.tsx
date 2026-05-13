@@ -716,6 +716,228 @@ function KnowledgeBasePageInner() {
   const showSubjectSwitcher = subjects.length > 0;
   const containerHeightClass = 'h-[calc(100dvh-64px)]';
 
+  // ── Center column content (shared by desktop Panel and mobile full-width) ──
+  const renderCenterContent = () => (
+    <div className="h-full flex flex-col overflow-hidden bg-white">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-2 md:px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-1 overflow-x-auto">
+        <div className="flex items-center gap-1 md:gap-2 shrink-0">
+          {!isCompactLayout && (
+            <button onClick={() => setShowLeftPanel(!showLeftPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showLeftPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+              {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
+            </button>
+          )}
+          <div className="flex bg-slate-100 rounded-md p-0.5">
+            <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
+            <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
+            {docFullText && <button onClick={() => setCenterView('document')} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-[9px] text-slate-400 ml-2">
+            <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />精熟</span>
+            <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />部分</span>
+            <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />弱</span>
+            <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300" />未測</span>
+          </div>
+          <button
+            onClick={async () => {
+              if (extracting || !activeSubjectId) return;
+              const activeSubject = subjects.find(s => s.id === activeSubjectId);
+              const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+              setExtracting(true);
+              setExtractResult(null);
+              try {
+                const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
+                const created = (res as Record<string, number>).nodes_created || 0;
+                setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                // 重新載入知識圖譜
+                const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
+                setNodes((mapRes.nodes || []) as KnowledgeNode[]);
+                setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                setExtractResult(`❌ 萃取失敗：${msg}`);
+              } finally {
+                setExtracting(false);
+                setTimeout(() => setExtractResult(null), 8000);
+              }
+            }}
+            disabled={extracting || !activeSubjectId}
+            className={`flex items-center gap-1 px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium ml-1 md:ml-2 transition-colors whitespace-nowrap ${
+              extracting
+                ? 'bg-blue-100 text-blue-500 cursor-wait'
+                : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+            title="重新分析：合併考古題與上傳教材，AI 統一萃取知識樹"
+          >
+            <RefreshCw className={`w-3 h-3 ${extracting ? 'animate-spin' : ''}`} />
+            {extracting ? '分析中...' : '重新分析'}
+          </button>
+          {extractResult && (
+            <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
+          )}
+        </div>
+        {!isCompactLayout && (
+          <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+            {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
+          </button>
+        )}
+      </div>
+      {/* Graph / Document */}
+      <div className="flex-1 overflow-hidden">
+        {centerView === 'document' ? (
+          <div ref={docViewRef} className="h-full overflow-y-auto px-4 md:px-8 py-4">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
+            <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700">
+              {/* Item 3: 渲染含章節錨點的段落 */}
+              {(() => {
+                const lines = docFullText.split('\n');
+                // 取得當前文件的章節 headings（若已載入 scaffolds）
+                const activeScaffolds = selectedDocId ? docScaffolds[selectedDocId] : undefined;
+                const headingSet = new Set<string>();
+                if (activeScaffolds) {
+                  for (const s of activeScaffolds) {
+                    if (s.chapter_heading) headingSet.add(s.chapter_heading);
+                  }
+                }
+                return lines.map((line, idx) => {
+                  // 找出對應 chapter_heading 的行（寬鬆 includes 匹配）
+                  let matchedHeading: string | undefined;
+                  for (const h of headingSet) {
+                    if (line.includes(h)) { matchedHeading = h; break; }
+                  }
+                  return (
+                    <p key={idx} className={line.trim() === '' ? 'my-2' : 'my-0.5'}>
+                      {matchedHeading && (
+                        <span
+                          data-chapter-heading={matchedHeading}
+                          className="inline-block w-0 h-0 overflow-hidden"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {line || ' '}
+                    </p>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        ) : !loadingDocs && mindMapNodes.length === 0 ? (
+          /* Layer 3 空態區分 + Spec 03b §空地圖 polish：4 種情境各自精準 CTA */
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center py-12 px-6 max-w-md">
+              {documents.length === 0 ? (
+                // 情境 1：從未上傳資源
+                <>
+                  <div className="text-6xl mb-3">📚</div>
+                  <p className="text-lg text-slate-700 font-bold mb-2">開始你的學習旅程</p>
+                  <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                    上傳第一份學習資源，AI 自動建構知識心智圖、生成題目、追蹤掌握度。
+                  </p>
+                  <Link
+                    href="/knowledge?openUpload=1"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200"
+                  >
+                    📤 上傳第一份資源
+                  </Link>
+                  <div className="mt-4 text-xs text-slate-400">或直接從考古題題庫開始 →</div>
+                </>
+              ) : documents.every(d => d.status === 'FAILED') ? (
+                // 情境 2：全部解析失敗
+                <>
+                  <AlertTriangle className="h-12 w-12 text-rose-400 mx-auto mb-3" />
+                  <p className="text-lg text-rose-600 font-bold mb-2">所有資源解析失敗</p>
+                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                    {Object.values(parseJobFailures).length > 0
+                      ? `常見原因：${Object.values(parseJobFailures)[0].slice(0, 60)}`
+                      : '請檢查資源格式或聯繫管理員'}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`一鍵重新解析所有 ${documents.length} 筆失敗資源？`)) return;
+                      try {
+                        const { resourceLibraryService } = await import('@/lib/api/services');
+                        const res = await resourceLibraryService.batchReparseFailed(activeSubjectId);
+                        alert(`已重新觸發 ${res.count} 筆資源解析`);
+                        location.reload();
+                      } catch (e: unknown) {
+                        const err = e as { message?: string };
+                        alert(`失敗：${err?.message}`);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white rounded-full font-bold text-sm hover:bg-rose-600 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" /> 全部重新解析
+                  </button>
+                  {/* 失敗詳情已顯示於左側資料列表（同頁），不再連結至已廢除的 /account/resource-library */}
+                </>
+              ) : documents.some(d => d.status === 'PROCESSING') ? (
+                // 情境 3：處理中
+                <>
+                  <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-lg text-slate-700 font-bold mb-2">AI 正在解析學習資源</p>
+                  <ul className="text-xs text-slate-500 mb-3 text-left space-y-1 inline-block">
+                    {documents.filter(d => d.status === 'PROCESSING').slice(0, 3).map(d => (
+                      <li key={d.id} className="truncate max-w-[280px]">⚙️ {d.title}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-slate-400 mt-2">
+                    ⏰ 預估約 1-3 分鐘，離開頁面後仍會繼續處理。每 5 秒自動更新。
+                  </p>
+                </>
+              ) : (
+                // 情境 4：資源已就緒但尚未生成知識樹
+                <>
+                  <div className="text-5xl mb-3">🌱</div>
+                  <p className="text-lg text-slate-700 font-bold mb-2">知識樹尚未生成</p>
+                  <p className="text-xs text-slate-500 mb-4">
+                    已有 {documents.length} 份資源，AI 可幫你萃取結構化知識節點。
+                  </p>
+                  <button
+                    onClick={async () => {
+                      if (extracting || !activeSubjectId) return;
+                      const activeSubject = subjects.find(s => s.id === activeSubjectId);
+                      const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
+                      setExtracting(true);
+                      setExtractResult(null);
+                      try {
+                        const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
+                        const created = (res as Record<string, number>).nodes_created || 0;
+                        setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
+                        const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
+                        setNodes((mapRes.nodes || []) as KnowledgeNode[]);
+                        setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
+                      } catch (err) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        setExtractResult(`❌ 萃取失敗：${msg}`);
+                      } finally {
+                        setExtracting(false);
+                      }
+                    }}
+                    disabled={extracting}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
+                    {extracting ? '萃取中...' : '🤖 萃取知識樹'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ) : graphView === 'force' ? (
+          <ForceGraph nodes={graphNodes} onNodeClick={handleNodeClick}
+            selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
+            width={800} height={500} searchQuery={searchQuery} />
+        ) : (
+          <div className="h-full overflow-y-auto p-3">
+            <MindMapTree nodes={mindMapNodes}
+              selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
+              onNodeClick={handleNodeClick} searchQuery={searchQuery} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (authLoading || !isAuthenticated || !onboardingCompleted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -874,6 +1096,13 @@ function KnowledgeBasePageInner() {
               </div>
             );
           })()}
+
+          {/* ── Mobile center (full-width, <1024px, mobileDrawer=null) ── */}
+          {isCompactLayout && (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {renderCenterContent()}
+            </div>
+          )}
 
           {/* ── Desktop / Tablet: PanelGroup (≥1024px enabled, <1024px disabled) ── */}
           {!isCompactLayout && (
@@ -1121,226 +1350,9 @@ function KnowledgeBasePageInner() {
               </PanelResizeHandle>
             )}
 
-            {/* ── Desktop CENTER: 知識圖譜 ── */}
+            {/* ── Desktop CENTER: 知識圖譜（共用 renderCenterContent）── */}
             <Panel id="kp-center" minSize="400px" defaultSize={panelLayout['kp-center']}>
-            <div className="h-full flex flex-col overflow-hidden bg-white">
-              {/* Toolbar */}
-              <div className="flex items-center justify-between px-2 md:px-3 py-1.5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-1 overflow-x-auto">
-                <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                  {!isCompactLayout && (
-                    <button onClick={() => setShowLeftPanel(!showLeftPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showLeftPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                      {showLeftPanel ? '◀ 隱藏資料' : '▶ 資料列表'}
-                    </button>
-                  )}
-                  <div className="flex bg-slate-100 rounded-md p-0.5">
-                    <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
-                    <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
-                    {docFullText && <button onClick={() => setCenterView('document')} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
-                  </div>
-                  <div className="hidden md:flex items-center gap-2 text-[9px] text-slate-400 ml-2">
-                    <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />精熟</span>
-                    <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />部分</span>
-                    <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />弱</span>
-                    <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300" />未測</span>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (extracting || !activeSubjectId) return;
-                      const activeSubject = subjects.find(s => s.id === activeSubjectId);
-                      const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
-                      setExtracting(true);
-                      setExtractResult(null);
-                      try {
-                        const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
-                        const created = (res as Record<string, number>).nodes_created || 0;
-                        setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
-                        // 重新載入知識圖譜
-                        const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
-                        setNodes((mapRes.nodes || []) as KnowledgeNode[]);
-                        setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
-                      } catch (err) {
-                        const msg = err instanceof Error ? err.message : String(err);
-                        setExtractResult(`❌ 萃取失敗：${msg}`);
-                      } finally {
-                        setExtracting(false);
-                        setTimeout(() => setExtractResult(null), 8000);
-                      }
-                    }}
-                    disabled={extracting || !activeSubjectId}
-                    className={`flex items-center gap-1 px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium ml-1 md:ml-2 transition-colors whitespace-nowrap ${
-                      extracting
-                        ? 'bg-blue-100 text-blue-500 cursor-wait'
-                        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
-                    }`}
-                    title="重新分析：合併考古題與上傳教材，AI 統一萃取知識樹"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${extracting ? 'animate-spin' : ''}`} />
-                    {extracting ? '分析中...' : '重新分析'}
-                  </button>
-                  {extractResult && (
-                    <span className="text-[10px] ml-1 text-blue-600">{extractResult}</span>
-                  )}
-                </div>
-                {!isCompactLayout && (
-                  <button onClick={() => setShowRightPanel(!showRightPanel)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors whitespace-nowrap ${showRightPanel ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                    {showRightPanel ? '說明 & AI ▶' : '◀ 說明 & AI'}
-                  </button>
-                )}
-              </div>
-              {/* Graph / Document */}
-              <div className="flex-1 overflow-hidden">
-                {centerView === 'document' ? (
-                  <div ref={docViewRef} className="h-full overflow-y-auto px-4 md:px-8 py-4">
-                    <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700">
-                      {/* Item 3: 渲染含章節錨點的段落 */}
-                      {(() => {
-                        const lines = docFullText.split('\n');
-                        // 取得當前文件的章節 headings（若已載入 scaffolds）
-                        const activeScaffolds = selectedDocId ? docScaffolds[selectedDocId] : undefined;
-                        const headingSet = new Set<string>();
-                        if (activeScaffolds) {
-                          for (const s of activeScaffolds) {
-                            if (s.chapter_heading) headingSet.add(s.chapter_heading);
-                          }
-                        }
-                        return lines.map((line, idx) => {
-                          // 找出對應 chapter_heading 的行（寬鬆 includes 匹配）
-                          let matchedHeading: string | undefined;
-                          for (const h of headingSet) {
-                            if (line.includes(h)) { matchedHeading = h; break; }
-                          }
-                          return (
-                            <p key={idx} className={line.trim() === '' ? 'my-2' : 'my-0.5'}>
-                              {matchedHeading && (
-                                <span
-                                  data-chapter-heading={matchedHeading}
-                                  className="inline-block w-0 h-0 overflow-hidden"
-                                  aria-hidden="true"
-                                />
-                              )}
-                              {line || ' '}
-                            </p>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </div>
-                ) : !loadingDocs && mindMapNodes.length === 0 ? (
-                  /* Layer 3 空態區分 + Spec 03b §空地圖 polish：4 種情境各自精準 CTA */
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center py-12 px-6 max-w-md">
-                      {documents.length === 0 ? (
-                        // 情境 1：從未上傳資源
-                        <>
-                          <div className="text-6xl mb-3">📚</div>
-                          <p className="text-lg text-slate-700 font-bold mb-2">開始你的學習旅程</p>
-                          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                            上傳第一份學習資源，AI 自動建構知識心智圖、生成題目、追蹤掌握度。
-                          </p>
-                          <Link
-                            href="/knowledge?openUpload=1"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-200"
-                          >
-                            📤 上傳第一份資源
-                          </Link>
-                          <div className="mt-4 text-xs text-slate-400">或直接從考古題題庫開始 →</div>
-                        </>
-                      ) : documents.every(d => d.status === 'FAILED') ? (
-                        // 情境 2：全部解析失敗
-                        <>
-                          <AlertTriangle className="h-12 w-12 text-rose-400 mx-auto mb-3" />
-                          <p className="text-lg text-rose-600 font-bold mb-2">所有資源解析失敗</p>
-                          <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                            {Object.values(parseJobFailures).length > 0
-                              ? `常見原因：${Object.values(parseJobFailures)[0].slice(0, 60)}`
-                              : '請檢查資源格式或聯繫管理員'}
-                          </p>
-                          <button
-                            onClick={async () => {
-                              if (!confirm(`一鍵重新解析所有 ${documents.length} 筆失敗資源？`)) return;
-                              try {
-                                const { resourceLibraryService } = await import('@/lib/api/services');
-                                const res = await resourceLibraryService.batchReparseFailed(activeSubjectId);
-                                alert(`已重新觸發 ${res.count} 筆資源解析`);
-                                location.reload();
-                              } catch (e: unknown) {
-                                const err = e as { message?: string };
-                                alert(`失敗：${err?.message}`);
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white rounded-full font-bold text-sm hover:bg-rose-600 transition-colors"
-                          >
-                            <RefreshCw className="w-4 h-4" /> 全部重新解析
-                          </button>
-                          {/* 失敗詳情已顯示於左側資料列表（同頁），不再連結至已廢除的 /account/resource-library */}
-                        </>
-                      ) : documents.some(d => d.status === 'PROCESSING') ? (
-                        // 情境 3：處理中
-                        <>
-                          <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                          <p className="text-lg text-slate-700 font-bold mb-2">AI 正在解析學習資源</p>
-                          <ul className="text-xs text-slate-500 mb-3 text-left space-y-1 inline-block">
-                            {documents.filter(d => d.status === 'PROCESSING').slice(0, 3).map(d => (
-                              <li key={d.id} className="truncate max-w-[280px]">⚙️ {d.title}</li>
-                            ))}
-                          </ul>
-                          <p className="text-xs text-slate-400 mt-2">
-                            ⏰ 預估約 1-3 分鐘，離開頁面後仍會繼續處理。每 5 秒自動更新。
-                          </p>
-                        </>
-                      ) : (
-                        // 情境 4：資源已就緒但尚未生成知識樹
-                        <>
-                          <div className="text-5xl mb-3">🌱</div>
-                          <p className="text-lg text-slate-700 font-bold mb-2">知識樹尚未生成</p>
-                          <p className="text-xs text-slate-500 mb-4">
-                            已有 {documents.length} 份資源，AI 可幫你萃取結構化知識節點。
-                          </p>
-                          <button
-                            onClick={async () => {
-                              if (extracting || !activeSubjectId) return;
-                              const activeSubject = subjects.find(s => s.id === activeSubjectId);
-                              const targetSubjectId = activeSubject?.subjectId || activeSubjectId;
-                              setExtracting(true);
-                              setExtractResult(null);
-                              try {
-                                const res = await knowledgeService.extractKnowledgeTree(targetSubjectId);
-                                const created = (res as Record<string, number>).nodes_created || 0;
-                                setExtractResult(`✅ 萃取完成：${created} 個知識節點`);
-                                const mapRes = await knowledgeService.getMap(targetSubjectId) as Record<string, unknown>;
-                                setNodes((mapRes.nodes || []) as KnowledgeNode[]);
-                                setMindMapNodes((mapRes.nodes || []) as unknown as MindMapNode[]);
-                              } catch (err) {
-                                const msg = err instanceof Error ? err.message : String(err);
-                                setExtractResult(`❌ 萃取失敗：${msg}`);
-                              } finally {
-                                setExtracting(false);
-                              }
-                            }}
-                            disabled={extracting}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                          >
-                            <RefreshCw className={`w-4 h-4 ${extracting ? 'animate-spin' : ''}`} />
-                            {extracting ? '萃取中...' : '🤖 萃取知識樹'}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : graphView === 'force' ? (
-                  <ForceGraph nodes={graphNodes} onNodeClick={handleNodeClick}
-                    selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
-                    width={800} height={500} searchQuery={searchQuery} />
-                ) : (
-                  <div className="h-full overflow-y-auto p-3">
-                    <MindMapTree nodes={mindMapNodes}
-                      selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
-                      onNodeClick={handleNodeClick} searchQuery={searchQuery} />
-                  </div>
-                )}
-              </div>
-            </div>
+              {renderCenterContent()}
             </Panel>
 
             {/* Drag handle: center ↔ right */}
