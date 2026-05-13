@@ -2578,3 +2578,45 @@ export const userNoteService = {
     return apiClient.delete<{ deleted: number }>('/user-notes/all');
   },
 };
+
+// ──────────────────────────────────────────────────────────────────────────
+// GET /user-tags/aggregate  &  GET /user-tags/items
+// 3 sources 聚合標籤 API
+// ──────────────────────────────────────────────────────────────────────────
+
+import type {
+  AggregatedTagsResponse,
+  TaggedItemsResponse,
+} from '@/types/api';
+
+export const userTagService = {
+  /**
+   * 聚合 3 sources（user_notes / chat_annotations / scaffolds）的標籤統計。
+   *
+   * @param params - subject_id / limit / offset
+   * @returns items 陣列（normalized / display / count / sources breakdown）+ total
+   */
+  async aggregate(params: { subject_id?: string; limit?: number; offset?: number } = {}): Promise<AggregatedTagsResponse> {
+    const query = new URLSearchParams();
+    if (params.subject_id) query.set('subject_id', params.subject_id);
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.offset !== undefined) query.set('offset', String(params.offset));
+    const qs = query.toString();
+    return apiClient.get<AggregatedTagsResponse>(`/user-tags/aggregate${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * 取得特定 tag 的 3 sources 混合 items。
+   *
+   * @param params - tag（必填）/ subject_id / limit / offset
+   * @returns items 陣列（kind 區分 note/annotation/scaffold）+ total
+   */
+  async items(params: { tag: string; subject_id?: string; limit?: number; offset?: number }): Promise<TaggedItemsResponse> {
+    const query = new URLSearchParams();
+    query.set('tag', params.tag);
+    if (params.subject_id) query.set('subject_id', params.subject_id);
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.offset !== undefined) query.set('offset', String(params.offset));
+    return apiClient.get<TaggedItemsResponse>(`/user-tags/items?${query.toString()}`);
+  },
+};

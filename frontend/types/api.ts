@@ -726,6 +726,39 @@ export interface UserTagListResponse {
   total: number;
 }
 
+// ===========================
+// Aggregated Tags API (3 sources)
+// ===========================
+
+export interface AggregatedTag {
+  normalized: string;
+  display: string;
+  count: number;
+  sources: { note: number; annotation: number; scaffold: number };
+}
+
+export interface AggregatedTagsResponse {
+  items: AggregatedTag[];
+  total: number;
+}
+
+/** 單一 tagged item（3 sources 混合），kind 區分來源 */
+export interface TaggedItem {
+  id: string;
+  kind: 'note' | 'annotation' | 'scaffold';
+  subject_id: string | null;
+  content: string;
+  title?: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface TaggedItemsResponse {
+  items: TaggedItem[];
+  total: number;
+}
+
 export interface ChatAnnotationUpdate {
   user_annotation?: string;
   annotation_type?: AnnotationType;
