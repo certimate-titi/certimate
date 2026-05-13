@@ -24,7 +24,6 @@ import { useIsEmbedded } from '@/lib/embed-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
 import MathContent from '@/components/MathContent';
 import MindMapTree, { type MindMapNode } from '@/components/MindMapTree';
-import ForceGraph, { type GraphNode } from '@/components/ForceGraph';
 import NodeDetailPanel, { type NodeDetailTab } from '@/components/NodeDetailPanel';
 import ScaffoldMaterial from '@/components/ScaffoldMaterial';
 import IntegratedNotebook from '@/components/IntegratedNotebook';
@@ -92,7 +91,6 @@ function KnowledgeBasePageInner() {
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<string | null>(null);
-  const [graphView, setGraphView] = useState<'tree' | 'force'>('force');
   const [centerView, setCenterView] = useState<'graph' | 'document'>('graph');
   const [parseJobFailures, setParseJobFailures] = useState<Record<string, string>>({});
   const [docFullText, setDocFullText] = useState<string>('');
@@ -209,28 +207,6 @@ function KnowledgeBasePageInner() {
     void slug; // suppress lint
     setChapterScrollTarget(null);
   }, [chapterScrollTarget, centerView]);
-
-  // V3: 轉換 MindMapNode[] → GraphNode[] for ForceGraph
-  const graphNodes: GraphNode[] = (() => {
-    const flat: GraphNode[] = [];
-    const flatten = (nodes: MindMapNode[]) => {
-      for (const n of nodes) {
-        flat.push({
-          id: n.id,
-          name: n.name,
-          depth: n.depth,
-          progress: n.mastery_rate || 0,
-          color: n.mastery_color || 'gray',
-          parentId: n.parent_id,
-          status: n.status || 'UNSEEN',
-          availableQuestions: 0,
-        });
-        if (n.children) flatten(n.children);
-      }
-    };
-    flatten(mindMapNodes);
-    return flat;
-  })();
 
   // Load subjects + guard
   useEffect(() => {
@@ -728,8 +704,7 @@ function KnowledgeBasePageInner() {
             </button>
           )}
           <div className="flex bg-slate-100 rounded-md p-0.5">
-            <button onClick={() => { setGraphView('force'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'force' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌐 圖譜</button>
-            <button onClick={() => { setGraphView('tree'); setCenterView('graph'); }} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' && graphView === 'tree' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📋 列表</button>
+            <button onClick={() => setCenterView('graph')} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'graph' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>🌳 知識樹</button>
             {docFullText && <button onClick={() => setCenterView('document')} className={`px-1.5 md:px-2 py-0.5 text-[10px] rounded font-medium whitespace-nowrap ${centerView === 'document' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400'}`}>📄 文件</button>}
           </div>
           <div className="hidden md:flex items-center gap-2 text-[9px] text-slate-400 ml-2">
@@ -923,10 +898,6 @@ function KnowledgeBasePageInner() {
               )}
             </div>
           </div>
-        ) : graphView === 'force' ? (
-          <ForceGraph nodes={graphNodes} onNodeClick={handleNodeClick}
-            selectedNodeId={selectedNodeDetail ? (selectedNodeDetail as unknown as Record<string, unknown>).node_id as string || selectedNodeDetail?.node?.id || null : null}
-            width={800} height={500} searchQuery={searchQuery} />
         ) : (
           <div className="h-full overflow-y-auto p-3">
             <MindMapTree nodes={mindMapNodes}
