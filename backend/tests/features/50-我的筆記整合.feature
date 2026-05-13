@@ -115,3 +115,20 @@ Feature: 我的筆記整合後端契約
       And 該資源有一個 scaffold id 存於 memo["scaffold_id"]
       When bob PATCH /api/v1/knowledge-map/scaffolds/<scaffold_id> 含 user_response "試圖修改他人鷹架"
       Then response status 為 403
+
+  @backend
+  Rule: 科目層級鷹架列表 (GET /api/v1/knowledge-map/subjects/{id}/scaffolds)
+
+    Scenario: alice 在 2 個資源各寫 user_response，subject-level API 跨 resource 合併回傳
+      Given alice 在科目下有 resource1 寫了 1 筆 user_response、resource2 寫了 2 筆 user_response
+      When alice GET /api/v1/knowledge-map/subjects/<subject_id>/scaffolds?user_response_only=true
+      Then response status 為 200
+      And subject scaffold response 含 total=3 且 items 長度為 3
+
+    Scenario: FREE 用戶無法讀科目層級鷹架 → 403
+      When bob GET /api/v1/knowledge-map/subjects/<subject_id>/scaffolds?user_response_only=true
+      Then response status 為 403
+
+    Scenario: 不存在的 subject_id → 404
+      When alice GET /api/v1/knowledge-map/subjects/<nonexistent_subject_id>/scaffolds
+      Then response status 為 404

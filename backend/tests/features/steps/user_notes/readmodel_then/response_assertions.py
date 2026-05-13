@@ -77,6 +77,15 @@ def step_response_user_annotation_equals(context, expected):
     assert actual == expected, f"期望 user_annotation='{expected}'，但得到 '{actual}'"
 
 
+@then('subject scaffold response 含 total={expected_total:d} 且 items 長度為 {expected_len:d}')
+def step_subject_scaffold_response_total_and_len(context, expected_total, expected_len):
+    data = context.memo.get("subject_scaffolds_response") or context.last_response.json()
+    total = data.get("total")
+    items = data.get("items", [])
+    assert total == expected_total, f"期望 total={expected_total}，但得到 {total}"
+    assert len(items) == expected_len, f"期望 items 長度={expected_len}，但得到 {len(items)}"
+
+
 @then('DB 中 scaffold 的 user_response 已更新')
 def step_db_scaffold_user_response_updated(context):
     from uuid import UUID
