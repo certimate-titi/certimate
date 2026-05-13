@@ -9,10 +9,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles, FileText, ArrowRight } from 'lucide-react';
+import { User, CreditCard, Shield, Settings, Zap, CheckCircle2, Award, Download, Trash2, Flame, Moon, Sun, AlertTriangle, X, BookOpen, Eye, EyeOff, Pencil, Sparkles, FileText, ArrowRight, RotateCcw } from 'lucide-react';
 import type { LearningStyle } from '@/types';
 import { useAuth } from '@/lib/auth-context';
-import { accountService, subscriptionService, subjectService } from '@/lib/api/services';
+import { accountService, subscriptionService, subjectService, userNoteService, chatAnnotationService, knowledgeService } from '@/lib/api/services';
 import { apiClient } from '@/lib/api/client';
 import type { GetUserUsageResponse, GetAchievementsResponse, GetBillingHistoryResponse } from '@/types';
 import AchievementGrid from '@/components/AchievementGrid';
@@ -40,6 +40,10 @@ export default function AccountPage() {
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [resetModalType, setResetModalType] = useState<'user_notes' | 'chat_annotations' | 'scaffold_responses' | null>(null);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetToast, setResetToast] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -783,6 +787,39 @@ export default function AccountPage() {
                     <Download className="h-4 w-4" /> 匯出
                   </button>
                 </div>
+                <div className="border-t border-amber-100 mt-4 pt-4 space-y-3">
+                  {[
+                    {
+                      type: 'user_notes' as const,
+                      title: '重置自由筆記',
+                      desc: '清空你寫的所有自由筆記（user_notes），此操作無法復原',
+                    },
+                    {
+                      type: 'chat_annotations' as const,
+                      title: '重置 AI 對話標記',
+                      desc: '清空所有 AI 對話 highlight 評語，此操作無法復原',
+                    },
+                    {
+                      type: 'scaffold_responses' as const,
+                      title: '重置鷹架深讀回答',
+                      desc: '將所有鷹架深讀的回答清空（鷹架本身保留），此操作無法復原',
+                    },
+                  ].map(card => (
+                    <div key={card.type} className="flex items-center justify-between p-4 bg-white rounded-xl border border-amber-200">
+                      <div>
+                        <p className="text-sm font-medium text-amber-700">{card.title}</p>
+                        <p className="text-xs text-slate-500">{card.desc}</p>
+                      </div>
+                      <button
+                        onClick={() => { setResetModalType(card.type); setResetConfirmText(''); }}
+                        className="px-3 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors flex items-center gap-2 shrink-0 ml-4"
+                      >
+                        <RotateCcw className="h-4 w-4" /> 重置
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="border-t border-rose-100 mt-4 pt-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-rose-700">刪除帳號</p>
@@ -958,6 +995,95 @@ export default function AccountPage() {
           )}
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {resetModalType !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <RotateCcw className="h-6 w-6 text-amber-600" />
+                </div>
+                <h2 className="text-xl font-bold text-amber-700">
+                  {resetModalType === 'user_notes' && '重置自由筆記'}
+                  {resetModalType === 'chat_annotations' && '重置 AI 對話標記'}
+                  {resetModalType === 'scaffold_responses' && '重置鷹架深讀回答'}
+                </h2>
+              </div>
+              <button onClick={() => { setResetModalType(null); setResetConfirmText(''); }} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4 mb-6">
+              <p className="text-sm text-slate-700">
+                {resetModalType === 'user_notes' && '此操作將清空你寫的所有自由筆記，'}
+                {resetModalType === 'chat_annotations' && '此操作將清空所有 AI 對話 highlight 評語，'}
+                {resetModalType === 'scaffold_responses' && '此操作將清空所有鷹架深讀回答（鷹架本身保留），'}
+                <strong className="text-amber-700">無法復原</strong>。
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  請輸入 <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-600 font-mono text-xs">我確認</code> 以繼續
+                </label>
+                <input
+                  type="text"
+                  value={resetConfirmText}
+                  onChange={e => setResetConfirmText(e.target.value)}
+                  placeholder="輸入「我確認」"
+                  className="w-full rounded-lg border border-amber-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setResetModalType(null); setResetConfirmText(''); }}
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors"
+              >
+                取消
+              </button>
+              <button
+                disabled={resetConfirmText !== '我確認' || resetLoading}
+                onClick={async () => {
+                  if (!resetModalType) return;
+                  setResetLoading(true);
+                  try {
+                    let count = 0;
+                    if (resetModalType === 'user_notes') {
+                      const res = await userNoteService.resetAll();
+                      count = res.deleted;
+                    } else if (resetModalType === 'chat_annotations') {
+                      const res = await chatAnnotationService.resetAll();
+                      count = res.deleted;
+                    } else if (resetModalType === 'scaffold_responses') {
+                      const res = await knowledgeService.resetAllScaffoldResponses();
+                      count = res.cleared;
+                    }
+                    setResetModalType(null);
+                    setResetConfirmText('');
+                    setResetToast(`已重置 ${count} 筆`);
+                    setTimeout(() => setResetToast(null), 4000);
+                  } catch {
+                    alert('重置失敗，請稍後再試');
+                  } finally {
+                    setResetLoading(false);
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" /> 確認重置
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Toast */}
+      {resetToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-lg text-sm font-medium flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" /> {resetToast}
+        </div>
+      )}
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
