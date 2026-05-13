@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Edit2,
   NotebookPen,
+  Plus,
   RotateCcw,
   Sparkles,
   Trash2,
@@ -61,6 +62,8 @@ type TimelineItem = NoteItem | AnnotationItem | ScaffoldItem;
 export interface NotesTimelineProps {
   /** UserSubject.subjectId（後端 UUID），用於 API 查詢 */
   subjectId: string | null;
+  /** 遞增此值可強制重新 fetch（新增筆記後使用） */
+  refreshSignal?: number;
   kindFilter: NoteKind | null;
   searchQuery: string;
   sortOrder: SortOrder;
@@ -75,6 +78,8 @@ export interface NotesTimelineProps {
   activeTag?: string | null;
   /** tag filter 變更 callback */
   onTagFilterChange?: (tag: string | null) => void;
+  /** 點擊「+ 新增筆記」按鈕時觸發 */
+  onCreateRequest?: () => void;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -451,6 +456,8 @@ export default function NotesTimeline({
   onUpgradeClick,
   activeTag = null,
   onTagFilterChange,
+  onCreateRequest,
+  refreshSignal = 0,
 }: NotesTimelineProps) {
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -468,6 +475,7 @@ export default function NotesTimeline({
       setItems([]);
       return;
     }
+
     setLoading(true);
     setError(null);
 
@@ -534,7 +542,8 @@ export default function NotesTimeline({
     } finally {
       setLoading(false);
     }
-  }, [subjectId]); // onCountsUpdate 透過 ref 存取，不列入 dep 以免 loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectId, refreshSignal]); // onCountsUpdate 透過 ref 存取，不列入 dep 以免 loop
 
   useEffect(() => {
     fetchData();
@@ -765,17 +774,31 @@ export default function NotesTimeline({
           <button
             type="button"
             onClick={() => { onResetFilters(); onTagFilterChange?.(null); }}
-            className="ml-auto inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200"
+            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200"
           >
             <RotateCcw className="h-3 w-3" />
             重置
           </button>
         )}
 
+        {/* Spacer */}
+        <div className="flex-1" />
+
         {/* Item count */}
-        <span className="text-xs text-slate-400 ml-auto">
+        <span className="text-xs text-slate-400">
           {sorted.length} 筆
         </span>
+
+        {/* Create button */}
+        {onCreateRequest && (
+          <button
+            type="button"
+            onClick={onCreateRequest}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-semibold hover:bg-emerald-600 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" /> 新增筆記
+          </button>
+        )}
       </div>
 
       {/* Timeline list */}

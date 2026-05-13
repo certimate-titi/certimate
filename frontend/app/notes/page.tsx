@@ -6,11 +6,12 @@
  */
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
-import { subjectService } from '@/lib/api/services';
+import { Check, Menu, Plus, X } from 'lucide-react';
+import { subjectService, userNoteService } from '@/lib/api/services';
 import type { UserSubject } from '@/types';
+import type { UserNote } from '@/types/api';
 import { useAuth } from '@/lib/auth-context';
 import NotesClassifyTree from '@/components/NotesClassifyTree';
 import NotesTimeline from '@/components/NotesTimeline';
@@ -42,6 +43,15 @@ function NotesPage() {
   const [kindCounts, setKindCounts] = useState<Record<string, { note: number; annotation: number; scaffold: number }>>({});
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [notesView, setNotesView] = useState<'timeline' | 'graph'>('timeline');
+
+  // ── New Note Form state ───────────────────────────────────────────────────
+  const [creating, setCreating] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+  const [createSaving, setCreateSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [refreshSignal, setRefreshSignal] = useState(0);
+  const newContentRef = useRef<HTMLTextAreaElement>(null);
 
   // Auth guard
   useEffect(() => {
@@ -81,6 +91,46 @@ function NotesPage() {
       return { ...prev, [key]: counts };
     });
   }, [filter.activeUserSubjectId]);
+
+  function handleOpenCreate() {
+    setNewTitle('');
+    setNewContent('');
+    setCreateError(null);
+    setCreating(true);
+    // 等 DOM 渲染後 focus textarea
+    setTimeout(() => newContentRef.current?.focus(), 50);
+  }
+
+  async function handleSaveNewNote() {
+    if (!newContent.trim()) return;
+    // subject_id：優先 active，否則第一個 enrolled
+    const targetSubjectId =
+      subjectIdForApi ??
+      (subjects.length > 0 ? subjects[0].subjectId : null);
+    if (!targetSubjectId) {
+      setCreateError('請先選擇科目');
+      return;
+    }
+    setCreateSaving(true);
+    setCreateError(null);
+    try {
+      await userNoteService.create({
+        subject_id: targetSubjectId,
+        title: newTitle.trim() || null,
+        content: newContent.trim(),
+      });
+      setCreating(false);
+      setNewTitle('');
+      setNewContent('');
+      // 通知 NotesTimeline 重新 fetch
+      setRefreshSignal((s) => s + 1);
+    } catch (e) {
+      const err = e as { message?: string };
+      setCreateError(err.message || '儲存失敗，請稍後再試');
+    } finally {
+      setCreateSaving(false);
+    }
+  }
 
   if (authLoading) {
     return (
@@ -244,7 +294,63 @@ function NotesPage() {
               )}
             </div>
 
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Inline New Note Form */}
+              {creating && notesView === 'timeline' && (
+                <div className="mx-4 mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-sm shrink-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Plus className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-semibold text-emerald-700">新增自由筆記</span>
+                    <button
+                      type="button"
+                      onClick={() => setCreating(false)}
+                      className="ml-auto p-1 rounded-lg hover:bg-emerald-100 text-emerald-500 transition-colors"
+                      aria-label="關閉"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="標題（選填）"
+                      className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-300 bg-white"
+                    />
+                    <textarea
+                      ref={newContentRef}
+                      value={newContent}
+                      onChange={(e) => setNewContent(e.target.value)}
+                      rows={4}
+                      placeholder="筆記內容（必填）"
+                      className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-300 resize-none bg-white"
+                    />
+                    {createError && (
+                      <p className="text-xs text-rose-500">{createError}</p>
+                    )}
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCreating(false)}
+                        className="text-xs px-3 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!newContent.trim() || createSaving}
+                        onClick={handleSaveNewNote}
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                      >
+                        <Check className="h-3 w-3" />
+                        {createSaving ? '儲存中...' : '儲存筆記'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {notesView === 'timeline' ? (
                 <NotesTimeline
                   subjectId={subjectIdForApi}
@@ -259,6 +365,8 @@ function NotesPage() {
                   onUpgradeClick={() => router.push('/account')}
                   activeTag={activeTag}
                   onTagFilterChange={setActiveTag}
+                  onCreateRequest={handleOpenCreate}
+                  refreshSignal={refreshSignal}
                 />
               ) : (
                 <NotesTagGraph
