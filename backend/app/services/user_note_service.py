@@ -24,8 +24,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.models.chat_annotation_tag import ChatAnnotationTag
+from app.models.chat_message_annotation import ChatMessageAnnotation
 from app.models.knowledge_node import KnowledgeNode
 from app.models.learning_journey import LearningJourney
+from app.models.resource import Resource
+from app.models.resource_scaffold import ResourceScaffold
+from app.models.scaffold_tag import ScaffoldTag
 from app.models.subject import Subject
 from app.models.user_note import UserNote
 from app.models.user_note_tag import UserNoteTag
@@ -338,14 +343,16 @@ class UserNoteService(BaseService):
     # ── Obsidian Export ─────────────────────────────────────────────
 
     def export_obsidian_zip(self, *, user_id: UUID, force: bool = False) -> dict:
-        """將 user 的所有 notes 打包成 Obsidian-compatible ZIP bytes。
+        """將 user 的所有 notes + chat annotations + scaffold responses 打包成 Obsidian-compatible ZIP bytes。
 
         B2 限制：只有考後 30 天才能匯出（任一科目的 learning_journey.exam_date + 30 days < now）。
         若 user 還在備考期（或尚無 exam_date）且 force=False → 403。
 
         ZIP 結構：
-        - <note_title_or_id>.md     每筆 note 一個 .md 檔，含 YAML frontmatter
-        - index.md                   所有 tag + 連結到 note 的 Obsidian-friendly 索引
+        - note-<title_or_id>.md      每筆 user note（frontmatter: source: note）
+        - annotation-<id>.md         每筆 chat annotation（frontmatter: source: annotation）
+        - scaffold-<id>.md           每筆 scaffold user_response（frontmatter: source: scaffold）
+        - index.md                   整合 3 sources 的 tag 索引（含 count breakdown）
 
         Args:
             user_id: 匯出者 UUID
@@ -359,7 +366,7 @@ class UserNoteService(BaseService):
             if not allowed:
                 return self.error("考後 30 天才能匯出避免影響當下複習", 403)
 
-        # 查詢 user 所有 notes（含 subject 和 tags eager load）
+        # ── Source 1: user_notes ────────────────────────────────────
         notes = (
             self.db.query(UserNote)
             .filter(UserNote.user_id == user_id)
@@ -367,34 +374,89 @@ class UserNoteService(BaseService):
             .all()
         )
 
-        # 預先載入 subject name（batch query 避免 N+1）
-        subject_ids = list({n.subject_id for n in notes})
-        subjects_map: dict[UUID, Subject] = {}
-        if subject_ids:
-            subjects = self.db.query(Subject).filter(Subject.id.in_(subject_ids)).all()
-            subjects_map = {s.id: s for s in subjects}
-
-        # 預先載入 tags
+        # 預先載入 note tags
         note_ids = [n.id for n in notes]
         tags_by_note: dict[UUID, list[UserNoteTag]] = defaultdict(list)
         if note_ids:
-            tags = (
+            note_tag_rows = (
                 self.db.query(UserNoteTag)
                 .filter(UserNoteTag.note_id.in_(note_ids))
                 .all()
             )
-            for tag in tags:
+            for tag in note_tag_rows:
                 tags_by_note[tag.note_id].append(tag)
 
-        # 構建 ZIP
+        # ── Source 2: chat_annotations ──────────────────────────────
+        annotations = (
+            self.db.query(ChatMessageAnnotation)
+            .filter(ChatMessageAnnotation.user_id == user_id)
+            .order_by(ChatMessageAnnotation.created_at.asc())
+            .all()
+        )
+
+        annotation_ids = [a.id for a in annotations]
+        tags_by_annotation: dict[UUID, list[ChatAnnotationTag]] = defaultdict(list)
+        if annotation_ids:
+            ann_tag_rows = (
+                self.db.query(ChatAnnotationTag)
+                .filter(ChatAnnotationTag.annotation_id.in_(annotation_ids))
+                .all()
+            )
+            for tag in ann_tag_rows:
+                tags_by_annotation[tag.annotation_id].append(tag)
+
+        # ── Source 3: scaffold user_responses ───────────────────────
+        scaffold_tag_rows = (
+            self.db.query(ScaffoldTag)
+            .filter(ScaffoldTag.user_id == user_id)
+            .all()
+        )
+        scaffold_ids_with_tags = list({st.scaffold_id for st in scaffold_tag_rows})
+
+        scaffolds: list[ResourceScaffold] = []
+        if scaffold_ids_with_tags:
+            scaffolds = (
+                self.db.query(ResourceScaffold)
+                .filter(
+                    ResourceScaffold.id.in_(scaffold_ids_with_tags),
+                    ResourceScaffold.user_response.isnot(None),
+                )
+                .order_by(ResourceScaffold.created_at.asc())
+                .all()
+            )
+
+        tags_by_scaffold: dict[UUID, list[ScaffoldTag]] = defaultdict(list)
+        for st in scaffold_tag_rows:
+            tags_by_scaffold[st.scaffold_id].append(st)
+
+        # 取得 scaffold 對應 resource 的 subject_id
+        resource_ids = list({s.resource_id for s in scaffolds if s.resource_id})
+        resources_map: dict[UUID, Resource] = {}
+        if resource_ids:
+            resources = self.db.query(Resource).filter(Resource.id.in_(resource_ids)).all()
+            resources_map = {r.id: r for r in resources}
+
+        # 收集所有需要查 subject 的 id（notes + resources）
+        subject_ids_all: set[UUID] = {n.subject_id for n in notes}
+        for r in resources_map.values():
+            if r.subject_id:
+                subject_ids_all.add(r.subject_id)
+
+        subjects_map: dict[UUID, Subject] = {}
+        if subject_ids_all:
+            subjects = self.db.query(Subject).filter(Subject.id.in_(subject_ids_all)).all()
+            subjects_map = {s.id: s for s in subjects}
+
+        # ── 構建 ZIP ──────────────────────────────────────────────────
         buf = io.BytesIO()
-        # tag → [{filename, title}] 用於 index.md
+        # tag_display → [{filename, title, source}] 用於 index.md
         tag_index: dict[str, list[dict]] = defaultdict(list)
         filenames_used: dict[str, int] = {}
 
         with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            # Source 1: notes（檔名前綴 note-）
             for note in notes:
-                filename = self._safe_filename(note, filenames_used)
+                filename = "note-" + self._safe_filename(note, filenames_used)
                 subject = subjects_map.get(note.subject_id)
                 note_tags = tags_by_note.get(note.id, [])
 
@@ -404,10 +466,53 @@ class UserNoteService(BaseService):
                 display_title = note.title or str(note.id)
                 for tag in note_tags:
                     tag_index[tag.tag_display].append(
-                        {"filename": filename, "title": display_title}
+                        {"filename": filename, "title": display_title, "source": "note"}
                     )
 
-            # 寫入 index.md
+            # Source 2: chat annotations（檔名前綴 annotation-）
+            for annotation in annotations:
+                ann_id_str = str(annotation.id)
+                filename = f"annotation-{ann_id_str}.md"
+                ann_tags = tags_by_annotation.get(annotation.id, [])
+
+                md_content = self._build_annotation_md(annotation, ann_tags)
+                zf.writestr(filename, md_content)
+
+                for tag in ann_tags:
+                    tag_index[tag.tag_display].append(
+                        {
+                            "filename": filename,
+                            "title": f"Annotation {ann_id_str[:8]}",
+                            "source": "annotation",
+                        }
+                    )
+
+            # Source 3: scaffold responses（檔名前綴 scaffold-）
+            for scaffold in scaffolds:
+                scaffold_id_str = str(scaffold.id)
+                filename = f"scaffold-{scaffold_id_str}.md"
+                sc_tags = tags_by_scaffold.get(scaffold.id, [])
+
+                resource = resources_map.get(scaffold.resource_id) if scaffold.resource_id else None
+                subject = (
+                    subjects_map.get(resource.subject_id)
+                    if resource and resource.subject_id
+                    else None
+                )
+
+                md_content = self._build_scaffold_md(scaffold, subject, sc_tags)
+                zf.writestr(filename, md_content)
+
+                for tag in sc_tags:
+                    tag_index[tag.tag_display].append(
+                        {
+                            "filename": filename,
+                            "title": f"Scaffold {scaffold_id_str[:8]}",
+                            "source": "scaffold",
+                        }
+                    )
+
+            # 寫入 index.md（整合 3 sources）
             index_md = self._build_index_md(tag_index)
             zf.writestr("index.md", index_md)
 
@@ -484,18 +589,78 @@ class UserNoteService(BaseService):
         frontmatter = "\n".join(frontmatter_lines)
         return f"{frontmatter}\n\n{note.content}\n"
 
+    def _build_annotation_md(
+        self,
+        annotation: "ChatMessageAnnotation",
+        tags: "list[ChatAnnotationTag]",
+    ) -> str:
+        """組裝 chat annotation 的 markdown 文字（YAML frontmatter + content）。"""
+        created_at_iso = annotation.created_at.isoformat() if annotation.created_at else ""
+        tag_list = ", ".join(f"#{t.tag_display}" for t in tags) if tags else ""
+
+        frontmatter_lines = [
+            "---",
+            f"id: {annotation.id}",
+            "source: annotation",
+            f"annotation_type: {annotation.annotation_type}",
+            f"created_at: {created_at_iso}",
+            f"tags: [{tag_list}]",
+            "---",
+        ]
+        frontmatter = "\n".join(frontmatter_lines)
+        highlighted = annotation.highlighted_text or ""
+        user_ann = annotation.user_annotation or ""
+        return f"{frontmatter}\n\n## Highlighted Text\n\n> {highlighted}\n\n## Annotation\n\n{user_ann}\n"
+
+    def _build_scaffold_md(
+        self,
+        scaffold: "ResourceScaffold",
+        subject: "Subject | None",
+        tags: "list[ScaffoldTag]",
+    ) -> str:
+        """組裝 scaffold user_response 的 markdown 文字（YAML frontmatter + content）。"""
+        created_at_iso = scaffold.created_at.isoformat() if scaffold.created_at else ""
+        responded_at_iso = scaffold.responded_at.isoformat() if scaffold.responded_at else ""
+        subject_name = subject.name if subject else ""
+        tag_list = ", ".join(f"#{t.tag_display}" for t in tags) if tags else ""
+
+        frontmatter_lines = [
+            "---",
+            f"id: {scaffold.id}",
+            "source: scaffold",
+            f"scaffold_type: {scaffold.type}",
+            f"chapter_heading: {scaffold.chapter_heading or ''}",
+            f"subject_name: {subject_name}",
+            f"created_at: {created_at_iso}",
+            f"responded_at: {responded_at_iso}",
+            f"tags: [{tag_list}]",
+            "---",
+        ]
+        frontmatter = "\n".join(frontmatter_lines)
+        content = scaffold.content or ""
+        user_response = scaffold.user_response or ""
+        return f"{frontmatter}\n\n## Question\n\n{content}\n\n## My Response\n\n{user_response}\n"
+
     def _build_index_md(self, tag_index: "dict[str, list[dict]]") -> str:
-        """組裝 index.md：列所有 tag + 連結到 note。"""
-        lines = ["# Notes Index", ""]
+        """組裝 index.md：整合 3 sources 的 tag 索引（含 count breakdown）。"""
+        lines = ["# Notes Index (3 Sources)", ""]
         if not tag_index:
             lines.append("_No tags found._")
             lines.append("")
         else:
             for tag_display in sorted(tag_index.keys()):
-                lines.append(f"## #{tag_display}")
-                for item in tag_index[tag_display]:
+                items = tag_index[tag_display]
+                note_count = sum(1 for i in items if i.get("source") == "note")
+                ann_count = sum(1 for i in items if i.get("source") == "annotation")
+                sc_count = sum(1 for i in items if i.get("source") == "scaffold")
+                total = len(items)
+                lines.append(
+                    f"## #{tag_display} ({total} — note:{note_count} annotation:{ann_count} scaffold:{sc_count})"
+                )
+                for item in items:
                     link = item["filename"].replace(".md", "")
                     title = item["title"]
-                    lines.append(f"- [[{link}|{title}]]")
+                    source = item.get("source", "note")
+                    lines.append(f"- [{source}] [[{link}|{title}]]")
                 lines.append("")
         return "\n".join(lines)
