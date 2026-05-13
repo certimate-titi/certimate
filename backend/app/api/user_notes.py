@@ -1,8 +1,9 @@
-"""User Notes API — 使用者自由格式筆記管理（Feature 50 我的筆記整合）。
+"""User Notes API — 使用者自由格式筆記管理（Feature 50 + 52）。
 
 Endpoints:
   POST   /api/v1/user-notes           201 建立筆記
-  GET    /api/v1/user-notes           200 列出自己的筆記
+  GET    /api/v1/user-notes           200 列出自己的筆記（支援 ?tag= filter）
+  GET    /api/v1/user-notes/tags      200 列出自己所有 hashtag tags + count
   PATCH  /api/v1/user-notes/{id}      200 更新自己的筆記
   DELETE /api/v1/user-notes/all       200 刪除自己所有筆記 {deleted: N}
   DELETE /api/v1/user-notes/{id}      204 刪除自己的筆記
@@ -19,6 +20,8 @@ from app.schemas.user_note import (
     UserNoteCreate,
     UserNoteListResponse,
     UserNoteResponse,
+    UserNoteTagItem,
+    UserNoteTagListResponse,
     UserNoteUpdate,
 )
 from app.services.user_note_service import UserNoteService
@@ -63,21 +66,47 @@ def create_note(
     return result["note"]
 
 
+@router.get("/tags", response_model=UserNoteTagListResponse)
+def list_tags(
+    subject_id: UUID | None = Query(None, description="依科目過濾（只列該 subject notes 的 tags）"),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """列出自己所有 hashtag tags + count（per user global）。
+
+    - 需登入（JWT）
+    - 可帶 ?subject_id 只列該科目的 notes 用到的 tags
+    - 依 count DESC 排序
+    """
+    svc = UserNoteService(db)
+    result = svc.list_user_tags(
+        user_id=UUID(user_id),
+        subject_id=subject_id,
+    )
+    _handle(result)
+    return {"items": result["items"], "total": result["total"]}
+
+
 @router.get("", response_model=UserNoteListResponse)
 def list_notes(
     subject_id: UUID | None = Query(None, description="依科目過濾"),
     node_id: UUID | None = Query(None, description="依知識節點過濾"),
+    tag: str | None = Query(None, description="依 hashtag normalized 字串過濾"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    """列出自己的筆記（可選 filter by subject / node），依 updated_at DESC 排序。"""
+    """列出自己的筆記（可選 filter by subject / node / tag），依 updated_at DESC 排序。
+
+    - ?tag=深度學習 → 只回含 #深度學習 的 notes
+    """
     svc = UserNoteService(db)
     result = svc.list(
         user_id=UUID(user_id),
         subject_id=subject_id,
         node_id=node_id,
+        tag=tag,
         limit=limit,
         offset=offset,
     )

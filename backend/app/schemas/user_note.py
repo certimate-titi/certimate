@@ -1,4 +1,4 @@
-"""Pydantic v2 schemas for User Notes — Feature 50 我的筆記整合。"""
+"""Pydantic v2 schemas for User Notes — Feature 50 我的筆記整合 + Feature 52 hashtag 系統。"""
 
 from datetime import datetime
 from uuid import UUID
@@ -50,4 +50,23 @@ class UserNoteListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     items: list[UserNoteResponse]
+    total: int
+
+
+class UserNoteTagItem(BaseModel):
+    """Single tag item in tag list response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    normalized: str
+    display: str
+    count: int
+
+
+class UserNoteTagListResponse(BaseModel):
+    """GET /api/v1/user-notes/tags response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[UserNoteTagItem]
     total: int
