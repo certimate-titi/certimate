@@ -530,6 +530,98 @@ class KnowledgeNavService:
             ],
         }
 
+    def get_subject_scaffolds(
+        self,
+        subject_id: str,
+        user_id: str,
+        user_response_only: bool = True,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> dict:
+        """取得科目層級的學習鷹架（跨 resource 合併）。
+
+        - 列出該 subject 下所有 resources 對應的 resource_scaffolds。
+        - user_response_only=True 時只回有 user_response 的筆記（/notes 頁用）。
+        - 權限：subject owner 或 enrolled 才能讀；但 user_response 仍是
+          呼叫者自己的（透過 Resource.user_id 過濾）。
+        """
+        try:
+            uid = uuid.UUID(user_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "使用者 ID 格式錯誤"}
+
+        user = self.db.query(User).filter_by(id=uid).first()
+        if not user:
+            return {"error": True, "status_code": 404, "message": "使用者不存在"}
+
+        plan = user.subscription_plan
+        plan_val = plan.value if hasattr(plan, "value") else plan
+        if plan_val in (None, "FREE"):
+            return {
+                "error": True,
+                "status_code": 403,
+                "paywall": True,
+                "message": "學習教材為 PRO 以上方案功能",
+                "upgrade": {
+                    "target_plan": "PRO_199",
+                    "message": "升級 PRO 解鎖 AI 學習教材與延伸思考",
+                },
+            }
+
+        try:
+            sid = uuid.UUID(subject_id)
+        except ValueError:
+            return {"error": True, "status_code": 400, "message": "科目 ID 格式錯誤"}
+
+        subject = self.db.query(Subject).filter_by(id=sid).first()
+        if not subject:
+            return {"error": True, "status_code": 404, "message": "科目不存在"}
+
+        # 建構查詢：只查呼叫者自己上傳到該科目的 resources
+        query = (
+            self.db.query(ResourceScaffold)
+            .join(Resource, Resource.id == ResourceScaffold.resource_id)
+            .filter(
+                Resource.subject_id == sid,
+                Resource.user_id == uid,
+            )
+        )
+
+        if user_response_only:
+            query = query.filter(ResourceScaffold.user_response.isnot(None))
+
+        total = query.count()
+
+        scaffolds = (
+            query
+            .order_by(ResourceScaffold.responded_at.desc().nulls_last())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        return {
+            "error": False,
+            "subject_id": subject_id,
+            "total": total,
+            "items": [
+                {
+                    "id": str(s.id),
+                    "resource_id": str(s.resource_id) if s.resource_id else None,
+                    "type": s.type.value if hasattr(s.type, "value") else s.type,
+                    "chapter_heading": s.chapter_heading,
+                    "content": s.content,
+                    "page_start": s.page_start,
+                    "page_end": s.page_end,
+                    "user_response": s.user_response,
+                    "responded_at": s.responded_at.isoformat() if s.responded_at else None,
+                    "reference_answer": s.reference_answer,
+                    "template_code": s.template_code,
+                }
+                for s in scaffolds
+            ],
+        }
+
     def get_layout(self, user_id: str) -> dict:
         """取得知識心智圖頁面佈局。"""
         return {

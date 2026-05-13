@@ -89,6 +89,31 @@ def get_node_scaffolds(
     return _handle_result(result)
 
 
+@router.get("/subjects/{subject_id}/scaffolds")
+def get_subject_scaffolds(
+    subject_id: str,
+    user_response_only: bool = True,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db_with_tenant),
+):
+    """取得科目層級的學習鷹架（跨 resource 合併）。
+
+    - user_response_only=true（預設）：只回有 user_response 的筆記，供 /notes 頁使用。
+    - 回傳 {items: [...], total} shape。
+    """
+    service = KnowledgeNavService(db)
+    result = service.get_subject_scaffolds(
+        subject_id=subject_id,
+        user_id=user_id,
+        user_response_only=user_response_only,
+        limit=limit,
+        offset=offset,
+    )
+    return _handle_result(result)
+
+
 @router.get("/resources/{resource_id}/scaffolds")
 def get_resource_scaffolds(
     resource_id: str,
