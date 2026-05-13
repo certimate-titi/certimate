@@ -593,9 +593,11 @@ function ChatAnnotationSection({ nodeId }: { nodeId: string | null }) {
 function ScaffoldSection({
   nodeId,
   fallbackResourceId,
+  subjectId,
 }: {
   nodeId: string | null;
   fallbackResourceId?: string | null;
+  subjectId?: string | null;
 }) {
   const [open, setOpen] = useState(true);
   const [scaffolds, setScaffolds] = useState<NodeScaffoldItem[]>([]);
@@ -608,22 +610,32 @@ function ScaffoldSection({
   const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
-    if (!nodeId && !fallbackResourceId) {
+    if (!nodeId && !fallbackResourceId && !subjectId) {
       setScaffolds([]);
       return;
     }
     setLoading(true);
     setError(null);
 
-    const fetchPromise = nodeId
-      ? knowledgeService.getNodeScaffolds(nodeId).then((res) => {
-          const withResp = (res.scaffolds || []).filter((s) => s.user_response);
-          if (withResp.length === 0 && fallbackResourceId) {
-            return knowledgeService.getResourceScaffolds(fallbackResourceId);
-          }
-          return res;
-        })
-      : knowledgeService.getResourceScaffolds(fallbackResourceId!);
+    let fetchPromise: Promise<{ scaffolds: NodeScaffoldItem[] }>;
+    if (nodeId) {
+      fetchPromise = knowledgeService.getNodeScaffolds(nodeId).then((res) => {
+        const withResp = (res.scaffolds || []).filter((s) => s.user_response);
+        if (withResp.length === 0 && fallbackResourceId) {
+          return knowledgeService.getResourceScaffolds(fallbackResourceId);
+        }
+        return res;
+      });
+    } else if (fallbackResourceId) {
+      fetchPromise = knowledgeService.getResourceScaffolds(fallbackResourceId);
+    } else if (subjectId) {
+      // /notes 獨立頁路徑：nodeId=null + fallbackResourceId=null → 打科目層級 endpoint
+      fetchPromise = knowledgeService.getSubjectScaffolds(subjectId);
+    } else {
+      setScaffolds([]);
+      setLoading(false);
+      return;
+    }
 
     fetchPromise
       .then((res) => {
@@ -635,7 +647,7 @@ function ScaffoldSection({
         setError(err.message || '載入鷹架深讀失敗');
       })
       .finally(() => setLoading(false));
-  }, [nodeId, fallbackResourceId ?? null]);
+  }, [nodeId, fallbackResourceId ?? null, subjectId ?? null]);
 
   function startEdit(scaffold: NodeScaffoldItem) {
     setEditingId(scaffold.id);
@@ -784,7 +796,7 @@ export default function IntegratedNotebook({
     <div className="flex flex-col h-full overflow-y-auto">
       <FreeNoteSection nodeId={nodeId} subjectId={subjectId} />
       <ChatAnnotationSection nodeId={nodeId} />
-      <ScaffoldSection nodeId={nodeId} fallbackResourceId={fallbackResourceId} />
+      <ScaffoldSection nodeId={nodeId} fallbackResourceId={fallbackResourceId} subjectId={subjectId} />
     </div>
   );
 }

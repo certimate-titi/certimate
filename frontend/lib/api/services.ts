@@ -618,6 +618,16 @@ export interface NodeScaffoldsResponse {
 }
 
 /**
+ * 科目層級鷹架清單回應（GET /knowledge-map/subjects/{id}/scaffolds）。
+ * items 對應後端 resource_scaffolds 跨 resource 合併後有 user_response 的筆記。
+ */
+export interface SubjectScaffoldsResponse {
+  subject_id: string;
+  total: number;
+  items: (NodeScaffoldItem & { resource_id?: string | null })[];
+}
+
+/**
  * 知識圖譜服務：節點層級、節點細節、鷹架、資源摘要與反向工程。
  */
 export const knowledgeService = {
@@ -638,6 +648,30 @@ export const knowledgeService = {
 
   async getResourceScaffolds(resourceId: string): Promise<NodeScaffoldsResponse> {
     return apiClient.get<NodeScaffoldsResponse>(`/knowledge-map/resources/${resourceId}/scaffolds`);
+  },
+
+  /**
+   * 科目層級跨 resource 學習鷹架（/notes 獨立頁使用）。
+   * user_response_only=true 時只回有 user_response 的筆記。
+   * 回傳結構轉換為 NodeScaffoldsResponse 格式（scaffolds[]）供 ScaffoldSection 統一處理。
+   */
+  async getSubjectScaffolds(
+    subjectId: string,
+    params?: { user_response_only?: boolean; limit?: number; offset?: number },
+  ): Promise<NodeScaffoldsResponse> {
+    const qs = new URLSearchParams({
+      user_response_only: String(params?.user_response_only ?? true),
+      ...(params?.limit !== undefined ? { limit: String(params.limit) } : {}),
+      ...(params?.offset !== undefined ? { offset: String(params.offset) } : {}),
+    });
+    const res = await apiClient.get<SubjectScaffoldsResponse>(
+      `/knowledge-map/subjects/${subjectId}/scaffolds?${qs}`,
+    );
+    // 轉換 items → scaffolds 使 ScaffoldSection 不需感知新 shape
+    return {
+      node_id: subjectId,
+      scaffolds: res.items ?? [],
+    };
   },
 
   async getResourceSummary(resourceId: string): Promise<{ title: string; content: string; node_count: number }> {
