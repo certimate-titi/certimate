@@ -44,6 +44,8 @@ export default function AccountPage() {
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetToast, setResetToast] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportToast, setExportToast] = useState<{ type: 'success' | 'error' | 'warn'; text: string } | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -751,6 +753,120 @@ export default function AccountPage() {
                       className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                     >
                       更新密碼
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Obsidian Export Section */}
+              <section className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <h2 className="text-xl font-bold text-slate-900 mb-2">資料匯出</h2>
+                <p className="text-xs text-slate-500 mb-5">將筆記匯出為 Obsidian / Logseq 相容格式</p>
+
+                {exportToast && (
+                  <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between ${
+                    exportToast.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : exportToast.type === 'warn'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}>
+                    <span>{exportToast.text}</span>
+                    <button type="button" onClick={() => setExportToast(null)} className="ml-3 hover:opacity-70">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between gap-4 rounded-2xl border border-sky-100 bg-sky-50/60 p-5">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-800 mb-1">
+                      匯出筆記為 Obsidian 格式
+                    </p>
+                    <p className="text-xs text-slate-500 mb-2">
+                      包含 Markdown + #標籤 + metadata，可匯入 Obsidian / Logseq。
+                    </p>
+                    <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 inline-block">
+                      考後 30 天才開放，避免影響當下複習
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <button
+                      type="button"
+                      disabled={exportLoading}
+                      onClick={async () => {
+                        setExportLoading(true);
+                        setExportToast(null);
+                        try {
+                          const { getStoredToken } = await import('@/lib/api/client');
+                          const token = getStoredToken();
+                          const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+                          const res = await fetch(`${BASE_URL}/user-notes/export/obsidian`, {
+                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                          });
+                          if (res.status === 403) {
+                            const body = await res.json().catch(() => ({}));
+                            const reason: string = body?.detail ?? '考後 30 天才可下載';
+                            setExportToast({ type: 'warn', text: reason });
+                          } else if (!res.ok) {
+                            setExportToast({ type: 'error', text: '匯出失敗，請稍後再試' });
+                          } else {
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                            a.download = `certimate-notes-${date}.zip`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            setExportToast({ type: 'success', text: 'ZIP 下載中！' });
+                          }
+                        } catch {
+                          setExportToast({ type: 'error', text: '匯出失敗，請稍後再試' });
+                        } finally {
+                          setExportLoading(false);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      {exportLoading ? '準備中…' : '下載 ZIP'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={exportLoading}
+                      onClick={async () => {
+                        setExportLoading(true);
+                        setExportToast(null);
+                        try {
+                          const { getStoredToken } = await import('@/lib/api/client');
+                          const token = getStoredToken();
+                          const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+                          const res = await fetch(`${BASE_URL}/user-notes/export/obsidian?force=true`, {
+                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                          });
+                          if (!res.ok) {
+                            setExportToast({ type: 'error', text: '匯出失敗，請稍後再試' });
+                          } else {
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                            a.download = `certimate-notes-${date}.zip`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            setExportToast({ type: 'success', text: 'ZIP 下載中（強制）！' });
+                          }
+                        } catch {
+                          setExportToast({ type: 'error', text: '匯出失敗，請稍後再試' });
+                        } finally {
+                          setExportLoading(false);
+                        }
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-slate-600 underline disabled:opacity-40 transition-colors"
+                    >
+                      我堅持下載（略過限制）
                     </button>
                   </div>
                 </div>
