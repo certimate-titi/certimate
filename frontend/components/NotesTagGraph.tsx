@@ -140,7 +140,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
         ? () => 6
         : d3.scaleLinear().domain([minCount, maxCount]).range([4, 12]).clamp(true) as unknown as (c: number) => number;
 
-    // 鄰居索引：active node 的鄰居節點 id 集合
+    // 鄰居索引：mouseenter 時用來找該節點 1-hop 鄰居以套高亮
     const neighborMap = new Map<string, Set<string>>();
     for (const e of validEdges) {
       if (!neighborMap.has(e.source)) neighborMap.set(e.source, new Set());
@@ -148,11 +148,6 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       neighborMap.get(e.source)!.add(e.target);
       neighborMap.get(e.target)!.add(e.source);
     }
-    const activeNeighbors = activeTag ? (neighborMap.get(activeTag) || new Set()) : new Set<string>();
-    const isHighlightedNode = (id: string) =>
-      !activeTag || id === activeTag || activeNeighbors.has(id);
-    const isHighlightedEdge = (s: string, t: string) =>
-      !activeTag || s === activeTag || t === activeTag;
 
     const simNodes: TagNode[] = tags.map((t) => ({
       id: t.normalized,
@@ -181,22 +176,24 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     svg.call(zoom);
     svg.call(zoom.transform, d3.zoomIdentity);
 
-    // Edges — Obsidian 風格：預設極淡灰，active node 連到的邊變亮綠
+    // High-count threshold：top 30% 視為「常用 tag」，顯示 emerald；其餘 slate-400
+    const sortedCounts = [...counts].sort((a, b) => b - a);
+    const top30Idx = Math.max(1, Math.floor(sortedCounts.length * 0.3));
+    const highCountThreshold = sortedCounts[top30Idx - 1] ?? 0;
+    const baseFillForNode = (id: string) => {
+      const c = tagMap.get(id)?.count ?? 0;
+      return c >= highCountThreshold ? '#10b981' : '#9ca3af'; // emerald-500 / slate-400
+    };
+
+    // Edges — Obsidian 風格：預設極淡灰，hover/active 相關邊變紫
     const link = container.append('g')
       .selectAll('line')
       .data(simEdges)
       .join('line')
-      .attr('stroke', (d: any) => {
-        const s = typeof d.source === 'string' ? d.source : d.source.id;
-        const t = typeof d.target === 'string' ? d.target : d.target.id;
-        return isHighlightedEdge(s, t) ? '#10b981' : '#3f3f46';
-      })
-      .attr('stroke-opacity', (d: any) => {
-        const s = typeof d.source === 'string' ? d.source : d.source.id;
-        const t = typeof d.target === 'string' ? d.target : d.target.id;
-        return isHighlightedEdge(s, t) ? Math.min(0.4 + (d.weight ?? 1) * 0.15, 0.9) : 0.25;
-      })
-      .attr('stroke-width', (d: any) => Math.min(0.8 + (d.weight ?? 1) * 0.4, 3));
+      .attr('stroke', '#52525b')
+      .attr('stroke-opacity', (d: any) => Math.min(0.25 + (d.weight ?? 1) * 0.05, 0.5))
+      .attr('stroke-width', (d: any) => Math.min(0.8 + (d.weight ?? 1) * 0.4, 3))
+      .style('transition', 'stroke 150ms ease, stroke-opacity 150ms ease');
 
     // Edge weight 不再以數字顯示；共現次數已由 link stroke-width 編碼
     // Node groups
@@ -233,18 +230,15 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       );
 
     // Node circles — Obsidian 風格
-    // - active node: 飽和綠 + 略大
-    // - active 鄰居 / 全部時: emerald-400
-    // - 非鄰居（淡化）: 暗灰
+    // 預設：emerald（高頻）/ slate-400（一般）
+    // active（已點擊持續）：飽和紫 + ring
+    // 非鄰居 dim 由 hover handler 動態套，初始皆「正常」色
     nodeGroup.append('circle')
       .attr('r', (d: any) => radiusScale(d.count) + (activeTag === d.id ? 2 : 0))
-      .attr('fill', (d: any) => {
-        if (activeTag === d.id) return '#10b981';                  // active emerald-500
-        if (isHighlightedNode(d.id)) return '#34d399';             // neighbor / default emerald-400
-        return '#52525b';                                          // dimmed slate-600
-      })
-      .attr('stroke', (d: any) => activeTag === d.id ? '#a7f3d0' : 'none')
-      .attr('stroke-width', (d: any) => activeTag === d.id ? 1.5 : 0);
+      .attr('fill', (d: any) => activeTag === d.id ? '#8b5cf6' : baseFillForNode(d.id))
+      .attr('stroke', (d: any) => activeTag === d.id ? '#c4b5fd' : 'none')
+      .attr('stroke-width', (d: any) => activeTag === d.id ? 1.5 : 0)
+      .style('transition', 'fill 150ms ease, r 150ms ease');
 
     // Node labels — Obsidian 風格：預設不顯示，只在 active 或 hover 時可見
     nodeGroup.append('text')
@@ -252,19 +246,52 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .text((d: any) => d.display.length > 12 ? d.display.slice(0, 12) + '…' : d.display)
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => radiusScale(d.count) + 12)
-      .attr('fill', '#d4d4d8')
+      .attr('fill', '#e4e4e7')
       .attr('font-size', '10px')
       .attr('font-weight', '500')
       .attr('pointer-events', 'none')
       .style('opacity', (d: any) => activeTag === d.id ? 1 : 0)
       .style('transition', 'opacity 120ms ease');
 
-    // Hover handler 顯示 / 隱藏 label
+    // Hover：紫色高亮該節點 + 鄰居白 + 非鄰居 dim + edges 變紫
     nodeGroup
-      .on('mouseenter.label', function (_event, d: any) {
+      .on('mouseenter.highlight', function (_event, d: any) {
+        const hoveredId = d.id;
+        const hovNeighbors = neighborMap.get(hoveredId) ?? new Set<string>();
+
+        // Nodes：hover 紫 / 鄰居白 / 其他 dim
+        nodeGroup.select<SVGCircleElement>('circle')
+          .attr('fill', (nd: any) => {
+            if (nd.id === hoveredId) return '#8b5cf6';
+            if (hovNeighbors.has(nd.id)) return '#f5f5f4';
+            return '#3f3f46';
+          });
+
+        // 顯示 hover 節點 label
         d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 1);
+
+        // Edges：hover 相關紫亮，其他暗
+        link
+          .attr('stroke', (ed: any) => {
+            const s = typeof ed.source === 'string' ? ed.source : ed.source.id;
+            const t = typeof ed.target === 'string' ? ed.target : ed.target.id;
+            return s === hoveredId || t === hoveredId ? '#8b5cf6' : '#27272a';
+          })
+          .attr('stroke-opacity', (ed: any) => {
+            const s = typeof ed.source === 'string' ? ed.source : ed.source.id;
+            const t = typeof ed.target === 'string' ? ed.target : ed.target.id;
+            return s === hoveredId || t === hoveredId ? 0.85 : 0.15;
+          });
       })
-      .on('mouseleave.label', function (_event, d: any) {
+      .on('mouseleave.highlight', function (_event, d: any) {
+        // 還原預設：node 顏色按 baseFill / active；edges 全部回 slate-700
+        nodeGroup.select<SVGCircleElement>('circle')
+          .attr('fill', (nd: any) => activeTag === nd.id ? '#8b5cf6' : baseFillForNode(nd.id));
+
+        link
+          .attr('stroke', '#52525b')
+          .attr('stroke-opacity', (ed: any) => Math.min(0.25 + (ed.weight ?? 1) * 0.05, 0.5));
+
         if (activeTag !== d.id) {
           d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 0);
         }
