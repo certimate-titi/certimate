@@ -36,7 +36,7 @@ _CC_STRUCTURING_PROMPT = """請根據以下 YouTube 字幕文字，產出結構�
 
 要求：
 1. 只回傳 JSON，不加任何說明文字
-2. transcript：根據字幕整理成連貫逐字稿
+2. transcript：根據字幕整理成連貫逐字稿，**必須完整輸出全片直到結束時間戳，禁止省略或截斷**
 3. sections：依主題劃分章節
 """
 
@@ -53,7 +53,7 @@ _DIRECT_TRANSCRIPT_PROMPT = """請分析這段 YouTube 影片並產出以下內�
 
 要求：
 1. title：影片標題（優先取影片自身標題）
-2. transcript：完整時間戳逐字稿，繁體中文優先，若原為英文則保持英文
+2. transcript：**完整**時間戳逐字稿，繁體中文優先，若原為英文則保持英文。**必須輸出全片所有時間戳直到影片結束，禁止省略中段或結尾截斷**
 3. sections：依主題劃分章節，每個章節含時間戳、標題與摘要
 4. 只回傳 JSON，不加任何說明文字
 """
@@ -287,7 +287,7 @@ def _apply_k01_structuring(vtt_text: str, title: str, youtube_url: str) -> Extra
             contents=[prompt],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                max_output_tokens=8192,
+                max_output_tokens=65536,  # 2.5 上限；中文逐字稿 8192 易截斷
                 temperature=0.1,
             ),
         )
@@ -323,7 +323,7 @@ def _gemini_direct_extract(youtube_url: str, resource_name: str = "") -> Extract
             ],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                max_output_tokens=8192,
+                max_output_tokens=65536,  # 2.5 上限；中文逐字稿 8192 易截斷
                 temperature=0.1,
             ),
         )
