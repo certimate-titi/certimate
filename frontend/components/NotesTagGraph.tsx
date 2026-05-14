@@ -178,16 +178,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .attr('stroke-opacity', (d: any) => Math.min(0.15 + (d.weight ?? 1) * 0.1, 0.7))
       .attr('stroke-width', (d: any) => Math.min(1 + (d.weight ?? 1) * 0.5, 4));
 
-    // Edge weight labels — 直接拿 join 後 selection，避免 nth-of-type 重 selectAll 撞到 node text
-    const edgeWeightLabels = container.append('g')
-      .selectAll('text')
-      .data(simEdges.filter((d: any) => (d.weight ?? 1) > 1))
-      .join('text')
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '9px')
-      .attr('fill', '#94a3b8')
-      .text((d: any) => d.weight);
-
+    // Edge weight 不再以數字顯示；共現次數已由 link stroke-width 編碼
     // Node groups
     const nodeGroup = container.append('g')
       .selectAll('g')
@@ -253,10 +244,6 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => d.target.x)
         .attr('y2', (d: any) => d.target.y);
-
-      edgeWeightLabels
-        .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
-        .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
 
       nodeGroup.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     };
