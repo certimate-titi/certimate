@@ -347,6 +347,11 @@ function KnowledgeBasePageInner() {
   }, [documents.map(d => `${d.id}:${d.status}`).join(',')]);
 
   const handleNodeClick = async (nodeId: string) => {
+    // 點 virtual subject root（sentinel id "subject-{uuid}"）不打 API（後端無此 row）
+    // 僅展開/收合，不切 selected detail
+    if (nodeId.startsWith('subject-')) {
+      return;
+    }
     setLoadingDetail(true);
     setChatMessages([]);
     setFreeQueriesLeft(isPro199 ? 0 : 3);

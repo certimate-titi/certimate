@@ -118,6 +118,12 @@ function FullMindMapPageInner() {
   }, [loading, mindMapNodes.length, activeSubjectId]);
 
   const handleNodeClick = (nodeId: string) => {
+    // 點 virtual subject root（sentinel id "subject-{uuid}"）不打 API（後端無此 row）
+    if (nodeId.startsWith('subject-')) {
+      setSelectedNodeId(nodeId);
+      setNodeDetail(null);
+      return;
+    }
     setSelectedNodeId(nodeId);
     // L62：載入節點詳情至側邊面板
     setNodeDetail(null);
