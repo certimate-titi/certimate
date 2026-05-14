@@ -1885,3 +1885,41 @@ def estimate_chapter_anchors_cost(
     return result
 
 
+# ── Tag backfill：補寫既有 user_notes / annotations / scaffolds 的 hashtag tags ──
+
+@router.post("/backfill-tags")
+def trigger_tag_backfill(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """補寫所有既有筆記 / chat annotation / scaffold user_response 的 hashtag tags。
+
+    PR #96/#99 加 hashtag parser 後只對 create/update 觸發；舊資料缺失。
+    本端點同步執行（資料量小），直接回傳 backfill 結果。
+
+    僅 SUPER_ADMIN 可呼叫。
+
+    Returns:
+        {
+            user_notes_processed: int,
+            annotations_processed: int,
+            scaffolds_processed: int,
+            total_tags_inserted: int,
+        }
+    """
+    import uuid as _uuid
+    from app.models.user import User, UserRole
+    from app.scripts.backfill_hashtag_tags import run as run_backfill
+
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+    user = db.query(User).filter_by(id=user_uuid).first()
+    if not user or user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail={"message": "需要 SUPER_ADMIN 權限"})
+
+    result = run_backfill(db=db)
+    return result
+
+
