@@ -38,6 +38,37 @@ def step_create_node_default_depth(context, res_label, name):
     context.memo["last_created_node"] = node
 
 
+@when('建立 KnowledgeNode(resource_id={res_label}, name="{name}", parent_id=NULL, depth={depth:d})')
+def step_create_node_with_depth(context, res_label, name, depth):
+    """指定 depth — 驗證 migration 100 解除上限後 depth>3 可寫入。"""
+    db = context.db_session
+    rid = context.memo.get("last_resource_id")
+    if not rid:
+        res = (
+            context.memo.get("resources", {}).get(res_label)
+            or context.memo.get("last_resource_obj")
+        )
+        rid = str(res.id) if res else None
+    assert rid, f"找不到資源 {res_label}"
+
+    node = KnowledgeNode(
+        resource_id=uuid.UUID(rid),
+        name=name,
+        parent_id=None,
+        depth=depth,
+    )
+    db.add(node)
+    try:
+        db.commit()
+        db.refresh(node)
+    except Exception as e:
+        db.rollback()
+        context.memo["last_node_error"] = str(e)
+        context.memo["last_created_node"] = None
+        return
+    context.memo["last_created_node"] = node
+
+
 @when('呼叫 KnowledgeMapService.build_for_resource("{res_label}")')
 def step_call_knowledge_map_build(context, res_label):
     """直接走 _generate_knowledge_tree 路徑（簡化版 build_for_resource 內部）。"""

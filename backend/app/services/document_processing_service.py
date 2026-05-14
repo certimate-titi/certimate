@@ -766,11 +766,12 @@ class DocumentProcessingService:
             "  depth 1 = 核心主題（章）— 例如「信託法規」「No Code / Low Code 概念」\n"
             "  depth 2 = 次要概念（節）— 例如「信託契約要素」「生成式AI 應用領域」\n"
             "  depth 3+ = 細節知識點 / 子知識點 — 例如「忠實義務範圍」「自動化行銷文案生成」\n\n"
-            "格式範例：\n"
+            "格式範例（depth 不設上限，依文件實際層級判斷）：\n"
             '{"chapters": [\n'
             '  {"title": "第一章 概論", "page_start": 1, "page_end": 10, "depth": 1},\n'
             '  {"title": "1.1 背景", "page_start": 1, "page_end": 3, "depth": 2},\n'
             '  {"title": "1.1.1 歷史沿革", "page_start": 1, "page_end": 2, "depth": 3},\n'
+            '  {"title": "1.1.1.1 早期發展", "page_start": 1, "page_end": 1, "depth": 4},\n'
             '  {"title": "1.2 目的", "page_start": 4, "page_end": 5, "depth": 2},\n'
             '  {"title": "第二章 方法", "page_start": 6, "page_end": 10, "depth": 1},\n'
             '  {"title": "練習題：第一章", "page_start": 11, "page_end": 12, "depth": 2, "type": "quiz"}\n'
@@ -1051,6 +1052,13 @@ class DocumentProcessingService:
             return None
 
         # Build page summaries for AI（不限 section 數量；長文件靠 max_tokens 自然約束）
+        # 觀測點：section 數量 > 200 時 log warning，便於追蹤 token cost 異常
+        if len(sections) > 200:
+            logger.warning(
+                "AI structure analysis: large doc with %d sections (doc=%s) — "
+                "input tokens may spike; monitor LLM cost",
+                len(sections), doc_title[:60]
+            )
         summaries = []
         for s in sections:
             preview = s["content"][:120].replace('\n', ' ').strip()
