@@ -79,8 +79,10 @@ function NotesPage() {
   const filter = useNotesFilter(subjectsForFilter);
 
   // subjectId (後端 UUID) for API
+  // 注意：/subjects/mine 回的 record 結構為 {id, name, ...}，無 subjectId 欄位。
+  // type UserSubject 期待 subjectId 與後端 schema 落差，fallback 到 id 才能正常 query。
   const activeUserSubject = subjects.find((s) => s.id === filter.activeUserSubjectId);
-  const subjectIdForApi = activeUserSubject?.subjectId ?? null;
+  const subjectIdForApi = activeUserSubject?.subjectId ?? activeUserSubject?.id ?? null;
 
   const handleCountsUpdate = useCallback((counts: { note: number; annotation: number; scaffold: number }) => {
     setKindCounts((prev) => {
