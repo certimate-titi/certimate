@@ -306,6 +306,33 @@ class DocumentProcessingService:
                 except Exception as e:
                     logger.warning("Unified extraction skipped: %s", e)
 
+                # Step 11.1: 自動產生章節級讀前定錨（K-RE-01 advance_organizer）
+                # 統一萃取完成 chapter 節點（depth=1）後，每章生成一張 anchor card。
+                # idempotent：已有 K-RE-01 + type=advance_organizer 的 chapter 會 skip。
+                # 失敗只 log warning 不阻斷上傳。
+                try:
+                    from app.services.chapter_anchor_service import (
+                        ChapterAnchorService,
+                    )
+                    anchor_svc = ChapterAnchorService(self.db)
+                    anchor_result = anchor_svc.generate_for_subject(
+                        str(resource.subject_id)
+                    )
+                    if anchor_result.get("error"):
+                        logger.warning(
+                            "Chapter anchor generation warning for subject %s: %s",
+                            resource.subject_id, anchor_result.get("message")
+                        )
+                    else:
+                        logger.info(
+                            "Chapter anchor auto-gen: subject=%s created=%d skipped=%d",
+                            resource.subject_id,
+                            anchor_result.get("scaffolds_created", 0),
+                            anchor_result.get("skipped_already_exists", 0),
+                        )
+                except Exception as e:
+                    logger.warning("Chapter anchor generation skipped: %s", e)
+
                 # Spec 29 §知識樹合併對齊 — 每次資源上傳自動 merge
                 # 取本次新建的 KnowledgeNode（resource_id == this resource）作為 incoming，
                 # 對該 subject 的既有樹做合併：
