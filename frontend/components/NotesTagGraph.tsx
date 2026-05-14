@@ -190,8 +190,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .selectAll('line')
       .data(simEdges)
       .join('line')
-      .attr('stroke', '#52525b')
-      .attr('stroke-opacity', (d: any) => Math.min(0.25 + (d.weight ?? 1) * 0.05, 0.5))
+      .attr('stroke', '#94a3b8')
+      .attr('stroke-opacity', (d: any) => Math.min(0.35 + (d.weight ?? 1) * 0.05, 0.6))
       .attr('stroke-width', (d: any) => Math.min(0.8 + (d.weight ?? 1) * 0.4, 3))
       .style('transition', 'stroke 150ms ease, stroke-opacity 150ms ease');
 
@@ -246,7 +246,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .text((d: any) => d.display.length > 12 ? d.display.slice(0, 12) + '…' : d.display)
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => radiusScale(d.count) + 12)
-      .attr('fill', '#e4e4e7')
+      .attr('fill', '#334155')
       .attr('font-size', '10px')
       .attr('font-weight', '500')
       .attr('pointer-events', 'none')
@@ -259,38 +259,38 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
         const hoveredId = d.id;
         const hovNeighbors = neighborMap.get(hoveredId) ?? new Set<string>();
 
-        // Nodes：hover 紫 / 鄰居白 / 其他 dim
+        // Nodes：hover 紫 / 鄰居深色 / 其他 dim 淺灰
         nodeGroup.select<SVGCircleElement>('circle')
           .attr('fill', (nd: any) => {
             if (nd.id === hoveredId) return '#8b5cf6';
-            if (hovNeighbors.has(nd.id)) return '#f5f5f4';
-            return '#3f3f46';
+            if (hovNeighbors.has(nd.id)) return '#334155';  // slate-700 強對比
+            return '#e2e8f0';                                // slate-200 淡化
           });
 
         // 顯示 hover 節點 label
         d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 1);
 
-        // Edges：hover 相關紫亮，其他暗
+        // Edges：hover 相關紫亮，其他淡化
         link
           .attr('stroke', (ed: any) => {
             const s = typeof ed.source === 'string' ? ed.source : ed.source.id;
             const t = typeof ed.target === 'string' ? ed.target : ed.target.id;
-            return s === hoveredId || t === hoveredId ? '#8b5cf6' : '#27272a';
+            return s === hoveredId || t === hoveredId ? '#8b5cf6' : '#e2e8f0';
           })
           .attr('stroke-opacity', (ed: any) => {
             const s = typeof ed.source === 'string' ? ed.source : ed.source.id;
             const t = typeof ed.target === 'string' ? ed.target : ed.target.id;
-            return s === hoveredId || t === hoveredId ? 0.85 : 0.15;
+            return s === hoveredId || t === hoveredId ? 0.85 : 0.3;
           });
       })
       .on('mouseleave.highlight', function (_event, d: any) {
-        // 還原預設：node 顏色按 baseFill / active；edges 全部回 slate-700
+        // 還原預設：node 顏色按 baseFill / active；edges 全部回 slate-400
         nodeGroup.select<SVGCircleElement>('circle')
           .attr('fill', (nd: any) => activeTag === nd.id ? '#8b5cf6' : baseFillForNode(nd.id));
 
         link
-          .attr('stroke', '#52525b')
-          .attr('stroke-opacity', (ed: any) => Math.min(0.25 + (ed.weight ?? 1) * 0.05, 0.5));
+          .attr('stroke', '#94a3b8')
+          .attr('stroke-opacity', (ed: any) => Math.min(0.35 + (ed.weight ?? 1) * 0.05, 0.6));
 
         if (activeTag !== d.id) {
           d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 0);
@@ -332,7 +332,9 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
   }, [renderGraph]);
 
   return (
-    <div ref={containerRef} className="relative flex-1 h-full bg-[#1e1e2e] rounded-none overflow-hidden">
+    <div ref={containerRef} className="relative flex-1 h-full bg-white rounded-none overflow-hidden">
+      {/* 首頁同款 24px 灰格底紋 */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -341,8 +343,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       {!loading && tags.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4">
           <span className="text-4xl">🏷️</span>
-          <p className="text-sm text-slate-300 font-medium">尚無標籤</p>
-          <p className="text-xs text-slate-500">在自由筆記中輸入 #標籤 即可建立標籤圖譜</p>
+          <p className="text-sm text-slate-500 font-medium">尚無標籤</p>
+          <p className="text-xs text-slate-400">在自由筆記中輸入 #標籤 即可建立標籤圖譜</p>
         </div>
       )}
       <svg
@@ -378,9 +380,9 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       )}
       {/* Legend — Obsidian 風格深色 */}
       {tags.length > 0 && (
-        <div className="absolute bottom-3 left-3 bg-slate-800/70 backdrop-blur-sm rounded-xl px-3 py-2 text-xs text-slate-300 border border-slate-700/60">
+        <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 text-xs text-slate-600 border border-slate-200 shadow-sm">
           <p>節點大小 = 出現次數｜連線粗細 = 共現次數</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">hover 顯示標籤 · 點擊節點篩選 Timeline</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">hover 顯示標籤 · 點擊節點篩選 Timeline</p>
         </div>
       )}
     </div>
