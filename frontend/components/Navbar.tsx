@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, LayoutDashboard, BrainCircuit, PenTool, Dumbbell, NotebookPen, User, Menu, X, LogOut, ShieldCheck, Building2, Calendar } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PenTool, Dumbbell, NotebookPen, User, Menu, X, LogOut, ShieldCheck, Building2, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/lib/auth-context';
 import TiTiLogo from '@/components/TiTiLogo';
@@ -22,14 +22,13 @@ export default function Navbar() {
   const { isAuthenticated, user, signOut, isPro, isUltra, isAdmin } = useAuth();
 
   const navLinks = [
-    // /dashboard（儀表板）→ /knowledge（學習庫）→ /exam/setup（測驗）→ /practice（練習）→ /notes（筆記）→ /review（AI 教練）
-    // /today 已廢除（2026-05-13），登入後直接進 /dashboard
+    // /dashboard → /knowledge → /exam/setup → /practice → /notes
+    // 錯題回顧（原 AI 教練）併入 /exam/setup 頁的入口卡（2026-05-14 UX 重整）
     { href: '/dashboard', label: '儀表板', icon: LayoutDashboard },
     { href: '/knowledge', label: '學習庫', icon: BookOpen },
     { href: '/exam/setup', label: '測驗', icon: PenTool },
     { href: '/practice', label: '練習', icon: Dumbbell },
     { href: '/notes', label: '筆記', icon: NotebookPen },
-    { href: '/review', label: 'AI 教練', icon: BrainCircuit },
     // 教育管理：ULTRA tier 用戶；管理者帳號（ADMIN/SUPER_ADMIN）亦自動含
     ...(isUltra || isAdmin ? [{ href: '/edu-console', label: '教育管理', icon: Building2 }] : []),
     // 平台管理：ADMIN + SUPER_ADMIN 皆可（管理者帳號）
