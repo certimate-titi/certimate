@@ -94,6 +94,12 @@ function NotesPage() {
     });
   }, [filter.activeUserSubjectId]);
 
+  // useCallback 包覆 — 避免每次 render 新 reference 觸發 NotesTagGraph useEffect 無限重啟（simulation tick 套不上 transform）
+  const handleTagClick = useCallback((tag: string) => {
+    setActiveTag(tag);
+    setNotesView('timeline');
+  }, []);
+
   function handleOpenCreate() {
     setNewTitle('');
     setNewContent('');
@@ -377,10 +383,7 @@ function NotesPage() {
                 <NotesTagGraph
                   subjectId={subjectIdForApi}
                   activeTag={activeTag}
-                  onTagClick={(tag) => {
-                    setActiveTag(tag);
-                    setNotesView('timeline');
-                  }}
+                  onTagClick={handleTagClick}
                 />
               )}
             </div>
