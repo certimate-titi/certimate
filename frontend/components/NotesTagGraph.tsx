@@ -169,12 +169,12 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     svg.call(zoom);
     svg.call(zoom.transform, d3.zoomIdentity);
 
-    // Edges
+    // Edges — TITI emerald 主題
     const link = container.append('g')
       .selectAll('line')
       .data(simEdges)
       .join('line')
-      .attr('stroke', '#0ea5e9')
+      .attr('stroke', '#10b981')
       .attr('stroke-opacity', (d: any) => Math.min(0.15 + (d.weight ?? 1) * 0.1, 0.7))
       .attr('stroke-width', (d: any) => Math.min(1 + (d.weight ?? 1) * 0.5, 4));
 
@@ -228,11 +228,11 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .attr('dx', 0).attr('dy', 1).attr('stdDeviation', 2)
       .attr('flood-color', '#00000015');
 
-    // Node circles
+    // Node circles — TITI emerald 主題
     nodeGroup.append('circle')
       .attr('r', (d: any) => radiusScale(d.count))
-      .attr('fill', (d: any) => activeTag === d.id ? '#0ea5e9' : '#e0f2fe')
-      .attr('stroke', (d: any) => activeTag === d.id ? '#0284c7' : '#7dd3fc')
+      .attr('fill', (d: any) => activeTag === d.id ? '#10b981' : '#d1fae5')
+      .attr('stroke', (d: any) => activeTag === d.id ? '#047857' : '#6ee7b7')
       .attr('stroke-width', (d: any) => activeTag === d.id ? 2.5 : 1.5)
       .attr('filter', 'url(#tag-shadow)');
 
@@ -241,18 +241,9 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .text((d: any) => d.display.length > 10 ? d.display.slice(0, 10) + '…' : d.display)
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')
-      .attr('fill', (d: any) => activeTag === d.id ? '#fff' : '#0369a1')
+      .attr('fill', (d: any) => activeTag === d.id ? '#fff' : '#047857')
       .attr('font-size', (d: any) => `${Math.max(8, Math.min(12, radiusScale(d.count) * 0.55))}px`)
       .attr('font-weight', '600')
-      .attr('pointer-events', 'none');
-
-    // Count badge below
-    nodeGroup.append('text')
-      .text((d: any) => d.count)
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d: any) => radiusScale(d.count) + 13)
-      .attr('fill', '#64748b')
-      .attr('font-size', '9px')
       .attr('pointer-events', 'none');
 
     // Tick handler updates DOM positions from datum.
@@ -297,7 +288,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     <div ref={containerRef} className="relative flex-1 h-full bg-slate-50 rounded-none overflow-hidden">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
       {!loading && tags.length === 0 && (
@@ -320,7 +311,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
           className="absolute bg-white text-slate-800 px-3 py-2 rounded-lg text-xs shadow-lg pointer-events-none z-10 border border-slate-200 min-w-[160px]"
           style={{ left: tooltip.x, top: tooltip.y, transform: 'translate(-50%, -100%)' }}
         >
-          <p className="font-bold text-sky-700 mb-1">{tooltip.tag.display}</p>
+          <p className="font-bold text-emerald-700 mb-1">{tooltip.tag.display}</p>
           <p className="text-slate-500 mb-1.5">共 {tooltip.tag.count} 次 · 點擊篩選</p>
           <div className="border-t border-slate-100 pt-1.5 space-y-0.5">
             <p className="text-[10px] text-slate-400 font-medium">來源分佈</p>
