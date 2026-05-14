@@ -118,11 +118,13 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
 
   // D3 force graph
   const renderGraph = useCallback(() => {
-    if (!svgRef.current || tags.length === 0) return;
+    if (!svgRef.current) return;
 
     const { width, height } = dimensions;
     const svg = d3.select(svgRef.current);
+    // 永遠先清 SVG（即便 tags 為空也要清掉前一個 subject 的殘留圖）
     svg.selectAll('*').remove();
+    if (tags.length === 0) return;
 
     const tagMap = new Map(tags.map((t) => [t.normalized, t]));
 
