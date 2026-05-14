@@ -303,9 +303,41 @@ class KnowledgeNavService:
             else:
                 empty_reason = "no_nodes_generated"
 
+        # 「一科目一棵樹」：合成 virtual subject root（depth=0），把現有 chapter
+        # roots 包成 children。DB 內 chapter 仍 parent_id=NULL（不破壞 091/100
+        # constraint），僅在 API 邊界 wrap。樹空時不加 root（保留 empty state）。
+        subject_obj = self.db.query(Subject).filter_by(id=sid).first()
+        subject_name = subject_obj.name if subject_obj else "知識樹"
+        wrapped_nodes: list[dict]
+        if roots:
+            virtual_root = {
+                "id": f"subject-{sid}",  # sentinel id；前端可識別並跳過 fetch detail
+                "name": subject_name,
+                "depth": 0,
+                "parent_id": None,
+                "resource_id": None,
+                "sort_order": 0,
+                "source_page": None,
+                "available_questions": 0,
+                "mastery_rate": 0,
+                "mastery_color": "gray",
+                "status": "UNSEEN",
+                "decay_status": "fresh",
+                "progress_percentage": 0.0,
+                "support_strength": 1.0,
+                "strength_tier": "full",
+                "strength_label": "",
+                "needs_supplement": False,
+                "node_source": "syllabus",
+                "children": roots,
+            }
+            wrapped_nodes = [virtual_root]
+        else:
+            wrapped_nodes = []
+
         return {
             "error": False,
-            "nodes": roots,
+            "nodes": wrapped_nodes,
             "resources": result_resources,
             "empty_reason": empty_reason,
         }
