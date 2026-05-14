@@ -131,16 +131,28 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       (e) => tagMap.has(e.source) && tagMap.has(e.target)
     );
 
-    // Node radius = proportional to count (min 10, max 36)
-    // 修：當所有 tag count 相同（如全為 1），d3.scaleLinear domain 退化 → NaN，
-    //     forceCollide radius NaN 導致節點全擠中心無排斥。改用固定中間值。
+    // Node radius — Obsidian 風格小節點（4-12px）
     const counts = tags.map((t) => t.count);
     const minCount = Math.min(...counts);
     const maxCount = Math.max(...counts);
     const radiusScale: (c: number) => number =
       minCount === maxCount
-        ? () => 18
-        : d3.scaleLinear().domain([minCount, maxCount]).range([10, 36]).clamp(true) as unknown as (c: number) => number;
+        ? () => 6
+        : d3.scaleLinear().domain([minCount, maxCount]).range([4, 12]).clamp(true) as unknown as (c: number) => number;
+
+    // 鄰居索引：active node 的鄰居節點 id 集合
+    const neighborMap = new Map<string, Set<string>>();
+    for (const e of validEdges) {
+      if (!neighborMap.has(e.source)) neighborMap.set(e.source, new Set());
+      if (!neighborMap.has(e.target)) neighborMap.set(e.target, new Set());
+      neighborMap.get(e.source)!.add(e.target);
+      neighborMap.get(e.target)!.add(e.source);
+    }
+    const activeNeighbors = activeTag ? (neighborMap.get(activeTag) || new Set()) : new Set<string>();
+    const isHighlightedNode = (id: string) =>
+      !activeTag || id === activeTag || activeNeighbors.has(id);
+    const isHighlightedEdge = (s: string, t: string) =>
+      !activeTag || s === activeTag || t === activeTag;
 
     const simNodes: TagNode[] = tags.map((t) => ({
       id: t.normalized,
@@ -155,11 +167,11 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     const simulation = d3.forceSimulation(simNodes as any)
       .force('link', d3.forceLink(simEdges as any)
         .id((d: any) => d.id)
-        .distance((d: any) => Math.max(80 - (d.weight ?? 1) * 5, 40))
-        .strength(0.8))
-      .force('charge', d3.forceManyBody().strength(-120))
-      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.1))
-      .force('collision', d3.forceCollide().radius((d: any) => radiusScale(d.count) + 12));
+        .distance((d: any) => Math.max(60 - (d.weight ?? 1) * 4, 30))
+        .strength(0.6))
+      .force('charge', d3.forceManyBody().strength(-80))
+      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.08))
+      .force('collision', d3.forceCollide().radius((d: any) => radiusScale(d.count) + 6));
 
     const container = svg.append('g');
 
@@ -169,14 +181,22 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     svg.call(zoom);
     svg.call(zoom.transform, d3.zoomIdentity);
 
-    // Edges — TITI emerald 主題
+    // Edges — Obsidian 風格：預設極淡灰，active node 連到的邊變亮綠
     const link = container.append('g')
       .selectAll('line')
       .data(simEdges)
       .join('line')
-      .attr('stroke', '#10b981')
-      .attr('stroke-opacity', (d: any) => Math.min(0.15 + (d.weight ?? 1) * 0.1, 0.7))
-      .attr('stroke-width', (d: any) => Math.min(1 + (d.weight ?? 1) * 0.5, 4));
+      .attr('stroke', (d: any) => {
+        const s = typeof d.source === 'string' ? d.source : d.source.id;
+        const t = typeof d.target === 'string' ? d.target : d.target.id;
+        return isHighlightedEdge(s, t) ? '#10b981' : '#3f3f46';
+      })
+      .attr('stroke-opacity', (d: any) => {
+        const s = typeof d.source === 'string' ? d.source : d.source.id;
+        const t = typeof d.target === 'string' ? d.target : d.target.id;
+        return isHighlightedEdge(s, t) ? Math.min(0.4 + (d.weight ?? 1) * 0.15, 0.9) : 0.25;
+      })
+      .attr('stroke-width', (d: any) => Math.min(0.8 + (d.weight ?? 1) * 0.4, 3));
 
     // Edge weight 不再以數字顯示；共現次數已由 link stroke-width 編碼
     // Node groups
@@ -212,30 +232,43 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
           }) as any
       );
 
-    // Defs
-    const defs = svg.append('defs');
-    const filter = defs.append('filter').attr('id', 'tag-shadow');
-    filter.append('feDropShadow')
-      .attr('dx', 0).attr('dy', 1).attr('stdDeviation', 2)
-      .attr('flood-color', '#00000015');
-
-    // Node circles — TITI emerald 主題
+    // Node circles — Obsidian 風格
+    // - active node: 飽和綠 + 略大
+    // - active 鄰居 / 全部時: emerald-400
+    // - 非鄰居（淡化）: 暗灰
     nodeGroup.append('circle')
-      .attr('r', (d: any) => radiusScale(d.count))
-      .attr('fill', (d: any) => activeTag === d.id ? '#10b981' : '#d1fae5')
-      .attr('stroke', (d: any) => activeTag === d.id ? '#047857' : '#6ee7b7')
-      .attr('stroke-width', (d: any) => activeTag === d.id ? 2.5 : 1.5)
-      .attr('filter', 'url(#tag-shadow)');
+      .attr('r', (d: any) => radiusScale(d.count) + (activeTag === d.id ? 2 : 0))
+      .attr('fill', (d: any) => {
+        if (activeTag === d.id) return '#10b981';                  // active emerald-500
+        if (isHighlightedNode(d.id)) return '#34d399';             // neighbor / default emerald-400
+        return '#52525b';                                          // dimmed slate-600
+      })
+      .attr('stroke', (d: any) => activeTag === d.id ? '#a7f3d0' : 'none')
+      .attr('stroke-width', (d: any) => activeTag === d.id ? 1.5 : 0);
 
-    // Node labels
+    // Node labels — Obsidian 風格：預設不顯示，只在 active 或 hover 時可見
     nodeGroup.append('text')
-      .text((d: any) => d.display.length > 10 ? d.display.slice(0, 10) + '…' : d.display)
+      .attr('class', 'tag-label')
+      .text((d: any) => d.display.length > 12 ? d.display.slice(0, 12) + '…' : d.display)
       .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .attr('fill', (d: any) => activeTag === d.id ? '#fff' : '#047857')
-      .attr('font-size', (d: any) => `${Math.max(8, Math.min(12, radiusScale(d.count) * 0.55))}px`)
-      .attr('font-weight', '600')
-      .attr('pointer-events', 'none');
+      .attr('dy', (d: any) => radiusScale(d.count) + 12)
+      .attr('fill', '#d4d4d8')
+      .attr('font-size', '10px')
+      .attr('font-weight', '500')
+      .attr('pointer-events', 'none')
+      .style('opacity', (d: any) => activeTag === d.id ? 1 : 0)
+      .style('transition', 'opacity 120ms ease');
+
+    // Hover handler 顯示 / 隱藏 label
+    nodeGroup
+      .on('mouseenter.label', function (_event, d: any) {
+        d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 1);
+      })
+      .on('mouseleave.label', function (_event, d: any) {
+        if (activeTag !== d.id) {
+          d3.select(this).select<SVGTextElement>('.tag-label').style('opacity', 0);
+        }
+      });
 
     // Tick handler updates DOM positions from datum.
     const updateDom = () => {
@@ -272,7 +305,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
   }, [renderGraph]);
 
   return (
-    <div ref={containerRef} className="relative flex-1 h-full bg-slate-50 rounded-none overflow-hidden">
+    <div ref={containerRef} className="relative flex-1 h-full bg-[#1e1e2e] rounded-none overflow-hidden">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -281,8 +314,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       {!loading && tags.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4">
           <span className="text-4xl">🏷️</span>
-          <p className="text-sm text-slate-500 font-medium">尚無標籤</p>
-          <p className="text-xs text-slate-400">在自由筆記中輸入 #標籤 即可建立標籤圖譜</p>
+          <p className="text-sm text-slate-300 font-medium">尚無標籤</p>
+          <p className="text-xs text-slate-500">在自由筆記中輸入 #標籤 即可建立標籤圖譜</p>
         </div>
       )}
       <svg
@@ -316,11 +349,11 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
           </div>
         </div>
       )}
-      {/* Legend */}
+      {/* Legend — Obsidian 風格深色 */}
       {tags.length > 0 && (
-        <div className="absolute bottom-3 left-3 bg-white/90 rounded-xl px-3 py-2 text-xs text-slate-500 border border-slate-200 shadow-sm">
+        <div className="absolute bottom-3 left-3 bg-slate-800/70 backdrop-blur-sm rounded-xl px-3 py-2 text-xs text-slate-300 border border-slate-700/60">
           <p>節點大小 = 出現次數｜連線粗細 = 共現次數</p>
-          <p className="text-[10px] text-slate-400 mt-0.5">點擊節點切換回 Timeline 篩選</p>
+          <p className="text-[10px] text-slate-500 mt-0.5">hover 顯示標籤 · 點擊節點篩選 Timeline</p>
         </div>
       )}
     </div>
