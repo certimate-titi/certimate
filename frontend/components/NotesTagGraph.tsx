@@ -258,7 +258,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     // Edge weight label positions (tick updates)
     const edgeWeightLabels = container.selectAll('g:nth-of-type(2) text');
 
-    simulation.on('tick', () => {
+    // Tick handler updates DOM. 用 reference 直接 query SVG 避免 captured selection 過期
+    const updateDom = () => {
       link
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
@@ -270,7 +271,14 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
         .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
 
       nodeGroup.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-    });
+    };
+
+    simulation.on('tick', updateDom);
+
+    // 強制 sync 跑 300 ticks 讓 sim 立即 converge（避免依賴 async timer 才能正常 settle）
+    // d3.forceSimulation 預設 alpha=1, alphaDecay=0.0228，300 ticks 後 alpha ~= 0.001
+    for (let i = 0; i < 300; i++) simulation.tick();
+    updateDom(); // 套上最終位置
 
     return () => { simulation.stop(); };
   }, [tags, edges, dimensions, activeTag, onTagClick]);
