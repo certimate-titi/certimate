@@ -89,8 +89,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     // aggregate endpoint 提供 3 sources 合併的 tag list
     // user-notes list 仍用於計算共現邊（只有 note 有自由文字 hashtag）
     Promise.allSettled([
-      userTagService.aggregate({ subject_id: subjectId, limit: 200 }),
-      userNoteService.list({ subject_id: subjectId, limit: 200 }),
+      userTagService.aggregate({ subject_id: subjectId, limit: 100 }),
+      userNoteService.list({ subject_id: subjectId, limit: 100 }),
     ]).then(([tagRes, noteRes]) => {
       const tagItems = tagRes.status === 'fulfilled' ? tagRes.value.items : [];
       setTags(tagItems);
