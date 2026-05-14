@@ -274,11 +274,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     };
 
     simulation.on('tick', updateDom);
-
-    // 強制 sync 跑 300 ticks 讓 sim 立即 converge（避免依賴 async timer 才能正常 settle）
-    // d3.forceSimulation 預設 alpha=1, alphaDecay=0.0228，300 ticks 後 alpha ~= 0.001
-    for (let i = 0; i < 300; i++) simulation.tick();
-    updateDom(); // 套上最終位置
+    simulation.alpha(1).restart();
 
     return () => { simulation.stop(); };
   }, [tags, edges, dimensions, activeTag, onTagClick]);
