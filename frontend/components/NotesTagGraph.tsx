@@ -132,13 +132,15 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
     );
 
     // Node radius = proportional to count (min 10, max 36)
+    // 修：當所有 tag count 相同（如全為 1），d3.scaleLinear domain 退化 → NaN，
+    //     forceCollide radius NaN 導致節點全擠中心無排斥。改用固定中間值。
     const counts = tags.map((t) => t.count);
     const minCount = Math.min(...counts);
     const maxCount = Math.max(...counts);
-    const radiusScale = d3.scaleLinear()
-      .domain([minCount, maxCount])
-      .range([10, 36])
-      .clamp(true);
+    const radiusScale: (c: number) => number =
+      minCount === maxCount
+        ? () => 18
+        : d3.scaleLinear().domain([minCount, maxCount]).range([10, 36]).clamp(true) as unknown as (c: number) => number;
 
     const simNodes: TagNode[] = tags.map((t) => ({
       id: t.normalized,
