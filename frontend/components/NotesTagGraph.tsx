@@ -178,8 +178,8 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .attr('stroke-opacity', (d: any) => Math.min(0.15 + (d.weight ?? 1) * 0.1, 0.7))
       .attr('stroke-width', (d: any) => Math.min(1 + (d.weight ?? 1) * 0.5, 4));
 
-    // Edge weight labels
-    container.append('g')
+    // Edge weight labels — 直接拿 join 後 selection，避免 nth-of-type 重 selectAll 撞到 node text
+    const edgeWeightLabels = container.append('g')
       .selectAll('text')
       .data(simEdges.filter((d: any) => (d.weight ?? 1) > 1))
       .join('text')
@@ -255,10 +255,7 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       .attr('font-size', '9px')
       .attr('pointer-events', 'none');
 
-    // Edge weight label positions (tick updates)
-    const edgeWeightLabels = container.selectAll('g:nth-of-type(2) text');
-
-    // Tick handler updates DOM. 用 reference 直接 query SVG 避免 captured selection 過期
+    // Tick handler updates DOM positions from datum.
     const updateDom = () => {
       link
         .attr('x1', (d: any) => d.source.x)
@@ -273,8 +270,20 @@ export default function NotesTagGraph({ subjectId, activeTag, onTagClick }: Note
       nodeGroup.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     };
 
+    // Tick handler 註冊讓 d3 timer + drag 互動可用。但因 React StrictMode + Suspense
+    // 環境實測 'tick' event 可能在 cleanup 前只觸發 1-2 次（rAF 鏈被 cancel）→ DOM
+    // transform 永遠 null。
+    //
+    // 防線：mount 時同步跑 200 ticks 強制 converge 並立即 updateDom，把最終位置寫進
+    // DOM。即使後續 cleanup 取消 d3 timer，DOM 已有完整佈局。forceLink id→node
+    // 解析在 simulation 創建時已完成，sync tick 不會撞 PR #109 的 crash。
     simulation.on('tick', updateDom);
-    simulation.alpha(1).restart();
+    for (let i = 0; i < 200; i++) simulation.tick();
+    updateDom();
+
+    // 重啟 d3 timer 讓拖曳互動能再觸發 tick → updateDom（即便 alpha 已降，drag
+    // start 會 alphaTarget(0.3).restart() 拉起 timer）。
+    simulation.alpha(0.05).restart();
 
     return () => { simulation.stop(); };
   }, [tags, edges, dimensions, activeTag, onTagClick]);
