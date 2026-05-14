@@ -22,6 +22,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { renderHashtags } from '@/lib/hashtag-render';
 import {
   chatAnnotationService,
   knowledgeService,
@@ -371,7 +372,7 @@ function TimelineCard({
                 {item.data.title && (
                   <p className="text-xs font-semibold text-slate-800 mb-0.5">{item.data.title}</p>
                 )}
-                <p className="text-sm text-slate-700 line-clamp-3 whitespace-pre-line leading-relaxed">{item.data.content}</p>
+                <p className="text-sm text-slate-700 line-clamp-3 whitespace-pre-line leading-relaxed">{renderHashtags(item.data.content)}</p>
               </div>
             )}
             {item._kind === 'annotation' && (
@@ -381,7 +382,7 @@ function TimelineCard({
                     {item.data.highlighted_text}
                   </blockquote>
                 )}
-                <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{item.data.user_annotation}</p>
+                <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{renderHashtags(item.data.user_annotation)}</p>
               </div>
             )}
             {item._kind === 'scaffold' && (
@@ -389,7 +390,7 @@ function TimelineCard({
                 <p className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2">{item.data.content}</p>
                 {item.data.user_response && (
                   <div className="rounded-lg bg-amber-50/60 border border-amber-100 px-3 py-2">
-                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{item.data.user_response}</p>
+                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{renderHashtags(item.data.user_response ?? '')}</p>
                   </div>
                 )}
               </div>
