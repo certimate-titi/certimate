@@ -519,9 +519,30 @@ function ExamSetupPage() {
             liveStageLabel={liveStageLabel}
           />
 
-      <div className="text-center mb-10">
+      <div className="text-center mb-6">
         <p className="text-slate-600">選擇你想測驗的範圍與難度，AI 將為你動態生成專屬考題。</p>
       </div>
+
+      {/* 錯題回顧入口（原 AI 教練併入測驗動線） */}
+      <button
+        type="button"
+        onClick={() => router.push('/review')}
+        className="group block w-full mb-8 text-left rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 transition-all shadow-sm hover:shadow-md p-4"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 shrink-0">
+            <BrainCircuit className="h-5 w-5" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900">錯題回顧</h3>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-200/60 text-amber-700">AI 教練</span>
+            </div>
+            <p className="text-xs text-slate-600 mt-0.5">回顧你之前答錯的題目，由 AI 教練蘇格拉底式對話協助理解</p>
+          </div>
+          <span className="text-amber-500 group-hover:translate-x-0.5 transition-transform shrink-0">→</span>
+        </div>
+      </button>
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="grid md:grid-cols-2">
