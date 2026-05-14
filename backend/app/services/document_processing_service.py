@@ -727,7 +727,7 @@ class DocumentProcessingService:
             )
 
             if content.strip():
-                depth = min(level, 3)  # cap at depth 3
+                depth = max(1, level)  # depth 不再封頂；PDF TOC level 即為 depth
                 sections.append({
                     "title": title.strip()[:60],
                     "content": content,
@@ -762,22 +762,23 @@ class DocumentProcessingService:
             "你是文件結構分析專家。根據提供的文件頁面（首3頁+末頁），推斷文件的目錄結構。\n"
             "回傳 JSON 格式，不要 markdown code block。\n"
             "如果無法判斷目錄結構（例如文件太短或無明顯章節），回傳 {\"chapters\": []}。\n\n"
-            "使用語意階層萃取（Semantic Hierarchy Extraction）三層結構：\n"
+            "使用語意階層萃取（Semantic Hierarchy Extraction），depth 數值依文件自然層級判斷，不設上限：\n"
             "  depth 1 = 核心主題（章）— 例如「信託法規」「No Code / Low Code 概念」\n"
             "  depth 2 = 次要概念（節）— 例如「信託契約要素」「生成式AI 應用領域」\n"
-            "  depth 3 = 細節知識點（考點）— 例如「忠實義務範圍」「自動化行銷文案生成」\n\n"
-            "格式範例：\n"
+            "  depth 3+ = 細節知識點 / 子知識點 — 例如「忠實義務範圍」「自動化行銷文案生成」\n\n"
+            "格式範例（depth 不設上限，依文件實際層級判斷）：\n"
             '{"chapters": [\n'
             '  {"title": "第一章 概論", "page_start": 1, "page_end": 10, "depth": 1},\n'
             '  {"title": "1.1 背景", "page_start": 1, "page_end": 3, "depth": 2},\n'
             '  {"title": "1.1.1 歷史沿革", "page_start": 1, "page_end": 2, "depth": 3},\n'
+            '  {"title": "1.1.1.1 早期發展", "page_start": 1, "page_end": 1, "depth": 4},\n'
             '  {"title": "1.2 目的", "page_start": 4, "page_end": 5, "depth": 2},\n'
             '  {"title": "第二章 方法", "page_start": 6, "page_end": 10, "depth": 1},\n'
             '  {"title": "練習題：第一章", "page_start": 11, "page_end": 12, "depth": 2, "type": "quiz"}\n'
             "]}\n\n"
             "規則：\n"
             "- title 要簡短（15字內），使用該主題的專業術語\n"
-            "- 盡量產出 3 層結構（至少 2 層）\n"
+            "- 依文件實際層級深度產出，不限層數（至少 2 層）\n"
             f"- 文件共 {max_page} 頁\n"
             "- 如果頁面內容主要是考題/選擇題，標記 type: quiz，標題加「練習題」前綴"
         )
@@ -1050,9 +1051,16 @@ class DocumentProcessingService:
         if not self._llm:
             return None
 
-        # Build page summaries for AI
+        # Build page summaries for AI（不限 section 數量；長文件靠 max_tokens 自然約束）
+        # 觀測點：section 數量 > 200 時 log warning，便於追蹤 token cost 異常
+        if len(sections) > 200:
+            logger.warning(
+                "AI structure analysis: large doc with %d sections (doc=%s) — "
+                "input tokens may spike; monitor LLM cost",
+                len(sections), doc_title[:60]
+            )
         summaries = []
-        for s in sections[:40]:
+        for s in sections:
             preview = s["content"][:120].replace('\n', ' ').strip()
             page = s.get("page_start", "?")
             summaries.append(f"p.{page}: {preview}")
@@ -1094,7 +1102,11 @@ class DocumentProcessingService:
             return None
 
     def _flatten_structure(self, chapters: list[dict], original_sections: list[dict]) -> list[dict]:
-        """Convert nested chapter structure to flat section list with depth."""
+        """Convert nested chapter structure to flat section list with depth.
+
+        遞迴展開任意層數，每節點的 depth 為 1 + 父深度，由 LLM 回傳的巢狀結構決定。
+        子節點 key 可為 "sections" / "subsections" / "children"（任一者）。
+        """
         # Build page → content map from original sections
         page_content: dict[int, str] = {}
         max_page = 0
@@ -1104,67 +1116,49 @@ class DocumentProcessingService:
                 page_content[pn] = s["content"]
                 max_page = max(max_page, pn)
 
-        # Infer page_end for chapters that don't have it
-        for i, ch in enumerate(chapters):
-            if not ch.get("page_end"):
-                if i + 1 < len(chapters):
-                    ch["page_end"] = chapters[i + 1].get("page_start", ch.get("page_start", 0)) - 1
-                else:
-                    ch["page_end"] = max_page
-            # Same for sections
-            for j, sec in enumerate(ch.get("sections", [])):
-                if not sec.get("page_end"):
-                    if j + 1 < len(ch.get("sections", [])):
-                        sec["page_end"] = ch["sections"][j + 1].get("page_start", sec.get("page_start", 0)) - 1
+        def _children(node: dict) -> list[dict]:
+            for key in ("sections", "subsections", "children"):
+                kids = node.get(key)
+                if kids:
+                    return kids
+            return []
+
+        def _infer_page_end(nodes: list[dict], parent_page_end: int) -> None:
+            for i, n in enumerate(nodes):
+                if not n.get("page_end"):
+                    if i + 1 < len(nodes):
+                        n["page_end"] = nodes[i + 1].get("page_start", n.get("page_start", 0)) - 1
                     else:
-                        sec["page_end"] = ch["page_end"]
+                        n["page_end"] = parent_page_end
+                _infer_page_end(_children(n), n["page_end"])
 
-        result = []
-        for ch in chapters:
-            page_start = ch.get("page_start", 0)
-            page_end = ch.get("page_end", page_start)
+        _infer_page_end(chapters, max_page)
 
-            # Chapter content: merge pages in range
-            ch_content = "\n\n".join(
+        result: list[dict] = []
+
+        def _walk(node: dict, depth: int, parent_title: str) -> None:
+            page_start = node.get("page_start", 0)
+            page_end = node.get("page_end", page_start)
+            kids = _children(node)
+            content = "\n\n".join(
                 page_content.get(p, "") for p in range(page_start, page_end + 1) if page_content.get(p)
             )
-
-            ch_sections = ch.get("sections", [])
-            if ch_sections:
-                # Has sub-sections: chapter is a container, add sub-sections with content
-                for sec in ch_sections:
-                    sec_start = sec.get("page_start", page_start)
-                    sec_end = sec.get("page_end", sec_start)
-                    sec_content = "\n\n".join(
-                        page_content.get(p, "") for p in range(sec_start, sec_end + 1) if page_content.get(p)
-                    )
-
-                    subsections = sec.get("subsections", [])
-                    if subsections:
-                        for sub in subsections:
-                            sub_page = sub.get("page_start", sec_start)
-                            sub_content = page_content.get(sub_page, "")
-                            result.append({
-                                "title": sub.get("title") or f"p.{sub_page}",
-                                "content": sub_content,
-                                "page_start": sub_page, "page_end": sub_page,
-                                "depth": 3, "parent_title": sec.get("title", ""),
-                            })
-                    else:
-                        result.append({
-                            "title": sec.get("title") or f"p.{sec_start}",
-                            "content": sec_content,
-                            "page_start": sec_start, "page_end": sec_end,
-                            "depth": 2, "parent_title": ch.get("title", ""),
-                        })
-            else:
-                # No sub-sections: chapter is a leaf
+            # 葉節點才寫入內容（與舊邏輯一致：containers skip）
+            if not kids:
                 result.append({
-                    "title": ch.get("title") or f"p.{page_start}",
-                    "content": ch_content,
-                    "page_start": page_start, "page_end": page_end,
-                    "depth": 1,
+                    "title": (node.get("title") or f"p.{page_start}")[:60],
+                    "content": content,
+                    "page_start": page_start,
+                    "page_end": page_end,
+                    "depth": depth,
+                    "parent_title": parent_title,
                 })
+            else:
+                for k in kids:
+                    _walk(k, depth + 1, node.get("title", parent_title))
+
+        for ch in chapters:
+            _walk(ch, depth=1, parent_title="")
 
         return result if result else None
 

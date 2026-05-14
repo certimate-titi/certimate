@@ -33,3 +33,17 @@ Feature: knowledge_nodes depth CHECK 寫入相容性（後端契約）
       When 用戶 alice 對該衝突 POST decision={"action":"keep_separate"}
       Then 新節點 depth 為 1
       And 寫入 DB 不觸發 chk_depth_range CHECK 違規
+
+  @backend @migration_100
+  Rule: migration 100 解除 depth 上限
+    Scenario: 寫入 depth=4 的 KnowledgeNode 成功（不再受 091 CHECK 約束）
+      Given 用戶 "alice@example.com" 擁有資源 "res-deep" 解析狀態為 "success"
+      When 建立 KnowledgeNode(resource_id=res-deep, name="深度節點", parent_id=NULL, depth=4)
+      Then KnowledgeNode 寫入成功
+      And 該節點 depth 為 4
+
+    Scenario: 寫入 depth=7 的 KnowledgeNode 成功（驗證真正無上限）
+      Given 用戶 "alice@example.com" 擁有資源 "res-deeper" 解析狀態為 "success"
+      When 建立 KnowledgeNode(resource_id=res-deeper, name="極深節點", parent_id=NULL, depth=7)
+      Then KnowledgeNode 寫入成功
+      And 該節點 depth 為 7

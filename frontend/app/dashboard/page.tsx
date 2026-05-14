@@ -23,7 +23,6 @@ import DailyQuestCard from '@/components/DailyQuestCard';
 import SubjectPickerModal from '@/components/SubjectPickerModal';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import PendingJourneysBanner from '@/components/PendingJourneysBanner';
-import DomainRadarChart from '@/components/DomainRadarChart';
 import type { SelectedSubject } from '@/components/onboarding/SelectedSubjectCard';
 import CompletionProgressBar from '@/components/completion/CompletionProgressBar';
 import BadgeShelf from '@/components/completion/BadgeShelf';
@@ -546,7 +545,7 @@ export default function DashboardPage() {
             {/* Schedule Week Card */}
             <ScheduleWeekCard isAuthenticated={isAuthenticated} />
 
-            {/* 中段 Section 6 — 學習狀態（領域雷達圖 + 信心度趨勢） */}
+            {/* 中段 Section 6 — 學習狀態（答對率 + 信心度趨勢） */}
             <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
               <h2 className="text-[18px] font-bold text-slate-900 mb-4">學習狀態</h2>
 
@@ -559,14 +558,6 @@ export default function DashboardPage() {
                   <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${data.stats.overallAccuracy}%` }} />
                 </div>
               </div>
-
-              <DomainRadarChart
-                domains={data.domainStrengths}
-                onDomainClick={activeSubjectId ? (_d, nodeId) => {
-                  const qs = nodeId ? `?nodeId=${nodeId}` : '';
-                  window.location.href = `/knowledge${qs}`;
-                } : undefined}
-              />
 
               {/* T63 (Sprint 8 L30) — 信心度校準趨勢（Feature 20） */}
               {calibration && calibration.exam_count > 0 && (
