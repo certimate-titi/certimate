@@ -1357,54 +1357,40 @@ function KnowledgeBasePageInner() {
                   masteryLevel={selectedNodeDetail.node?.masteryLevel}
                   isPro={isProPlus || subscriptionTier === 'PRO_199'}
                 />
-                {(() => {
-                  // Spec 03b §「練習/測驗按鈕應依節點題目可用性決定啟用狀態」
-                  // 從 mindMapNodes 找出當前節點的 available_questions
-                  const findAvail = (list: MindMapNode[]): number | null => {
-                    for (const n of list) {
-                      if (n.id === nodeId) return n.available_questions ?? 0;
-                      if (n.children?.length) {
-                        const r = findAvail(n.children);
-                        if (r !== null) return r;
-                      }
-                    }
-                    return null;
-                  };
-                  const avail = nodeId ? (findAvail(mindMapNodes) ?? 0) : 0;
-                  const noQ = avail === 0;
-                  return (
-                    <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
-                      {noQ ? (
-                        <span className="text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">練習</span>
-                      ) : (
-                        <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
-                      )}
-                      {noQ ? (
-                        <span className="text-[10px] text-slate-300 cursor-not-allowed whitespace-nowrap" title="此節點目前無可用題目">測驗</span>
-                      ) : (
-                        <button onClick={() => { router.push(`/exam/setup?nodeId=${nodeId}`); }} className="text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">測驗</button>
-                      )}
-                    </div>
-                  );
-                })()}
+                <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
+                  {/* 弱/部分/精通 badge 內聯到 toolbar，不再獨佔一行 */}
+                  {selectedNodeDetail.node?.masteryLevel && selectedNodeDetail.node?.masteryLevel !== 'untested' ? (
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                      {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '精通' : selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分' : '弱'}
+                    </span>
+                  ) : <span />}
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => { const nname = nodeLabel || ''; router.push(`/practice?nodeId=${nodeId}&nodeName=${encodeURIComponent(nname)}`); }} className="text-[10px] text-blue-600 font-medium hover:text-blue-700 whitespace-nowrap">練習</button>
+                    <button onClick={() => { router.push(`/exam/setup?nodeId=${nodeId}`); }} className="text-[10px] text-emerald-600 font-medium hover:text-emerald-700 whitespace-nowrap">測驗</button>
+                  </div>
+                </div>
                 <div className="px-3 py-2">
-                  {selectedNodeDetail.node?.masteryLevel && selectedNodeDetail.node?.masteryLevel !== 'untested' && (
-                    <div className="mb-2">
-                      <span className={`inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold border ${selectedNodeDetail.node?.masteryLevel === 'mastered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : selectedNodeDetail.node?.masteryLevel === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
-                        {selectedNodeDetail.node?.masteryLevel === 'mastered' ? '精通' : selectedNodeDetail.node?.masteryLevel === 'partial' ? '部分' : '弱'}
-                      </span>
-                    </div>
-                  )}
                   {selectedNodeDetail.citationSource?.type === 'youtube' && selectedNodeDetail.citationSource?.sourceUrl && (
                     <div className="aspect-video bg-black rounded-lg overflow-hidden mb-2">
                       <iframe src={`https://www.youtube.com/embed/${extractYouTubeId(selectedNodeDetail.citationSource?.sourceUrl)}?start=${selectedNodeDetail.citationSource?.timestampStart || 0}&autoplay=0`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="YouTube" />
                     </div>
                   )}
-                  {/* ── 概念說明 ── */}
+                  {/* ── 概念說明 ── 剝除開頭與 nodeLabel 重複的 H1，避免標題重複 */}
                   {(selectedNodeDetail.citationText || selectedNodeDetail.sourceText) && !(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '').includes('無原文摘要') ? (
                     <div className="prose prose-slate prose-xs max-w-none">
                       <div className="whitespace-pre-line text-[11px] text-slate-600 leading-relaxed">
-                        {renderMarkdown(selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '')}
+                        {renderMarkdown(
+                          (() => {
+                            const raw = selectedNodeDetail.citationText || selectedNodeDetail.sourceText || '';
+                            // 去除開頭與 nodeLabel 同名的 # 標題（含 ##/###）+ 緊跟的空行
+                            if (!nodeLabel) return raw;
+                            const trimmed = raw.replace(
+                              new RegExp(`^\\s*#{1,6}\\s*${nodeLabel.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\s*\\n+`),
+                              ''
+                            );
+                            return trimmed;
+                          })()
+                        )}
                       </div>
                     </div>
                   ) : (
