@@ -1566,3 +1566,9 @@ from .tags_3sources.commands import api_calls as f54_commands  # noqa: F401
 from .tags_3sources.aggregate_then import assertions as f54_assertions  # noqa: F401
 from .tags_3sources.readmodel_then import response_assertions as f54_readmodel  # noqa: F401
 
+# Tag Backfill admin endpoint — Feature 55
+from .tag_backfill.aggregate_given import setup as f55_given  # noqa: F401
+from .tag_backfill.commands import api_calls as f55_commands  # noqa: F401
+from .tag_backfill.aggregate_then import db_assertions as f55_db  # noqa: F401
+from .tag_backfill.readmodel_then import response_assertions as f55_readmodel  # noqa: F401
+
