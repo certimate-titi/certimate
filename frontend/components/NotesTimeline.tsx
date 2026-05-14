@@ -14,6 +14,7 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  ChevronUp,
   Edit2,
   NotebookPen,
   Plus,
@@ -171,8 +172,8 @@ function NoteEditForm({
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        rows={3}
-        className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-300 resize-none bg-white"
+        rows={8}
+        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-300 resize-y bg-white min-h-[180px] max-h-[60vh] leading-relaxed"
       />
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="text-xs px-3 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
@@ -231,9 +232,9 @@ function AnnotationEditForm({
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        rows={3}
+        rows={8}
         placeholder="評語（至少 10 字）"
-        className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-violet-300 resize-none bg-white"
+        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-violet-300 resize-y bg-white min-h-[180px] max-h-[60vh] leading-relaxed"
       />
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="text-xs px-3 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
@@ -274,8 +275,8 @@ function ScaffoldEditForm({
       <textarea
         value={response}
         onChange={(e) => setResponse(e.target.value)}
-        rows={3}
-        className="w-full text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-amber-300 resize-none bg-white"
+        rows={8}
+        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300 resize-y bg-white min-h-[180px] max-h-[60vh] leading-relaxed"
       />
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="text-xs px-3 py-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
@@ -294,6 +295,14 @@ function ScaffoldEditForm({
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
+// 判斷內容是否「夠長」需要展開/收合 toggle。
+// 規則：> 160 字 或 > 4 個換行
+function isLongContent(s: string | null | undefined): boolean {
+  if (!s) return false;
+  if (s.length > 160) return true;
+  return (s.match(/\n/g)?.length ?? 0) > 3;
+}
+
 function TimelineCard({
   item,
   onUpdate,
@@ -305,7 +314,22 @@ function TimelineCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const meta = KIND_META[item._kind];
+
+  // 取本卡主要內容字串以判斷是否需要展開 toggle
+  const mainText =
+    item._kind === 'note'
+      ? item.data.content
+      : item._kind === 'annotation'
+        ? item.data.user_annotation
+        : item.data.user_response ?? '';
+  const showToggle = isLongContent(mainText);
+
+  // 共用 className：未展開→line-clamp-3；展開→限高+內捲
+  const bodyCls = expanded
+    ? 'text-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-[60vh] overflow-y-auto pr-1'
+    : 'text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3';
 
   async function handleDelete() {
     if (!window.confirm('確定要刪除此筆記？')) return;
@@ -372,28 +396,46 @@ function TimelineCard({
                 {item.data.title && (
                   <p className="text-xs font-semibold text-slate-800 mb-0.5">{item.data.title}</p>
                 )}
-                <p className="text-sm text-slate-700 line-clamp-3 whitespace-pre-line leading-relaxed">{renderHashtags(item.data.content)}</p>
+                <div className={bodyCls}>{renderHashtags(item.data.content)}</div>
               </div>
             )}
             {item._kind === 'annotation' && (
               <div>
                 {item.data.highlighted_text && (
-                  <blockquote className="text-xs text-slate-500 italic border-l-2 border-slate-300 pl-2 mb-1.5 line-clamp-2">
+                  <blockquote className={`text-xs text-slate-500 italic border-l-2 border-slate-300 pl-2 mb-1.5 ${expanded ? '' : 'line-clamp-2'}`}>
                     {item.data.highlighted_text}
                   </blockquote>
                 )}
-                <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{renderHashtags(item.data.user_annotation)}</p>
+                <div className={bodyCls}>{renderHashtags(item.data.user_annotation)}</div>
               </div>
             )}
             {item._kind === 'scaffold' && (
               <div>
-                <p className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2">{item.data.content}</p>
+                <p className={`text-xs font-semibold text-slate-600 mb-1 ${expanded ? '' : 'line-clamp-2'}`}>{item.data.content}</p>
                 {item.data.user_response && (
                   <div className="rounded-lg bg-amber-50/60 border border-amber-100 px-3 py-2">
-                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed line-clamp-3">{renderHashtags(item.data.user_response ?? '')}</p>
+                    <div className={bodyCls}>{renderHashtags(item.data.user_response ?? '')}</div>
                   </div>
                 )}
               </div>
+            )}
+            {/* 展開/收合 toggle — 內容夠長才顯示 */}
+            {showToggle && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" /> 收合
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" /> 閱讀全文
+                  </>
+                )}
+              </button>
             )}
           </>
         )}
