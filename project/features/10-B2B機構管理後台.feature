@@ -573,18 +573,44 @@ Feature: B2B 機構管理後台
       When 使用者 "org-admin@school.com" 移除機構 1 的學生 "notexist@school.com"
       Then 操作失敗，錯誤為「找不到該學生」
 
-  # ========== 未實作功能 Placeholder ==========
-  Rule: 後置（回應）- 匯入學生名單按鈕顯示未實作提示
+  # ========== CSV 匯入 Modal 行為（已實作） ==========
+  # 2026-05-18 更新：ImportStudentModal 已完整實作（CSV 解析、5 行 preview、consent checkbox、
+  # 匯入結果統計）。原 placeholder「匯入學生名單按鈕顯示即將推出」已移除。
+  # CSV 匯入相關 Scenario 見上方 L136-170（欄位格式驗證、DPA 簽署、批量匯入成功等）。
 
-    Example: 點擊匯入學生名單按鈕顯示即將推出提示
+  Rule: 後置（回應）- 機構管理後台匯入學生名單應開啟 CSV 匯入 Modal
+    # @frontend — 此 Rule 描述前端 ImportStudentModal 的真實行為
+
+    Example: 點擊匯入學生名單按鈕應開啟 CSV 匯入 Modal
       When 使用者 "org-admin@school.com" 在機構管理後台點擊「匯入學生名單」按鈕
-      Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
-  Rule: 後置（回應）- 快速操作卡片點擊顯示未實作提示
+      Then 系統應開啟 CSV 匯入 Modal
+      And Modal 應包含 CSV 檔案上傳區域
+      And Modal 應包含「下載範本」按鈕
+      And CSV 範本應包含欄位：姓名、電子郵件、群組
 
-    Example: 點擊快速操作卡片顯示即將推出提示
+    Example: 上傳 CSV 後顯示預覽表格與同意勾選
+      Given 使用者 "org-admin@school.com" 已開啟 CSV 匯入 Modal
+      When 使用者上傳包含 3 筆學生資料的合法 CSV 檔案
+      Then Modal 應顯示預覽表格，最多 5 行
+      And Modal 應顯示「我已確認上述資料正確，並已取得相關當事人同意」勾選框
+      And 「開始匯入」按鈕在未勾選同意前應為停用狀態
+
+    Example: 匯入成功後顯示結果統計
+      Given 使用者 "org-admin@school.com" 已上傳合法 CSV 並勾選同意
+      When 使用者點擊「開始匯入」按鈕
+      Then Modal 應顯示匯入結果統計：總筆數、新建帳號數、加入成員數、跳過重複數、群組列表
+
+  # ========== 仍為 Placeholder 的快速操作功能 ==========
+
+  Rule: 後置（回應）- 派發模擬考卷與全局弱點分析卡片顯示未實作提示
+    # 「派發模擬考卷」與「全局弱點分析」兩張快速卡片仍為 alert() stub
+
+    Example: 點擊派發模擬考卷卡片顯示即將推出提示
       When 使用者 "org-admin@school.com" 在機構管理後台點擊快速操作卡片
       Then 系統應顯示提示訊息「此功能即將推出，敬請期待」
+
   Rule: 後置（回應）- 匯出詳細報告按鈕顯示未實作提示
+    # 匯出按鈕仍為 alert() stub
 
     Example: 點擊匯出詳細報告按鈕顯示即將推出提示
       When 使用者 "org-admin@school.com" 在班級分析頁點擊「匯出詳細報告」按鈕

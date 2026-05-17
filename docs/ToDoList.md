@@ -3,7 +3,7 @@
 > **🔒 SSOT 宣告**：本檔（`docs/ToDoList.md`）為待辦清單**唯一真實來源**。專案根目錄 `ToDoList.md` 為 symlink 指向此檔。所有巡檢腳本 / agent 寫入必須以此路徑為準。歷史 session 筆記已歸檔至 `docs/archive/`。（建立於 2026-05-03）
 
 ## 待辦事項
-**最後更新**：2026-05-08 ToDoList 殘留 audit — 14 項 unchecked 對照實作，2 項巡檢誤報已勾掉（番茄鐘 UI L44/L58）；其餘分類：4 項 BDD 覆蓋缺口（UI 已做需補 scenario：L45 AI inference / L46 模式 tooltip / L47 行內加科目 modal / L50 weekly-reports 空態）+ 8 項真未做（L29 Certi 表情 / L30 信心度趨勢 / L48 分享節點 / L59 摺疊按鈕 / L60 confetti / L65 setup Layer 3 / L69 dashboard parse failure_reason / L70 PROCESSING 三態）
+**最後更新**：2026-05-18 Daily QA Audit — 全站 58 頁 + 43 Feature Files 交叉審核完成。無新增問題，確認所有現有 open 項目狀態。新增 🟡 1 項建議（/exam/results Layer 3 適用性評估）。（前次：2026-05-17 Daily QA Audit）
 
 > **2026-05-08 ToDoList Audit 註**：剩餘 12 項 unchecked 已分類，巡檢「未實作 UI」的判定標準需區分「UI 缺」vs「Scenario 缺」— 後者 UI 存在但 BDD spec 缺，task 仍未完成。未來巡檢腳本應優先讀程式碼存在性再判 missing，避免誤報。
 
@@ -26,9 +26,49 @@
 
 **待補稽核**（次要）：`/super-admin/settings/*`、`/super-admin/prompt-templates/`、`/super-admin/cost-monitor/`、`/super-admin/settings/flags`、`/super-admin/settings/plans` 等高等設定頁應改用 `isSuperAdmin` 守衛（目前皆用 `isAdmin`）。後端 `require_super_admin` 已存在，需 audit endpoint 一致性。
 
+## 🟡 空態補強 — 適用性評估（2026-05-18 新增）
+
+- [ ] `/exam/results` — **Layer 3 適用性評估（P3）**：頁面 Layer 3 job 查詢為 0，但此頁面語意為「examId 對應的測驗不存在或載入失敗」而非「資源解析失敗」，需 QA 架構師確認 Layer 3 規則是否適用於 exam results 頁。若不適用則標記 N/A；若適用，需補 Layer 3 查詢邏輯（首見：2026-05-18 Daily QA Audit）
+
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-17 新增）
+
+- [x] Feature 10 L577-586 — ~~**Scenario 誤導（P1）**：三個 Scenario 描述「CSV 匯入顯示即將推出」~~ 已修正：L577-581 Rule 更新為「匯入學生名單應開啟 CSV 匯入 Modal」含 3 個新 Example Scenario（開啟 Modal / 預覽表格與同意勾選 / 匯入結果統計），對齊 ImportStudentModal 真實行為；「派發模擬考卷」與「匯出詳細報告」placeholder Scenario 保留；project/ 與 backend/ 兩份 feature 檔同步更新（修復：2026-05-18 TiTi Commander 排程巡檢）
+
+- [ ] `/exam/workspace` — **EPIC-035 AI inference 判斷按鈕未整合（P2）**：Feature 20 已有 Scenario 覆蓋（keep_mine/accept_ai/skip），且 Feature 20 Comment L139 明確記錄「/exam/workspace 目前未整合此 UI（僅 practice 有）」。需將 `blindInferenceService.submitJudgment` 三按鈕 UI 移植到 workspace/page.tsx（首見：2026-05-14；本次確認：2026-05-18 Daily QA Audit）
+
+## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-16 新增）
+
+- [x] `/today/reviews` — ~~SM-2 鷹架到期複習面板缺乏獨立 Feature Scenario~~ 巡檢誤報：Feature 42 L119-170 已涵蓋完整 /today/reviews Scenario（SM-2 metadata interval_days/repetitions 展示、「現在複習」跳轉 reading 頁行為、空態處理、Layer 3 解析失敗偵測）（確認：2026-05-16 TiTi Commander 排程巡檢）
+- [x] `/invite/setup-password` — ~~EDU 受邀使用者密碼設定頁無前端 Feature Scenario~~ Feature 10 未涵蓋是正確的，但 **Feature 01 L379-421** 已完整覆蓋（EDU 學生邀請連結 → 密碼設定頁、token valid/expired/used 三態、密碼強度驗證 8+ 含大小寫數字、設定成功導向儀表板）（確認：2026-05-16 TiTi Commander 排程巡檢）
+
+## 🟠 實作缺失 — 需補前端功能（2026-05-17 新增）
+
+- [ ] `/edu-console` — **「派發模擬考卷」快速卡片為 alert() stub（P2）**：`edu-console/page.tsx` → `alert('此功能即將推出，敬請期待！')`。Feature 10 涵蓋機構管理員派發試卷給學生群體。行動：實作派卷 modal，整合後端 assign exam API（首見：2026-05-17；確認：2026-05-18 Daily QA Audit）
+
+- [ ] `/edu-console` — **「全局弱點分析」快速卡片為 alert() stub（P3）**：`edu-console/page.tsx` → `alert('此功能即將推出，敬請期待！')`。Feature 10 涵蓋全班弱點分析報表（首見：2026-05-17；確認：2026-05-18 Daily QA Audit）
+
+- [ ] `/edu-console` — **「匯出詳細報告」按鈕為 alert() stub（P2）**：`edu-console/page.tsx` → `alert('此功能即將推出，敬請期待！')`。Feature 10 涵蓋全班報告匯出，行動：實作 CSV/PDF 匯出（首見：2026-05-17；確認：2026-05-18 Daily QA Audit）
+
+- [ ] `/edu-console/student/[id]` — **「匯出報告」與「複習排程」為 alert() stub（P2）**：`client.tsx` L447 `alert('匯出功能即將推出！')`；L659 `alert('複習排程功能即將推出！')`。Feature 10 涵蓋教師查看學生詳情並匯出報告（首見：2026-05-17；確認：2026-05-18 Daily QA Audit）
+
+- [ ] `/pricing` → ECPay — **訂閱付款整合仍為 TODO（P1）**：`pricing/page.tsx` 中 `// TODO: ECPay redirect`，點擊付費方案升級僅 `router.push('/account?upgrade=...')`，無實際付款頁跳轉。Feature 08a 規格要求綠界金流串接（首見：2026-05-17；確認：2026-05-18 Daily QA Audit）
+
+## 🟡 空態補強 — 需查 Job 表（2026-05-17 新增）
+
+- [x] `/library/[stub]/watch`、`/library/[stub]/slides`、`/library/[stub]/quiz` — ~~**三個 viewer 的空態無 Layer 3（P2）**~~ Layer 3 已實作：三個 client.tsx 在內容為空時自動呼叫 `resourceParseService.getStatus(resourceId)`，若 status === 'FAILED' 則顯示紅色警示卡（data-testid="watch-empty-parse-failure" / "slides-empty-parse-failure" / "quiz-empty-parse-failure"）含 failure_reason + 「前往學習庫重新解析」連結；TypeScript 編譯零錯誤（修復：2026-05-17 TiTi Commander 排程巡檢）
+
+## 🟠 實作缺失 — 需補前端功能（2026-05-16 新增）
+
+- [x] `/today` — ~~鷹架到期連結目標不一致~~ 已修正：`reviewCount === 0` 時 scaffold 提示連結改為 `/today/reviews`（原指向 `/knowledge`）；`reviewCount > 0` 時 scaffold 提示改為 `<span onClick>` 導向 `/today/reviews`（原為無連結純文字）；TypeScript 編譯零錯誤（修復：2026-05-16 TiTi Commander 排程巡檢）
+- [x] `/library/[stub]/concept` — ~~concept/page.tsx 標注為 Sprint 4 P3 骨架~~ 巡檢誤報：concept/client.tsx 已在 Sprint 5 T43 升級至 backend `/concept-center` endpoint，四分組渲染完整（迷思彙整 pitfall / PDF 教材 / 影片 / 考古題），非 client-side 聚合（確認：2026-05-16 TiTi Commander 排程巡檢）
+
+## 🟡 空態補強 — 需查 Job 表（2026-05-16 新增）
+
+- [x] `/today/reviews` — ~~空態需查 resource_parse_jobs~~ 巡檢誤報：reviews/page.tsx L51-101 已完整實作 Layer 3（items 為空時 useEffect 查 documentService.list() 過濾 FAILED + resourceParseService.getStatus() 取 failure_reason → parseJobFailures state → data-testid="reviews-empty-parse-failures" 紅色警示卡 + 「前往學習庫重新解析」連結）（確認：2026-05-16 TiTi Commander 排程巡檢）
+
 ## 🔴 Feature 缺失 — 需補 Gherkin Scenario（2026-05-08 新增）
 
-- [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08；最後確認：2026-05-14）
+- [ ] `/exam/results` — Feature 06 Scenario「Then 畫面應顯示 AI 教練（Certi）的陪伴與安撫表情」存在，但前端僅顯示靜態 AI 教練文字，非動態 Certi 情感表情 UI；Feature 06 與實作有落差（首見：2026-05-08；最後確認：2026-05-18 Daily QA Audit）
 - [x] `/dashboard` — ~~Feature 20 Rule「後置（回應）- 儀表板應顯示信心度校準趨勢」要求，但儀表板目前無任何信心度趨勢 UI 區塊~~ T63 已修正：dashboardService.getConfidenceCalibration() 對接後端 /dashboard/confidence-calibration（trend / rate / status），DomainRadarChart 下方加迷你 sparkline + 狀態 badge（emerald/amber/rose 三色）；Chrome Preview Layer 2 實測通過（修復：2026-05-08 Sprint 8 CTO quick wins）
 - [x] `/exam/workspace` — ~~Feature 20 Rule「後置（回應）- 題號導覽網格應以不同底色標示信心度」要求網格底色差異，目前網格格子無信心度底色~~ 已修復：題號網格依 `confidences[q.id]` 信心度值上色（😎 confident → 綠色 / 😐 somewhat → 琥珀色 / 😰 guessing → 玫瑰色），圖例同步更新；TypeScript 編譯零錯誤（修復：2026-05-08 TiTi Commander 排程巡檢）
 
@@ -47,7 +87,7 @@
 - [x] `/exam/workspace` + `/practice` — ~~AI inference 判斷按鈕（EPIC-035：保留我的答案/採信AI/略過）已在兩頁實作，但無任何 Feature Scenario 覆蓋~~ 已補 Feature 20 新增 Rule「AI inference 判斷按鈕」含 4 個 Example Scenario（練習頁顯示/保留我的答案/採信AI/略過）；注意：目前僅 /practice 有實作，/exam/workspace 未整合（修復：2026-05-14 TiTi Commander 排程巡檢）
 - [x] `/dashboard` — ~~模式 tooltip 說明按鈕（Sprint/Standard/Mastery 策略說明彈窗）無對應 Feature Scenario~~ 已補 Feature 13 新增 Rule「備考模式 tooltip 說明按鈕」含 2 個 Example Scenario（點擊顯示/再次收合）；dashboard/page.tsx L82 showModeTooltip + L495 toggle 已實作（修復：2026-05-14 TiTi Commander 排程巡檢）
 - [x] `/dashboard` — ~~儀表板無科目時「開始選擇科目」dashboard-level modal 路徑~~ 已補 Feature 13 新增 Rule「儀表板行內新增科目入口」含 2 個 Example Scenario（顯示按鈕/點擊進入流程）；dashboard/page.tsx L424 已實作（修復：2026-05-14 TiTi Commander 排程巡檢）
-- [ ] `/knowledge` — 「分享知識節點」Feature 03 提及節點分享，但無對應 Scenario 且前端未實作按鈕（首見：2026-05-06；最後確認：2026-05-14）
+- [ ] `/knowledge` — 「分享知識節點」Feature 03 提及節點分享，但無對應 Scenario 且前端未實作按鈕（首見：2026-05-06；最後確認：2026-05-18 Daily QA Audit）
 - [x] `/radar-demo` — ~~開發沙盒頁無 Feature Spec、無 @ignore 標記、無 auth/feature-flag 守衛，生產環境可直接訪問~~ 已新增 `isSuperAdmin` 守衛：未認證或非 SUPER_ADMIN 自動 redirect → /dashboard；載入中顯示 spinner（修復：2026-05-06 TiTi Commander 排程巡檢）
 - [x] `/account/weekly-reports` — ~~Feature 14 未覆蓋「reports 為空」時應顯示的 UI 說明情境~~ 已補 Feature 14 Rule「查看歷史週報列表」新增 Example「週報列表為空時顯示引導說明」（顯示「尚無週報」標題 + 活躍用戶說明文字）（修復：2026-05-14 TiTi Commander 排程巡檢）
 
@@ -59,7 +99,7 @@
 
 - [x] `/exam/workspace` — ~~Feature 21 三個 Scenario 要求的番茄鐘互動 UI 全部缺失~~ 與上方 #21 同件事；[PomodoroTimer.tsx](frontend/components/PomodoroTimer.tsx) 已實作，巡檢誤報（移交 BDD 補測清單，2026-05-08 audit）
 - [x] `/knowledge` — ~~Feature 03b Scenario「資源面板摺疊按鈕」存在，但頁面為 resizable 佈局，缺明確的摺疊/展開按鈕 UI~~ 巡檢誤報：[knowledge/page.tsx:819 / 873](frontend/app/knowledge/page.tsx) 已實作左右兩面板各自 toggle 按鈕（「◀ 隱藏資料」/「▶ 資料列表」與右側對稱）；註解 L28 已標明 react-resizable-panels removed（確認：2026-05-08 Sprint 8 audit）
-- [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06；最後確認：2026-05-14）
+- [ ] `/knowledge` — Feature 03 規格「AI 教練可能發送灑花恭喜獎章動畫（節點掌握時）」，頁面未實作 Confetti 或獎章動畫（僅 /exam/results 有 Confetti）（首見：2026-05-06；最後確認：2026-05-18 Daily QA Audit）
 - [x] `/exam/results` — ~~Feature 06 規定 FREE 用戶「不應包含 AI 考後總評文字」並應顯示「升級至 PRO_199 方案的提示資訊」，前端 `/exam/results` 無 tier check 直接渲染 `aiSummary`~~ 已修復：新增 `isFreeUser`（subscriptionTier === 'FREE' && !isAdmin）條件判斷；FREE 用戶顯示灰色區塊 + 「升級至 PRO_199 方案即可解鎖 AI 考後總評分析」+ 查看升級方案按鈕（連結 /pricing）；付費用戶 / 管理者維持原 AI 摘要渲染（修復：2026-05-06 TiTi Commander 排程巡檢）
 
 ## 🟡 空態補強 — 需查 Job 表（2026-05-07 新增）
@@ -478,3 +518,28 @@ feature_conflicts.md 中標註需 /titi-commander 評估的衝突項目（衝突
 ## 🟡 空態補強 — 需查 Job 表（2026-05-14 新增）
 
 - [x] `/today/reviews` — ~~Layer 3 違規：空態未查 job 表~~ 已修復：items 為空時 useEffect 自動查 documentService.list() 過濾 FAILED 文件，逐個呼叫 resourceParseService.getStatus() 取得 failure_reason；UI 顯示紅色警示卡（data-testid="reviews-empty-parse-failures"）含失敗資源名稱 + failure_reason（最多 3 個）+ 「前往學習庫重新解析」連結；Feature 42 新增 2 個 Layer 3 Scenario 覆蓋；TypeScript 編譯零錯誤（修復：2026-05-14 TiTi Commander 排程巡檢）
+
+---
+
+## QA Audit 新發現（2026-05-15）
+
+> 由 daily-qa-page-audit 排程任務自動追加。
+
+### 🔴 Feature 缺失
+
+- [x] `/` — ~~公開行銷首頁（Hero CTA、功能展示、定價導引）完全無 Feature Spec~~ 已新建 `project/features/43-公開行銷首頁.feature`，覆蓋 Hero CTA、三步驟流程、定價方案顯示共 4 個 @frontend Scenario（修復：2026-05-15 TiTi Commander 排程巡檢）
+- [x] `/dashboard` — ~~Completion Framework：CompletionProgressBar + BadgeShelf + MarginalUtilityNudge 三元件無 Scenario~~ 已補 Feature 13 新增 Rule「Completion Framework 進度追蹤元件」含 4 個 @fullstack Scenario（CompletionProgressBar / sweet spot / BadgeShelf / MarginalUtilityNudge）（修復：2026-05-15 TiTi Commander 排程巡檢）
+- [x] `/exam/setup` — ~~進階出題配方 UI（Bloom ratio sliders、Node ratio sliders，`showAdvancedRecipe` / ULTRA guard）無 Scenario~~ 已補 Feature 04 新增 Rule「ULTRA 方案進階出題配方面板」含 3 個 @fullstack Scenario（ULTRA 展開 / FREE 無入口 / Bloom 比例加總）（修復：2026-05-15 TiTi Commander 排程巡檢）
+- [x] `/library/[stub]/slides` — ~~PPT Slides viewer（T27：投影片格子 + 全螢幕瀏覽器）無 Feature Scenario~~ 已補 Feature 11 新增 Rule「PPT 投影片檢視器」含 2 個 @frontend Scenario（格子預覽 / 全螢幕瀏覽）（修復：2026-05-15 TiTi Commander 排程巡檢）
+- [x] `/review` — ~~WrongAnswerExamModal（錯題重考模態）無獨立 Feature Scenario~~ 已補 Feature 07 新增 Rule「錯題重考模態視窗」含 3 個 @fullstack Scenario（入口按鈕 / modal 開啟 / modal 關閉）（修復：2026-05-15 TiTi Commander 排程巡檢）
+
+### 🟠 實作缺失 / 架構風險
+
+- [x] `auth-context.tsx` — ~~Feature 01 定義 JWT 每 30 分鐘 setInterval 自動刷新，需確認 auth-context.tsx 是否有實際實作~~ 驗證通過：auth-context.tsx L131 呼叫 `startTokenAutoRefresh()`（30 分鐘間隔，定義於 client.ts），登入啟動/登出停止/unmount 清除生命週期完整（確認：2026-05-15 TiTi Commander 排程巡檢）
+- [ ] `/knowledge` — Feature 03 要求節點顏色「透過事件即時更新（非頁面重整）」，目前僅有 parse-status 5 秒輪詢，mastery 變化後節點顏色需重新進入頁面才更新；需 WebSocket/SSE 基礎設施支援（首見：2026-05-15；最後確認：2026-05-18 Daily QA Audit）
+- [x] `/super-admin/*` — ~~super-admin/dashboard、users、cost-monitor、prompt-templates 皆以 `isAdmin` 守衛；高敏感頁（prompt-templates、cost-monitor）應升級為 `isSuperAdmin`~~ 驗證通過：prompt-templates 與 cost-monitor 已使用 `isSuperAdmin` 頁面級守衛；dashboard 與 users 使用 layout 級 `isAdmin` 符合權限模型設計（ADMIN 可存取用戶管理與總覽）（確認：2026-05-15 TiTi Commander 排程巡檢）
+
+### 🟡 空態補強（Layer 3 違規）
+
+- [x] `/exam/workspace` — ~~題目載入失敗（load error state）未查詢 `resource_parse_jobs` 表的 `failure_reason`，違反 Layer 3 空態規則~~ 已修復：新增 useEffect 於 loadError 或 questions 為空時自動查 documentService.list() → 過濾 FAILED → resourceParseService.getStatus() 取 failure_reason；紅色警示卡（data-testid="workspace-load-parse-failures"）顯示最多 3 筆失敗原因 + /knowledge 連結；TypeScript 編譯零錯誤（修復：2026-05-15 TiTi Commander 排程巡檢）
+
