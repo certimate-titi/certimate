@@ -817,6 +817,64 @@ DEFAULT_EXAM_SUBJECTS = [
 ]
 
 
+@router.post("/backfill-balance-code-fences", include_in_schema=False)
+def backfill_balance_code_fences(
+    dry_run: bool = False,
+    limit: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """一次性修補 resources.parsed_markdown 內未配對的 ``` code fence。
+
+    2026-05-19：對應 frontend MathContent.balanceCodeFences；DB 內存的 source
+    markdown 仍是壞的，修一次性 source；之後新解析由 K-01 v3 prompt 保證配對。
+
+    Query params：
+        dry_run=true：只統計不寫
+        limit=N：限制處理筆數
+    """
+    import re as _re
+    from sqlalchemy import text as _text
+
+    fence_re = _re.compile(r"^\s*```", _re.MULTILINE)
+    sql = (
+        "SELECT id, parsed_markdown FROM resources "
+        "WHERE parsed_markdown IS NOT NULL AND parsed_markdown LIKE '%```%' "
+        "ORDER BY created_at DESC"
+    )
+    if limit:
+        sql += " LIMIT :lim"
+    rows = db.execute(_text(sql), {"lim": limit} if limit else {}).fetchall()
+
+    scanned = 0
+    unbalanced = 0
+    fixed = 0
+    fixed_ids: list[str] = []
+    for row in rows:
+        scanned += 1
+        md = row.parsed_markdown
+        if len(fence_re.findall(md)) % 2 != 1:
+            continue
+        unbalanced += 1
+        if dry_run:
+            continue
+        new_md = (md + "```\n") if md.endswith("\n") else (md + "\n```\n")
+        db.execute(
+            _text("UPDATE resources SET parsed_markdown = :md WHERE id = :id"),
+            {"md": new_md, "id": row.id},
+        )
+        db.commit()
+        fixed += 1
+        fixed_ids.append(str(row.id))
+    return {
+        "ok": True,
+        "scanned": scanned,
+        "unbalanced": unbalanced,
+        "fixed": fixed,
+        "dry_run": dry_run,
+        "fixed_ids": fixed_ids[:50],
+    }
+
+
 @router.post("/sync-prompts", include_in_schema=False)
 def sync_prompts():
     """從 GCS 同步 prompt templates 到 DB（CI 部署後觸發）。

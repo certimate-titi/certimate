@@ -6,7 +6,7 @@ category: "knowledge"
 model: "gemini-flash"
 max_tokens: 4096
 temperature: 0.1
-version: 2
+version: 3
 feature_refs:
   - "02-資源上傳"
 variables:
@@ -59,8 +59,9 @@ variables:
 通用規則：
 1. 不添加任何原文中沒有的內容
 2. 重要概念以 **粗體** 標記
-3. 程式碼區塊使用 ``` 包裹並標注語言
-4. 全文使用繁體中文
+3. 程式碼區塊使用 ``` 包裹並標注語言，**每個 ``` 開頭必須有對應的 ``` 結尾**（fence 必須成對；錯誤示範會讓表格 / 段落被誤判為程式碼）
+4. 表格與程式碼區塊之間留**空行**分隔，避免解析錯亂
+5. 全文使用繁體中文
 ```
 
 ## User Prompt
