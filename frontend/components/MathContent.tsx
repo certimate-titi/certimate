@@ -36,10 +36,30 @@ interface MathContentProps {
  * @param props.className - 額外樣式
  * @param props.inline - 是否為 inline 短文模式（預設 true）
  */
+/**
+ * 平衡 ``` 程式碼圍欄。
+ *
+ * AI 生成的 markdown 偶爾遺漏結尾 ```，導致 react-markdown 把後續整段（含表格、
+ * 段落）全部當成 code block 渲染。掃描行首 ```，若奇數則尾端補上一個結尾。
+ */
+function balanceCodeFences(md: string): string {
+  const lines = md.split('\n');
+  let fences = 0;
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) fences += 1;
+  }
+  if (fences % 2 === 1) {
+    return md.endsWith('\n') ? md + '```\n' : md + '\n```\n';
+  }
+  return md;
+}
+
 export default function MathContent({ children, className = '', inline = true }: MathContentProps) {
   const wrapperCls = inline
     ? `prose prose-sm max-w-none whitespace-pre-line ${className}`
     : `prose prose-sm max-w-none prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-table:my-3 prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:px-2 prose-th:py-1 prose-td:border prose-td:border-slate-300 prose-td:px-2 prose-td:py-1 ${className}`;
+
+  const balanced = balanceCodeFences(children);
 
   return (
     <div className={wrapperCls}>
@@ -55,7 +75,7 @@ export default function MathContent({ children, className = '', inline = true }:
             : undefined
         }
       >
-        {children}
+        {balanced}
       </ReactMarkdown>
     </div>
   );
