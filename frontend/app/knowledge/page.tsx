@@ -865,7 +865,7 @@ function KnowledgeBasePageInner() {
                 {centerView === 'document' ? (
                   <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <MathContent className="prose-slate text-slate-700 leading-relaxed">
+                    <MathContent inline={false} className="prose-slate text-slate-700 leading-relaxed">
                       {docFullText}
                     </MathContent>
                   </div>
