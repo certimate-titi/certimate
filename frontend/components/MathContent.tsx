@@ -3,10 +3,12 @@
  *
  * 用於 /review 題目內容、AI 教練回覆等可能含 $...$ / $$...$$ LaTeX 的文字。
  * 支援 inline 公式 `$x^2$` 與 block 公式 `$$\\frac{a}{b}$$`，以及一般 Markdown。
+ * GFM 擴充：表格、刪除線、任務清單、自動連結。
  */
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -28,7 +30,7 @@ export default function MathContent({ children, className = '' }: MathContentPro
   return (
     <div className={`prose prose-sm max-w-none whitespace-pre-line ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           // 移除預設 wrapping <p> 對 prose 的影響
