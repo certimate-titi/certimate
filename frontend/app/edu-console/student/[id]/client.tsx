@@ -17,6 +17,7 @@ import {
 
 import { useAuth } from '@/lib/auth-context';
 import { adminService } from '@/lib/api/services';
+import MathContent from '@/components/MathContent';
 import type { Student } from '@/types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -194,7 +195,7 @@ function ExamCard({ exam }: { exam: ExamHistoryItem }) {
                       {wa.question_number}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-800 leading-relaxed mb-2">{wa.content}</p>
+                      <div className="text-sm text-slate-800 leading-relaxed mb-2"><MathContent>{wa.content}</MathContent></div>
                       <div className="flex items-center gap-4 text-xs mb-2">
                         <span className="text-rose-600">
                           學生作答：<span className="font-bold">{wa.student_answer || '未作答'}</span>

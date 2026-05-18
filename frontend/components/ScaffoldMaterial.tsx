@@ -10,6 +10,7 @@ import { knowledgeService, scaffoldService, orphanScaffoldService, type NodeScaf
 import type { OrphanFillResponse, OrphanFillResult } from '@/types/api';
 import OrphanScaffoldCard from '@/components/scaffold/OrphanScaffoldCard';
 import OrphanScaffoldEmptyState from '@/components/scaffold/OrphanScaffoldEmptyState';
+import MathContent from '@/components/MathContent';
 
 /** 教材閱讀模式（Sprint 10 T92 — 後端 6 類前端歸併 3 類）：
  *  - anchor：讀前定錨（advance_organizer）— Ausubel subsumption
@@ -324,7 +325,7 @@ function AnchorMode({ items }: { items: NodeScaffoldItem[] }) {
           {s.chapter_heading && (
             <div className="text-[10px] font-semibold text-violet-600 mb-1">🧭 {s.chapter_heading}</div>
           )}
-          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{s.content}</p>
+          <div className="text-xs text-slate-700 leading-relaxed"><MathContent>{s.content}</MathContent></div>
         </li>
       ))}
     </ul>
@@ -347,7 +348,7 @@ function SpeedMode({ items }: { items: NodeScaffoldItem[] }) {
           {s.chapter_heading && (
             <div className="text-[10px] font-semibold text-emerald-600 mb-1">{s.chapter_heading}</div>
           )}
-          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{s.content}</p>
+          <div className="text-xs text-slate-700 leading-relaxed"><MathContent>{s.content}</MathContent></div>
           {(s.page_start || s.page_end) && (
             <div className="mt-1.5 text-[10px] text-slate-400">
               頁 {s.page_start ?? '-'}{s.page_end && s.page_end !== s.page_start ? `–${s.page_end}` : ''}
@@ -411,7 +412,7 @@ function DeepItem({ item }: { item: NodeScaffoldItem }) {
       {item.chapter_heading && (
         <div className="text-[10px] font-semibold text-emerald-600 mb-1">{item.chapter_heading}</div>
       )}
-      <p className="text-xs font-semibold text-slate-800 mb-2 leading-relaxed">{item.content}</p>
+      <div className="text-xs font-semibold text-slate-800 mb-2 leading-relaxed"><MathContent>{item.content}</MathContent></div>
       <div className="relative">
         <textarea
           value={response}
@@ -436,7 +437,7 @@ function DeepItem({ item }: { item: NodeScaffoldItem }) {
           {reveal ? (
             <div className="rounded-md bg-emerald-50/60 border border-emerald-200 p-2">
               <div className="text-[10px] font-semibold text-emerald-700 mb-1">參考答案</div>
-              <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-line">{item.reference_answer}</p>
+              <div className="text-[11px] text-slate-700 leading-relaxed"><MathContent>{item.reference_answer}</MathContent></div>
             </div>
           ) : (
             <button

@@ -23,6 +23,7 @@ import { ArrowLeft, Search, FileText, Film, HelpCircle, AlertTriangle } from 'lu
 
 // services removed in T43 — using /concept-center via apiClient
 import { useAuth } from '@/lib/auth-context';
+import MathContent from '@/components/MathContent';
 
 interface ConceptHit {
   resourceId: string;
@@ -237,7 +238,7 @@ function ConceptSection({
                 <span className="text-xs text-slate-400">· {h.chapterHeading}</span>
               )}
             </div>
-            <p className="text-sm text-slate-700 line-clamp-3">{h.content}</p>
+            <div className="text-sm text-slate-700 line-clamp-3"><MathContent>{h.content}</MathContent></div>
           </Link>
         ))}
       </div>

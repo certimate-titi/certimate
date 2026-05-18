@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { Lightbulb, Check } from 'lucide-react';
 
 import { apiClient } from '@/lib/api/client';
+import MathContent from '@/components/MathContent';
 
 export interface RetrievalCardProps {
   /** Scaffold UUID — 後端 interaction log 用 */
@@ -140,8 +141,8 @@ export default function RetrievalCard({
           <span className="text-xs text-emerald-600/70">{chapterHeading}</span>
         )}
       </header>
-      <p className="text-sm text-slate-500 italic mb-2">{retrievalPrompt}</p>
-      <p className="text-base text-slate-800 leading-relaxed mb-4">{content}</p>
+      <div className="text-sm text-slate-500 italic mb-2"><MathContent>{retrievalPrompt}</MathContent></div>
+      <div className="text-base text-slate-800 leading-relaxed mb-4"><MathContent>{content}</MathContent></div>
 
       {!rating ? (
         <div>

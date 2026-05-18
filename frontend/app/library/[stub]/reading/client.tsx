@@ -269,7 +269,7 @@ export default function ReadingClient() {
                         <span className="text-xs font-bold text-slate-500">
                           {s.type === 'elaborative' ? '💭 延伸思考' : '📌 重點'}
                         </span>
-                        <p className="text-sm text-slate-700 mt-1">{s.content}</p>
+                        <div className="text-sm text-slate-700 mt-1"><MathContent>{s.content}</MathContent></div>
                       </div>
                     ),
                   )}

@@ -23,6 +23,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, X, AlertTriangle } from 'lucide-react';
 
 import PitfallAlert from '@/components/PitfallAlert';
+import MathContent from '@/components/MathContent';
 import { resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { ScaffoldEntry } from '@/hooks/use-reading-page-state';
@@ -163,7 +164,9 @@ export default function QuizClient() {
                 aria-label={`第 ${idx + 1} 題`}
               >
                 <p className="text-sm font-bold text-slate-500 mb-1">第 {idx + 1} 題</p>
-                <p className="text-base text-slate-900 mb-4 whitespace-pre-line">{q.content}</p>
+                <div className="text-base text-slate-900 mb-4">
+                  <MathContent>{q.content}</MathContent>
+                </div>
 
                 <div className="space-y-2 mb-3">
                   {OPTION_KEYS.map((k) => {
@@ -184,10 +187,12 @@ export default function QuizClient() {
                         disabled={showAnswer}
                         className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${cls} ${showAnswer ? 'cursor-default' : 'cursor-pointer'}`}
                       >
-                        <span className="font-bold mr-2">({k})</span>
-                        {text}
-                        {showAnswer && isCorrectChoice && <Check className="inline w-4 h-4 ml-2 text-emerald-600" />}
-                        {showAnswer && isUserChoice && !isCorrectChoice && <X className="inline w-4 h-4 ml-2 text-rose-600" />}
+                        <span className="flex items-start gap-2">
+                          <span className="font-bold shrink-0">({k})</span>
+                          <span className="flex-1"><MathContent>{text}</MathContent></span>
+                          {showAnswer && isCorrectChoice && <Check className="shrink-0 w-4 h-4 text-emerald-600" />}
+                          {showAnswer && isUserChoice && !isCorrectChoice && <X className="shrink-0 w-4 h-4 text-rose-600" />}
+                        </span>
                       </button>
                     );
                   })}
@@ -199,7 +204,9 @@ export default function QuizClient() {
                       {correct ? '✓ 答對了！' : `✗ 正確答案：(${q.correct_answer})`}
                     </div>
                     {q.explanation && (
-                      <p className="mt-2 text-xs text-slate-600 leading-relaxed">{q.explanation}</p>
+                      <div className="mt-2 text-xs text-slate-600 leading-relaxed">
+                        <MathContent>{q.explanation}</MathContent>
+                      </div>
                     )}
                     {/* concept_extract（K-06-quiz scaffold 寫成 takeaway 但 template_code='K-06-quiz')*/}
                     {conceptScaffolds
@@ -210,7 +217,9 @@ export default function QuizClient() {
                           className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3"
                         >
                           <p className="text-xs font-bold text-emerald-700 mb-1">📌 考點解析</p>
-                          <p className="text-sm text-slate-800 whitespace-pre-line">{s.content}</p>
+                          <div className="text-sm text-slate-800">
+                            <MathContent>{s.content}</MathContent>
+                          </div>
                         </div>
                       ))}
                     {/* pitfall（常見錯選陷阱）*/}

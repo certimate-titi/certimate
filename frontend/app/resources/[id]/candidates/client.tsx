@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { questionCandidateService } from '@/lib/api/services';
 import type { CandidateListResponse, QuestionCandidate } from '@/types/api';
+import MathContent from '@/components/MathContent';
 
 /** 從 `window.location.pathname` 解析 `/resources/{id}/candidates` 的 resource id。 */
 function useResourceIdFromPath(): string {
@@ -110,11 +111,14 @@ export default function CandidateApprovalPage() {
                 <span className="text-xs text-gray-400">來源：第 {c.source_page} 頁</span>
               )}
             </div>
-            <p className="text-sm text-gray-900 mb-2 whitespace-pre-wrap">{c.question_text}</p>
+            <div className="text-sm text-gray-900 mb-2">
+              <MathContent>{c.question_text}</MathContent>
+            </div>
             <ul className="text-xs text-gray-600 space-y-1 mb-2">
               {c.options.map((opt, i) => (
-                <li key={i}>
-                  <span className="font-mono">{String.fromCharCode(65 + i)}.</span> {opt}
+                <li key={i} className="flex gap-1">
+                  <span className="font-mono shrink-0">{String.fromCharCode(65 + i)}.</span>
+                  <MathContent>{opt}</MathContent>
                 </li>
               ))}
             </ul>

@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { NotebookPen, Download, Sparkles } from 'lucide-react';
 import { knowledgeService, type NodeScaffoldItem } from '@/lib/api/services';
+import MathContent from '@/components/MathContent';
 
 /**
  * ScaffoldNotebook 的 props。
@@ -167,9 +168,9 @@ export default function ScaffoldNotebook({ nodeId, fallbackResourceId, nodeLabel
             {e.chapter_heading && (
               <div className="text-[10px] font-semibold text-emerald-600 mb-1">{e.chapter_heading}</div>
             )}
-            <p className="text-[11px] font-semibold text-slate-700 mb-1">{e.content}</p>
+            <div className="text-[11px] font-semibold text-slate-700 mb-1"><MathContent>{e.content}</MathContent></div>
             <div className="mt-1 rounded bg-slate-50 border border-slate-100 px-2 py-1.5">
-              <p className="text-[11px] text-slate-700 whitespace-pre-line leading-relaxed">{e.user_response}</p>
+              <div className="text-[11px] text-slate-700 leading-relaxed"><MathContent>{e.user_response ?? ''}</MathContent></div>
             </div>
             {e.responded_at && (
               <div className="mt-1.5 text-[10px] text-slate-400">

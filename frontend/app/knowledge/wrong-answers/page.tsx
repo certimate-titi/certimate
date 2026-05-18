@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { subjectService, wrongAnswerMapService, documentService, resourceParseService, type WrongAnswerMapNode } from '@/lib/api/services';
 import type { UserSubject } from '@/types';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import MathContent from '@/components/MathContent';
 
 const COLOR_CLASS: Record<string, string> = {
   green: 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -151,7 +152,7 @@ function Inner() {
               <ul className="space-y-1">
                 {wrongs.slice(0, 5).map(w => (
                   <li key={w.question_id} className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-xs">
-                    <p className="text-slate-800 line-clamp-2 mb-1">{w.content}</p>
+                    <div className="text-slate-800 line-clamp-2 mb-1"><MathContent>{w.content}</MathContent></div>
                     <p className="text-slate-500">你選 <span className="text-rose-700 font-medium">{w.user_choice}</span> · 正解 <span className="text-emerald-700 font-medium">{w.correct_answer}</span></p>
                   </li>
                 ))}

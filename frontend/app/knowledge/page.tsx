@@ -865,9 +865,9 @@ function KnowledgeBasePageInner() {
                 {centerView === 'document' ? (
                   <div className="h-full overflow-y-auto px-4 md:px-8 py-4">
                     <h2 className="text-lg font-bold text-slate-800 mb-4">{docFullTitle}</h2>
-                    <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                    <MathContent className="prose-slate text-slate-700 leading-relaxed">
                       {docFullText}
-                    </div>
+                    </MathContent>
                   </div>
                 ) : !loadingDocs && mindMapNodes.length === 0 ? (
                   /* Layer 3 空態區分 + Spec 03b §空地圖 polish：4 種情境各自精準 CTA */

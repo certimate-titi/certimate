@@ -19,6 +19,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import MathContent from '@/components/MathContent';
 
 export interface PitfallAlertProps {
   /** Scaffold UUID — 用於 localStorage dismiss key */
@@ -70,9 +71,9 @@ export default function PitfallAlert({
           <span className="text-xs text-rose-600/70">{chapterHeading}</span>
         )}
       </header>
-      <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-        {content}
-      </p>
+      <div className="text-sm text-slate-800 leading-relaxed">
+        <MathContent>{content}</MathContent>
+      </div>
     </section>
   );
 }

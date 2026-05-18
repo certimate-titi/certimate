@@ -26,6 +26,7 @@ import type { InferenceJudgment } from '@/types/api';
 import type { UserSubject } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import SubjectSwitcher from '@/components/SubjectSwitcher';
+import MathContent from '@/components/MathContent';
 
 export default function PracticePageWrapper() {
   return (
@@ -544,9 +545,9 @@ function PracticePage() {
                 </span>
               </div>
 
-              <p className="text-sm text-slate-800 leading-relaxed mb-4 whitespace-pre-line">
-                {currentQuestion.content}
-              </p>
+              <div className="text-sm text-slate-800 leading-relaxed mb-4">
+                <MathContent>{currentQuestion.content}</MathContent>
+              </div>
 
               {currentQuestion.figure_urls && currentQuestion.figure_urls.length > 0 && (
                 <div className="mb-6 space-y-2">
@@ -585,8 +586,10 @@ function PracticePage() {
                         : 'border-slate-200 hover:border-slate-300 text-slate-700'
                     } ${submitting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    <span className="font-bold mr-2 text-xs">{opt.key}.</span>
-                    {opt.text}
+                    <span className="flex items-start gap-2">
+                      <span className="font-bold text-xs shrink-0">{opt.key}.</span>
+                      <span className="flex-1"><MathContent>{opt.text}</MathContent></span>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -706,9 +709,9 @@ function PracticePage() {
             {/* Question recap with answer highlights */}
             {currentQuestion && (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-4">
-                <p className="text-sm text-slate-800 leading-relaxed mb-5 whitespace-pre-line">
-                  {currentQuestion.content}
-                </p>
+                <div className="text-sm text-slate-800 leading-relaxed mb-5">
+                  <MathContent>{currentQuestion.content}</MathContent>
+                </div>
                 <div className="space-y-2.5">
                   {options.map((opt) => {
                     const isCorrect = opt.key === feedback.correct_answer;
@@ -723,7 +726,7 @@ function PracticePage() {
                     return (
                       <div key={opt.key} className={`${baseClass} ${stateClass}`}>
                         <span className="font-bold text-xs shrink-0 mt-0.5">{opt.key}.</span>
-                        <span className="flex-1">{opt.text}</span>
+                        <span className="flex-1"><MathContent>{opt.text}</MathContent></span>
                         {isCorrect && (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white shrink-0">
                             正確答案
@@ -747,9 +750,9 @@ function PracticePage() {
                 <Lightbulb className="h-4 w-4 text-amber-500" />
                 <h4 className="text-sm font-bold text-slate-700">詳解</h4>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                {feedback.explanation || '本題暫無詳解，若需進一步說明可詢問 AI 教練。'}
-              </p>
+              <div className="text-sm text-slate-600 leading-relaxed">
+                <MathContent>{feedback.explanation || '本題暫無詳解，若需進一步說明可詢問 AI 教練。'}</MathContent>
+              </div>
             </div>
 
             {/* EPIC-035: AI 推論揭示（僅 ai_inferred 題目顯示） */}

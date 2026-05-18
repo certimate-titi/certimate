@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
 
 import { apiClient } from '@/lib/api/client';
+import MathContent from '@/components/MathContent';
 
 interface ChapterPracticeQuestion {
   id: string;
@@ -114,9 +115,10 @@ export default function InlinePractice({ resourceId, chapterHeading }: InlinePra
 
           return (
             <div key={q.id} className="rounded-xl bg-white border border-slate-200 p-4">
-              <p className="text-sm font-medium text-slate-900 mb-3 whitespace-pre-line">
-                {idx + 1}. {q.content}
-              </p>
+              <div className="text-sm font-medium text-slate-900 mb-3 flex gap-1">
+                <span className="shrink-0">{idx + 1}.</span>
+                <span className="flex-1"><MathContent>{q.content}</MathContent></span>
+              </div>
 
               <div className="space-y-2 mb-2">
                 {OPTION_KEYS.map((k) => {
@@ -137,14 +139,16 @@ export default function InlinePractice({ resourceId, chapterHeading }: InlinePra
                       disabled={showAnswer}
                       className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${cls} ${showAnswer ? 'cursor-default' : 'cursor-pointer'}`}
                     >
-                      <span className="font-bold mr-2">({k})</span>
-                      {text}
-                      {showAnswer && isCorrectChoice && (
-                        <Check className="inline w-4 h-4 ml-2 text-emerald-600" />
-                      )}
-                      {showAnswer && isUserChoice && !isCorrectChoice && (
-                        <X className="inline w-4 h-4 ml-2 text-rose-600" />
-                      )}
+                      <span className="flex items-start gap-2">
+                        <span className="font-bold shrink-0">({k})</span>
+                        <span className="flex-1"><MathContent>{text}</MathContent></span>
+                        {showAnswer && isCorrectChoice && (
+                          <Check className="shrink-0 w-4 h-4 text-emerald-600" />
+                        )}
+                        {showAnswer && isUserChoice && !isCorrectChoice && (
+                          <X className="shrink-0 w-4 h-4 text-rose-600" />
+                        )}
+                      </span>
                     </button>
                   );
                 })}
@@ -154,7 +158,7 @@ export default function InlinePractice({ resourceId, chapterHeading }: InlinePra
                 <div className={`mt-2 text-xs ${correct ? 'text-emerald-700' : 'text-rose-700'}`}>
                   {correct ? '✓ 答對了！' : `✗ 正確答案：(${q.correct_answer})`}
                   {q.explanation && (
-                    <p className="mt-1 text-slate-600">{q.explanation}</p>
+                    <div className="mt-1 text-slate-600"><MathContent>{q.explanation}</MathContent></div>
                   )}
                 </div>
               )}

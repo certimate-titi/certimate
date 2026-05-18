@@ -20,6 +20,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Grid3x3 } from 'lucide-react';
 
 import RetrievalCard from '@/components/RetrievalCard';
 import PitfallAlert from '@/components/PitfallAlert';
+import MathContent from '@/components/MathContent';
 import { resourceParseService } from '@/lib/api/services';
 import { useAuth } from '@/lib/auth-context';
 import type { ScaffoldEntry } from '@/hooks/use-reading-page-state';
@@ -227,7 +228,7 @@ function SlideFullscreen({
                     <span className="text-xs font-bold text-slate-500">
                       {s.type === 'elaborative' ? '💭 重述故事線' : '📌 重點'}
                     </span>
-                    <p className="text-sm text-slate-700 mt-1">{s.content}</p>
+                    <div className="text-sm text-slate-700 mt-1"><MathContent>{s.content}</MathContent></div>
                   </div>
                 ),
               )}

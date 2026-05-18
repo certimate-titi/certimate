@@ -21,6 +21,7 @@
 
 import { useState } from 'react';
 import { Lightbulb, ArrowDown, ChevronUp } from 'lucide-react';
+import MathContent from '@/components/MathContent';
 
 export interface AdvanceOrganizerProps {
   scaffoldId: string;
@@ -75,9 +76,9 @@ export default function AdvanceOrganizer({
           <span className="text-xs text-violet-600/70">{chapterHeading}</span>
         )}
       </header>
-      <p className="text-base text-slate-800 leading-relaxed mb-3 whitespace-pre-line">
-        {content}
-      </p>
+      <div className="text-base text-slate-800 leading-relaxed mb-3">
+        <MathContent>{content}</MathContent>
+      </div>
       <p className="text-xs text-violet-600 mb-3">
         💡 帶著這個問題讀章節，效果比直接讀好得多（Ausubel 1968）
       </p>
