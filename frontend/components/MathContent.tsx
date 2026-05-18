@@ -54,10 +54,19 @@ function balanceCodeFences(md: string): string {
   return md;
 }
 
+// 程式碼區塊 + 表格的共用樣式（inline / document 兩模式共用，保證視覺一致）
+const BLOCK_STYLES = [
+  'prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto prose-pre:text-xs',
+  'prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs',
+  'prose-table:my-3 prose-table:text-xs',
+  'prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:px-2 prose-th:py-1',
+  'prose-td:border prose-td:border-slate-300 prose-td:px-2 prose-td:py-1',
+].join(' ');
+
 export default function MathContent({ children, className = '', inline = true }: MathContentProps) {
   const wrapperCls = inline
-    ? `prose prose-sm max-w-none whitespace-pre-line ${className}`
-    : `prose prose-sm max-w-none prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-table:my-3 prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:px-2 prose-th:py-1 prose-td:border prose-td:border-slate-300 prose-td:px-2 prose-td:py-1 ${className}`;
+    ? `prose prose-sm max-w-none whitespace-pre-line ${BLOCK_STYLES} ${className}`
+    : `prose prose-sm max-w-none ${BLOCK_STYLES} ${className}`;
 
   const balanced = balanceCodeFences(children);
 
