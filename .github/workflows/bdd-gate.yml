@@ -1,26 +1,29 @@
 name: BDD Gate
 
+# 2026-05-19 停用自動觸發（billing）；改為僅手動 workflow_dispatch
+# 恢復方式：還原下方被註解的 push / pull_request 區塊
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'project/specs/**'
-      - 'frontend/**'
-      - '.github/workflows/frontend-gate.yml'
-      - '.github/workflows/deploy-gcp.yml'
-      - 'exam-bank/**'
-  pull_request:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'project/specs/**'
-      - 'frontend/**'
-      - '.github/workflows/frontend-gate.yml'
-      - '.github/workflows/deploy-gcp.yml'
-      - 'exam-bank/**'
+  workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '**/*.md'
+  #     - 'project/specs/**'
+  #     - 'frontend/**'
+  #     - '.github/workflows/frontend-gate.yml'
+  #     - '.github/workflows/deploy-gcp.yml'
+  #     - 'exam-bank/**'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '**/*.md'
+  #     - 'project/specs/**'
+  #     - 'frontend/**'
+  #     - '.github/workflows/frontend-gate.yml'
+  #     - '.github/workflows/deploy-gcp.yml'
+  #     - 'exam-bank/**'
 
 concurrency:
   group: bdd-gate-${{ github.ref }}

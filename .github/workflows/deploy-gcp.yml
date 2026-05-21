@@ -1,14 +1,16 @@
 name: Deploy to GCP
 
+# 2026-05-19 停用自動觸發（billing）；改為僅手動 workflow_dispatch
+# 恢復方式：還原下方被註解的 push 區塊
 on:
-  push:
-    branches: [ main, production ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'project/specs/**'
-      - 'project/features/**'
   workflow_dispatch:  # Manual trigger
+  # push:
+  #   branches: [ main, production ]
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '**/*.md'
+  #     - 'project/specs/**'
+  #     - 'project/features/**'
 
 # 同 ref 上的舊 deploy 自動取消（避免快速合並時觸發兩次部署，浪費 ~5-6 min/run）
 concurrency:
